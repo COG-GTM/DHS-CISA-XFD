@@ -62,7 +62,6 @@ async def sync_post(sync_body, request: Request):
                     )
 
             except Exception as e:
-                pass
                 print("Error processing item:", e)
 
         return {"status": 200}
