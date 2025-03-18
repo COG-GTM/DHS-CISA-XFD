@@ -33,10 +33,11 @@ def get_matching_cidr(ip, org):
         return None
 
 
-def resolve_domain(domain, nameservers=["8.8.8.8"]):
+def resolve_domain(domain, nameservers=None):
     """Identify ips linked to a given domain."""
     ip_addresses = set()
-
+    if not nameservers:
+        nameservers = ["8.8.8.8"]
     # Create a resolver instance and optionally set a custom DNS server
     resolver = dns.resolver.Resolver()
 
