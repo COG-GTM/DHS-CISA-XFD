@@ -15,8 +15,8 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 LOGGER = logging.getLogger(__name__)
 WHOIS_KEY = os.getenv("WHOIS_XML_KEY")
+THREAD_COUNT = os.getenv("WHOIS_XML_THREAD_COUNT")
 DATE = datetime.datetime.today().date()
-THREAD_COUNT = 5
 
 # Third-Party Libraries
 from xfd_api.helpers.asset_inserts import create_or_update_ip
