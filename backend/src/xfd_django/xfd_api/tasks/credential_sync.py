@@ -10,13 +10,11 @@ from django.conf import settings
 from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
-from xfd_mini_dl.models import (
+from xfd_mini_dl.models import (  # RootDomains,; SubDomains,
     CredentialBreaches,
     CredentialExposures,
     DataSource,
     Organization,
-    RootDomains,
-    SubDomains,
 )
 
 # Django setup
@@ -229,8 +227,8 @@ def save_findings_to_db(cred_exposures_array, cred_breaches_array, org):
     if cred_exposures_array:
         for exposure in cred_exposures_array:
             try:
-                root_domain, created = RootDomains.objects.get_or_create()
-                sub_domain, created = SubDomains.objects.get_or_create()
+                # root_domain, created = RootDomains.objects.get_or_create()
+                # sub_domain, created = SubDomains.objects.get_or_create()
                 CredentialExposures.objects.update_or_create(
                     breach_name=exposure.get("breach_name"),
                     email=exposure.get("email"),
@@ -249,7 +247,7 @@ def save_findings_to_db(cred_exposures_array, cred_breaches_array, org):
                         "data_source": data_source_dict[
                             exposure.get("data_source_name", "unknown")
                         ],
-                        "sub_domain": sub_domain,
+                        # "sub_domain": sub_domain,
                     },
                 )
             except Exception as e:
