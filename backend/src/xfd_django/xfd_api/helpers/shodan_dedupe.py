@@ -16,6 +16,9 @@ API_KEY = os.getenv("SHODAN_API_KEY")
 from xfd_api.helpers.asset_inserts import create_or_update_ip
 from xfd_mini_dl.models import Cidr, Ip, Organization
 
+logging.basicConfig(
+    level=logging.INFO, 
+    format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 states = [
@@ -161,7 +164,7 @@ def cidr_dedupe(cidrs, api, org):
         if result:
             results.append(result)
     found = len([i for i in results if i != 0])
-    LOGGER.warning("CIDRs with IPs found: %d", found)
+    LOGGER.info("CIDRs with IPs found: %d", found)
 
     if len(ip_obj) > 0:
         update_shodan_ips(ip_obj, org)
@@ -194,7 +197,7 @@ def update_shodan_ips(ip_list, org):
                 create_or_update_ip(create_default, update_default, linked_sub=None)
 
         except Exception as e:
-            LOGGER.warning("Error saving the IP to the db: %s", e)
+            LOGGER.error("Error saving the IP to the db: %s", e)
 
 
 def ip_dedupe(api, ips, org):

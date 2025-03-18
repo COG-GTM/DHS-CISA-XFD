@@ -11,6 +11,10 @@ import time
 from django.utils import timezone
 import requests
 
+logging.basicConfig(
+    level=logging.INFO, 
+    format="%(levelname)s: %(message)s")
+
 LOGGER = logging.getLogger(__name__)
 WHOIS_KEY = os.getenv("WHOIS_XML_KEY")
 DATE = datetime.datetime.today().date()
@@ -47,14 +51,14 @@ def process_ips(thread_id, org, cidr, ip_gen):
                 failed_ips.append(ip)
                 continue
             if domain_list:
-                LOGGER.warning(
+                LOGGER.info(
                     "Found %d domains associated with %s", len(domain_list), ip
                 )
                 save_and_link_ip_and_subdomain(ip, cidr, org, domain_list)
-            # print(f"Thread {thread_id} processing IP: {ip}")
+            
         except StopIteration:
             # Stop when the generator is exhausted
-            LOGGER.warning(
+            LOGGER.info(
                 "Thread %s has completed. Processed %d ips in %s seconds.",
                 thread_id,
                 count,
@@ -141,10 +145,10 @@ def connect_subs_from_ips(orgs: list[Organization]):
         org_uid = org.id
         # ips_df = query_ips(org_uid, conn)
         cidrs = query_cidrs_by_org(org_uid)
-        LOGGER.warning("identified %d cidrs for %s", len(cidrs), org.acronym)
+        LOGGER.info("identified %d cidrs for %s", len(cidrs), org.acronym)
 
         for cidr_row in cidrs:
-            LOGGER.warning("Running %s", cidr_row.network)
+            LOGGER.info("Running %s", cidr_row.network)
             process_cidr(cidr_row, org)
 
 
@@ -214,6 +218,7 @@ def save_and_link_ip_and_subdomain(ip, cidr, org, domains):
                         "root_domain": root_domain,
                         "from_root_domain": root_domain.sub_domain,
                         "ip_address": ip,
+                        "is_root_domain":False 
                     },
                 )
 
@@ -233,8 +238,8 @@ def save_and_link_ip_and_subdomain(ip, cidr, org, domains):
             )
 
         except KeyError as ke:
-            LOGGER.warning("Key error: %s", ke)
+            LOGGER.error("Key error: %s", ke)
             continue
         except Exception as e:
-            LOGGER.warning("Unknown error: %s", error=e)
+            LOGGER.error("Unknown error: %s", error=e)
             continue

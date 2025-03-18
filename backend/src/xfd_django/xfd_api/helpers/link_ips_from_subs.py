@@ -10,6 +10,9 @@ import dns.resolver
 from xfd_api.helpers.asset_inserts import create_or_update_ip
 from xfd_mini_dl.models import Cidr, Organization, SubDomains
 
+logging.basicConfig(
+    level=logging.INFO, 
+    format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 DATE = datetime.datetime.now(datetime.timezone.utc)
 
@@ -49,10 +52,8 @@ def resolve_domain(domain, nameservers=["8.8.8.8"]):
         for rdata in ipv4_answers:
             ip_addresses.add((rdata.address, "IPv4"))
     except dns.resolver.NoAnswer:
-        # LOGGER.warning("No A record (IPv4) found for %s", domain)
         pass
     except dns.exception.DNSException:
-        # LOGGER.warning("Error resolving IPv4 for %s: %s", domain, e)
         pass
 
     try:
@@ -61,10 +62,8 @@ def resolve_domain(domain, nameservers=["8.8.8.8"]):
         for rdata in ipv6_answers:
             ip_addresses.add((rdata.address, "IPv6"))
     except dns.resolver.NoAnswer:
-        # LOGGER.warning("No AAAA record (IPv6) found for %s", domain)
         pass
     except dns.exception.DNSException:
-        # LOGGER.warning("Error resolving IPv6 for %s: %s", domain, e)
         pass
 
     return ip_addresses
@@ -101,7 +100,7 @@ def get_ips_and_type_socket(subdomain, org):
 
             cidr = get_matching_cidr(ip_address, org)
             if cidr:
-                LOGGER.warning(
+                LOGGER.info(
                     "Found matching cidr for %s: %s", str(ip_address), cidr.network
                 )
 
@@ -117,7 +116,7 @@ def get_ips_and_type_socket(subdomain, org):
             ip_info.append((ip_address, ip_type))
 
     except socket.gaierror as e:
-        LOGGER.warning("Error resolving the subdomain %s: %s", subdomain, e)
+        LOGGER.error("Error resolving the subdomain %s: %s", subdomain, e)
 
     return ip_info
 

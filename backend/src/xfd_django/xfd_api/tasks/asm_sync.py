@@ -25,6 +25,10 @@ from xfd_mini_dl.models import (
     SubDomains,
 )
 
+logging.basicConfig(
+    level=logging.INFO, 
+    format="%(levelname)s: %(message)s"
+)
 LOGGER = logging.getLogger(__name__)
 
 # Django setup
@@ -75,9 +79,9 @@ def main(event):
         # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         enumerate_subs(orgs_to_sync)
 
-        LOGGER.warning("Identifying subdomains from ips...")
+        LOGGER.info("Identifying subdomains from ips...")
         connect_subs_from_ips(orgs_to_sync)
-        LOGGER.warning("Identifying ips from subdomains...")
+        LOGGER.info("Identifying ips from subdomains...")
         connect_ips_from_subs(orgs_to_sync)
 
         LOGGER.info("Identifying asset changes...")
@@ -146,7 +150,7 @@ def enumerate_subs(org_list=None):
         roots = SubDomains.objects.filter(
             is_root_domain=True, organization__id__in=org_ids
         ).filter(Q(enumerate_subs=True) | Q(enumerate_subs=None))
-    print(roots)
+    
 
     for root in roots:
         enumerate_roots(root)
@@ -165,8 +169,7 @@ def enumerate_roots(root_domain):
     )
     headers = {"Content-Type": "application/json"}
     response = requests.request("POST", url, headers=headers, data=payload, timeout=20)
-    LOGGER.info(response.json())
-    LOGGER.info(response.text)
+    
     retry_count, max_retries, time_delay = 1, 10, 5
     while response.status_code != 200 and retry_count <= max_retries:
         LOGGER.info(
