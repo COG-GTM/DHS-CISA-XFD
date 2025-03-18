@@ -16,9 +16,7 @@ API_KEY = os.getenv("SHODAN_API_KEY")
 from xfd_api.helpers.asset_inserts import create_or_update_ip
 from xfd_mini_dl.models import Cidr, Ip, Organization
 
-logging.basicConfig(
-    level=logging.INFO, 
-    format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 states = [

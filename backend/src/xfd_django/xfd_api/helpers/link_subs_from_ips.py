@@ -11,9 +11,7 @@ import time
 from django.utils import timezone
 import requests
 
-logging.basicConfig(
-    level=logging.INFO, 
-    format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 LOGGER = logging.getLogger(__name__)
 WHOIS_KEY = os.getenv("WHOIS_XML_KEY")
@@ -51,11 +49,9 @@ def process_ips(thread_id, org, cidr, ip_gen):
                 failed_ips.append(ip)
                 continue
             if domain_list:
-                LOGGER.info(
-                    "Found %d domains associated with %s", len(domain_list), ip
-                )
+                LOGGER.info("Found %d domains associated with %s", len(domain_list), ip)
                 save_and_link_ip_and_subdomain(ip, cidr, org, domain_list)
-            
+
         except StopIteration:
             # Stop when the generator is exhausted
             LOGGER.info(
@@ -218,7 +214,7 @@ def save_and_link_ip_and_subdomain(ip, cidr, org, domains):
                         "root_domain": root_domain,
                         "from_root_domain": root_domain.sub_domain,
                         "ip_address": ip,
-                        "is_root_domain":False 
+                        "is_root_domain": False,
                     },
                 )
 

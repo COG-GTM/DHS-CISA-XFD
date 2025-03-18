@@ -25,10 +25,7 @@ from xfd_mini_dl.models import (
     SubDomains,
 )
 
-logging.basicConfig(
-    level=logging.INFO, 
-    format="%(levelname)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 # Django setup
@@ -150,7 +147,6 @@ def enumerate_subs(org_list=None):
         roots = SubDomains.objects.filter(
             is_root_domain=True, organization__id__in=org_ids
         ).filter(Q(enumerate_subs=True) | Q(enumerate_subs=None))
-    
 
     for root in roots:
         enumerate_roots(root)
@@ -169,7 +165,7 @@ def enumerate_roots(root_domain):
     )
     headers = {"Content-Type": "application/json"}
     response = requests.request("POST", url, headers=headers, data=payload, timeout=20)
-    
+
     retry_count, max_retries, time_delay = 1, 10, 5
     while response.status_code != 200 and retry_count <= max_retries:
         LOGGER.info(
