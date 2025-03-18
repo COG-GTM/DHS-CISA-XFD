@@ -2,8 +2,8 @@
 # Third-Party Libraries
 from django.db.models.query import Q, QuerySet
 from fastapi import HTTPException
+from xfd_mini_dl.models import Vulnerability
 
-from ..models import Vulnerability
 from ..schema_models.vulnerability import VulnerabilityFilters
 
 # Define the severity levels

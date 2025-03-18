@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
 from django.forms import model_to_dict
 from fastapi import HTTPException
+from xfd_mini_dl.models import Organization, Role, User
 
 from ..auth import (
     can_access_user,
@@ -24,7 +25,6 @@ from ..helpers.email import (
     send_registration_denied_email,
 )
 from ..helpers.regionStateMap import REGION_STATE_MAP
-from ..models import Organization, Role, User
 from ..tools.serializers import serialize_user
 
 
@@ -44,7 +44,7 @@ def get_me(current_user):
         # Fetch the user and related objects from the database
         user = User.objects.prefetch_related(
             Prefetch("roles", queryset=Role.objects.select_related("organization")),
-            Prefetch("apiKeys"),
+            Prefetch("api_keys"),
         ).get(id=str(current_user.id))
 
         # Convert the user object to a dictionary
@@ -54,7 +54,7 @@ def get_me(current_user):
         user_dict["id"] = str(user.id)
 
         # Include roles with their related organization
-        user_dict["roles"] = [
+        user_dict["role_user_id_set"] = [
             {
                 "id": role.id,
                 "role": role.role,
@@ -65,20 +65,20 @@ def get_me(current_user):
                         fields=[
                             "acronym",
                             "name",
-                            "rootDomains",
-                            "ipBlocks",
-                            "isPassive",
-                            "pendingDomains",
+                            "root_domains",
+                            "ip_blocks",
+                            "is_passive",
+                            "pending_domains",
                             "country",
                             "state",
-                            "regionId",
-                            "stateFips",
-                            "stateName",
+                            "region_id",
+                            "state_fips",
+                            "state_name",
                             "county",
-                            "countyFips",
+                            "county_fips",
                             "type",
                             "parent",
-                            "createdBy",
+                            "created_by",
                         ],
                     ),
                     "id": str(role.organization.id),  # Explicitly add the ID
@@ -86,13 +86,13 @@ def get_me(current_user):
                 if role.organization
                 else None,
             }
-            for role in user.roles.all()
+            for role in user.role_user_id_set.all()
         ]
 
         # Include API keys
         user_dict["apiKeys"] = list(
             user.apiKeys.values(
-                "id", "createdAt", "updatedAt", "lastUsed", "hashedKey", "lastFour"
+                "id", "created_at", "updated_at", "last_used", "hashed_key", "last_four"
             )
         )
 
@@ -123,29 +123,29 @@ def accept_terms(version_data, current_user):
         return {
             "id": str(current_user.id),
             "cognitoId": current_user.cognitoId,
-            "oktaId": current_user.oktaId,
-            "loginGovId": current_user.loginGovId,
-            "createdAt": current_user.createdAt.isoformat()
-            if current_user.createdAt
+            "oktaId": current_user.okta_id,
+            "loginGovId": current_user.login_gov_id,
+            "createdAt": current_user.created_at.isoformat()
+            if current_user.created_at
             else None,
-            "updatedAt": current_user.updatedAt.isoformat()
-            if current_user.updatedAt
+            "updatedAt": current_user.updated_at.isoformat()
+            if current_user.updated_at
             else None,
-            "firstName": current_user.firstName,
-            "lastName": current_user.lastName,
-            "fullName": current_user.fullName,
+            "firstName": current_user.first_name,
+            "lastName": current_user.last_name,
+            "fullName": current_user.full_name,
             "email": current_user.email,
-            "invitePending": current_user.invitePending,
-            "loginBlockedByMaintenance": current_user.loginBlockedByMaintenance,
-            "dateAcceptedTerms": current_user.dateAcceptedTerms.isoformat()
-            if current_user.dateAcceptedTerms
+            "invitePending": current_user.invite_pending,
+            "loginBlockedByMaintenance": current_user.login_blocked_by_maintenance,
+            "dateAcceptedTerms": current_user.date_accepted_terms.isoformat()
+            if current_user.date_accepted_terms
             else None,
-            "acceptedTermsVersion": current_user.acceptedTermsVersion,
-            "lastLoggedIn": current_user.lastLoggedIn.isoformat()
-            if current_user.lastLoggedIn
+            "acceptedTermsVersion": current_user.accepted_terms_version,
+            "lastLoggedIn": current_user.last_logged_in.isoformat()
+            if current_user.last_logged_in
             else None,
-            "userType": current_user.userType,
-            "regionId": current_user.regionId,
+            "userType": current_user.user_type,
+            "regionId": current_user.region_id,
             "state": current_user.state,
         }
     except Exception as e:
@@ -193,18 +193,18 @@ def get_users(current_user):
         return [
             {
                 "id": str(user.id),
-                "createdAt": user.createdAt.isoformat(),
-                "updatedAt": user.updatedAt.isoformat(),
-                "firstName": user.firstName,
-                "lastName": user.lastName,
-                "fullName": user.fullName,
+                "createdAt": user.created_at.isoformat(),
+                "updatedAt": user.updated_at.isoformat(),
+                "firstName": user.first_name,
+                "lastName": user.last_name,
+                "fullName": user.full_name,
                 "email": user.email,
-                "regionId": user.regionId,
+                "regionId": user.region_id,
                 "state": user.state,
-                "userType": user.userType,
-                "lastLoggedIn": user.lastLoggedIn,
-                "acceptedTermsVersion": user.acceptedTermsVersion,
-                "dateAcceptedTerms": user.dateAcceptedTerms,
+                "userType": user.user_type,
+                "lastLoggedIn": user.last_logged_in,
+                "acceptedTermsVersion": user.accepted_terms_version,
+                "dateAcceptedTerms": user.date_accepted_terms,
                 "roles": [
                     {
                         "id": str(role.id),
@@ -217,7 +217,7 @@ def get_users(current_user):
                         if role.organization
                         else None,
                     }
-                    for role in user.roles.all()
+                    for role in user.role_user_id_set.all()
                 ],
             }
             for user in users
@@ -247,17 +247,17 @@ def get_users_by_region_id(region_id, current_user):
             return [
                 {
                     "id": str(user.id),
-                    "createdAt": user.createdAt.isoformat(),
-                    "updatedAt": user.updatedAt.isoformat(),
-                    "firstName": user.firstName,
-                    "lastName": user.lastName,
-                    "fullName": user.fullName,
+                    "createdAt": user.created_at.isoformat(),
+                    "updatedAt": user.updated_at.isoformat(),
+                    "firstName": user.first_name,
+                    "lastName": user.last_name,
+                    "fullName": user.full_name,
                     "email": user.email,
-                    "regionId": user.regionId,
+                    "regionId": user.region_id,
                     "state": user.state,
-                    "userType": user.userType,
-                    "lastLoggedIn": user.lastLoggedIn,
-                    "acceptedTermsVersion": user.acceptedTermsVersion,
+                    "userType": user.user_type,
+                    "lastLoggedIn": user.last_logged_in,
+                    "acceptedTermsVersion": user.accepted_terms_version,
                     "roles": [
                         {
                             "id": str(role.id),
@@ -299,22 +299,24 @@ def get_users_by_state(state, current_user):
                 status_code=400, detail="Missing state in path parameters"
             )
 
-        users = User.objects.filter(state=state).prefetch_related("roles__organization")
+        users = User.objects.filter(state=state).prefetch_related(
+            "role_user_id_set__organization"
+        )
         if users:
             return [
                 {
                     "id": str(user.id),
-                    "createdAt": user.createdAt.isoformat(),
-                    "updatedAt": user.updatedAt.isoformat(),
-                    "firstName": user.firstName,
-                    "lastName": user.lastName,
-                    "fullName": user.fullName,
+                    "createdAt": user.created_at.isoformat(),
+                    "updatedAt": user.updated_at.isoformat(),
+                    "firstName": user.first_name,
+                    "lastName": user.last_name,
+                    "fullName": user.full_name,
                     "email": user.email,
-                    "regionId": user.regionId,
+                    "regionId": user.region_id,
                     "state": user.state,
-                    "userType": user.userType,
-                    "lastLoggedIn": user.lastLoggedIn,
-                    "acceptedTermsVersion": user.acceptedTermsVersion,
+                    "userType": user.user_type,
+                    "lastLoggedIn": user.last_logged_in,
+                    "acceptedTermsVersion": user.accepted_terms_version,
                     "roles": [
                         {
                             "id": str(role.id),
@@ -365,17 +367,17 @@ def get_users_v2(state, regionId, invitePending, current_user):
         return [
             {
                 "id": str(user.id),
-                "createdAt": user.createdAt.isoformat(),
-                "updatedAt": user.updatedAt.isoformat(),
-                "firstName": user.firstName,
-                "lastName": user.lastName,
-                "fullName": user.fullName,
+                "createdAt": user.created_at.isoformat(),
+                "updatedAt": user.updated_at.isoformat(),
+                "firstName": user.first_name,
+                "lastName": user.last_name,
+                "fullName": user.full_name,
                 "email": user.email,
-                "regionId": user.regionId,
+                "regionId": user.region_id,
                 "state": user.state,
-                "userType": user.userType,
-                "lastLoggedIn": user.lastLoggedIn,
-                "acceptedTermsVersion": user.acceptedTermsVersion,
+                "userType": user.user_type,
+                "lastLoggedIn": user.last_logged_in,
+                "acceptedTermsVersion": user.accepted_terms_version,
                 "roles": [
                     {
                         "id": str(role.id),
@@ -425,12 +427,12 @@ def update_user_v2(user_id, user_data, current_user):
 
         # Update fields
         if user_data.state:
-            user.regionId = REGION_STATE_MAP.get(user_data.state)
+            user.region_id = REGION_STATE_MAP.get(user_data.state)
 
         print(user_data.dict())
         # Check for invitePending explicitly
         if "invitePending" in user_data.dict():
-            user.invitePending = user_data.invitePending
+            user.invite_pending = user_data.invitePending
         for field, value in user_data.dict(exclude_defaults=True).items():
             setattr(user, field, value)
 
@@ -445,17 +447,17 @@ def update_user_v2(user_id, user_data, current_user):
         # Return the updated user details
         return {
             "id": str(updated_user.id),
-            "createdAt": updated_user.createdAt.isoformat(),
-            "updatedAt": updated_user.updatedAt.isoformat(),
-            "firstName": updated_user.firstName,
-            "lastName": updated_user.lastName,
-            "fullName": user.fullName,
+            "createdAt": updated_user.created_at.isoformat(),
+            "updatedAt": updated_user.updated_at.isoformat(),
+            "firstName": updated_user.first_name,
+            "lastName": updated_user.last_name,
+            "fullName": user.full_name,
             "email": updated_user.email,
-            "regionId": updated_user.regionId,
+            "regionId": updated_user.region_id,
             "state": updated_user.state,
-            "userType": updated_user.userType,
-            "lastLoggedIn": user.lastLoggedIn,
-            "acceptedTermsVersion": user.acceptedTermsVersion,
+            "userType": updated_user.user_type,
+            "lastLoggedIn": user.last_logged_in,
+            "acceptedTermsVersion": user.accepted_terms_version,
             "roles": [
                 {
                     "id": str(role.id),
@@ -499,8 +501,8 @@ def approve_user_registration(user_id, current_user):
         send_registration_approved_email(
             user.email,
             subject="CyHy Dashboard Registration Approved",
-            first_name=user.firstName,
-            last_name=user.lastName,
+            first_name=user.first_name,
+            last_name=user.last_name,
             template="crossfeed_approval_notification.html",
         )
 
@@ -536,8 +538,8 @@ def deny_user_registration(user_id: str, current_user: User):
         send_registration_denied_email(
             user.email,
             subject="CyHy Dashboard Registration Denied",
-            first_name=user.firstName,
-            last_name=user.lastName,
+            first_name=user.first_name,
+            last_name=user.last_name,
             template="crossfeed_denial_notification.html",
         )
 
@@ -591,15 +593,15 @@ def invite(new_user_data, current_user):
                 invitePending=True,
                 **new_user_data.dict(
                     exclude_unset=True,
-                    exclude={"organizationAdmin", "organization", "userType"},
+                    exclude={"organization_admin", "organization", "user_type"},
                 ),
             )
             if not os.getenv("IS_LOCAL"):
                 send_invite_email(user.email, organization)
-        elif not user.firstName and not user.lastName:
+        elif not user.firstName and not user.last_name:
             # Update first and last name if the user exists but has no name set
-            user.firstName = new_user_data.firstName
-            user.lastName = new_user_data.lastName
+            user.firstName = new_user_data.first_name
+            user.lastName = new_user_data.last_name
             user.save()
 
         # Always update userType if specified
@@ -614,18 +616,18 @@ def invite(new_user_data, current_user):
                 organization=organization,
                 defaults={
                     "approved": True,
-                    "createdBy": current_user,
-                    "approvedBy": current_user,
+                    "created_by": current_user,
+                    "approved_by": current_user,
                     "role": "admin" if new_user_data.organizationAdmin else "user",
                 },
             )
         # Return the updated user with relevant details
         return {
             "id": str(user.id),
-            "firstName": user.firstName,
-            "lastName": user.lastName,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
             "email": user.email,
-            "userType": user.userType,
+            "userType": user.user_type,
             "roles": [
                 {
                     "id": str(role.id),
@@ -640,7 +642,7 @@ def invite(new_user_data, current_user):
                 }
                 for role in user.roles.select_related("organization").all()
             ],
-            "invitePending": user.invitePending,
+            "invitePending": user.invite_pending,
         }
 
     except HTTPException as http_exc:

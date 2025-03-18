@@ -6,9 +6,9 @@ from typing import Optional
 
 # Third-Party Libraries
 from fastapi import HTTPException, Response, status
+from xfd_mini_dl.models import ScanTask
 
 from ..auth import get_tag_organizations, is_global_view_admin, is_global_write_admin
-from ..models import ScanTask
 from ..schema_models.scan_tasks import ScanTaskSearch
 from ..tasks.ecs_client import ECSClient
 

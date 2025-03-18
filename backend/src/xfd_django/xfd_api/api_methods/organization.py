@@ -8,6 +8,7 @@ import uuid
 # Third-Party Libraries
 from django.db.models import Q
 from fastapi import HTTPException
+from xfd_mini_dl.models import Organization, OrganizationTag, Role, Scan, ScanTask, User
 
 from ..auth import (
     get_org_memberships,
@@ -19,7 +20,6 @@ from ..auth import (
     matches_user_region,
 )
 from ..helpers.regionStateMap import REGION_STATE_MAP
-from ..models import Organization, OrganizationTag, Role, Scan, ScanTask, User
 from ..schema_models import organization_schema
 from ..tasks.es_client import ESClient
 from ..tools.serializers import serialize_role
@@ -52,7 +52,7 @@ def list_organizations(current_user):
 
         # Fetch organizations with related userRoles and tags
         organizations = (
-            Organization.objects.prefetch_related("tags", "userRoles")
+            Organization.objects.prefetch_related("tags", "user_roles")
             .filter(**org_filter)
             .order_by("name")
         )
@@ -61,31 +61,31 @@ def list_organizations(current_user):
         organization_list = [
             {
                 "id": str(org.id),
-                "createdAt": org.createdAt.isoformat(),
-                "updatedAt": org.updatedAt.isoformat(),
+                "created_at": org.createdAt.isoformat(),
+                "updated_at": org.updatedAt.isoformat(),
                 "acronym": org.acronym,
                 "name": org.name,
-                "rootDomains": org.rootDomains,
-                "ipBlocks": org.ipBlocks,
-                "isPassive": org.isPassive,
-                "pendingDomains": org.pendingDomains,
+                "root_domains": org.rootDomains,
+                "ip_blocks": org.ipBlocks,
+                "is_passive": org.isPassive,
+                "pending_domains": org.pendingDomains,
                 "country": org.country,
                 "state": org.state,
-                "regionId": org.regionId,
-                "stateFips": org.stateFips,
-                "stateName": org.stateName,
+                "region_id": org.regionId,
+                "state_fips": org.stateFips,
+                "state_name": org.stateName,
                 "county": org.county,
-                "countyFips": org.countyFips,
+                "county_fips": org.countyFips,
                 "type": org.type,
-                "userRoles": [
+                "user_roles": [
                     {"id": str(role.id), "role": role.role, "approved": role.approved}
                     for role in org.userRoles.all()
                 ],
                 "tags": [
                     {
                         "id": str(tag.id),
-                        "createdAt": tag.createdAt.isoformat(),
-                        "updatedAt": tag.updatedAt.isoformat(),
+                        "created_at": tag.createdAt.isoformat(),
+                        "updated_at": tag.updatedAt.isoformat(),
                         "name": tag.name,
                     }
                     for tag in org.tags.all()
@@ -134,7 +134,7 @@ def get_organization(organization_id, current_user):
         # Fetch organization with relations
         organization = (
             Organization.objects.select_related("parent")
-            .prefetch_related("userRoles__user", "granularScans", "tags", "children")
+            .prefetch_related("userRoles__user", "granular_scans", "tags", "children")
             .filter(id=organization_id)
             .first()
         )
@@ -146,7 +146,7 @@ def get_organization(organization_id, current_user):
         scan_tasks = (
             ScanTask.objects.filter(organizations__id=organization_id)
             .select_related("scan")
-            .order_by("-createdAt")[:10]
+            .order_by("-created_at")[:10]
         )
 
         if isinstance(organization.pendingDomains, str):
@@ -159,31 +159,31 @@ def get_organization(organization_id, current_user):
         # Serialize organization details along with scan tasks
         org_data = {
             "id": str(organization.id),
-            "createdAt": organization.createdAt.isoformat(),
-            "updatedAt": organization.updatedAt.isoformat(),
+            "created_at": organization.createdAt.isoformat(),
+            "updated_at": organization.updatedAt.isoformat(),
             "acronym": organization.acronym,
             "name": organization.name,
-            "rootDomains": organization.rootDomains,
-            "ipBlocks": organization.ipBlocks,
-            "isPassive": organization.isPassive,
-            "pendingDomains": pending_domains,
+            "root_domains": organization.rootDomains,
+            "ip_blocks": organization.ipBlocks,
+            "is_passive": organization.isPassive,
+            "pending_domains": pending_domains,
             "country": organization.country,
             "state": organization.state,
-            "regionId": organization.regionId,
-            "stateFips": organization.stateFips,
-            "stateName": organization.stateName,
+            "region_id": organization.regionId,
+            "state_ips": organization.stateFips,
+            "state_name": organization.stateName,
             "county": organization.county,
-            "countyFips": organization.countyFips,
+            "county_fips": organization.countyFips,
             "type": organization.type,
-            "createdBy": {
+            "created_by": {
                 "id": str(organization.createdBy.id),
-                "firstName": organization.createdBy.firstName,
-                "lastName": organization.createdBy.lastName,
+                "first_name": organization.createdBy.firstName,
+                "last_name": organization.createdBy.lastName,
                 "email": organization.createdBy.email,
             }
             if organization.createdBy
             else None,
-            "userRoles": [
+            "user_roles": [
                 {
                     "id": str(role.id),
                     "role": role.role,
@@ -191,34 +191,34 @@ def get_organization(organization_id, current_user):
                     "user": {
                         "id": str(role.user.id),
                         "email": role.user.email,
-                        "firstName": role.user.firstName,
-                        "lastName": role.user.lastName,
-                        "fullName": role.user.fullName,
+                        "first_name": role.user.firstName,
+                        "last_name": role.user.lastName,
+                        "full_name": role.user.fullName,
                     },
                 }
                 for role in organization.userRoles.all()
             ],
-            "granularScans": [
+            "granular_scans": [
                 {
                     "id": str(scan.id),
-                    "createdAt": scan.createdAt.isoformat(),
-                    "updatedAt": scan.updatedAt.isoformat(),
+                    "created_at": scan.createdAt.isoformat(),
+                    "updated_at": scan.updatedAt.isoformat(),
                     "name": scan.name,
                     "arguments": scan.arguments,
                     "frequency": scan.frequency,
-                    "lastRun": scan.lastRun.isoformat() if scan.lastRun else None,
-                    "isGranular": scan.isGranular,
-                    "isUserModifiable": scan.isUserModifiable,
-                    "isSingleScan": scan.isSingleScan,
-                    "manualRunPending": scan.manualRunPending,
+                    "last_run": scan.lastRun.isoformat() if scan.lastRun else None,
+                    "is_granular": scan.isGranular,
+                    "is_user_modifiable": scan.isUserModifiable,
+                    "is_single_scan": scan.isSingleScan,
+                    "manual_run_pending": scan.manualRunPending,
                 }
                 for scan in organization.granularScans.all()
             ],
             "tags": [
                 {
                     "id": str(tag.id),
-                    "createdAt": tag.createdAt.isoformat(),
-                    "updatedAt": tag.updatedAt.isoformat(),
+                    "created_at": tag.createdAt.isoformat(),
+                    "updated_at": tag.updatedAt.isoformat(),
                     "name": tag.name,
                 }
                 for tag in organization.tags.all()
@@ -236,7 +236,7 @@ def get_organization(organization_id, current_user):
             "scanTasks": [
                 {
                     "id": str(task.id),
-                    "createdAt": task.createdAt.isoformat(),
+                    "created_at": task.createdAt.isoformat(),
                     "scan": {"id": str(task.scan.id), "name": task.scan.name}
                     if task.scan
                     else None,
@@ -265,21 +265,21 @@ def get_by_state(state, current_user):
     # Fetch organizations based on the provided state
     organizations = Organization.objects.filter(state=state).values(
         "id",
-        "createdAt",
-        "updatedAt",
+        "created_at",
+        "updated_at",
         "acronym",
         "name",
-        "rootDomains",
-        "ipBlocks",
-        "isPassive",
-        "pendingDomains",
+        "root_domains",
+        "ip_blocks",
+        "is_passive",
+        "pending_domains",
         "country",
         "state",
-        "regionId",
-        "stateFips",
-        "stateName",
+        "region_id",
+        "state_fips",
+        "state_name",
         "county",
-        "countyFips",
+        "county_fips",
         "type",
     )
 
@@ -302,21 +302,21 @@ def get_by_region(regionId, current_user):
     # Fetch organizations based on the provided state
     organizations = Organization.objects.filter(regionId=regionId).values(
         "id",
-        "createdAt",
-        "updatedAt",
+        "created_at",
+        "updated_at",
         "acronym",
         "name",
-        "rootDomains",
-        "ipBlocks",
-        "isPassive",
-        "pendingDomains",
+        "root_domains",
+        "ip_blocks",
+        "is_passive",
+        "pending_domains",
         "country",
         "state",
-        "regionId",
-        "stateFips",
-        "stateName",
+        "region_id",
+        "state_fips",
+        "state_name",
         "county",
-        "countyFips",
+        "county_fips",
         "type",
     )
 
@@ -340,7 +340,7 @@ def get_all_regions(current_user):
         # Fetch distinct regionId values
         regions = (
             Organization.objects.exclude(regionId__isnull=True)
-            .values("regionId")
+            .values("region_id")
             .distinct()
         )
 
@@ -386,10 +386,10 @@ def create_organization(organization_data, current_user):
         organization_data_dict = organization_data.dict(
             exclude_unset=True, exclude={"tags", "parent"}
         )
-        organization_data_dict["createdBy"] = current_user
+        organization_data_dict["created_by"] = current_user
 
         # Set regionId based on stateName if available
-        organization_data_dict["regionId"] = REGION_STATE_MAP.get(
+        organization_data_dict["region_id"] = REGION_STATE_MAP.get(
             organization_data.stateName, None
         )
 
@@ -416,30 +416,30 @@ def create_organization(organization_data, current_user):
         # Return the organization details in response
         return {
             "id": str(organization.id),
-            "createdAt": organization.createdAt.isoformat(),
-            "updatedAt": organization.updatedAt.isoformat(),
+            "created_at": organization.createdAt.isoformat(),
+            "updated_at": organization.updatedAt.isoformat(),
             "acronym": organization.acronym,
             "name": organization.name,
-            "rootDomains": organization.rootDomains,
-            "ipBlocks": organization.ipBlocks,
-            "isPassive": organization.isPassive,
-            "pendingDomains": pending_domains,
+            "root_domains": organization.rootDomains,
+            "ip_blocks": organization.ipBlocks,
+            "is_passive": organization.isPassive,
+            "pending_domains": pending_domains,
             "country": organization.country,
             "state": organization.state,
-            "regionId": organization.regionId,
-            "stateFips": organization.stateFips,
-            "stateName": organization.stateName,
+            "region_id": organization.regionId,
+            "state_fips": organization.stateFips,
+            "state_name": organization.stateName,
             "county": organization.county,
-            "countyFips": organization.countyFips,
+            "county_fips": organization.countyFips,
             "type": organization.type,
-            "createdBy": {
+            "created_by": {
                 "id": str(current_user.id),  # Simplify to just the user ID
             },
             "tags": [
                 {
                     "id": str(tag.id),
-                    "createdAt": tag.createdAt.isoformat(),
-                    "updatedAt": tag.updatedAt.isoformat(),
+                    "created_at": tag.createdAt.isoformat(),
+                    "updated_at": tag.updatedAt.isoformat(),
                     "name": tag.name,
                 }
                 for tag in organization.tags.all()
@@ -475,10 +475,10 @@ def upsert_organization(organization_data, current_user):
         organization_data_dict = organization_data.dict(
             exclude_unset=True, exclude={"tags", "parent"}
         )
-        organization_data_dict["createdBy"] = current_user
+        organization_data_dict["created_by"] = current_user
 
         # Set regionId based on stateName if available
-        organization_data_dict["regionId"] = REGION_STATE_MAP.get(
+        organization_data_dict["region_id"] = REGION_STATE_MAP.get(
             organization_data.stateName, None
         )
 
@@ -508,26 +508,26 @@ def upsert_organization(organization_data, current_user):
         # Return the organization details in response
         return {
             "id": str(organization.id),
-            "createdAt": organization.createdAt.isoformat(),
-            "updatedAt": organization.updatedAt.isoformat(),
+            "created_at": organization.createdAt.isoformat(),
+            "updated_at": organization.updatedAt.isoformat(),
             "acronym": organization.acronym,
             "name": organization.name,
-            "rootDomains": organization.rootDomains,
-            "ipBlocks": organization.ipBlocks,
-            "isPassive": organization.isPassive,
-            "pendingDomains": pending_domains,
+            "root_domains": organization.rootDomains,
+            "ip_blocks": organization.ipBlocks,
+            "is_passive": organization.isPassive,
+            "pending_domains": pending_domains,
             "country": organization.country,
             "state": organization.state,
-            "regionId": organization.regionId,
-            "stateFips": organization.stateFips,
-            "stateName": organization.stateName,
+            "region_id": organization.regionId,
+            "state_ips": organization.stateFips,
+            "state_name": organization.stateName,
             "county": organization.county,
-            "countyFips": organization.countyFips,
+            "county_fips": organization.countyFips,
             "type": organization.type,
-            "createdBy": {
+            "created_by": {
                 "id": str(organization.createdBy.id),
-                "firstName": organization.createdBy.firstName,
-                "lastName": organization.createdBy.lastName,
+                "first_name": organization.createdBy.firstName,
+                "last_name": organization.createdBy.lastName,
                 "email": organization.createdBy.email,
             }
             if organization.createdBy
@@ -535,8 +535,8 @@ def upsert_organization(organization_data, current_user):
             "tags": [
                 {
                     "id": str(tag.id),
-                    "createdAt": tag.createdAt.isoformat(),
-                    "updatedAt": tag.updatedAt.isoformat(),
+                    "created_at": tag.createdAt.isoformat(),
+                    "updated_at": tag.updatedAt.isoformat(),
                     "name": tag.name,
                 }
                 for tag in organization.tags.all()
@@ -573,7 +573,7 @@ def update_organization(organization_id: str, organization_data, current_user):
         # Fetch the existing organization with userRoles and granularScans relations
         try:
             organization = Organization.objects.prefetch_related(
-                "userRoles", "granularScans"
+                "user_roles", "granular_scans"
             ).get(id=organization_id)
         except Organization.DoesNotExist:
             raise HTTPException(status_code=404, detail="Organization not found")
@@ -584,15 +584,15 @@ def update_organization(organization_id: str, organization_data, current_user):
         if organization_data.acronym is not None:
             organization.acronym = organization_data.acronym
         if organization_data.rootDomains is not None:
-            organization.rootDomains = organization_data.rootDomains
+            organization.root_domains = organization_data.rootDomains
         if organization_data.ipBlocks is not None:
-            organization.ipBlocks = organization_data.ipBlocks
+            organization.ip_blocks = organization_data.ipBlocks
         if organization_data.stateName is not None:
-            organization.stateName = organization_data.stateName
+            organization.state_name = organization_data.stateName
         if organization_data.state is not None:
             organization.state = organization_data.state
         if organization_data.isPassive is not None:
-            organization.isPassive = organization_data.isPassive
+            organization.is_passive = organization_data.isPassive
 
         # Handle parent organization if provided
         if organization_data.parent:
@@ -606,45 +606,45 @@ def update_organization(organization_id: str, organization_data, current_user):
         # Save the updated organization object
         organization.save()
 
-        if isinstance(organization.pendingDomains, str):
-            pending_domains = json.loads(organization.pendingDomains)
-        elif isinstance(organization.pendingDomains, list):
-            pending_domains = organization.pendingDomains
+        if isinstance(organization.pending_domains, str):
+            pending_domains = json.loads(organization.pending_domains)
+        elif isinstance(organization.pending_domains, list):
+            pending_domains = organization.pending_domains
         else:
             pending_domains = []
 
         # Return the updated organization details in response
         return {
             "id": str(organization.id),
-            "createdAt": organization.createdAt.isoformat(),
-            "updatedAt": organization.updatedAt.isoformat(),
+            "created_at": organization.created_at.isoformat(),
+            "updated_at": organization.updated_at.isoformat(),
             "acronym": organization.acronym,
             "name": organization.name,
-            "rootDomains": organization.rootDomains,
-            "ipBlocks": organization.ipBlocks,
-            "isPassive": organization.isPassive,
-            "pendingDomains": pending_domains,
+            "root_domains": organization.root_domains,
+            "ip_blocks": organization.ip_blocks,
+            "is_passive": organization.is_passive,
+            "pending_domains": pending_domains,
             "country": organization.country,
             "state": organization.state,
-            "regionId": organization.regionId,
-            "stateFips": organization.stateFips,
-            "stateName": organization.stateName,
+            "region_id": organization.region_id,
+            "state_fips": organization.state_fips,
+            "state_name": organization.state_name,
             "county": organization.county,
-            "countyFips": organization.countyFips,
+            "county_fips": organization.county_fips,
             "type": organization.type,
-            "createdBy": {
-                "id": str(organization.createdBy.id),
-                "firstName": organization.createdBy.firstName,
-                "lastName": organization.createdBy.lastName,
-                "email": organization.createdBy.email,
+            "created_by": {
+                "id": str(organization.created_by.id),
+                "first_name": organization.created_by.firstName,
+                "last_name": organization.created_by.lastName,
+                "email": organization.created_by.email,
             }
-            if organization.createdBy
+            if organization.created_by
             else None,
             "tags": [
                 {
                     "id": str(tag.id),
-                    "createdAt": tag.createdAt.isoformat(),
-                    "updatedAt": tag.updatedAt.isoformat(),
+                    "created_at": tag.created_at.isoformat(),
+                    "updated_at": tag.updated_at.isoformat(),
                     "name": tag.name,
                 }
                 for tag in organization.tags.all()
@@ -657,28 +657,28 @@ def update_organization(organization_id: str, organization_data, current_user):
                     "user": {
                         "id": str(role.user.id),
                         "email": role.user.email,
-                        "firstName": role.user.firstName,
-                        "lastName": role.user.lastName,
-                        "fullName": role.user.fullName,
+                        "first_name": role.user.first_name,
+                        "last_name": role.user.last_name,
+                        "full_name": role.user.full_name,
                     },
                 }
                 for role in organization.userRoles.all()
             ],
-            "granularScans": [
+            "granular_scans": [
                 {
                     "id": str(scan.id),
-                    "createdAt": scan.createdAt.isoformat(),
-                    "updatedAt": scan.updatedAt.isoformat(),
+                    "created_at": scan.created_at.isoformat(),
+                    "updated_at": scan.updated_at.isoformat(),
                     "name": scan.name,
                     "arguments": scan.arguments,
                     "frequency": scan.frequency,
-                    "lastRun": scan.lastRun.isoformat() if scan.lastRun else None,
-                    "isGranular": scan.isGranular,
-                    "isUserModifiable": scan.isUserModifiable,
-                    "isSingleScan": scan.isSingleScan,
-                    "manualRunPending": scan.manualRunPending,
+                    "last_run": scan.last_run.isoformat() if scan.lastRun else None,
+                    "is_granular": scan.is_granular,
+                    "is_user_modifiable": scan.is_user_modifiable,
+                    "is_single_scan": scan.is_single_scan,
+                    "manual_run_pending": scan.manual_run_pending,
                 }
-                for scan in organization.granularScans.all()
+                for scan in organization.granular_scans.all()
             ],
         }
 
@@ -767,8 +767,8 @@ def add_user_to_org_v2(organization_id: str, user_data, current_user):
             "organization": organization,
             "approved": True,
             "role": user_data.role,
-            "approvedBy": current_user,
-            "createdBy": current_user,
+            "approved_by": current_user,
+            "created_by": current_user,
         }
 
         # Create the new role object
@@ -780,8 +780,8 @@ def add_user_to_org_v2(organization_id: str, user_data, current_user):
             "user": {
                 "id": str(new_role.user.id),
                 "email": new_role.user.email,
-                "firstName": new_role.user.firstName,
-                "lastName": new_role.user.lastName,
+                "first_name": new_role.user.first_name,
+                "last_name": new_role.user.last_name,
             },
             "organization": {
                 "id": str(new_role.organization.id),
@@ -789,13 +789,13 @@ def add_user_to_org_v2(organization_id: str, user_data, current_user):
             },
             "role": new_role.role,
             "approved": new_role.approved,
-            "approvedBy": {
-                "id": str(new_role.approvedBy.id),
-                "email": new_role.approvedBy.email,
+            "approved_by": {
+                "id": str(new_role.approved_by.id),
+                "email": new_role.approved_by.email,
             },
-            "createdBy": {
-                "id": str(new_role.createdBy.id),
-                "email": new_role.createdBy.email,
+            "created_by": {
+                "id": str(new_role.created_by.id),
+                "email": new_role.created_by.email,
             },
         }
 
@@ -829,7 +829,7 @@ def approve_role(organization_id: str, role_id, current_user):
         if role:
             # Approve the role and set the approvedBy field to the current user
             role.approved = True
-            role.approvedBy = current_user
+            role.approved_by = current_user
             role.save()
 
             return {"status": "success", "message": "Role approved successfully"}
@@ -901,7 +901,7 @@ def update_org_scan(organization_id: str, scan_id, scan_data, current_user):
     try:
         # Fetch the scan that is granular and user-modifiable
         scan = Scan.objects.filter(
-            id=scan_id, isGranular=True, isUserModifiable=True
+            id=scan_id, is_granular=True, is_user_modifiable=True
         ).first()
         if not scan:
             raise HTTPException(
@@ -925,57 +925,57 @@ def update_org_scan(organization_id: str, scan_id, scan_data, current_user):
 
         # Add the scan to the organization's granular scans if enabled and not already present
         if enabled:
-            if not organization.granularScans.filter(id=scan_id).exists():
-                organization.granularScans.add(scan)
+            if not organization.granular_scans.filter(id=scan_id).exists():
+                organization.granular_scans.add(scan)
         # Remove the scan from the organization's granular scans if disabled and present
         else:
-            if organization.granularScans.filter(id=scan_id).exists():
-                organization.granularScans.remove(scan)
+            if organization.granular_scans.filter(id=scan_id).exists():
+                organization.granular_scans.remove(scan)
 
         # Save the updated organization
         organization.save()
 
-        if isinstance(organization.pendingDomains, str):
-            pending_domains = json.loads(organization.pendingDomains)
-        elif isinstance(organization.pendingDomains, list):
-            pending_domains = organization.pendingDomains
+        if isinstance(organization.pending_domains, str):
+            pending_domains = json.loads(organization.pending_domains)
+        elif isinstance(organization.pending_domains, list):
+            pending_domains = organization.pending_domains
         else:
             pending_domains = []
 
         # Return a success response
         return {
             "id": str(organization.id),
-            "createdAt": organization.createdAt.isoformat(),
-            "updatedAt": organization.updatedAt.isoformat(),
+            "created_at": organization.created_at.isoformat(),
+            "updated_at": organization.updated_at.isoformat(),
             "acronym": organization.acronym,
             "name": organization.name,
-            "rootDomains": organization.rootDomains,
-            "ipBlocks": organization.ipBlocks,
-            "isPassive": organization.isPassive,
-            "pendingDomains": pending_domains,
+            "root_domains": organization.root_domains,
+            "ip_blocks": organization.ip_blocks,
+            "is_passive": organization.is_passive,
+            "pending_domains": pending_domains,
             "country": organization.country,
             "state": organization.state,
-            "regionId": organization.regionId,
-            "stateFips": organization.stateFips,
-            "stateName": organization.stateName,
+            "region_id": organization.region_id,
+            "state_fips": organization.state_fips,
+            "state_name": organization.state_name,
             "county": organization.county,
-            "countyFips": organization.countyFips,
+            "county_fips": organization.county_fips,
             "type": organization.type,
-            "granularScans": [
+            "granular_scans": [
                 {
                     "id": str(scan.id),
-                    "createdAt": scan.createdAt.isoformat(),
-                    "updatedAt": scan.updatedAt.isoformat(),
+                    "created_at": scan.createdAt.isoformat(),
+                    "updated_at": scan.updatedAt.isoformat(),
                     "name": scan.name,
                     "arguments": scan.arguments,
                     "frequency": scan.frequency,
-                    "lastRun": scan.lastRun.isoformat() if scan.lastRun else None,
-                    "isGranular": scan.isGranular,
-                    "isUserModifiable": scan.isUserModifiable,
-                    "isSingleScan": scan.isSingleScan,
-                    "manualRunPending": scan.manualRunPending,
+                    "last_run": scan.last_run.isoformat() if scan.last_run else None,
+                    "is_granular": scan.is_granular,
+                    "is_user_modifiable": scan.is_user_modifiable,
+                    "is_single_scan": scan.is_single_scan,
+                    "manual_run_pending": scan.manual_run_pending,
                 }
-                for scan in organization.granularScans.all()
+                for scan in organization.granular_scans.all()
             ],
         }
 
@@ -1006,7 +1006,7 @@ def list_organizations_v2(state, regionId, current_user):
             filter_criteria &= Q(state__in=state)
 
         if regionId:
-            filter_criteria &= Q(regionId__in=regionId)
+            filter_criteria &= Q(region_id__in=regionId)
 
         # Fetch organizations with related userRoles and tags
         organizations = (
@@ -1019,21 +1019,21 @@ def list_organizations_v2(state, regionId, current_user):
         organization_list = [
             {
                 "id": str(org.id),
-                "createdAt": org.createdAt.isoformat(),
-                "updatedAt": org.updatedAt.isoformat(),
+                "created_at": org.created_at.isoformat(),
+                "updated_at": org.updated_at.isoformat(),
                 "acronym": org.acronym,
                 "name": org.name,
-                "rootDomains": org.rootDomains,
-                "ipBlocks": org.ipBlocks,
-                "isPassive": org.isPassive,
-                "pendingDomains": org.pendingDomains,
+                "root_domains": org.root_domains,
+                "ip_blocks": org.ip_blocks,
+                "is_passive": org.is_passive,
+                "pending_domains": org.pending_domains,
                 "country": org.country,
                 "state": org.state,
-                "regionId": org.regionId,
-                "stateFips": org.stateFips,
-                "stateName": org.stateName,
+                "region_id": org.region_id,
+                "state_fips": org.state_fips,
+                "state_name": org.state_name,
                 "county": org.county,
-                "countyFips": org.countyFips,
+                "county_fips": org.county_fips,
                 "type": org.type,
             }
             for org in organizations
@@ -1077,7 +1077,7 @@ def search_organizations_task(search_body, current_user: User):
         # Add region filters if provided
         if search_body.regions:
             query_body["query"]["bool"]["filter"].append(
-                {"terms": {"regionId": search_body.regions}}
+                {"terms": {"region_id": search_body.regions}}
             )
 
         # Log the query for debugging

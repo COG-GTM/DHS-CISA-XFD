@@ -16,7 +16,7 @@ class ScanTaskSearch(BaseModel):
     """Scan-task search schema."""
 
     page: Optional[int] = 1
-    pageSize: Optional[int] = 10
+    page_size: Optional[int] = 10
     sort: Optional[str] = "createdAt"
     order: Optional[str] = "DESC"
     filters: Optional[Dict[str, Optional[str]]] = {}
@@ -26,17 +26,17 @@ class ScanTaskList(BaseModel):
     """Single scan-task schema."""
 
     id: UUID
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime
+    updated_at: datetime
     status: str
     type: str
-    fargateTaskArn: Optional[str]
+    fargate_task_arn: Optional[str]
     input: Optional[str]
     output: Optional[str]
-    requestedAt: Optional[datetime]
-    startedAt: Optional[datetime]
-    finishedAt: Optional[datetime]
-    queuedAt: Optional[datetime]
+    requested_at: Optional[datetime]
+    started_at: Optional[datetime]
+    finished_at: Optional[datetime]
+    queued_at: Optional[datetime]
     scan: Optional[Scan]
     organization: Optional[List[Organization]] = []
 
@@ -51,5 +51,5 @@ class ScanTaskListResponse(BaseModel):
 class GenericResponse(BaseModel):
     """Generic scan task response."""
 
-    statusCode: int
+    status_code: int
     message: str

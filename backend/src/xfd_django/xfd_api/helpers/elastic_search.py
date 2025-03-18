@@ -48,7 +48,7 @@ def get_term_filter_value(field, field_value):
     """
     if field_value in ["false", "true"]:
         return {field: field_value == "true"}
-    if field == "organization.regionId":
+    if field == "organization.region_id":
         return {field: field_value}
     if isinstance(field_value, (int, float)):
         return {field: field_value}
@@ -73,7 +73,7 @@ def get_term_filter(term_filter):
         search_type = "wildcard"
     elif term_filter["field"] == "services.port":
         search_type = "match"
-    elif term_filter["field"] == "organization.regionId":
+    elif term_filter["field"] == "organization.region_id":
         search_type = "terms"
 
     reg_values = [
@@ -99,7 +99,7 @@ def get_term_filter(term_filter):
     ]
 
     if term_filter["type"] == "any":
-        if term_filter["field"] == "organization.regionId" and term_filter["values"]:
+        if term_filter["field"] == "organization.region_id" and term_filter["values"]:
             search = {
                 "bool": {
                     "should": [
@@ -191,7 +191,7 @@ def get_term_filter(term_filter):
             }
         }
 
-    if len(field_path) > 1 and term_filter["field"] != "organization.regionId":
+    if len(field_path) > 1 and term_filter["field"] != "organization.region_id":
         return {"nested": {"path": field_path[0], "query": search}}
 
     return search
@@ -220,9 +220,11 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
     sort_direction = state.sortDirection
     sort_field = state.sortField
 
-    orgs_in_filters = next((f for f in filters if f["field"] == "organizationId"), None)
+    orgs_in_filters = next(
+        (f for f in filters if f["field"] == "organization_id"), None
+    )
     refined_filters = (
-        [f for f in filters if f["field"] != "organizationId"]
+        [f for f in filters if f["field"] != "organization_id"]
         if orgs_in_filters
         else filters
     )
