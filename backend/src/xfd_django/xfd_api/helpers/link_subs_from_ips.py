@@ -15,7 +15,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 LOGGER = logging.getLogger(__name__)
 WHOIS_KEY = os.getenv("WHOIS_XML_KEY")
-THREAD_COUNT = os.getenv("WHOIS_XML_THREAD_COUNT")
+thread_count = os.getenv("WHOIS_XML_THREAD_COUNT")
+if thread_count:
+    THREAD_COUNT = int(thread_count)
+else:
+    THREAD_COUNT = 1
 DATE = datetime.datetime.today().date()
 
 # Third-Party Libraries
@@ -44,7 +48,7 @@ def process_ips(thread_id, org, cidr, ip_gen):
             try:
                 domain_list, failed_ips = search_whois_for_domains(ip, failed_ips)
             except Exception as e:
-                LOGGER.error("Thread %s: Error identifying domains: %s", thread_id, e)
+                LOGGER.error("Thread %d: Error identifying domains: %s", thread_id, e)
 
                 failed_ips.append(ip)
                 continue
@@ -55,7 +59,7 @@ def process_ips(thread_id, org, cidr, ip_gen):
         except StopIteration:
             # Stop when the generator is exhausted
             LOGGER.info(
-                "Thread %s has completed. Processed %d ips in %s seconds.",
+                "Thread %d has completed. Processed %d ips in %s seconds.",
                 thread_id,
                 count,
                 round(time.time() - chunk_start, 2),
@@ -92,13 +96,14 @@ def search_whois_for_domains(ip, failed_ips):
     # Retry clause
     retry_count, max_retries, time_delay = 1, 3, 3
     while response.status_code != 200 and retry_count <= max_retries:
-        LOGGER.warning(
-            "Retrying WhoisXML API endpoint (code %s), attempt %d of %s (url: %s)",
-            response.status_code,
-            retry_count,
-            max_retries,
-            url,
-        )
+        if response.status_code:
+            LOGGER.warning(
+                "Retrying WhoisXML API endpoint (code %d), attempt %d of %s (url: %s)",
+                response.status_code,
+                retry_count,
+                max_retries,
+                url,
+            )
         time.sleep(time_delay)
         response = requests.request(
             "GET", url, headers=headers, data=payload, timeout=20

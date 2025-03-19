@@ -168,13 +168,14 @@ def enumerate_roots(root_domain):
 
     retry_count, max_retries, time_delay = 1, 10, 5
     while response.status_code != 200 and retry_count <= max_retries:
-        LOGGER.info(
-            "Retrying WhoisXML API endpoint (code %s), attempt %d of %d (url: %s)",
-            response.status_code,
-            retry_count,
-            max_retries,
-            url,
-        )
+        if response.status_code:
+            LOGGER.info(
+                "Retrying WhoisXML API endpoint (code %d), attempt %d of %d (url: %s)",
+                response.status_code,
+                retry_count,
+                max_retries,
+                url,
+            )
         time.sleep(time_delay)
         response = requests.request(
             "POST", url, headers=headers, data=payload, timeout=20
