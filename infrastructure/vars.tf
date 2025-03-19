@@ -848,3 +848,15 @@ variable "crossfeed-lz-sync_name" {
   description = "The name of the S3 bucket for Crossfeed LZ sync"
   default     = "crossfeed-lz-sync"
 }
+
+variable "image_tag" {
+  description = "The tag for the image in ECR"
+  type        = string
+  default     = "latest"
+}
+
+variable "automated_test_report_bucket_name" {
+  description = "S3 bucket where test reports will be stored"
+  type        = string
+  default     = "cisa-crossfeed-staging-auto-test-reports"
+}
