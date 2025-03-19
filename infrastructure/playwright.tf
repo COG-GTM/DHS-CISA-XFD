@@ -26,8 +26,8 @@ resource "aws_iam_role_policy" "playwright_ecs_task_policy" {
         Action = ["s3:ListBucket", "s3:GetObject", "s3:PutObject"]
         Effect = "Allow"
         Resource = [
-          "arn:aws:s3:::my-bucket",  # ListBucket on the bucket itself
-          "arn:aws:s3:::my-bucket/*" # GetObject and PutObject on all objects within the bucket
+          "arn:aws:s3:::cisa-crossfeed-staging-auto-test-reports",  # ListBucket on the bucket itself
+          "arn:aws:s3:::cisa-crossfeed-staging-auto-test-reports/*" # GetObject and PutObject on all objects within the bucket
         ]
       }
     ]
