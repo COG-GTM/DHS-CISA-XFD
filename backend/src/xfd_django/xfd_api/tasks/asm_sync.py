@@ -101,7 +101,7 @@ def flag_asset_changes():
     )
 
     SubDomains.objects.filter(Q(last_seen__lt=cutoff_date)).exclude(
-        Q(is_root_domain=True) & Q(identified=False)
+        Q(is_root_domain=True) & (Q(identified=False) | Q(identified__isnull=True))
     ).update(current=False)
 
     IpsSubs.objects.filter(last_seen__lt=cutoff_date).update(current=False)
