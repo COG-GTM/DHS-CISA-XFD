@@ -854,3 +854,9 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "automated_test_report_bucket_name" {
+  description = "S3 bucket where test reports will be stored"
+  type        = string
+  default     = "cisa-crossfeed-staging-auto-test-reports"
+}
