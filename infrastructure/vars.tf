@@ -853,4 +853,16 @@ variable "ssm_sqs_url" {
   type        = string
   description = "ssm_sqs_url"
   default     = "/crossfeed/staging/SQS_URL"
+
+}
+variable "image_tag" {
+  description = "The tag for the image in ECR"
+  type        = string
+  default     = "latest"
+}
+
+variable "automated_test_report_bucket_name" {
+  description = "S3 bucket where test reports will be stored"
+  type        = string
+  default     = "cisa-crossfeed-staging-auto-test-reports"
 }
