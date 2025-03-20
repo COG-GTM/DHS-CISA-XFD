@@ -8,8 +8,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import Organization, OrganizationTag, Scan, User, UserType
 from xfd_django.asgi import app
+from xfd_mini_dl.models import Organization, OrganizationTag, Scan, User, UserType
 
 client = TestClient(app)
 
@@ -19,12 +19,12 @@ client = TestClient(app)
 def test_list_scans_by_global_admin():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
@@ -33,24 +33,24 @@ def test_list_scans_by_global_admin():
         name=name,
         arguments={},
         frequency=999999,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     Scan.objects.create(
         name="{}-2".format(name),
         arguments={},
         frequency=999999,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -70,12 +70,12 @@ def test_list_scans_by_global_admin():
 def test_create_scan_by_global_admin():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "censys"
@@ -88,10 +88,10 @@ def test_create_scan_by_global_admin():
             "name": name,
             "arguments": arguments,
             "frequency": frequency,
-            "isGranular": False,
+            "is_granular": False,
             "organizations": [],
-            "isUserModifiable": False,
-            "isSingleScan": False,
+            "is_user_modifiable": False,
+            "is_single_scan": False,
             "tags": [],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -102,10 +102,10 @@ def test_create_scan_by_global_admin():
     assert data["name"] == name
     assert data["arguments"] == arguments
     assert data["frequency"] == frequency
-    assert data["isGranular"] is False
+    assert data["is_granular"] is False
     assert data["organizations"] == []
     assert data["tags"] == []
-    assert data["createdBy"]["id"] == str(user.id)
+    assert data["created_by"]["id"] == str(user.id)
 
 
 # Test: create a granular scan by globalAdmin should succeed
@@ -113,12 +113,12 @@ def test_create_scan_by_global_admin():
 def test_create_granular_scan_by_global_admin():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "censys"
@@ -127,11 +127,11 @@ def test_create_granular_scan_by_global_admin():
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.post(
@@ -140,10 +140,10 @@ def test_create_granular_scan_by_global_admin():
             "name": name,
             "arguments": arguments,
             "frequency": frequency,
-            "isGranular": True,
+            "is_granular": True,
             "organizations": [str(organization.id)],
-            "isUserModifiable": False,
-            "isSingleScan": False,
+            "is_user_modifiable": False,
+            "is_single_scan": False,
             "tags": [],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -154,7 +154,7 @@ def test_create_granular_scan_by_global_admin():
     assert data["name"] == name
     assert data["arguments"] == arguments
     assert data["frequency"] == frequency
-    assert data["isGranular"] is True
+    assert data["is_granular"] is True
     assert str(organization.id) in [org["id"] for org in data["organizations"]]
 
 
@@ -163,12 +163,12 @@ def test_create_granular_scan_by_global_admin():
 def test_create_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.post(
@@ -177,10 +177,10 @@ def test_create_by_global_view_fails():
             "name": "censys",
             "arguments": "{}",
             "frequency": 999999,
-            "isGranular": False,
+            "is_granular": False,
             "organizations": [],
-            "isUserModifiable": False,
-            "isSingleScan": False,
+            "is_user_modifiable": False,
+            "is_single_scan": False,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -194,12 +194,12 @@ def test_create_by_global_view_fails():
 def test_update_by_global_admin_succeeds():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(name="censys", arguments="{}", frequency=999999)
@@ -210,10 +210,10 @@ def test_update_by_global_admin_succeeds():
             "name": "findomain",
             "arguments": "{}",
             "frequency": 999991,
-            "isGranular": False,
+            "is_granular": False,
             "organizations": [],
-            "isUserModifiable": False,
-            "isSingleScan": False,
+            "is_user_modifiable": False,
+            "is_single_scan": False,
             "tags": [],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -231,30 +231,30 @@ def test_update_by_global_admin_succeeds():
 def test_update_non_granular_to_granular_by_global_admin():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(
         name="censys",
         arguments="{}",
         frequency=999999,
-        isGranular=False,
-        isSingleScan=False,
+        is_granular=False,
+        is_single_scan=False,
     )
 
     tag = OrganizationTag.objects.create(name="test-{}".format(secrets.token_hex(4)))
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     organization.tags.set([tag])
 
@@ -264,10 +264,10 @@ def test_update_non_granular_to_granular_by_global_admin():
             "name": "findomain",
             "arguments": "{}",
             "frequency": 999991,
-            "isGranular": True,
+            "is_granular": True,
             "organizations": [str(organization.id)],
-            "isSingleScan": False,
-            "isUserModifiable": True,
+            "is_single_scan": False,
+            "is_user_modifiable": True,
             "tags": [{"id": str(tag.id)}],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -278,8 +278,8 @@ def test_update_non_granular_to_granular_by_global_admin():
     data = response.json()
     assert data["name"] == "findomain"
     assert data["frequency"] == 999991
-    assert data["isGranular"] is True
-    assert data["isUserModifiable"] is True
+    assert data["is_granular"] is True
+    assert data["is_user_modifiable"] is True
     assert str(organization.id) in [org["id"] for org in data["organizations"]]
     assert str(tag.id) in [t["id"] for t in data["tags"]]
 
@@ -289,12 +289,12 @@ def test_update_non_granular_to_granular_by_global_admin():
 def test_update_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(name="censys", arguments="{}", frequency=999999)
@@ -315,12 +315,12 @@ def test_update_by_global_view_fails():
 def test_delete_by_global_admin_succeeds():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(name="censys", arguments="{}", frequency=999999)
@@ -338,12 +338,12 @@ def test_delete_by_global_admin_succeeds():
 def test_delete_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(name="censys", arguments="{}", frequency=999999)
@@ -362,12 +362,12 @@ def test_delete_by_global_view_fails():
 def test_get_by_global_view_succeeds():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(name="censys", arguments="{}", frequency=999999)
@@ -387,12 +387,12 @@ def test_get_by_global_view_succeeds():
 def test_get_by_regular_user_fails():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(name="censys", arguments="{}", frequency=999999)
@@ -413,12 +413,12 @@ def test_scheduler_invoke_by_global_admin(mock_scheduler):
     """Test scan."""
     mock_scheduler.return_value = {}
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.post(
@@ -437,12 +437,12 @@ def test_scheduler_invoke_by_global_admin(mock_scheduler):
 def test_scheduler_invoke_by_global_view_fails(mock_scheduler):
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.post(
@@ -460,19 +460,19 @@ def test_scheduler_invoke_by_global_view_fails(mock_scheduler):
 def test_run_scan_should_set_manualRunPending_to_true():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(
         name="censys",
         arguments="{}",
         frequency=999999,
-        lastRun=datetime.now(),
+        last_run=datetime.now(),
     )
 
     response = client.post(
@@ -488,19 +488,19 @@ def test_run_scan_should_set_manualRunPending_to_true():
 def test_run_scan_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(
         name="censys",
         arguments="{}",
         frequency=999999,
-        lastRun=datetime.now(),
+        last_run=datetime.now(),
     )
 
     response = client.post(
@@ -516,33 +516,33 @@ def test_run_scan_by_global_view_fails():
 def test_list_granular_scans_as_global_admin():
     """Test that a GlobalViewAdmin can retrieve granular scans."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Scan.objects.create(
         name="Granular Scan 1",
-        isGranular=True,
-        isUserModifiable=True,
-        isSingleScan=False,
+        is_granular=True,
+        is_user_modifiable=True,
+        is_single_scan=False,
         frequency=999999,
     )
     Scan.objects.create(
         name="Granular Scan 2",
-        isGranular=True,
-        isUserModifiable=True,
-        isSingleScan=False,
+        is_granular=True,
+        is_user_modifiable=True,
+        is_single_scan=False,
         frequency=999999,
     )
     Scan.objects.create(
         name="Non Granular Scan",
-        isGranular=False,
-        isUserModifiable=True,
-        isSingleScan=False,
+        is_granular=False,
+        is_user_modifiable=True,
+        is_single_scan=False,
         frequency=999999,
     )
 
@@ -564,12 +564,12 @@ def test_list_granular_scans_as_global_admin():
 def test_list_granular_scans_as_standard_user_fails():
     """Test that a standard user cannot retrieve granular scans."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -592,12 +592,12 @@ def test_list_granular_scans_no_auth():
 def test_list_granular_scans_empty():
     """Test that an empty result is returned if no granular scans exist."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(

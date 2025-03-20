@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 # Define non-keyword fields
-NON_KEYWORD_FIELDS = {"updatedAt", "createdAt"}
+NON_KEYWORD_FIELDS = {"updated_at", "created_at"}
 
 
 def build_from(current: int, results_per_page: int) -> Optional[int]:
@@ -215,10 +215,10 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
     print(options)
     current = state.current
     filters = state.filters or []
-    results_per_page = state.resultsPerPage
-    search_term = state.searchTerm
-    sort_direction = state.sortDirection
-    sort_field = state.sortField
+    results_per_page = state.results_per_page
+    search_term = state.search_term
+    sort_direction = state.sort_direction
+    sort_field = state.sort_field
 
     orgs_in_filters = next(
         (f for f in filters if f["field"] == "organization_id"), None
@@ -291,7 +291,7 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
         },
         "aggs": {
             "name": {"terms": {"field": "name.keyword"}},
-            "fromRootDomain": {"terms": {"field": "fromRootDomain.keyword"}},
+            "from_root_domain": {"terms": {"field": "from_root_domain.keyword"}},
             "organization": {"terms": {"field": "organization.name.keyword"}},
             "services": {
                 "nested": {"path": "services"},

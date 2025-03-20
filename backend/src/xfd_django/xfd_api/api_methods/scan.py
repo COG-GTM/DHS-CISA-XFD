@@ -80,7 +80,7 @@ def list_granular_scans(current_user):
         # Fetch scans that match the criteria (isGranular, isUserModifiable, isSingleScan)
         scans = Scan.objects.filter(
             is_granular=True, is_user_modifiable=True, is_single_scan=False
-        ).values("id", "name", "isUserModifiable")
+        ).values("id", "name", "is_user_modifiable")
 
         response = {"scans": list(scans), "schema": SCAN_SCHEMA}
 
@@ -129,7 +129,7 @@ def create_scan(scan_data: NewScan, current_user):
             "arguments": scan.arguments,
             "frequency": scan.frequency,
             "is_granular": scan.is_granular,
-            "isUserModifiable": scan.is_user_modifiable,
+            "is_user_modifiable": scan.is_user_modifiable,
             "is_single_scan": scan.is_single_scan,
             "created_by": {"id": current_user.id, "name": current_user.full_name},
             "tags": list(scan.tags.values("id")),

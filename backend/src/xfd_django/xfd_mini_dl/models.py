@@ -48,6 +48,7 @@ class ApiKey(models.Model):
         db_column="user_id",
         blank=True,
         null=True,
+        related_name="api_keys",
         help_text="FK: foreign key relationship to the user who owns the API key.",
     )
 
@@ -779,7 +780,7 @@ class Role(models.Model):
         "User",
         models.DO_NOTHING,
         db_column="approved_by_id",
-        related_name="role_approved_by_id_set",
+        related_name="approved_roles",
         blank=True,
         null=True,
         help_text="Foreign key to the user who approved the role assignation.",
@@ -788,7 +789,7 @@ class Role(models.Model):
         "User",
         models.DO_NOTHING,
         db_column="user_id",
-        related_name="role_user_id_set",
+        related_name="roles",
         blank=True,
         null=True,
         help_text="Foreign key to the user being assigned the role.",
@@ -1018,7 +1019,6 @@ class ScanTask(models.Model):
         null=True,
         help_text="Foreign key to the scan the scan task was based off of.",
     )
-    
 
     class Meta:
         """The Meta class for ScanTask."""
@@ -1115,8 +1115,8 @@ class User(models.Model):
     id = models.UUIDField(
         primary_key=True, help_text="Unique identifier for a user object."
     )
-    cognito_id = models.CharField(
-        db_column="cognito_id",
+    cognitoId = models.CharField(
+        db_column="cognitoId",
         unique=True,
         blank=True,
         null=True,

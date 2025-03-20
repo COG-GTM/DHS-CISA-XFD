@@ -9,8 +9,8 @@ import uuid
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import ApiKey, User, UserType
 from xfd_django.asgi import app
+from xfd_mini_dl.models import ApiKey, User, UserType
 
 client = TestClient(app)
 
@@ -20,12 +20,12 @@ client = TestClient(app)
 def test_create_api_key_as_global_view_admin():
     """Test API key creation by GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.post(
@@ -41,10 +41,10 @@ def test_create_api_key_as_global_view_admin():
     # Ensure the API key was stored in the database
     assert ApiKey.objects.filter(user=user).exists()
     api_key_instance = ApiKey.objects.get(user=user)
-    assert api_key_instance.lastFour == data["api_key"][-4:]
+    assert api_key_instance.last_four == data["api_key"][-4:]
     assert (
         hashlib.sha256(data["api_key"].encode()).hexdigest()
-        == api_key_instance.hashedKey
+        == api_key_instance.hashed_key
     )
 
 
@@ -53,12 +53,12 @@ def test_create_api_key_as_global_view_admin():
 def test_create_api_key_as_regular_user_fails():
     """Test API key creation should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.post(
@@ -78,21 +78,21 @@ def test_create_api_key_as_regular_user_fails():
 def test_delete_api_key_as_global_view_admin():
     """Test API key deletion by GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     api_key = ApiKey.objects.create(
         id=uuid.uuid4(),
-        hashedKey=hashlib.sha256(b"testkey").hexdigest(),
-        lastFour="test",
+        hashed_key=hashlib.sha256(b"testkey").hexdigest(),
+        last_four="test",
         user=user,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.delete(
@@ -115,21 +115,21 @@ def test_delete_api_key_as_global_view_admin():
 def test_delete_api_key_as_regular_user_fails():
     """Test API key deletion should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     api_key = ApiKey.objects.create(
         id=uuid.uuid4(),
-        hashedKey=hashlib.sha256(b"testkey").hexdigest(),
-        lastFour="test",
+        hashed_key=hashlib.sha256(b"testkey").hexdigest(),
+        last_four="test",
         user=user,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.delete(
@@ -149,12 +149,12 @@ def test_delete_api_key_as_regular_user_fails():
 def test_get_all_api_keys_as_regular_user_fails():
     """Test retrieving all API keys should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -171,21 +171,21 @@ def test_get_all_api_keys_as_regular_user_fails():
 def test_get_all_api_keys_as_global_view_admin():
     """Test retrieving all API keys by GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     ApiKey.objects.create(
         id=uuid.uuid4(),
-        hashedKey=hashlib.sha256(b"testkey").hexdigest(),
-        lastFour="test",
+        hashed_key=hashlib.sha256(b"testkey").hexdigest(),
+        last_four="test",
         user=user,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.get(
@@ -203,21 +203,21 @@ def test_get_all_api_keys_as_global_view_admin():
 def test_get_api_key_by_id_as_regular_user_fails():
     """Test retrieving a specific API key by ID should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     api_key = ApiKey.objects.create(
         id=uuid.uuid4(),
-        hashedKey=hashlib.sha256(b"testkey").hexdigest(),
-        lastFour="test",
+        hashed_key=hashlib.sha256(b"testkey").hexdigest(),
+        last_four="test",
         user=user,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.get(
@@ -234,21 +234,21 @@ def test_get_api_key_by_id_as_regular_user_fails():
 def test_get_api_key_by_id_as_global_view_admin():
     """Test retrieving a specific API key by ID as GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     api_key = ApiKey.objects.create(
         id=uuid.uuid4(),
-        hashedKey=hashlib.sha256(b"testkey").hexdigest(),
-        lastFour="test",
+        hashed_key=hashlib.sha256(b"testkey").hexdigest(),
+        last_four="test",
         user=user,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.get(

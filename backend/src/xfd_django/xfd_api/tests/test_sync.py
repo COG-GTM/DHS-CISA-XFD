@@ -8,9 +8,9 @@ import secrets
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import User, UserType
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_django.asgi import app
+from xfd_mini_dl.models import User, UserType
 
 client = TestClient(app)
 
@@ -34,12 +34,12 @@ c033dc84-ea64-43eb-b700-7c446b351713,Organization 47,ORG6,TRUE,2021-06-14T03:57:
 def test_sync_invalid_checksum_should_return_500():
     """Test sync with invalid checksum."""
     user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     invalid_checksum = create_checksum(dummy_org_csv_data) + "invstr"
     response = client.post(
@@ -59,12 +59,12 @@ def test_sync_invalid_checksum_should_return_500():
 def test_sync_missing_checksum_should_return_500():
     """Test sync with missing checksum."""
     user = user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     headers = {"Authorization": "Bearer {}".format(create_jwt_token(user))}
     response = client.post("/sync", json={"data": dummy_org_csv_data}, headers=headers)
@@ -76,12 +76,12 @@ def test_sync_missing_checksum_should_return_500():
 def test_sync_missing_data_should_return_422():
     """Test sync with missing data."""
     user = user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     headers = {
         "Authorization": "Bearer {}".format(create_jwt_token(user)),
