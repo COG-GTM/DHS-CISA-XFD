@@ -122,17 +122,27 @@ const Risk: React.FC<ContextType> = ({
 
   const fetchStats = useCallback(
     async (orgId?: string) => {
-      const { result } = await apiPost<ApiResponse>('/stats', {
-        body: {
-          filters: riskFilters
-        }
-      });
-      const max = Math.max(...result.vulnerabilities.byOrg.map((p) => p.value));
-      colorScale = scaleLinear<string>()
-        .domain([0, Math.log(max)])
-        .range(['#c7e8ff', '#135787']);
-      setStats(result);
+      if (
+        user?.userType === 'globalAdmin' &&
+        riskFilters.regions.length === 0
+      ) {
+        return;
+      } else {
+        const { result } = await apiPost<ApiResponse>('/stats', {
+          body: {
+            filters: riskFilters
+          }
+        });
+        const max = Math.max(
+          ...result.vulnerabilities.byOrg.map((p) => p.value)
+        );
+        colorScale = scaleLinear<string>()
+          .domain([0, Math.log(max)])
+          .range(['#c7e8ff', '#135787']);
+        setStats(result);
+      }
     },
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [riskFilters]
   );
