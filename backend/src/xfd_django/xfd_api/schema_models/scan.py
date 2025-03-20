@@ -26,6 +26,7 @@ class Scan(BaseModel):
     isUserModifiable: Optional[bool]
     isSingleScan: bool
     manualRunPending: bool
+    concurrentTasks: Optional[int]
     tags: Optional[List[OrganizationalTags]] = []
     organizations: Optional[List[Organization]] = []
 

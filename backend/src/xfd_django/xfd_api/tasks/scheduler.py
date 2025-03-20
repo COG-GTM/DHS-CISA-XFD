@@ -36,16 +36,16 @@ class Scheduler:
 
     def launch_scan_execution(self, scan):
         """Prepare and send scan execution request."""
+        # Prepare scan specific queue
         queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan.name)
         base_queue_url = os.getenv("QUEUE_URL").rstrip("/")
         is_local = os.getenv("IS_LOCAL")
-
         sqs = boto3.client(
             "sqs",
             region_name=os.getenv("AWS_REGION", "us-east-1"),
             endpoint_url=base_queue_url if is_local else None,
         )
-
+        # Create or get queue
         response = sqs.create_queue(
             QueueName=queue_name,
             Attributes={
@@ -54,14 +54,20 @@ class Scheduler:
                 "MessageRetentionPeriod": "604800"
             }
         )
-
         queue_url = response["QueueUrl"]
-        print("Queue URL: {}".format(queue_url))
 
-        # Get relevant organizations
+        # Get organizations to run on
         orgs = get_scan_organizations(scan) if scan.isGranular else self.organizations
         filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
 
+        if not filtered_orgs:
+            print("Skipping scan execution for {} - No organizations to run on.".format(scan.name))
+            return
+
+        # Check queue URL
+        print("Queue URL: {}".format(queue_url))
+
+        # Send organizations to the queue
         for org in filtered_orgs:
             message_body = json.dumps({"org": org.name, "id": str(org.id)})
             try:
@@ -75,15 +81,22 @@ class Scheduler:
             "scanId": str(scan.id),
             "scanType": scan.name,
             "desiredCount": scan.concurrentTasks,
-            "organizations": list(filtered_orgs),  # Pass orgs to scanExecution
+            "organizations": list(filtered_orgs),
             "isPe": False,
         }
-
         try:
             response = scan_execution_handler(event_payload, None)
             print("scanExecution handler response: {}".format(response))
+
+            # ✅ Set manualRunPending to False since scan is now launched
+            scan.manualRunPending = False
+            scan.lastRun = timezone.now()
+            scan.save()
+            print("Updated scan: manualRunPending set to False")
+
         except Exception as e:
             print("Error invoking scanExecution: {}".format(e))
+
 
     def should_run_scan(self, scan, organization=None):
         """
@@ -143,8 +156,6 @@ class Scheduler:
     def run(self):
         """Execute scans based on their configurations."""
         for scan in self.scans:
-            print("Running on scan")
-            print(scan)
             if getattr(scan, "concurrentTasks", 0):
                 self.launch_scan_execution(scan)
 
@@ -162,7 +173,7 @@ def handler(event, context):
 
     org_ids = event.get("organizationIds", [])
 
-    # Fetch scans based on scan_ids if provided.
+    # Fetch scans based on scan_ids if provided. Else, get all scans.
     if scan_ids:
         scans = Scan.objects.filter(id__in=scan_ids).prefetch_related("organizations", "tags")
     else:

@@ -50,13 +50,14 @@ def to_snake_case(input_string):
     """Convert a string to snake-case."""
     return re.sub(r"\s+", "-", input_string)
 
-def create_scan_task(scan_id, scan_type, organizations, fargate_task_arn=None):
+def create_scan_task(scan_id, scan_type, organizations, fargate_task_arn=None, concurrency_index=1):
     """Create a ScanTask for each launched task and assign the correct fargateTaskArn."""
     scan_task = ScanTask.objects.create(
         scan_id=scan_id,
         type="fargate",
         status="created",
-        fargateTaskArn=fargate_task_arn  # Assign if available
+        fargateTaskArn=fargate_task_arn,
+        concurrencyIndex=concurrency_index,
     )
 
     if organizations:
@@ -73,6 +74,8 @@ def start_desired_tasks(scan_type, desired_count, scan_id, organizations, is_pe=
 
     batch_size = 1 if scan_type == "shodan" else 10
     remaining_count = desired_count
+    concurrency_index = 1
+
     while remaining_count > 0:
         current_batch_count = min(remaining_count, batch_size)
         shodan_api_key = shodan_api_keys[remaining_count - 1] if shodan_api_keys else ""
@@ -133,8 +136,9 @@ def start_desired_tasks(scan_type, desired_count, scan_id, organizations, is_pe=
 
             for task in result["tasks"]:
                 task_arn = task["taskArn"]
-                scan_task = create_scan_task(scan_id, scan_type, organizations, fargate_task_arn=task_arn)
+                scan_task = create_scan_task(scan_id, scan_type, organizations, fargate_task_arn=task_arn, concurrency_index=concurrency_index)
                 print("Started ECS task: {}".format(task_arn))
+                concurrency_index += 1
 
         remaining_count -= current_batch_count
 

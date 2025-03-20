@@ -114,6 +114,7 @@ def list_scan_tasks(search_data: Optional[ScanTaskSearch], current_user):
                     if task.finishedAt
                     else None,
                     "queuedAt": task.queuedAt.isoformat() if task.queuedAt else None,
+                    "concurrencyIndex": task.concurrencyIndex,
                     "scan": scan_data,
                     "organizations": [
                         {

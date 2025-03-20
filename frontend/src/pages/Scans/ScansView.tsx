@@ -57,6 +57,7 @@ export interface ScansRow {
   frequency: number;
   lastRun: string;
   description: string;
+  concurrentTasks: number;
 }
 
 const ScansView: React.FC = () => {
@@ -216,7 +217,8 @@ const ScansView: React.FC = () => {
         new Date(scan.lastRun).getTime() === new Date(0).getTime()
           ? 'None'
           : `${formatDistanceToNow(parseISO(scan.lastRun))} ago`,
-      description: scanSchema[scan.name]?.description
+      description: scanSchema[scan.name]?.description,
+      concurrentTasks: scan.concurrentTasks
     };
   });
 
@@ -255,6 +257,14 @@ const ScansView: React.FC = () => {
       valueFormatter: (params) => formatFrequency(Number(params.value))
     },
     { field: 'lastRun', headerName: 'Last Run', minWidth: 100, flex: 1 },
+    {
+      field: 'concurrentTasks',
+      headerName: 'Concurrent Tasks',
+      minWidth: 100,
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center'
+    },
     {
       field: 'delete',
       headerName: 'Delete',

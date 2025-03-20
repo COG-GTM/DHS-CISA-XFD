@@ -41,6 +41,7 @@ def list_scans(current_user):
                 "isUserModifiable": scan.isUserModifiable,
                 "isSingleScan": scan.isSingleScan,
                 "manualRunPending": scan.manualRunPending,
+                "concurrentTasks": scan.concurrentTasks,
                 "tags": [
                     {
                         "id": tag.id,

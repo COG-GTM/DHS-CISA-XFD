@@ -449,6 +449,8 @@ class ScanTask(models.Model):
     startedAt = models.DateTimeField(db_column="startedAt", blank=True, null=True)
     finishedAt = models.DateTimeField(db_column="finishedAt", blank=True, null=True)
     queuedAt = models.DateTimeField(db_column="queuedAt", blank=True, null=True)
+    concurrencyIndex = models.IntegerField(db_column="concurrencyIndex", default=1)
+
 
     scan = models.ForeignKey(
         Scan, on_delete=models.SET_NULL, db_column="scanId", blank=True, null=True

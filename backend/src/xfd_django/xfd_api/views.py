@@ -53,6 +53,7 @@ from .api_methods.vulnerability import (
     search_vulnerabilities,
     update_vulnerability,
 )
+from .api_methods.queue_monitoring import list_queues
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
 from .models import User
@@ -70,6 +71,10 @@ from .schema_models.saved_search import (
     SavedSearchCreate,
     SavedSearchList,
     SavedSearchUpdate,
+)
+from .schema_models.queue_monitoring import (
+    QueueSearch,
+    QueueListResponse
 )
 from .schema_models.saved_search import SavedSearch as SavedSearchSchema
 from .schema_models.search import DomainSearchBody, SearchResponse
@@ -653,6 +658,23 @@ async def search_organizations(
     """Search for organizations in Elasticsearch."""
     return organization.search_organizations_task(search_body, current_user)
 
+
+# ========================================
+#   Queue Monitoring Endpoints
+# ========================================
+
+@api_router.post(
+    "/queues/search",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=QueueListResponse,
+    tags=["Queues"],
+)
+async def search_queues(
+    search_data: Optional[QueueSearch] = Body(None),
+    current_user=Depends(get_current_active_user),
+):
+    """List SQS queues with metadata (message count, in-flight, delayed)."""
+    return list_queues(search_data, current_user)
 
 # ========================================
 #   Region Endpoints
