@@ -1069,7 +1069,14 @@ def search_organizations_task(search_body, current_user: User):
         # Use match_all if searchTerm is empty
         if search_body.searchTerm.strip():
             query_body["query"]["bool"]["must"].append(
-                {"wildcard": {"name": "*{}*".format(search_body.searchTerm)}}
+                {
+                    "query_string": {
+                        "query": "*{}*".format(search_body.searchTerm),
+                        "fields": ["name"],
+                        "fuzziness": "AUTO",
+                        "analyze_wildcard": True,
+                    }
+                }
             )
         else:
             query_body["query"]["bool"]["must"].append({"match_all": {}})
