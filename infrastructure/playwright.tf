@@ -15,9 +15,26 @@ resource "aws_iam_role" "playwright_worker_task_execution_role" {
   })
 }
 
+resource "aws_iam_role" "playwright_worker_task_role" {
+  name = "playwright-worker-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Effect = "Allow"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "playwright_ecs_task_policy" {
   name = "playwright-ecs-task-policy"
-  role = aws_iam_role.worker_task_role.id
+  role = aws_iam_role.playwright_worker_task_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -36,7 +53,7 @@ resource "aws_iam_role_policy" "playwright_ecs_task_policy" {
 
 resource "aws_iam_role_policy_attachment" "playwright_ecs_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  role       = aws_iam_role.playwright_worker_task_execution_role.name
+  role       = aws_iam_role.playwright_worker_task_execution_role.id
 }
 
 resource "aws_ecr_repository" "playwright" {
@@ -93,9 +110,10 @@ resource "aws_ecs_task_definition" "playwright_worker" {
 ]
 EOF
   requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  execution_role_arn       = aws_iam_role.playwright_worker_task_execution_role.arn
-  task_role_arn            = aws_iam_role.worker_task_role.arn
+  # "awsvpc" is required for Fargate tasks to enable the use of ENIs for networking.
+  network_mode       = "awsvpc"
+  execution_role_arn = aws_iam_role.playwright_worker_task_execution_role.arn # Execution role for ECS tasks
+  task_role_arn      = aws_iam_role.playwright_worker_task_role.arn           # Task role for the application
 
   cpu    = 256 # .25 vCPU
   memory = 512 # 512 MB
