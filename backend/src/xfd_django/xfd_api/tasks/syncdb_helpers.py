@@ -112,15 +112,23 @@ def create_sample_user(organization):
 
 def create_test_user(organization):
     """Create a test user linked to an organization."""
-    user = User.objects.create(
-        firstName="Test",
-        lastName="User",
-        email=os.environ.get("PW_XFD_USERNAME"),
-        userType=UserType.GLOBAL_ADMIN,
-        state=random.choice(SAMPLE_STATES),
-        regionId=random.choice(SAMPLE_REGION_IDS),
-        organization=organization,
-    )
+    email = os.environ.get("PW_XFD_USERNAME")
+
+    existing_user = User.objects.filter(email=email).first()
+
+    if existing_user:
+        return existing_user
+
+    if not email:
+        user = User.objects.create(
+            firstName="Test",
+            lastName="User",
+            email=os.environ.get("PW_XFD_USERNAME"),
+            userType=UserType.GLOBAL_ADMIN,
+            state=random.choice(SAMPLE_STATES),
+            regionId=random.choice(SAMPLE_REGION_IDS),
+            organization=organization,
+        )
 
     return user
 
