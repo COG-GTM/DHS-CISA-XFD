@@ -466,7 +466,7 @@ resource "aws_s3_bucket_policy" "crossfeed-lz-sync" {
         "Principal" : "*",
         "Resource" : [
           aws_s3_bucket.crossfeed-lz-sync[0].arn,
-          "${aws_s3_bucket.crossfeed-lz-sync.arn}/*"
+          "${aws_s3_bucket.crossfeed-lz-sync[0].arn}/*"
         ],
         "Condition" : {
           "Bool" : {
