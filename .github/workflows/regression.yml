@@ -82,11 +82,11 @@ jobs:
     needs: deploy
     environment: staging
     timeout-minutes: 60
-    container:
-      image: >
-        ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-        /playwright-tests:latest
     steps:
+      - name: Set container image
+        run: echo "CONTAINER_IMAGE=${{ secrets.AWS_ACCOUNT_ID }}\
+          .dkr.ecr.${{ secrets.AWS_REGION }}\
+          .amazonaws.com/playwright-tests:latest" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
@@ -102,7 +102,7 @@ jobs:
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
         run: |
-          npx playwright test
+         docker run --rm $CONTAINER_IMAGE npx playwright test
 
       - name: Upload test results as artifact
         uses: actions/upload-artifact@v2
