@@ -465,7 +465,7 @@ resource "aws_s3_bucket_policy" "crossfeed-lz-sync" {
         "Effect" : "Deny",
         "Principal" : "*",
         "Resource" : [
-          aws_s3_bucket.crossfeed-lz-sync.arn,
+          aws_s3_bucket.crossfeed-lz-sync[0].arn,
           "${aws_s3_bucket.crossfeed-lz-sync.arn}/*"
         ],
         "Condition" : {
@@ -480,13 +480,13 @@ resource "aws_s3_bucket_policy" "crossfeed-lz-sync" {
 
 resource "aws_s3_bucket_acl" "crossfeed-lz-sync" {
   count  = var.is_dmz ? 1 : 0
-  bucket = aws_s3_bucket.crossfeed-lz-sync.id
+  bucket = aws_s3_bucket.crossfeed-lz-sync[0].id
   acl    = "private"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "crossfeed-lz-sync" {
   count  = var.is_dmz ? 1 : 0
-  bucket = aws_s3_bucket.crossfeed-lz-sync.id
+  bucket = aws_s3_bucket.crossfeed-lz-sync[0].id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
