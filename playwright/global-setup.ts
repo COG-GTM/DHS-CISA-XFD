@@ -18,6 +18,7 @@ let totp = new OTPAuth.TOTP({
 const axios = require('axios');
 
 const waitForFrontend = async (url, timeout = 900000, checkInterval = 5000) => {
+  console.log(`Url: ${url}`);
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     try {
@@ -48,8 +49,8 @@ async function globalSetup(config: FullConfig) {
   const page = await browser.newPage();
 
   //Log in with credentials.
-  await waitForFrontend('http://xfd-frontend-1:3000');
-  await page.goto('http://xfd-frontend-1:3000');
+  await waitForFrontend(process.env.PW_XFD_URL);
+  await page.goto(String(process.env.PW_XFD_URL));
   await page.getByTestId('button').click();
   await page
     .getByLabel('Username (Email)')
