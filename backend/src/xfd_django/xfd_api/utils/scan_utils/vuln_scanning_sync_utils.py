@@ -565,7 +565,6 @@ def load_test_data(data_set: str) -> list:
     with open(expanded_path, encoding="utf-8") as file:
         return json.load(file)
 
-
 def map_severity(severity):
     """Map a severity score to a severity level."""
     if severity == 0 or severity is None:
