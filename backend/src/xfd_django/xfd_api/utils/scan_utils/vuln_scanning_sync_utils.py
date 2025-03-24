@@ -10,7 +10,7 @@ import datetime
 import json
 import os
 from typing import Dict
-from uuid import uuid4
+from uuid import uuid1
 
 # Third-Party Libraries
 from django.db import transaction
@@ -64,7 +64,7 @@ def save_port_scan_to_datalake(port_scan_obj):
                 # Upsert: Insert or update if a conflict occurs
                 port_scan_record, created = PortScan.objects.update_or_create(
                     id=port_scan_obj.get(
-                        "id", str(uuid4())
+                        "id", str(uuid1())
                     ),  # Generate UUID if not provided
                     defaults=port_scan_updated_values,
                 )
@@ -73,7 +73,7 @@ def save_port_scan_to_datalake(port_scan_obj):
             else:
                 # Insert but ignore if the record already exists
                 obj, created = PortScan.objects.get_or_create(
-                    id=port_scan_obj.get("id", str(uuid4())), defaults=port_scan_obj
+                    id=port_scan_obj.get("id", str(uuid1())), defaults=port_scan_obj
                 )
                 if not created:
                     print(f"Found existing PortScan: {obj.id}")
@@ -111,7 +111,7 @@ def save_ticket_to_datalake(ticket_obj):
                 # Upsert: Insert or update if a conflict occurs
                 ticket_record, created = Ticket.objects.update_or_create(
                     id=ticket_obj.get(
-                        "id", str(uuid4())
+                        "id", str(uuid1())
                     ),  # Generate UUID if not provided
                     defaults=ticket_updated_values,
                 )
@@ -120,7 +120,7 @@ def save_ticket_to_datalake(ticket_obj):
             else:
                 # Insert but ignore if the record already exists
                 obj, created = Ticket.objects.get_or_create(
-                    id=ticket_obj.get("id", str(uuid4())), defaults=ticket_obj
+                    id=ticket_obj.get("id", str(uuid1())), defaults=ticket_obj
                 )
                 if not created:
                     print(f"Found existing Ticket: {obj.id}")
@@ -219,14 +219,14 @@ def save_cve_to_datalake(cve_obj):
                 cve_record, created = Cve.objects.update_or_create(
                     name=cve_name,
                     defaults={key: cve_obj[key] for key in cve_updated_values}
-                    | {"id": str(uuid4())},
+                    | {"id": str(1())},
                 )
                 print("Updated CVE" if not created else "Created CVE")
                 return str(cve_record.id)
             else:
                 # Insert but ignore if the record already exists
                 obj, created = Cve.objects.get_or_create(
-                    name=cve_name, defaults=cve_obj | {"id": str(uuid4())}
+                    name=cve_name, defaults=cve_obj | {"id": str(uuid1())}
                 )
                 if not created:
                     print(f"Found existing CVE: {obj.id}")
@@ -451,7 +451,7 @@ def save_organization_to_mdl(
         org_obj = organization_obj
     except Organization.DoesNotExist:
         organization_obj = Organization.objects.using(db_name).create(
-            id=str(uuid4()),
+            id=str(uuid1()),
             name=org_dict["name"],
             acronym=org_dict["acronym"],
             retired=org_dict["retired"],
@@ -506,7 +506,7 @@ def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake
 
             else:
                 cidr_obj = Cidr.objects.using(db_name).create(
-                    id=str(uuid4()),
+                    id=str(uuid1()),
                     network=cidr_dict["network"],
                     start_ip=cidr_dict["start_ip"],
                     end_ip=cidr_dict["end_ip"],
@@ -518,7 +518,7 @@ def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake
                 organization=org,
                 cidr=cidr_obj,
                 defaults={
-                    "cidr_orgs_id": str(uuid4()),
+                    "cidr_orgs_id": str(uuid1()),
                     "last_seen": datetime.datetime.today().date(),
                     "current": True,
                 },
