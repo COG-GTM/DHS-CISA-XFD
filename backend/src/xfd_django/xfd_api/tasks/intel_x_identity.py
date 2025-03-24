@@ -231,10 +231,10 @@ class IntelX:
         time.sleep(5)
         return response.json()
 
-    def get_search_results(self, id):
+    def get_search_results(self, search_id):
         """Search IntelX for email leaks."""
         url = "https://3.intelx.io/live/search/result?id={id}&format=1&k={api_key}".format(
-            id=id, api_key=api_key
+            id=search_id, api_key=api_key
         )
         payload = {}
         headers = {}
