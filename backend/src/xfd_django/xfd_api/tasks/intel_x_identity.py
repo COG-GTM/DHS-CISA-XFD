@@ -79,16 +79,7 @@ def main():
         ).order_by("acronym")
         intelx = IntelX(orgs_to_scan)
         intelx.run_intelx()
-        # for org in orgs_to_scan:
-        #     LOGGER.info('Running IntelX scan on {acronym}'.format(acronym=org.acronym))
-        #     roots = SubDomains.objects.filter(
-        #         is_root_domain=True,
-        #         organization__id=org.id
-        #     ).filter(
-        #         Q(enumerate_subs=True) | Q(enumerate_subs=None)
-        #     )
-        #     LOGGER.info("Running {x} root domains through IntelX.".format(x=len(roots)))
-        #
+
     except Exception as e:
         LOGGER.error("Error running IntelX Credential Scan %s", e)
 
@@ -104,30 +95,6 @@ class IntelX:
         """Run IntelX api calls."""
         LOGGER.info("Running IntelX")
         orgs_objects = self.org_objects
-
-        # Retrieve full org info from PE database
-        # pe_orgs = get_orgs()
-        # pe_orgs_final = []
-        # if orgs_list == "all":
-        #     for pe_org in pe_orgs:
-        #         if pe_org["report_on"]:
-        #             pe_orgs_final.append(pe_org)
-        #         else:
-        #             continue
-        # elif orgs_list == "DEMO":
-        #     for pe_org in pe_orgs:
-        #         if pe_org["demo"]:
-        #             pe_orgs_final.append(pe_org)
-        #         else:
-        #             continue
-        # else:
-        #     for pe_org in pe_orgs:
-        #         if pe_org["cyhy_db_name"] in orgs_list:
-        #             pe_orgs_final.append(pe_org)
-        #         else:
-        #             continue
-        # alphabetize org list for consistent order
-        # pe_orgs_final = sorted(pe_orgs_final, key=lambda d: d["cyhy_db_name"])
 
         # Run IntelX on each org
         success = 0
@@ -152,14 +119,14 @@ class IntelX:
             index += 1
         # Log summary statistics
         LOGGER.info(
-            "IntelX scan ran successfully for {success}/{total} organizations".format(
-                success=success, total=total_org_count
-            )
+            "IntelX scan ran successfully for %d/%d organizations",
+            success,
+            total_org_count,
         )
         LOGGER.info(
-            "IntelX scan had significant failures for {failed}/{total} organizations".format(
-                failed=failed, total=total_org_count
-            )
+            "IntelX scan had significant failures for %d/%d organizations",
+            failed,
+            total_org_count,
         )
 
     def get_credentials(self, org: Organization):
@@ -246,7 +213,9 @@ class IntelX:
         # Call IntelX endpoint to submit initial search query
         while attempts < 5:
             try:
-                response = requests.request("GET", url, headers=headers, data=payload)
+                response = requests.request(
+                    "GET", url, headers=headers, data=payload, timeout=TIMEOUT
+                )
                 response.raise_for_status()
                 break
             except requests.exceptions.Timeout:
@@ -272,7 +241,9 @@ class IntelX:
         attempts = 0
         # Call IntelX endpoint to retrieve search results
         try:
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request(
+                "GET", url, headers=headers, data=payload, timeout=TIMEOUT
+            )
         except requests.exceptions.Timeout:
             time.sleep(5)
             attempts += 1
@@ -281,7 +252,7 @@ class IntelX:
                 sys.exit()
             LOGGER.info("IntelX Identity API response timed out. Trying again.")
         except Exception as e:
-            LOGGER.error("Error occured geting search results: {error}".format(error=e))
+            LOGGER.error("Error occured geting search results: %s", e)
             return 0
         response = response.json()
 
