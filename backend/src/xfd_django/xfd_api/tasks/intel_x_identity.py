@@ -23,7 +23,7 @@ from xfd_mini_dl.models import (
 
 # Calculate Datetimes for collection period
 TODAY = datetime.date.today()
-DAYS_BACK = datetime.timedelta(days=20)  # TODO change date back
+DAYS_BACK = datetime.timedelta(days=20)
 START_DATE = (TODAY - DAYS_BACK).strftime("%Y-%m-%d %H:%M:%S")
 END_DATE = TODAY.strftime("%Y-%m-%d %H:%M:%S")
 
