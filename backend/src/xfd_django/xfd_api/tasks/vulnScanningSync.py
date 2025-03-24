@@ -77,8 +77,10 @@ def query_redshift(query, params=None):
 def main():
     """Execute the vulnerability scanning synchronization task."""
     print("Starting VS Sync scan")
+    # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
-    org_id_dict = process_orgs(request_list[:10])
+    org_id_dict = process_orgs(request_list)
+    # Process Organizations & Relations
     process_organizations_and_relations()
 
     # Process Vulnerability Scans
@@ -186,11 +188,11 @@ def send_csv_to_sync(csv_data, bounds):
         "x-checksum": checksum,
         "x-cursor": f"{bounds['start']}-{bounds['end']}",
         "Content-Type": "application/json",
-        "Authorization": os.environ.get("DMZ_API_KEY"),
+        "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0N2Q0MDk3LWM5ZTEtNGMxZS1iMmY0LWY2Mjg4OTU3NTlkMCIsImVtYWlsIjoiSkFOU09OLkJVTkNFQGFzc29jaWF0ZXMuY2lzYS5kaHMuZ292IiwiZXhwIjoxNzQxMzc1NTQwfQ.Yo4A0fBP8cF00ODKgxD5U2NaffXv1k3nmaN4jv5kyVs",
     }
 
     response = requests.post(
-        os.environ.get("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
+        "http://localhost:3000/sync", json=body, headers=headers, timeout=60
     )
     if response.status_code == 200:
         print("CSV successfully sent to /sync")
