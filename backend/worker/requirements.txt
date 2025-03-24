@@ -1,3 +1,5 @@
 mitmproxy
+numpy==1.24.3
 python-dotenv
 requests-http-signature==0.2.0
+shodan==1.27.0
