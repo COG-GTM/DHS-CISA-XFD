@@ -190,7 +190,7 @@ def send_csv_to_sync(csv_data, bounds):
     }
 
     response = requests.post(
-        "http://localhost:3000/sync", json=body, headers=headers, timeout=60
+        os.environ.get("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
     )
     if response.status_code == 200:
         print("CSV successfully sent to /sync")
