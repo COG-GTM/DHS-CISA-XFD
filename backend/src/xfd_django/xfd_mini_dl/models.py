@@ -2239,9 +2239,14 @@ class IpsSubs(models.Model):
     """Define IpsSubs model."""
 
     ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid1)
-    ip = models.ForeignKey(Ip, on_delete=models.CASCADE, db_column="ip_id", related_name="ipssubs")
+    ip = models.ForeignKey(
+        Ip, on_delete=models.CASCADE, db_column="ip_id", related_name="ipssubs"
+    )
     sub_domain = models.ForeignKey(
-        "SubDomains", on_delete=models.CASCADE, db_column="sub_domain_id", related_name="ipssubs"
+        "SubDomains",
+        on_delete=models.CASCADE,
+        db_column="sub_domain_id",
+        related_name="ipssubs",
     )
     first_seen = models.DateTimeField(
         blank=True,

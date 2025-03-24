@@ -7,25 +7,27 @@ import sys
 import time
 
 # Third-Party Libraries
+import django
+from django.db.models import Q
+from django.utils import timezone
 import numpy as np
 import pandas as pd
 import requests
-import django
-from django.db.models import Q
-from django.conf import settings
-from django.utils import timezone
-
-from xfd_mini_dl.models import DataSource, Organization, Cidr, CidrOrgs, SubDomains, Service, Ip, IpsSubs, CredentialBreaches, CredentialExposures
+from xfd_mini_dl.models import (
+    CredentialBreaches,
+    CredentialExposures,
+    DataSource,
+    Organization,
+    SubDomains,
+)
 
 # Calculate Datetimes for collection period
 TODAY = datetime.date.today()
-DAYS_BACK = datetime.timedelta(days=60) #TODO change date back
+DAYS_BACK = datetime.timedelta(days=20)  # TODO change date back
 START_DATE = (TODAY - DAYS_BACK).strftime("%Y-%m-%d %H:%M:%S")
 END_DATE = TODAY.strftime("%Y-%m-%d %H:%M:%S")
 
-logging.basicConfig(
-    level=logging.INFO, 
-    format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 # Django setup
@@ -36,7 +38,7 @@ django.setup()
 MAX_RETRIES = 3  # Max retries for failed tasks
 TIMEOUT = 60  # Timeout in seconds for waiting on task completion
 
-api_key = os.getenv('INTELX_KEY')
+api_key = os.getenv("INTELX_KEY")
 
 # Get data source uid
 SOURCE_OBJ, created = DataSource.objects.get_or_create(
@@ -47,13 +49,14 @@ SOURCE_OBJ, created = DataSource.objects.get_or_create(
     },
 )
 
+
 def handler(event):
     """Identify credential breaches associated with stakeholder's root domains."""
     try:
         is_dmz = os.getenv("IS_DMZ", "0") == "1"
         is_local = os.getenv("IS_LOCAL", "1") == "1"
         if not is_dmz and not is_local:
-            LOGGER.warning('Scan can only be run in the DMZ or locally. Exitting now.')
+            LOGGER.warning("Scan can only be run in the DMZ or locally. Exitting now.")
             return {
                 "statusCode": 200,
                 "body": "IntelX Credential scan cannot run outside the DMZ.",
@@ -65,39 +68,41 @@ def handler(event):
         }
     except Exception as e:
         return {"statusCode": 500, "body": str(e)}
-    
+
 
 def main():
     """Identify credential breaches associated with stakeholder's root domains."""
     try:
         # orgs_to_scan = Organization.objects.all()
-        orgs_to_scan = Organization.objects.filter(acronym__in=['USAGM', 'DHS']).order_by('acronym')
+        orgs_to_scan = Organization.objects.filter(
+            acronym__in=["USAGM", "DHS"]
+        ).order_by("acronym")
         intelx = IntelX(orgs_to_scan)
         intelx.run_intelx()
         # for org in orgs_to_scan:
         #     LOGGER.info('Running IntelX scan on {acronym}'.format(acronym=org.acronym))
         #     roots = SubDomains.objects.filter(
-        #         is_root_domain=True, 
+        #         is_root_domain=True,
         #         organization__id=org.id
         #     ).filter(
         #         Q(enumerate_subs=True) | Q(enumerate_subs=None)
         #     )
         #     LOGGER.info("Running {x} root domains through IntelX.".format(x=len(roots)))
-        #     
+        #
     except Exception as e:
-        LOGGER.error('Error running IntelX Credential Scan %s', e)
+        LOGGER.error("Error running IntelX Credential Scan %s", e)
 
 
 class IntelX:
     """Fetch IntelX data."""
 
-    def __init__(self, org_objects:list[Organization]):
+    def __init__(self, org_objects: list[Organization]):
         """Initialize IntelX class."""
         self.org_objects = org_objects
 
     def run_intelx(self):
         """Run IntelX api calls."""
-        LOGGER.info('Running IntelX')
+        LOGGER.info("Running IntelX")
         orgs_objects = self.org_objects
 
         # Retrieve full org info from PE database
@@ -131,57 +136,69 @@ class IntelX:
         total_org_count = len(orgs_objects)
         for org in orgs_objects:
             LOGGER.info(
-                "Running IntelX on %s (%d of %d)", org.acronym, index+1, total_org_count
+                "Running IntelX on %s (%d of %d)",
+                org.acronym,
+                index + 1,
+                total_org_count,
             )
-            
+
             if self.get_credentials(org) == 1:
-                LOGGER.error("Failed to retrieve IntelX credentials for %s", org.acronym)
+                LOGGER.error(
+                    "Failed to retrieve IntelX credentials for %s", org.acronym
+                )
                 failed += 1
             else:
                 success += 1
-            index +=1
+            index += 1
         # Log summary statistics
         LOGGER.info(
-            "IntelX scan ran successfully for {success}/{total} organizations".format(success=success, total=total_org_count)
+            "IntelX scan ran successfully for {success}/{total} organizations".format(
+                success=success, total=total_org_count
+            )
         )
         LOGGER.info(
-            "IntelX scan had significant failures for {failed}/{total} organizations".format(failed=failed, total=total_org_count)
+            "IntelX scan had significant failures for {failed}/{total} organizations".format(
+                failed=failed, total=total_org_count
+            )
         )
 
-    def get_credentials(self, org:Organization):
+    def get_credentials(self, org: Organization):
         """Get credentials for a provided org."""
         # Get the org root domains
         LOGGER.info("Retrieving root domains for %s", org.acronym)
         try:
-            roots = SubDomains.objects.filter(
-                is_root_domain=True, 
-                organization__id=org.id,
-                current=True
-            ).filter(
-                Q(enumerate_subs=True) | Q(enumerate_subs=None)
-            ).exclude(
-                identified=True
+            roots = (
+                SubDomains.objects.filter(
+                    is_root_domain=True, organization__id=org.id, current=True
+                )
+                .filter(Q(enumerate_subs=True) | Q(enumerate_subs=None))
+                .exclude(identified=True)
             )
-            
+
         except Exception as e:
             LOGGER.error("Failed fetching root domains for %s", org.acronym)
             LOGGER.error(e)
             return 1
-        
+
         # Catch situation where org has no eligble root domains
         if not roots.exists():
-            LOGGER.warning("%s does not have any eligible root domains for IntelX", org.acronym)
+            LOGGER.warning(
+                "%s does not have any eligible root domains for IntelX", org.acronym
+            )
             return 0
 
         # Retrieve credential leaks from IntelX
         LOGGER.info("Retrieving IntelX findings for %s", org.acronym)
         count = 0
         for root in roots:
-            LOGGER.info("IntelX working on domain: %s %d/%d",root.sub_domain, count+1, len(roots))
-            count+=1
-            leaks_json = self.find_credential_leaks(
-                root, START_DATE, END_DATE
+            LOGGER.info(
+                "IntelX working on domain: %s %d/%d",
+                root.sub_domain,
+                count + 1,
+                len(roots),
             )
+            count += 1
+            leaks_json = self.find_credential_leaks(root, START_DATE, END_DATE)
 
             # Process and format results
             if len(leaks_json) < 1:
@@ -194,33 +211,34 @@ class IntelX:
                 breach_dict = insert_intelx_breaches(breaches_df)
                 # insert_intelx_breaches(breaches_df)
             except Exception as e:
-                LOGGER.error("Failed inserting IntelX breach data for %s", root.sub_domain)
+                LOGGER.error(
+                    "Failed inserting IntelX breach data for %s", root.sub_domain
+                )
                 LOGGER.error(e)
                 continue
-        # breach_dict = get_intelx_breaches(SOURCE_UID)
-        # breach_dict = dict(breach_dict)
-        # for cred_index, cred_row in creds_df.iterrows():
-        #     breach_uid = breach_dict[cred_row["breach_name"]]
-        #     creds_df.at[cred_index, "credential_breaches_uid"] = breach_uid
-        # Insert credential data into the PE database
+            # breach_dict = get_intelx_breaches(SOURCE_UID)
+            # breach_dict = dict(breach_dict)
+            # for cred_index, cred_row in creds_df.iterrows():
+            #     breach_uid = breach_dict[cred_row["breach_name"]]
+            #     creds_df.at[cred_index, "credential_breaches_uid"] = breach_uid
+            # Insert credential data into the PE database
             LOGGER.info("Inserting IntelX credential data for %s", root.sub_domain)
             try:
                 insert_intelx_credentials(creds_df, breach_dict, org, root)
-                
+
             except Exception as e:
-                LOGGER.error("Failed inserting IntelX credential data for %s", root.sub_domain)
+                LOGGER.error(
+                    "Failed inserting IntelX credential data for %s", root.sub_domain
+                )
                 LOGGER.error(e)
                 continue
-            
+
         return 0
 
     def query_identity_api(self, domain, start_date, end_date):
         """Create an initial search and return the search id."""
         url = "https://3.intelx.io/accounts/csv?selector={domain}&k={api_key}&datefrom={start_date}&dateto={end_date}".format(
-            domain=domain, 
-            api_key=api_key, 
-            start_date=start_date, 
-            end_date=end_date
+            domain=domain, api_key=api_key, start_date=start_date, end_date=end_date
         )
         payload = {}
         headers = {}
@@ -246,7 +264,9 @@ class IntelX:
 
     def get_search_results(self, id):
         """Search IntelX for email leaks."""
-        url = "https://3.intelx.io/live/search/result?id={id}&format=1&k={api_key}".format(id=id, api_key=api_key)
+        url = "https://3.intelx.io/live/search/result?id={id}&format=1&k={api_key}".format(
+            id=id, api_key=api_key
+        )
         payload = {}
         headers = {}
         attempts = 0
@@ -267,15 +287,15 @@ class IntelX:
 
         return response
 
-    def find_credential_leaks(self, root_obj:SubDomains, start_date, end_date):
+    def find_credential_leaks(self, root_obj: SubDomains, start_date, end_date):
         """Find leaks for a domain between two dates."""
         # Retrieve results for each domain
-    
-        all_results_list = []
-        
+
+        all_results_list: list[dict] = []
+
         if not root_obj:
             return all_results_list
-        
+
         response = self.query_identity_api(root_obj.sub_domain, start_date, end_date)
         if not response:
             return all_results_list
@@ -291,7 +311,9 @@ class IntelX:
                 if current_results:
                     # Add the root_domain to each result object
                     LOGGER.info(
-                        "Intelx returned %d more credentials for %s", len(current_results), root_obj.sub_domain
+                        "Intelx returned %d more credentials for %s",
+                        len(current_results),
+                        root_obj.sub_domain,
                     )
                     result = [
                         dict(item, **{"root_domain": root_obj.sub_domain})
@@ -309,7 +331,9 @@ class IntelX:
                 if current_results:
                     # Add the root_domain to each result object
                     LOGGER.info(
-                        "Intelx returned %d more credentials for %s", len(current_results), root_obj.sub_domain
+                        "Intelx returned %d more credentials for %s",
+                        len(current_results),
+                        root_obj.sub_domain,
                     )
                     result = [
                         dict(item, **{"root_domain": root_obj.sub_domain})
@@ -331,12 +355,18 @@ class IntelX:
         # format email to all lowercase and remove duplicates
         all_df["user"] = all_df["user"].str.lower()
         # Log stats
-        num_email = all_df['user'].nunique()
-        num_post = all_df['sourceshort'].nunique()
+        num_email = all_df["user"].nunique()
+        num_post = all_df["sourceshort"].nunique()
         all_df = all_df.drop_duplicates(subset=["user", "sourceshort"], keep="first")
         # num emails after removing duplicates in the same post
         num_email_dedupe = len(leaks_json)
-        LOGGER.info("IntelX results %s: %d unique emails, %d unique posts, %d email/post pairs", org.acronym, num_email, num_post, num_email_dedupe)
+        LOGGER.info(
+            "IntelX results %s: %d unique emails, %d unique posts, %d email/post pairs",
+            org.acronym,
+            num_email,
+            num_post,
+            num_email_dedupe,
+        )
         # Format date
         all_df["breach_datetime"] = pd.to_datetime(all_df["date"])
         # all_df["breach_date"] = all_df["datetime"].dt.strftime("%Y-%m-%d")
@@ -355,7 +385,7 @@ class IntelX:
         all_df.rename(
             columns={
                 "user": "email",
-                "sourceshort": "breach_name",   
+                "sourceshort": "breach_name",
                 "systemid": "intelx_system_id",
                 "passwordtype": "hash_type",
             },
@@ -375,9 +405,15 @@ class IntelX:
             ]
         ].reset_index(drop=True)
         # group results by breaches
-        breaches_df = all_df.groupby(
-            ["breach_name", "bucket"]
-        ).aggregate({"email": "count", "password_included": "sum", "modified_date":"max", "added_date":"min", "breach_datetime":"min"})
+        breaches_df = all_df.groupby(["breach_name", "bucket"]).aggregate(
+            {
+                "email": "count",
+                "password_included": "sum",
+                "modified_date": "max",
+                "added_date": "min",
+                "breach_datetime": "min",
+            }
+        )
         breaches_df = breaches_df.reset_index()
         breaches_df["password_included"] = breaches_df["password_included"] > 0
         # Build breach description
@@ -395,7 +431,9 @@ class IntelX:
             + " passwords. It falls in the following category: "
             + breaches_df["bucket"]
         )
-        breaches_df["breach_date"] = breaches_df["breach_datetime"].dt.strftime("%Y-%m-%d")
+        breaches_df["breach_date"] = breaches_df["breach_datetime"].dt.strftime(
+            "%Y-%m-%d"
+        )
         breaches_df = breaches_df[
             [
                 "breach_name",
@@ -418,49 +456,48 @@ def insert_intelx_breaches(df):
 
     for breach in df_dict_list:
         breach_obj, created = CredentialBreaches.objects.get_or_create(
-            breach_name=breach.get('breach_name'),
+            breach_name=breach.get("breach_name"),
             defaults={
-                'description': breach.get('description'),
-                'breach_date': breach.get('breach_date'),
-                'added_date': breach.get('added_date'),
-                'modified_date': datetime.datetime.now(datetime.timezone.utc),
-                'password_included': breach.get('password_included'),
-                'data_source': SOURCE_OBJ
-            }
+                "description": breach.get("description"),
+                "breach_date": breach.get("breach_date"),
+                "added_date": breach.get("added_date"),
+                "modified_date": datetime.datetime.now(datetime.timezone.utc),
+                "password_included": breach.get("password_included"),
+                "data_source": SOURCE_OBJ,
+            },
         )
 
         if not created:
             breach_obj.modified_date = datetime.datetime.now(datetime.timezone.utc)
             breach_obj.save()
-        
-        breach_dict[breach.get('breach_name')] = breach_obj
+
+        breach_dict[breach.get("breach_name")] = breach_obj
 
     return breach_dict
 
 
-def insert_intelx_credentials(df, breach_obj_dict, org:Organization, root:SubDomains):
+def insert_intelx_credentials(df, breach_obj_dict, org: Organization, root: SubDomains):
     """Save intelx credentials to DB."""
-    
     df_dict_list = df.to_dict("records")
 
     for exposure in df_dict_list:
-        if root.sub_domain == exposure.get('sub_domain'):
+        if root.sub_domain == exposure.get("sub_domain"):
             sub = root
         else:
             sub, created = SubDomains.objects.get_or_create(
                 organization=org,
-                sub_domain=exposure.get('sub_domain'),
+                sub_domain=exposure.get("sub_domain"),
                 defaults={
-                    'root_domain':root,
-                    'is_root_domain':False,
-                    'data_source':SOURCE_OBJ,
-                    'subdomain_source': "IntelX",
+                    "root_domain": root,
+                    "is_root_domain": False,
+                    "data_source": SOURCE_OBJ,
+                    "subdomain_source": "IntelX",
                     "first_seen": datetime.datetime.now(datetime.timezone.utc),
                     "last_seen": datetime.datetime.now(datetime.timezone.utc),
                     "from_root_domain": root.sub_domain,
-                    'identified':True,
-                    "current":True
-                }
+                    "identified": True,
+                    "current": True,
+                },
             )
             if created:
                 sub.last_seen = datetime.datetime.now(datetime.timezone.utc)
@@ -468,20 +505,19 @@ def insert_intelx_credentials(df, breach_obj_dict, org:Organization, root:SubDom
                 sub.save()
 
         CredentialExposures.objects.get_or_create(
-            email=exposure.get('email'),
-            breach_name=exposure.get('breach_name'),
+            email=exposure.get("email"),
+            breach_name=exposure.get("breach_name"),
             organization=org,
             defaults={
-                'root_domain': exposure.get('root_domain'),
-                'sub_domain_string': exposure.get('sub_domain'),
-                'sub_domain': sub,
-                'credential_breach':breach_obj_dict.get(exposure.get('breach_name')),
-                'modified_date': exposure.get('modified_date'),
-                'created_at': datetime.datetime.now(datetime.timezone.utc),
-                'data_source': SOURCE_OBJ,
-                'password': exposure.get('password'),
-                'hash_type': exposure.get('hash_type'),
-                'intelx_system_id': exposure.get('intelx_system_id'),
-            }
+                "root_domain": exposure.get("root_domain"),
+                "sub_domain_string": exposure.get("sub_domain"),
+                "sub_domain": sub,
+                "credential_breach": breach_obj_dict.get(exposure.get("breach_name")),
+                "modified_date": exposure.get("modified_date"),
+                "created_at": datetime.datetime.now(datetime.timezone.utc),
+                "data_source": SOURCE_OBJ,
+                "password": exposure.get("password"),
+                "hash_type": exposure.get("hash_type"),
+                "intelx_system_id": exposure.get("intelx_system_id"),
+            },
         )
-
