@@ -6,77 +6,23 @@ import json
 import logging
 import pathlib
 import traceback
-
+from typing import Optional
+from uuid import uuid4
 
 # Third-Party Libraries
 import dnstwist
 import dshield
-import psycopg2.extras as extras
 import requests
-from uuid import uuid4
-
-from typing import Optional
-
-import os
-import sys
-import django
-from django.conf import settings
-
-# Set the Django settings module
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.append(PROJECT_ROOT)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
-
-
-settings.DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "crossfeed",
-        "USER": "crossfeed",
-        "PASSWORD": "password",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
-        "TEST": {
-            "NAME": "crossfeed_test",  # Name of the test database
-        },
-    },
-    "mini_data_lake": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",  # Replace with your database engine
-        "NAME": "crossfeed_mini_datalake",
-        "USER": "crossfeed",
-        "PASSWORD": "password",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
-        "TEST": {
-            "NAME": "mini_data_lake_test",  # Name of the test database
-        },
-    },
-}
-
-
-# Initialize Django
-django.setup()
-
-
-from xfd_mini_dl.models import Organization as Organization, DataSource, SubDomains
-
-# from .data.pe_db.db_query_source import (
-#     addSubdomain, => Hits PE API to add a subdomain
-#     connect,
-#     execute_dnstwist_data, => Hits PE API to add domain permutation
-#     get_data_source_uid, => Gets Data Source ID for DNSTwist
-#     get_orgs, => Returns all orgs
-#     getSubdomain, => Returns sub_domain ID given the sub_domain
-#     org_root_domains,
-# )
-
+from xfd_mini_dl.models import DataSource, DomainPermutations
+from xfd_mini_dl.models import Organization as Organization
+from xfd_mini_dl.models import SubDomains
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
 LOGGER = logging.getLogger(__name__)
 
 
 # Update this function to use the new homebrew blocklist checking system
-def checkBlocklist(dom, source_uid, pe_org_uid, perm_list):
+def checkBlocklist(dom, data_source, org, perm_list):
     """Cross reference the dnstwist results with DShield Blocklist."""
     malicious = False
     attacks = 0
@@ -91,7 +37,8 @@ def checkBlocklist(dom, source_uid, pe_org_uid, perm_list):
 
         # Check IP in Blocklist API
         response = requests.get(
-            "http://api.blocklist.de/api.php?ip=" + str(dom["dns_a"][0])
+            "http://api.blocklist.de/api.php?ip=" + str(dom["dns_a"][0]),
+            timeout=60,
         ).content
 
         if str(response) != "b'attacks: 0<br />reports: 0<br />'":
@@ -125,8 +72,10 @@ def checkBlocklist(dom, source_uid, pe_org_uid, perm_list):
         dom["dns_aaaa"] = [""]
     else:
         # Check IP in Blocklist API
+        # To-Do: Update this function to use the new homebrew blocklist checking system
         response = requests.get(
-            "http://api.blocklist.de/api.php?ip=" + str(dom["dns_aaaa"][0])
+            "http://api.blocklist.de/api.php?ip=" + str(dom["dns_aaaa"][0]),
+            timeout=60,
         ).content
         if str(response) != "b'attacks: 0<br />reports: 0<br />'":
             try:
@@ -166,8 +115,8 @@ def checkBlocklist(dom, source_uid, pe_org_uid, perm_list):
         perm_list.append(permutation)
 
     domain_dict = {
-        "organizations_uid": pe_org_uid,
-        "data_source_uid": source_uid,
+        "organization": org,
+        "data_source": data_source,
         "domain_permutation": dom["domain"],
         "ipv4": dom["dns_a"][0],
         "ipv6": dom["dns_aaaa"][0],
@@ -221,65 +170,67 @@ def execute_dnstwist(root_domain, test=0):
     return finalorglist
 
 
-def get_data_source_uid(data_source_name: str) -> Optional[str]:
+def get_data_source(data_source_name: str) -> Optional[str]:
+    """Return the data source record for the given data source name."""
     try:
         data_source_record = DataSource.objects.get(name=data_source_name)
-        return data_source_record.data_source_uid
+        return data_source_record
     except DataSource.DoesNotExist:
         return None
 
 
 def get_org_root_domains(org_id):
-    sub_domains = SubDomains.objects.filter(organization_id=org_id, is_root_domain=True, enumerate_subs=True)
+    """Return the root domains for the given organization."""
+    sub_domains = SubDomains.objects.filter(
+        organization_id=org_id, is_root_domain=True, enumerate_subs=True
+    )
     return sub_domains
 
 
-def get_sub_domain_uid(sub_domain: str) -> Optional[str]:
-    try:
-        sub_domain_record = SubDomains.objects.get(sub_domain=sub_domain)
-        return sub_domain_record.sub_domain_uid
-    except SubDomains.DoesNotExist:
-        return None
-
-
 def reverse_domain(domain: str) -> str:
+    """Reverse the domain."""
     return ".".join(domain.split(".")[::-1])
 
 
 def get_orgs() -> list:
+    """Return all organizations."""
     try:
         orgs = Organization.objects.all()
         return orgs
-    except Exception as e:
-        print(f"Error fetching organizations from data lake {str(e)}")
+    except Exception:
+        return []
 
 
-def add_sub_domain(sub_domain: str, org_uid: str, is_root_domain: bool) -> None:
+def execute_dnstwist_data(domain_dict):
+    """Insert the domain permutation into the database."""
     try:
-        sub_domain_record = SubDomains(
-            sub_domain_uid=str(uuid4()),
-            is_root_domain=is_root_domain,
-            first_seen=datetime.datetime.now(datetime.timezone.utc),
-            last_seen=datetime.datetime.now(datetime.timezone.utc),
-            created_at=datetime.datetime.now(datetime.timezone.utc),
-            updated_at=datetime.datetime.now(datetime.timezone.utc),
-            reverse_name=reverse_domain(sub_domain),
-            cloud_hosted=False,
-            censys_certificates_results=[],
-            trustymail_resuts=[],
-            sub_domain=sub_domain,
-            organization_uid=org_uid,
+        DomainPermutations.objects.update_or_create(
+            suspected_domain_uid=uuid4(),
+            organization=domain_dict["organization"],
+            domain_permutation=domain_dict["domain_permutation"],
+            ipv4=domain_dict["ipv4"],
+            ipv6=domain_dict["ipv6"],
+            mail_server=domain_dict["mail_server"],
+            name_server=domain_dict["name_server"],
+            fuzzer=domain_dict["fuzzer"],
+            date_observed=datetime.datetime.now(datetime.timezone.utc),
+            date_active=domain_dict["date_active"],
+            ssdeep_score=domain_dict["ssdeep_score"],
+            malicious=domain_dict["malicious"],
+            blocklist_attack_count=domain_dict["blocklist_attack_count"],
+            blocklist_report_count=domain_dict["blocklist_report_count"],
+            data_source=domain_dict["data_source"],
+            dshield_record_count=domain_dict["dshield_record_count"],
+            dshield_attack_count=domain_dict["dshield_attack_count"],
         )
-        sub_domain_record.save()
     except Exception as e:
-        print(f"Error adding subdomain to data lake {str(e)}")
+        LOGGER.error(f"Error adding domain permutation to data lake {str(e)}")
 
 
 def run_dnstwist(orgs_list):
     """Run DNStwist on certain domains and upload findings to database."""
-    source_uid = get_data_source_uid("DNSTwist")
+    data_source = get_data_source("DNSTwist")
 
-    """ Get P&E Orgs """
     orgs = get_orgs()
 
     orgs_final = []
@@ -311,14 +262,13 @@ def run_dnstwist(orgs_list):
         # Only run on orgs in the org list
         if pe_org_id in orgs_list or orgs_list == "all" or orgs_list == "DEMO":
             LOGGER.info("Running DNSTwist on %s", org_name)
-            print("Running DNSTwist on", org_name)
             """Collect DNSTwist data from Crossfeed"""
             try:
                 # Get root domains
                 root_dict = get_org_root_domains(org_id)
                 domain_list = []
                 perm_list = []
-                print("Root Dict", root_dict)
+
                 for root in root_dict:
                     root_domain = root.sub_domain
                     LOGGER.info("\tRunning on root domain: %s", root_domain)
@@ -331,18 +281,16 @@ def run_dnstwist(orgs_list):
                     for dom in finalorglist:
                         print("Checking Blocklist", dom)
                         domain_dict, perm_list = checkBlocklist(
-                            dom, source_uid, org_id, perm_list
+                            dom, data_source, org, perm_list
                         )
                         if domain_dict is not None:
                             domain_list.append(domain_dict)
-            except Exception as error:
+            except Exception:
                 # TODO: Create custom exceptions.
                 # Issue 265: https://github.com/cisagov/pe-reports/issues/265
                 LOGGER.info("Failed selecting DNSTwist data.")
-                print(error)
                 failures.append(org_name)
                 LOGGER.info(traceback.format_exc())
-
             """Insert cleaned data into PE database."""
             try:
                 for domain in domain_list:
