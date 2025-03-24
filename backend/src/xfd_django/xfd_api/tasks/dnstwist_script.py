@@ -76,7 +76,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # Update this function to use the new homebrew blocklist checking system
-def checkBlocklist(dom, sub_domain_uid, source_uid, pe_org_uid, perm_list):
+def checkBlocklist(dom, source_uid, pe_org_uid, perm_list):
     """Cross reference the dnstwist results with DShield Blocklist."""
     malicious = False
     attacks = 0
@@ -168,7 +168,6 @@ def checkBlocklist(dom, sub_domain_uid, source_uid, pe_org_uid, perm_list):
     domain_dict = {
         "organizations_uid": pe_org_uid,
         "data_source_uid": source_uid,
-        "sub_domain_uid": sub_domain_uid,
         "domain_permutation": dom["domain"],
         "ipv4": dom["dns_a"][0],
         "ipv6": dom["dns_aaaa"][0],
@@ -231,7 +230,7 @@ def get_data_source_uid(data_source_name: str) -> Optional[str]:
 
 
 def get_org_root_domains(org_id):
-    sub_domains = SubDomains.objects.filter(organization_id=org_id, is_root_domain=True)
+    sub_domains = SubDomains.objects.filter(organization_id=org_id, is_root_domain=True, enumerate_subs=True)
     return sub_domains
 
 
@@ -319,35 +318,20 @@ def run_dnstwist(orgs_list):
                 root_dict = get_org_root_domains(org_id)
                 domain_list = []
                 perm_list = []
+                print("Root Dict", root_dict)
                 for root in root_dict:
-                    root_domain = root.root_domain
-                    if root_domain == "Null_Root":
-                        continue
-                    LOGGER.info("\tRunning on root domain: %s", root.root_domain)
-                    print("\tRunning on root domain:", root.root_domain)
-
+                    root_domain = root.sub_domain
+                    LOGGER.info("\tRunning on root domain: %s", root_domain)
                     with open(
                         "dnstwist_output.txt", "w"
                     ) as f, contextlib.redirect_stdout(f):
                         finalorglist = execute_dnstwist(root_domain)
-
                     # Get subdomain uid
-                    sub_domain = root_domain
-                    try:
-                        print("Grabbing Sub Domain UID for", sub_domain)
-                        sub_domain_uid = get_sub_domain_uid(sub_domain)
-                    except Exception:
-                        # TODO: Create custom exceptions.
-                        # Issue 265: https://github.com/cisagov/pe-reports/issues/265
-                        # Add and then get it
-                        add_sub_domain(sub_domain, org_id, True)  # api ver.
-                        # addSubdomain(PE_conn, sub_domain, pe_org_uid, True) # tsql ver.
-                        sub_domain_uid = get_sub_domain_uid(sub_domain)
-
                     # Check Blocklist
                     for dom in finalorglist:
+                        print("Checking Blocklist", dom)
                         domain_dict, perm_list = checkBlocklist(
-                            dom, sub_domain_uid, source_uid, org_id, perm_list
+                            dom, source_uid, org_id, perm_list
                         )
                         if domain_dict is not None:
                             domain_list.append(domain_dict)

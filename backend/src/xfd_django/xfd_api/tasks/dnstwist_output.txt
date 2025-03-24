@@ -1,0 +1,219 @@
+[
+    {
+        "dns_a": [
+            "185.151.30.213"
+        ],
+        "dns_mx": [
+            "mx.example11.com.cust.a.hostedemail.com"
+        ],
+        "dns_ns": [
+            "ns1.stackdns.com"
+        ],
+        "domain": "example11.com",
+        "fuzzer": "*original"
+    },
+    {
+        "dns_a": [
+            "104.21.93.204"
+        ],
+        "dns_aaaa": [
+            "2606:4700:3035::ac43:d65f"
+        ],
+        "dns_ns": [
+            "aaden.ns.cloudflare.com"
+        ],
+        "domain": "example110.com",
+        "fuzzer": "addition"
+    },
+    {
+        "dns_a": [
+            "133.167.114.110"
+        ],
+        "dns_mx": [
+            "example112.com"
+        ],
+        "dns_ns": [
+            "ns1.dns.ne.jp"
+        ],
+        "domain": "example112.com",
+        "fuzzer": "addition"
+    },
+    {
+        "dns_a": [
+            "133.167.114.110"
+        ],
+        "dns_mx": [
+            "example113.com"
+        ],
+        "dns_ns": [
+            "ns1.dns.ne.jp"
+        ],
+        "domain": "example113.com",
+        "fuzzer": "addition"
+    },
+    {
+        "dns_a": [
+            "160.202.104.214"
+        ],
+        "dns_ns": [
+            "a.share-dns.com"
+        ],
+        "domain": "example111.com",
+        "fuzzer": "addition"
+    },
+    {
+        "dns_a": [
+            "!ServFail"
+        ],
+        "dns_aaaa": [
+            "!ServFail"
+        ],
+        "dns_ns": [
+            "!ServFail"
+        ],
+        "domain": "example13.com",
+        "fuzzer": "bitsquatting"
+    },
+    {
+        "dns_a": [
+            "104.207.154.17"
+        ],
+        "dns_mx": [
+            "example10.com"
+        ],
+        "dns_ns": [
+            "dns1.registrar-servers.com"
+        ],
+        "domain": "example10.com",
+        "fuzzer": "bitsquatting"
+    },
+    {
+        "dns_a": [
+            "15.197.172.60"
+        ],
+        "dns_ns": [
+            "dns1.name-services.com"
+        ],
+        "domain": "example19.com",
+        "fuzzer": "bitsquatting"
+    },
+    {
+        "dns_a": [
+            "151.101.130.133"
+        ],
+        "dns_aaaa": [
+            "2a04:4e42:200::645"
+        ],
+        "dns_ns": [
+            "ns-cloud-d1.googledomains.com"
+        ],
+        "domain": "example91.com",
+        "fuzzer": "bitsquatting"
+    },
+    {
+        "dns_a": [
+            "185.151.30.213"
+        ],
+        "dns_mx": [
+            "mx.example15.com.cust.a.hostedemail.com"
+        ],
+        "dns_ns": [
+            "ns1.stackdns.com"
+        ],
+        "domain": "example15.com",
+        "fuzzer": "bitsquatting"
+    },
+    {
+        "dns_mx": [
+            "mail.dmx51.com"
+        ],
+        "dns_ns": [
+            "ns1.dnsowl.com"
+        ],
+        "domain": "example01.com",
+        "fuzzer": "bitsquatting"
+    },
+    {
+        "dns_a": [
+            "192.185.44.208"
+        ],
+        "dns_mx": [
+            "mail.example1.com"
+        ],
+        "dns_ns": [
+            "ns8159.hostgator.com"
+        ],
+        "domain": "example1.com",
+        "fuzzer": "omission"
+    },
+    {
+        "dns_a": [
+            "34.205.242.146"
+        ],
+        "dns_ns": [
+            "nsg1.namebrightdns.com"
+        ],
+        "domain": "example12.com",
+        "fuzzer": "replacement"
+    },
+    {
+        "dns_a": [
+            "!ServFail"
+        ],
+        "dns_aaaa": [
+            "!ServFail"
+        ],
+        "dns_ns": [
+            "!ServFail"
+        ],
+        "domain": "example11.ru",
+        "fuzzer": "tld-swap"
+    },
+    {
+        "dns_a": [
+            "!ServFail"
+        ],
+        "dns_aaaa": [
+            "!ServFail"
+        ],
+        "dns_ns": [
+            "!ServFail"
+        ],
+        "domain": "example11.su",
+        "fuzzer": "tld-swap"
+    },
+    {
+        "dns_a": [
+            "!ServFail"
+        ],
+        "dns_aaaa": [
+            "!ServFail"
+        ],
+        "dns_ns": [
+            "!ServFail"
+        ],
+        "domain": "example11.xyz",
+        "fuzzer": "tld-swap"
+    },
+    {
+        "dns_a": [
+            "45.79.222.138"
+        ],
+        "domain": "example11.ph",
+        "fuzzer": "tld-swap"
+    },
+    {
+        "dns_a": [
+            "64.70.19.203"
+        ],
+        "domain": "example11.ws",
+        "fuzzer": "tld-swap"
+    },
+    {
+        "dns_ns": [
+            "!ServFail"
+        ],
+        "domain": "example11.loan",
+        "fuzzer": "tld-swap"
+    }
+]

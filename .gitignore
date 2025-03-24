@@ -26,6 +26,7 @@ xfd_backend_venv/
 backend/coverage
 docs/coverage
 frontend/coverage
+xfd_backend_venv/
 
 # production
 frontend/build

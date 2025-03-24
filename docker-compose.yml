@@ -33,6 +33,7 @@ services:
       context: ./backend
       dockerfile: ./Dockerfile.python
     volumes:
+      - ./backend/src/xfd_django:/app  # bind mount your app source
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - backend
