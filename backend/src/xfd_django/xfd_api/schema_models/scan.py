@@ -219,6 +219,14 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Finds emails that have appeared in breaches related to a given domain",
     ),
+    "intel_x_identity": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Identify credential exposures via IntelX.",
+    ),
     "intrigueIdent": ScanSchema(
         type="fargate",
         isPassive=True,
