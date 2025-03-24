@@ -28,7 +28,7 @@ RUN ./aws/install
 # Sync the latest from cf-staging branch
 RUN git clone -b crossfeed-SQS https://github.com/cisagov/ATC-Framework.git && \
     cd ATC-Framework && \
-    git checkout c4bde122f3a596c7ebe5ad5b79560dcfde370f49 && \
+    git checkout fc4c19163128b83f4ba62211f54b0ae8d9af7fa2 && \
     pip install .
 
 RUN python -m spacy download en_core_web_lg
