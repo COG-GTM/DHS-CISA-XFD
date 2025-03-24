@@ -21,7 +21,8 @@ def create_checksum(data: str) -> str:
     Returns:
         str: The SHA-256 hash of the input string.
     """
-    hash_object = sha256(data.encode("utf-8"))
+    hashable_data = isinstance(data, str) and data or json.dumps(data)
+    hash_object = sha256(hashable_data.encode("utf-8"))
     return hash_object.hexdigest()
 
 
