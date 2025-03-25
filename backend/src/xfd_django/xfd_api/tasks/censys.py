@@ -9,7 +9,7 @@ import time
 import requests
 from xfd_api.helpers.get_root_domains import get_root_domains
 from xfd_api.helpers.save_domains_to_db import save_domains_to_db
-from xfd_api.models import Domain, Scan
+from xfd_api.models import Domain
 
 # Constants controlling pagination and rate limiting
 RESULT_LIMIT = 1000
@@ -126,6 +126,7 @@ def handler(command_options):
             domain_name = domain_data["name"]
             ip = socket.gethostbyname(domain_name)
         except (socket.gaierror, UnicodeError) as e:
+            print(e)
             ip = None
 
         domain_data["ip"] = ip

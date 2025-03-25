@@ -9,7 +9,6 @@ from xfd_api.models import Domain
 
 def save_domains_to_db(domains):
     """Save or update a list of Domain instances in the database."""
-
     for domain in domains:
         updated_values = {}
         for field in domain._meta.fields:

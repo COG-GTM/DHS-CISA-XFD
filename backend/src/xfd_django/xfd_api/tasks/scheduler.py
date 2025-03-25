@@ -1,22 +1,23 @@
 """Scheduler method containing AWS Lambda handler."""
 
 # Standard Python Libraries
-import os
-import time
 import json
+import os
 
 # Third-Party Libraries
+import boto3
 import django
 from django.utils import timezone
-import boto3
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
+# Third-Party Libraries
+from xfd_api.helpers.getScanOrganizations import get_scan_organizations
+
 # Import Django models and helper functions
 from xfd_api.models import Organization, Scan, ScanTask
-from xfd_api.helpers.getScanOrganizations import get_scan_organizations
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_api.tasks.scanExecution import handler as scan_execution_handler
 
@@ -51,8 +52,8 @@ class Scheduler:
             Attributes={
                 "VisibilityTimeout": "18000",
                 "MaximumMessageSize": "262144",
-                "MessageRetentionPeriod": "604800"
-            }
+                "MessageRetentionPeriod": "604800",
+            },
         )
         queue_url = response["QueueUrl"]
 
@@ -61,7 +62,11 @@ class Scheduler:
         filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
 
         if not filtered_orgs:
-            print("Skipping scan execution for {} - No organizations to run on.".format(scan.name))
+            print(
+                "Skipping scan execution for {} - No organizations to run on.".format(
+                    scan.name
+                )
+            )
             return
 
         # Check queue URL
@@ -72,7 +77,11 @@ class Scheduler:
             message_body = json.dumps({"org": org.name, "id": str(org.id)})
             try:
                 resp = sqs.send_message(QueueUrl=queue_url, MessageBody=message_body)
-                print("Message sent to queue with MessageId: {}".format(resp.get("MessageId")))
+                print(
+                    "Message sent to queue with MessageId: {}".format(
+                        resp.get("MessageId")
+                    )
+                )
             except Exception as e:
                 print("Error sending message for org {}: {}".format(org.name, e))
 
@@ -96,7 +105,6 @@ class Scheduler:
 
         except Exception as e:
             print("Error invoking scanExecution: {}".format(e))
-
 
     def should_run_scan(self, scan, organization=None):
         """
@@ -129,25 +137,39 @@ class Scheduler:
         def filter_scan_tasks(tasks):
             if global_scan:
                 return tasks.filter(scan=scan)
-            return tasks.filter(scan=scan).filter(organizations=organization) | tasks.filter(organizations__id=organization.id)
+            return tasks.filter(scan=scan).filter(
+                organizations=organization
+            ) | tasks.filter(organizations__id=organization.id)
 
         last_running_scan_task = filter_scan_tasks(
-            ScanTask.objects.filter(status__in=["created", "queued", "requested", "started"]).order_by("-createdAt")
+            ScanTask.objects.filter(
+                status__in=["created", "queued", "requested", "started"]
+            ).order_by("-createdAt")
         ).first()
         if last_running_scan_task:
             return False
 
         last_finished_scan_task = filter_scan_tasks(
-            ScanTask.objects.filter(status__in=["finished", "failed"], finishedAt__isnull=False).order_by("-finishedAt")
+            ScanTask.objects.filter(
+                status__in=["finished", "failed"], finishedAt__isnull=False
+            ).order_by("-finishedAt")
         ).first()
         if last_finished_scan_task and last_finished_scan_task.finishedAt:
             frequency_seconds = scan.frequency * 86400
             if timezone.is_naive(last_finished_scan_task.finishedAt):
-                last_finished_scan_task.finishedAt = timezone.make_aware(last_finished_scan_task.finishedAt, timezone.get_current_timezone())
-            if (timezone.now() - last_finished_scan_task.finishedAt).total_seconds() < frequency_seconds:
+                last_finished_scan_task.finishedAt = timezone.make_aware(
+                    last_finished_scan_task.finishedAt, timezone.get_current_timezone()
+                )
+            if (
+                timezone.now() - last_finished_scan_task.finishedAt
+            ).total_seconds() < frequency_seconds:
                 return False
 
-        if last_finished_scan_task and last_finished_scan_task.finishedAt and scan.isSingleScan:
+        if (
+            last_finished_scan_task
+            and last_finished_scan_task.finishedAt
+            and scan.isSingleScan
+        ):
             print("Single scan")
             return False
 
@@ -164,7 +186,7 @@ class Scheduler:
 # Lambda Handler
 # -----------------------------------------------------------------------------
 def handler(event, context):
-    """Handler for invoking the scheduler to run scans."""
+    """Handle invoking the scheduler to run scans."""
     print("Running scheduler...")
 
     scan_ids = event.get("scanIds", [])
@@ -175,7 +197,9 @@ def handler(event, context):
 
     # Fetch scans based on scan_ids if provided. Else, get all scans.
     if scan_ids:
-        scans = Scan.objects.filter(id__in=scan_ids).prefetch_related("organizations", "tags")
+        scans = Scan.objects.filter(id__in=scan_ids).prefetch_related(
+            "organizations", "tags"
+        )
     else:
         scans = Scan.objects.all().prefetch_related("organizations", "tags")
 

@@ -1,12 +1,13 @@
-#!/usr/bin/env python
+"""Worker controller."""
+# Standard Python Libraries
+import importlib
+import json
 import os
 import sys
-import json
-import importlib
 import time
-import boto3
-from datetime import datetime, timezone
 
+# Third-Party Libraries
+import boto3
 import django
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 
@@ -28,18 +29,22 @@ USE_ELASTICMQ = "elasticmq" in QUEUE_URL or "localhost" in QUEUE_URL
 sqs = boto3.client(
     "sqs",
     region_name=os.getenv("AWS_REGION", "us-east-1"),
-    endpoint_url=QUEUE_URL if USE_ELASTICMQ else None
+    endpoint_url=QUEUE_URL if USE_ELASTICMQ else None,
 )
+
 
 def get_message(queue_url):
     """Retrieve a message from the queue (ElasticMQ or AWS SQS)."""
     try:
-        response = sqs.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1, WaitTimeSeconds=5)
+        response = sqs.receive_message(
+            QueueUrl=queue_url, MaxNumberOfMessages=1, WaitTimeSeconds=5
+        )
         messages = response.get("Messages", [])
         return messages[0] if messages else None
     except Exception as e:
         print("Error retrieving message: {}".format(e))
         return None
+
 
 def delete_message(queue_url, receipt_handle):
     """Delete a processed message from the queue."""
@@ -49,6 +54,7 @@ def delete_message(queue_url, receipt_handle):
     except Exception as e:
         print("Error deleting message: {}".format(e))
 
+
 def process_message(message_data):
     """Extract and process the message data."""
     try:
@@ -56,15 +62,16 @@ def process_message(message_data):
     except Exception:
         return {"org": message_data.get("Body")}
 
+
 def main():
-    """Main worker loop."""
+    """Worker loop."""
     try:
         command_options = json.loads(os.getenv("CROSSFEED_COMMAND_OPTIONS", "{}"))
     except Exception:
         command_options = {}
 
     print("Base command options: {}".format(command_options))
-    
+
     scan_name = command_options.get("scanName", "test")
     SERVICE_QUEUE_URL = command_options.get("SERVICE_QUEUE_URL")
 
@@ -76,7 +83,8 @@ def main():
 
     full_queue_path_name = (
         "http://localhost:9324/000000000000/{}-{}-queue".format("dev", scan_name)
-        if is_local else SERVICE_QUEUE_URL
+        if is_local
+        else SERVICE_QUEUE_URL
     )
 
     print("Polling queue: {}".format(full_queue_path_name))
@@ -85,10 +93,12 @@ def main():
         task_module = importlib.import_module("xfd_api.tasks.{}".format(scan_name))
         scan_fn = getattr(task_module, "handler", None)
         if not callable(scan_fn):
-            raise ValueError("No handler function found for scan name: {}".format(scan_name))
+            raise ValueError(
+                "No handler function found for scan name: {}".format(scan_name)
+            )
     except ModuleNotFoundError:
         raise ValueError("No task handler found for scan name: {}".format(scan_name))
-    
+
     scan_schema = SCAN_SCHEMA.get(scan_name)
     if not scan_schema:
         raise ValueError("No schema found for scan name: {}".format(scan_name))
@@ -105,7 +115,6 @@ def main():
 
         if not org:
             print("Invalid message format. Skipping.")
-            success = False
             continue
 
         print("Processing organization: {}".format(org))
@@ -113,11 +122,13 @@ def main():
         try:
             task_options = dict(command_options)
             if not getattr(scan_schema, "global_scan", False):
-                task_options.update({
-                    "organizationName": org,
-                    "organizationId": org_id,
-                    "organizations": []
-                })
+                task_options.update(
+                    {
+                        "organizationName": org,
+                        "organizationId": org_id,
+                        "organizations": [],
+                    }
+                )
 
             scan_fn(task_options)
 
@@ -130,7 +141,6 @@ def main():
 
         except Exception as e:
             print("Error processing {}: {}".format(org, e))
-            success = False
 
         time.sleep(1)
 

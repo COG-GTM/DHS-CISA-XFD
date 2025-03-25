@@ -36,7 +36,6 @@ class ECSClient:
 
     def run_command(self, command_options):
         """Launch an ECS task or Docker container with the given command options."""
-        scan_id = command_options["scanId"]
         scan_name = command_options["scanName"]
         scan_schema = SCAN_SCHEMA.get(scan_name, {})
         cpu = getattr(scan_schema, "cpu", None)
@@ -85,13 +84,23 @@ class ECSClient:
                             "WORKER_USER_AGENT": os.getenv("WORKER_USER_AGENT", ""),
                             "SHODAN_API_KEY": os.getenv("SHODAN_API_KEY", ""),
                             "SIXGILL_CLIENT_ID": os.getenv("SIXGILL_CLIENT_ID", ""),
-                            "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET", ""),
+                            "SIXGILL_CLIENT_SECRET": os.getenv(
+                                "SIXGILL_CLIENT_SECRET", ""
+                            ),
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS", ""),
-                            "WORKER_SIGNATURE_PUBLIC_KEY": os.getenv("WORKER_SIGNATURE_PUBLIC_KEY", ""),
-                            "WORKER_SIGNATURE_PRIVATE_KEY": os.getenv("WORKER_SIGNATURE_PRIVATE_KEY", ""),
-                            "ELASTICSEARCH_ENDPOINT": os.getenv("ELASTICSEARCH_ENDPOINT", ""),
+                            "WORKER_SIGNATURE_PUBLIC_KEY": os.getenv(
+                                "WORKER_SIGNATURE_PUBLIC_KEY", ""
+                            ),
+                            "WORKER_SIGNATURE_PRIVATE_KEY": os.getenv(
+                                "WORKER_SIGNATURE_PRIVATE_KEY", ""
+                            ),
+                            "ELASTICSEARCH_ENDPOINT": os.getenv(
+                                "ELASTICSEARCH_ENDPOINT", ""
+                            ),
                             "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID", ""),
-                            "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+                            "AWS_SECRET_ACCESS_KEY": os.getenv(
+                                "AWS_SECRET_ACCESS_KEY", ""
+                            ),
                             "LG_API_KEY": os.getenv("LG_API_KEY", ""),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME", ""),
                             "QUEUE_URL": os.getenv("QUEUE_URL", ""),
@@ -126,10 +135,21 @@ class ECSClient:
                     {
                         "name": "main",
                         "environment": [
-                            {"name": "CROSSFEED_COMMAND_OPTIONS", "value": json.dumps(command_options)},
+                            {
+                                "name": "CROSSFEED_COMMAND_OPTIONS",
+                                "value": json.dumps(command_options),
+                            },
                             {"name": "SERVICE_TYPE", "value": scan_name},
-                            {"name": "SERVICE_QUEUE_URL", "value": command_options.get("SERVICE_QUEUE_URL")},
-                            {"name": "NODE_OPTIONS", "value": "--max_old_space_size={}".format(memory) if memory else ""},
+                            {
+                                "name": "SERVICE_QUEUE_URL",
+                                "value": command_options.get("SERVICE_QUEUE_URL"),
+                            },
+                            {
+                                "name": "NODE_OPTIONS",
+                                "value": "--max_old_space_size={}".format(memory)
+                                if memory
+                                else "",
+                            },
                         ],
                     }
                 ],

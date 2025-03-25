@@ -1,30 +1,19 @@
 """API methods to support Queu Monitoring endpoints."""
 
 # Standard Python Libraries
+import os
 from typing import Optional
-from datetime import datetime
-import json
 
 # Third-Party Libraries
-from fastapi import Request, HTTPException
-from fastapi.responses import Response
-import httpx
 import boto3
-import os
-
+from fastapi import HTTPException
 from xfd_api.schema_models.queue_monitoring import QueueSearch
-from ..auth import (
-    get_org_memberships,
-    is_global_view_admin,
-    is_global_write_admin,
-    is_org_admin,
-    is_regional_admin,
-    is_regional_admin_for_organization,
-    matches_user_region,
-)
+
+from ..auth import is_global_view_admin
 
 is_local = os.getenv("IS_LOCAL")
-base_queue_url = os.getenv("QUEUE_URL").rstrip("/")
+base_queue_url = os.getenv("QUEUE_URL")
+
 
 # POST: /queues/search
 def list_queues(search_data: Optional[QueueSearch], current_user):
@@ -35,7 +24,9 @@ def list_queues(search_data: Optional[QueueSearch], current_user):
 
         # Set defaults if search_data is None
         if search_data is None:
-            search_data = QueueSearch(pageSize=15, page=1, sort="name", order="ASC", filters={})
+            search_data = QueueSearch(
+                pageSize=15, page=1, sort="name", order="ASC", filters={}
+            )
 
         page_size = search_data.pageSize or 15
         page = search_data.page or 1
@@ -69,9 +60,15 @@ def list_queues(search_data: Optional[QueueSearch], current_user):
 
                 queue_info = {
                     "name": queue_name,
-                    "messagesAvailable": int(attributes.get("ApproximateNumberOfMessages", 0)),
-                    "messagesInFlight": int(attributes.get("ApproximateNumberOfMessagesNotVisible", 0)),
-                    "messagesDelayed": int(attributes.get("ApproximateNumberOfMessagesDelayed", 0)),
+                    "messagesAvailable": int(
+                        attributes.get("ApproximateNumberOfMessages", 0)
+                    ),
+                    "messagesInFlight": int(
+                        attributes.get("ApproximateNumberOfMessagesNotVisible", 0)
+                    ),
+                    "messagesDelayed": int(
+                        attributes.get("ApproximateNumberOfMessagesDelayed", 0)
+                    ),
                 }
                 queue_data.append(queue_info)
             except Exception as attr_err:
@@ -80,10 +77,15 @@ def list_queues(search_data: Optional[QueueSearch], current_user):
         # Apply filters
         filters = search_data.filters or {}
         if "name" in filters:
-            queue_data = [q for q in queue_data if filters["name"].lower() in q["name"].lower()]
+            queue_data = [
+                q for q in queue_data if filters["name"].lower() in q["name"].lower()
+            ]
 
         # Sort data
-        queue_data.sort(key=lambda x: x.get(search_data.sort, ""), reverse=(search_data.order == "DESC"))
+        queue_data.sort(
+            key=lambda x: x.get(search_data.sort, ""),
+            reverse=(search_data.order == "DESC"),
+        )
 
         # Paginate results
         paginated_data = queue_data[(page - 1) * page_size : page * page_size]
@@ -92,4 +94,6 @@ def list_queues(search_data: Optional[QueueSearch], current_user):
 
     except Exception as e:
         print(f"Error fetching queue metadata: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve queue metadata.")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve queue metadata."
+        )

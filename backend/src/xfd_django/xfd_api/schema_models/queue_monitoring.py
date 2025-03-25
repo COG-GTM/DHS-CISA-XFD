@@ -2,9 +2,7 @@
 # Third-Party Libraries
 # from pydantic.types import UUID1, UUID
 # Standard Python Libraries
-from datetime import datetime
-from typing import Any, List, Optional
-from uuid import UUID
+from typing import List, Optional
 
 # Third-Party Libraries
 from pydantic import BaseModel
@@ -22,6 +20,7 @@ class QueueSearch(BaseModel):
 
 class QueueMetadata(BaseModel):
     """Queue metadata."""
+
     name: str
     messagesAvailable: int
     messagesInFlight: int
@@ -30,5 +29,6 @@ class QueueMetadata(BaseModel):
 
 class QueueListResponse(BaseModel):
     """Queue list response."""
+
     result: List[QueueMetadata]
     count: int

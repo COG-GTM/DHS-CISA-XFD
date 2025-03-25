@@ -10,9 +10,9 @@ https://docs.djangoproject.com/en/4.1/howto/deployment/asgi/
 # Standard Python Libraries
 import asyncio
 from asyncio import Semaphore
+import functools
 import os
 import threading
-import functools
 
 # Third-Party Libraries
 import django

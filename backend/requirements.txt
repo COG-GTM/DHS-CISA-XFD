@@ -47,6 +47,7 @@ netaddr==1.3.0
 orjson==3.10.12
 packaging==24.2
 pika==1.3.2
+pika
 pipdeptree==2.24.0
 platformdirs==4.3.6
 pluggy==1.5.0
@@ -93,4 +94,3 @@ uvloop==0.21.0
 watchfiles==1.0.0
 websockets==14.1
 yarl==1.18.3
-pika

@@ -17,6 +17,7 @@ from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
     delete_saved_search,
@@ -53,7 +54,6 @@ from .api_methods.vulnerability import (
     search_vulnerabilities,
     update_vulnerability,
 )
-from .api_methods.queue_monitoring import list_queues
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
 from .models import User
@@ -67,14 +67,11 @@ from .schema_models.cve import Cve as CveSchema
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
+from .schema_models.queue_monitoring import QueueListResponse, QueueSearch
 from .schema_models.saved_search import (
     SavedSearchCreate,
     SavedSearchList,
     SavedSearchUpdate,
-)
-from .schema_models.queue_monitoring import (
-    QueueSearch,
-    QueueListResponse
 )
 from .schema_models.saved_search import SavedSearch as SavedSearchSchema
 from .schema_models.search import DomainSearchBody, SearchResponse
@@ -663,6 +660,7 @@ async def search_organizations(
 #   Queue Monitoring Endpoints
 # ========================================
 
+
 @api_router.post(
     "/queues/search",
     dependencies=[Depends(get_current_active_user)],
@@ -675,6 +673,7 @@ async def search_queues(
 ):
     """List SQS queues with metadata (message count, in-flight, delayed)."""
     return list_queues(search_data, current_user)
+
 
 # ========================================
 #   Region Endpoints
