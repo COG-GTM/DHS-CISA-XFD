@@ -48,6 +48,7 @@ def checkBlocklist(dom, data_source, org, perm_list):
     else:
         # Check IP in Blocklist API
         # To-Do: Update this function to use the new homebrew blocklist checking system
+        dom["use_check_ipv6"] = True
         check_domain_in_blocklist(
             dom,
             malicious,
@@ -55,7 +56,6 @@ def checkBlocklist(dom, data_source, org, perm_list):
             reports,
             dshield_attacks,
             dshield_count,
-            is_ipv6=True,
         )
 
     # Clean-up other fields
@@ -145,10 +145,10 @@ def get_data_source(data_source_name: str) -> Optional[str]:
 
 
 def check_domain_in_blocklist(
-    dom, malicious, attacks, reports, dshield_attacks, dshield_count, is_ipv6=False
+    dom, malicious, attacks, reports, dshield_attacks, dshield_count
 ):
     """Cross reference the dnstwist results with DShield Blocklist."""
-    dns_key = is_ipv6 and "dns_aaaa" or "dns_a"
+    dns_key = "dns_aaaa" if dom["use_check_ipv6"] else "dns_a"
     response = requests.get(
         "http://api.blocklist.de/api.php?ip=" + str(dom[dns_key][0]),
         timeout=60,
@@ -235,7 +235,6 @@ def process_org(org, orgs_list, data_source, failures):
     pe_org_id = org.name
     if pe_org_id in orgs_list or orgs_list == "all" or orgs_list == "DEMO":
         LOGGER.info("Running DNSTwist on %s", org_name)
-        """Collect DNSTwist data from Crossfeed"""
         try:
             # Get root domains
             root_dict = get_org_root_domains(org_id)
@@ -264,7 +263,6 @@ def process_org(org, orgs_list, data_source, failures):
             LOGGER.info("Failed selecting DNSTwist data.")
             failures.append(org_name)
             LOGGER.info(traceback.format_exc())
-        """Insert cleaned data into PE database."""
         try:
             for domain in domain_list:
                 execute_dnstwist_data(domain)
