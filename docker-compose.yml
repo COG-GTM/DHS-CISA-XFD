@@ -146,18 +146,12 @@ services:
     ports:
       - "8080:80"
 
-  # rabbitmq:
-  #   image: 'rabbitmq:3.8-management'
-  #   ports:
-  #     - '5672:5672'  # RabbitMQ default port
-  #     - '15672:15672'  # RabbitMQ management plugin
-  #   networks:
-  #     - backend
-  #   environment:
-  #     RABBITMQ_DEFAULT_USER: guest
-  #     RABBITMQ_DEFAULT_PASS: guest
-  #   volumes:
-  #     - rabbitmq-data:/var/lib/rabbitmq
+  elasticmq:
+    image: softwaremill/elasticmq-native
+    ports:
+      - "9324:9324"
+    networks:
+      - backend
 
   playwright:
     image: mcr.microsoft.com/playwright:v1.41.2-jammy

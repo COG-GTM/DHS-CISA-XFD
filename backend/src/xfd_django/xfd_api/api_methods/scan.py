@@ -106,8 +106,18 @@ def create_scan(scan_data: NewScan, current_user):
         if scan_data.name not in SCAN_SCHEMA:
             raise HTTPException(status_code=400, detail="Invalid scan name")
 
-        # Check if number of concurrent tasks is allowed
-        if scan_data.concurrentTasks > SCAN_SCHEMA[scan_data.name].maxConcurrentTasks:
+        max_tasks = SCAN_SCHEMA[scan_data.name].maxConcurrentTasks
+        if scan_data.concurrentTasks is None:
+            raise HTTPException(
+                status_code=400, detail="Concurrent tasks must be provided."
+            )
+        if max_tasks is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Server configuration error: max concurrent tasks not set.",
+            )
+
+        if scan_data.concurrentTasks > max_tasks:
             raise HTTPException(
                 status_code=400,
                 detail="Number of concurrent tasks exceeds the max for this scan.",

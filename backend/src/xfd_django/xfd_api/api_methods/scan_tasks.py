@@ -88,6 +88,7 @@ def list_scan_tasks(search_data: Optional[ScanTaskSearch], current_user):
                     "isUserModifiable": task.scan.isUserModifiable,
                     "isSingleScan": task.scan.isSingleScan,
                     "manualRunPending": task.scan.manualRunPending,
+                    "concurrentTasks": task.scan.concurrentTasks,
                 }
             results.append(
                 {

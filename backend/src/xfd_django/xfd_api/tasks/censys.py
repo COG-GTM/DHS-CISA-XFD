@@ -36,7 +36,7 @@ def fetch_page(root_domain, next_token=None):
     if next_token:
         payload["cursor"] = next_token
 
-    response = requests.post(url, json=payload, headers=headers, auth=auth)
+    response = requests.post(url, json=payload, headers=headers, auth=auth, timeout=10)
     response.raise_for_status()  # raises an exception for HTTP errors
     return response.json()
 

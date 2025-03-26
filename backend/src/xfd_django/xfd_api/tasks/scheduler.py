@@ -72,18 +72,36 @@ class Scheduler:
         # Check queue URL
         print("Queue URL: {}".format(queue_url))
 
-        # Send organizations to the queue
-        for org in filtered_orgs:
-            message_body = json.dumps({"org": org.name, "id": str(org.id)})
+        # Send organizations to the queue in batches of 10
+        batch_size = 10
+        org_batches = [
+            filtered_orgs[i : i + batch_size]
+            for i in range(0, len(filtered_orgs), batch_size)
+        ]
+
+        for batch in org_batches:
+            entries = [
+                {
+                    "Id": str(i),  # Unique identifier for the batch request
+                    "MessageBody": json.dumps({"org": org.name, "id": str(org.id)}),
+                }
+                for i, org in enumerate(batch)
+            ]
+
             try:
-                resp = sqs.send_message(QueueUrl=queue_url, MessageBody=message_body)
-                print(
-                    "Message sent to queue with MessageId: {}".format(
-                        resp.get("MessageId")
-                    )
-                )
+                resp = sqs.send_message_batch(QueueUrl=queue_url, Entries=entries)
+                print("Batch sent successfully")
+
+                # Handle any failed messages
+                if "Failed" in resp:
+                    for failure in resp["Failed"]:
+                        print(
+                            "Failed to send message {}: {}".format(
+                                failure["Id"], failure["Message"]
+                            )
+                        )
             except Exception as e:
-                print("Error sending message for org {}: {}".format(org.name, e))
+                print("Error sending message batch: {}".format(e))
 
         # Now pass organizations to scanExecution
         event_payload = {

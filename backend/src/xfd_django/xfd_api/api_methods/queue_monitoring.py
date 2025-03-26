@@ -2,7 +2,6 @@
 
 # Standard Python Libraries
 import os
-from typing import Optional
 
 # Third-Party Libraries
 import boto3
@@ -16,7 +15,7 @@ base_queue_url = os.getenv("QUEUE_URL")
 
 
 # POST: /queues/search
-def list_queues(search_data: Optional[QueueSearch], current_user):
+def list_queues(search_data: QueueSearch, current_user):
     """Fetch queue metadata including message counts."""
     try:
         if not is_global_view_admin(current_user):

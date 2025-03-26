@@ -16,7 +16,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
-from xfd_api.models import ScanTask
+from xfd_api.models import Scan, ScanTask
 from xfd_api.tasks.ecs_client import ECSClient
 
 # Initialize AWS clients
@@ -72,13 +72,37 @@ def start_desired_tasks(
     scan_type, desired_count, scan_id, organizations, is_pe=False, shodan_api_keys=[]
 ):
     """Start the desired number of tasks on AWS ECS or local Docker based on configuration."""
-    print("Starting desired tasks")
-    shodan_api_keys = shodan_api_keys or []
-    queue_url = "{}{}-queue".format(QUEUE_URL, scan_type)
+    # Step 1: Get all Scan instances with this name
+    scans_with_name = Scan.objects.filter(name=scan_type)
 
+    # Step 2: Determine the max concurrentTasks among them
+    max_concurrent = max((scan.concurrentTasks for scan in scans_with_name), default=1)
+
+    # Step 3: Get all currently running concurrencyIndexes
+    existing_indexes = list(
+        ScanTask.objects.filter(
+            scan__name=scan_type,
+            status__in=["created", "queued", "requested", "started"],
+        ).values_list("concurrencyIndex", flat=True)
+    )
+
+    # Calculate available indexes to use for new tasks
+    available_indexes = sorted(
+        set(range(1, max_concurrent + 1)) - set(existing_indexes)
+    )
+    remaining_count = len(available_indexes)
+
+    if remaining_count == 0:
+        print(
+            "Max concurrency already reached for scan '{}': {}".format(
+                scan_type, max_concurrent
+            )
+        )
+        return
+
+    queue_url = "{}{}-queue".format(QUEUE_URL, scan_type)
     batch_size = 1 if scan_type == "shodan" else 10
-    remaining_count = desired_count
-    concurrency_index = 1
+    shodan_api_keys = shodan_api_keys or []
 
     while remaining_count > 0:
         current_batch_count = min(remaining_count, batch_size)
@@ -148,17 +172,22 @@ def start_desired_tasks(
                     "Failed to start ECS task for scan {}".format(scan_type)
                 )
 
-            for task in result["tasks"]:
+            # After launching ECS tasks, assign concurrency indexes correctly
+            for i, task in enumerate(result["tasks"]):
                 task_arn = task["taskArn"]
+                index_to_use = available_indexes[i]  # Use one of the available indexes
                 create_scan_task(
                     scan_id,
                     scan_type,
                     organizations,
                     fargate_task_arn=task_arn,
-                    concurrency_index=concurrency_index,
+                    concurrency_index=index_to_use,
                 )
-                print("Started ECS task: {}".format(task_arn))
-                concurrency_index += 1
+                print(
+                    "Started ECS task {} with concurrency index {}".format(
+                        task_arn, index_to_use
+                    )
+                )
 
         remaining_count -= current_batch_count
 
