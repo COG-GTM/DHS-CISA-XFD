@@ -29,7 +29,6 @@ custom:
       - mypy
       - mypy-extensions
       - python-dotenv
-      - pika
       - isort
       - black
       - pika
