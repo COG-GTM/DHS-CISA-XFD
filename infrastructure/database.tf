@@ -297,7 +297,7 @@ resource "aws_ssm_parameter" "crossfeed_send_db_host" {
 resource "aws_ssm_parameter" "crossfeed_send_db_name" {
   name      = var.ssm_db_name
   type      = "SecureString"
-  value     = aws_db_instance.db.identifier
+  value     = aws_db_instance.db.db_name
   overwrite = true
 
   tags = {

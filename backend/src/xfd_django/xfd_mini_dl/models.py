@@ -424,10 +424,12 @@ class Organization(models.Model):
     ip_blocks = models.TextField(
         db_column="ip_blocks",
         help_text="IP blocks attributed to or provided by a stakeholder.",
+        null=True
     )  # This field type is a guess.
     is_passive = models.BooleanField(
         db_column="is_passive",
         help_text="Boolean to flag if only passive data collection can be used on the stakeholder's assets.",
+        null=True
     )
     pending_domains = ArrayField(
         models.TextField(blank=True, null=True),
