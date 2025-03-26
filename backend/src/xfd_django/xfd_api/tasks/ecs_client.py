@@ -105,6 +105,7 @@ class ECSClient:
                             "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME"),
+                            "QUEUE_URL": os.getenv("QUEUE_URL", ""),
                         },
                         detach=True,
                     )

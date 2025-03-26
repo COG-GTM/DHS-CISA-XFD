@@ -849,12 +849,6 @@ variable "crossfeed-lz-sync_name" {
   default     = "crossfeed-lz-sync"
 }
 
-variable "ssm_sqs_url" {
-  type        = string
-  description = "ssm_sqs_url"
-  default     = "/crossfeed/staging/SQS_URL"
-
-}
 variable "image_tag" {
   description = "The tag for the image in ECR"
   type        = string

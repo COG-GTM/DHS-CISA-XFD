@@ -110,8 +110,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_redshift_user.arn}",
           "${data.aws_ssm_parameter.ssm_redshift_password.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
-          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}",
-          "${data.aws_ssm_parameter.ssm_sqs_url.arn}"
+          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
         ]
     },
     {
@@ -379,18 +378,6 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "DMZ_SYNC_ENDPOINT",
         "valueFrom": "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
-      },
-      {
-        "name": "SQS_URL",
-        "valueFrom": "${data.aws_ssm_parameter.ssm_sqs_url.arn}"
-      },
-      {
-        "name": "STAGE_NAME",
-        "value": "${var.stage}"
-      },
-      {
-        "name": "AWS_REGION",
-        "value": "${var.aws_region}"
       }
     ]
   }
@@ -487,8 +474,6 @@ data "aws_ssm_parameter" "ssm_redshift_password" { name = var.ssm_redshift_passw
 data "aws_ssm_parameter" "ssm_dmz_api_key" { name = var.ssm_dmz_api_key }
 
 data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpoint }
-
-data "aws_ssm_parameter" "ssm_sqs_url" { name = var.ssm_sqs_url }
 
 resource "aws_s3_bucket" "export_bucket" {
   bucket = var.export_bucket_name
