@@ -34,7 +34,6 @@ custom:
       - black
       - pika
       - pipdeptree
-      - Jinja2
       - MarkupSafe
       - uvloop
 

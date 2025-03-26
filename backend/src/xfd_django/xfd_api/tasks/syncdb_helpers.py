@@ -112,15 +112,23 @@ def create_sample_user(organization):
 
 def create_test_user(organization):
     """Create a test user linked to an organization."""
-    user = User.objects.create(
-        firstName="Test",
-        lastName="User",
-        email=os.environ.get("PW_XFD_USERNAME"),
-        userType=UserType.GLOBAL_ADMIN,
-        state=random.choice(SAMPLE_STATES),
-        regionId=random.choice(SAMPLE_REGION_IDS),
-        organization=organization,
-    )
+    email = os.environ.get("PW_XFD_USERNAME")
+
+    existing_user = User.objects.filter(email=email).first()
+
+    if existing_user:
+        return existing_user
+
+    if not email:
+        user = User.objects.create(
+            firstName="Test",
+            lastName="User",
+            email=os.environ.get("PW_XFD_USERNAME"),
+            userType=UserType.GLOBAL_ADMIN,
+            state=random.choice(SAMPLE_STATES),
+            regionId=random.choice(SAMPLE_REGION_IDS),
+            organization=organization,
+        )
 
     return user
 
@@ -498,10 +506,13 @@ def drop_all_tables(app_label=None):
 
 
 def chunked_iterable(iterable, size):
-    """Chunk an iterable."""
+    """Yield successive chunks of size `size` from `iterable`."""
     iterator = iter(iterable)
-    for first in iterator:
-        yield list(islice([first] + list(iterator), size - 1))
+    while True:
+        chunk = list(islice(iterator, size))
+        if not chunk:
+            break
+        yield chunk
 
 
 def update_organization_chunk(es_client, organizations):
