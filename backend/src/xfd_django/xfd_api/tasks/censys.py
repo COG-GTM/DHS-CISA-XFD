@@ -7,9 +7,9 @@ import time
 
 # Third-Party Libraries
 import requests
-from xfd_api.helpers.get_root_domains import get_root_domains
-from xfd_api.helpers.save_domains_to_db import save_domains_to_db
 from xfd_api.models import Domain
+from xfd_api.tasks.helpers.get_root_domains import get_root_domains
+from xfd_api.tasks.helpers.save_domains_to_db import save_domains_to_db
 
 # Constants controlling pagination and rate limiting
 RESULT_LIMIT = 1000
