@@ -3,6 +3,7 @@ aws_other_region                  = "us-gov-west-1"
 aws_partition                     = "aws-us-gov"
 is_dmz                            = false
 project                           = "Crossfeed"
+stage                             = "staging"
 frontend_domain                   = "staging.crossfeed.cyber.dhs.gov"
 frontend_lambda_function          = "crossfeed-security-headers-staging"
 frontend_bucket                   = "staging.crossfeed.cyber.dhs.gov"
