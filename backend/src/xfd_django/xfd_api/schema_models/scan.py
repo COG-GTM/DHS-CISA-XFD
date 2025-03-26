@@ -135,6 +135,14 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Open source tool that integrates passive APIs and active subdomain enumeration in order to discover target subdomains",
     ),
+    "asm_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Enumerate and sync org assets.",
+    ),
     "censys": ScanSchema(
         type="fargate",
         isPassive=True,
@@ -317,6 +325,14 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
+    "sync_asm_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull synced assets from DMZ.",
+    ),
     "updateBlocklist": ScanSchema(
         type="fargate",
         isPassive=True,
@@ -341,13 +357,5 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Xpanse alert data from commercial mdl",
-    ),
-    "asm_sync": ScanSchema(
-        type="fargate",
-        isPassive=True,
-        global_scan=True,
-        cpu="1024",
-        memory="8192",
-        description="Enumerate and sync org assets.",
     ),
 }
