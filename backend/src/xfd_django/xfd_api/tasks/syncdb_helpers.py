@@ -90,9 +90,9 @@ def populate_sample_data():
         # Create an API key for the user
         create_api_key_for_user(user)
 
-        # test_user = create_test_user(org)
+        test_user = create_test_user(org)
 
-        # create_api_key_for_user(test_user)
+        create_api_key_for_user(test_user)
 
 
 def create_sample_user(organization):
