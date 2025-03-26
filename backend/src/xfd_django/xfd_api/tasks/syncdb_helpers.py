@@ -1,6 +1,7 @@
 """Syncdb helpers."""
 # File: xfd_api/utils/db_utils.py
 # Standard Python Libraries
+from collections import defaultdict, deque
 from datetime import datetime
 import hashlib
 from itertools import islice
@@ -8,7 +9,6 @@ import json
 import os
 import random
 import secrets
-from collections import defaultdict, deque
 
 # Third-Party Libraries
 from django.apps import apps
@@ -248,11 +248,13 @@ def create_sample_services_and_vulnerabilities(domain):
             structuredData={},
         )
 
+
 def table_exists_in_db(table_name, database):
     """Check table exists."""
     with connections[database].cursor() as cursor:
         cursor.execute("SELECT to_regclass(%s);", [table_name])
         return cursor.fetchone()[0] is not None
+
 
 def synchronize(target_app_label=None):
     """
@@ -309,10 +311,10 @@ def synchronize(target_app_label=None):
 def get_ordered_models(target_app_label):
     """
     Get models in dependency order to ensure foreign key constraints are respected.
+
     Only consider dependencies among models within the same app, and break cycles
     deterministically (alphabetically by model name).
     """
-
     # Get all models for the app and create a set for quick membership checks.
     models = list(apps.get_app_config(target_app_label).get_models())
     model_set = set(models)
@@ -344,9 +346,11 @@ def get_ordered_models(target_app_label):
     # Any models not yet added are in a dependency cycle.
     remaining = [model for model in models if model not in ordered]
     if remaining:
-        print("Circular dependencies detected among: {}".format(
-            ", ".join(m.__name__ for m in remaining)
-        ))
+        print(
+            "Circular dependencies detected among: {}".format(
+                ", ".join(m.__name__ for m in remaining)
+            )
+        )
         # Sort them deterministically (alphabetically) so that, for example, 'User' comes before 'Organization'
         remaining_sorted = sorted(remaining, key=lambda m: m.__name__)
         ordered.extend(remaining_sorted)
@@ -354,7 +358,9 @@ def get_ordered_models(target_app_label):
     return ordered
 
 
-def process_model(schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables):
+def process_model(
+    schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
+):
     """Process a single model: create or update its table."""
     table_name = model._meta.db_table
 
@@ -396,7 +402,9 @@ def process_m2m_tables(schema_editor: BaseDatabaseSchemaEditor, models, database
                     )
 
 
-def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables):
+def update_table(
+    schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
+):
     """Update an existing table for the given model. Ensure columns match fields."""
     table_name = model._meta.db_table
     db_fields = {field.column for field in model._meta.fields}
@@ -416,21 +424,26 @@ def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database, allow
                 if hasattr(field, "remote_field") and field.remote_field:
                     related_table = field.remote_field.model._meta.db_table
                     # If the related table isn't in allowed_tables or doesn't exist yet, skip adding this field.
-                    if (related_table not in allowed_tables or
-                        not table_exists_in_db(related_table, database)):
+                    if related_table not in allowed_tables or not table_exists_in_db(
+                        related_table, database
+                    ):
                         print(
                             "Skipping addition of foreign key field '{}' on model '{}' because referenced table '{}' does not exist yet.".format(
                                 field.column, model.__name__, related_table
                             )
                         )
                         continue
-                print("Adding column '{}' to table '{}'".format(field.column, table_name))
+                print(
+                    "Adding column '{}' to table '{}'".format(field.column, table_name)
+                )
                 schema_editor.add_field(model, field)
 
         # Remove extra columns
         extra_columns = existing_columns - db_fields
         for column in extra_columns:
-            print("Removing extra column '{}' from table '{}'".format(column, table_name))
+            print(
+                "Removing extra column '{}' from table '{}'".format(column, table_name)
+            )
             try:
                 safe_table_name = connections[database].ops.quote_name(table_name)
                 safe_column_name = connections[database].ops.quote_name(column)
@@ -439,7 +452,11 @@ def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database, allow
                 )
                 cursor.execute(query)
             except Exception as e:
-                print("Error dropping column '{}' from table '{}': {}".format(column, table_name, e))
+                print(
+                    "Error dropping column '{}' from table '{}': {}".format(
+                        column, table_name, e
+                    )
+                )
 
 
 def cleanup_stale_tables(models, database):

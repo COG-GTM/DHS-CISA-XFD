@@ -89,14 +89,18 @@ class ECSClient:
                             "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET"),
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
                             "WHOIS_XML_KEY": os.getenv("WHOIS_XML_KEY"),
-                            "WHOIS_XML_THREAD_COUNT": os.getenv("WHOIS_XML_THREAD_COUNT"),
+                            "WHOIS_XML_THREAD_COUNT": os.getenv(
+                                "WHOIS_XML_THREAD_COUNT"
+                            ),
                             "WORKER_SIGNATURE_PUBLIC_KEY": os.getenv(
                                 "WORKER_SIGNATURE_PUBLIC_KEY"
                             ),
                             "WORKER_SIGNATURE_PRIVATE_KEY": os.getenv(
                                 "WORKER_SIGNATURE_PRIVATE_KEY"
                             ),
-                            "ELASTICSEARCH_ENDPOINT": os.getenv("ELASTICSEARCH_ENDPOINT"),
+                            "ELASTICSEARCH_ENDPOINT": os.getenv(
+                                "ELASTICSEARCH_ENDPOINT"
+                            ),
                             "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
                             "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
