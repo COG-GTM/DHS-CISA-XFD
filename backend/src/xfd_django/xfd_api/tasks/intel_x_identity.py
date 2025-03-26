@@ -37,7 +37,7 @@ django.setup()
 # Constants
 MAX_RETRIES = 3  # Max retries for failed tasks
 TIMEOUT = 60  # Timeout in seconds for waiting on task completion
-
+BASE_URL = "https://3.intelx.io"
 api_key = os.getenv("INTELX_KEY")
 
 # Get data source uid
@@ -183,11 +183,7 @@ class IntelX:
                 )
                 LOGGER.error(e)
                 continue
-            # breach_dict = get_intelx_breaches(SOURCE_UID)
-            # breach_dict = dict(breach_dict)
-            # for cred_index, cred_row in creds_df.iterrows():
-            #     breach_uid = breach_dict[cred_row["breach_name"]]
-            #     creds_df.at[cred_index, "credential_breaches_uid"] = breach_uid
+           
             # Insert credential data into the PE database
             LOGGER.info("Inserting IntelX credential data for %s", root.sub_domain)
             try:
@@ -204,7 +200,7 @@ class IntelX:
 
     def query_identity_api(self, domain, start_date, end_date):
         """Create an initial search and return the search id."""
-        url = "https://3.intelx.io/accounts/csv?selector={domain}&k={api_key}&datefrom={start_date}&dateto={end_date}".format(
+        url = BASE_URL +"/accounts/csv?selector={domain}&k={api_key}&datefrom={start_date}&dateto={end_date}".format(
             domain=domain, api_key=api_key, start_date=start_date, end_date=end_date
         )
         payload = {}
@@ -233,7 +229,7 @@ class IntelX:
 
     def get_search_results(self, search_id):
         """Search IntelX for email leaks."""
-        url = "https://3.intelx.io/live/search/result?id={id}&format=1&k={api_key}".format(
+        url = BASE_URL + "/live/search/result?id={id}&format=1&k={api_key}".format(
             id=search_id, api_key=api_key
         )
         payload = {}
