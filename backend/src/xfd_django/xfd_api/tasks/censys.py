@@ -1,15 +1,15 @@
-"""Cesys scan."""
+"""Censys scan."""
 # Standard Python Libraries
+import datetime
 import os
 import re
-import socket
 import time
 
 # Third-Party Libraries
+from django.utils import timezone
 import requests
-from xfd_api.models import Domain
 from xfd_api.tasks.helpers.get_root_domains import get_root_domains
-from xfd_api.tasks.helpers.save_domains_to_db import save_domains_to_db
+from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Constants controlling pagination and rate limiting
 RESULT_LIMIT = 1000
@@ -56,7 +56,6 @@ def fetch_censys_data(root_domain):
         )
     )
     result_count = 0
-    # Assume the API returns a "links" object with a "next" key for pagination
     next_token = data.get("result", {}).get("links", {}).get("next")
     while next_token and result_count < RESULT_LIMIT:
         next_page = fetch_page(root_domain, next_token)
@@ -71,24 +70,38 @@ def handler(command_options):
     """
     Run the Censys scan.
 
-      - Retrieves root domains for the given organization.
+      - Retrieves root domains for the given organization (from SubDomains where is_root_domain is True).
       - For each root domain, fetches certificate data from Censys.
       - Normalizes found subdomain names (removing leading "*." and "www.").
-      - Deduplicates subdomains and performs a DNS lookup to fetch the IP address.
-      - Converts the raw data into Domain model instances and saves them.
+      - Deduplicates subdomains.
+      - Creates or updates SubDomains records.
     """
-    organization_id = command_options.get("organizationId")
     organization_name = command_options.get("organizationName")
-    scan_id = command_options.get("scanId")
+    if not organization_name:
+        return {"statusCode": 400, "body": "Organization name not provided."}
 
-    print("Running Censys on: {}".format(organization_name))
+    orgs_to_sync = Organization.objects.filter(name=organization_name)
+    if not orgs_to_sync.exists():
+        return {"statusCode": 500, "body": "Organization not found."}
+    organization = orgs_to_sync.first()
+    organization_id = organization.id
 
-    # Retrieve root domains
+    print("Running Censys on organization: {}".format(organization_name))
+
+    # Fetch or create the Censys data source record.
+    censys_datasource, _ = DataSource.objects.get_or_create(
+        name="Censys",
+        defaults={
+            "description": "The Leading Internet Intelligence Platform for Threat Hunting and Attack Surface Management.",
+            "last_run": timezone.now().date(),
+        },
+    )
+
+    # Retrieve root domains from SubDomains where is_root_domain is True.
     root_domains = get_root_domains(organization_id)
 
-    # Use a set to de-duplicate domain names.
     unique_names = set()
-    found_domains = []  # List of dicts to later convert to Domain instances.
+    subdomains_created = 0
 
     for root_domain in root_domains:
         data = fetch_censys_data(root_domain)
@@ -98,7 +111,7 @@ def handler(command_options):
             if not names:
                 continue
             for name in names:
-                # Normalize the domain name: remove any "*." and a leading "www."
+                # Normalize: remove any leading "*." and "www."
                 normalized_name = re.sub(r"\*\.", "", name)
                 normalized_name = re.sub(r"^www\.", "", normalized_name)
                 if (
@@ -106,37 +119,25 @@ def handler(command_options):
                     and normalized_name not in unique_names
                 ):
                     unique_names.add(normalized_name)
-                    found_domains.append(
-                        {
-                            "name": normalized_name,
-                            "organization_id": organization_id,
-                            "fromRootDomain": root_domain,
-                            "subdomainSource": "censys",
-                            "discoveredBy_id": scan_id,
-                        }
+                    obj, created = SubDomains.objects.get_or_create(
+                        organization=organization,
+                        sub_domain=normalized_name.lower(),
+                        defaults={
+                            "last_seen": datetime.datetime.now(datetime.timezone.utc),
+                            "current": True,
+                            "from_root_domain": root_domain,
+                            "enumerate_subs": False,
+                            "subdomain_source": "censys",
+                            "data_source": censys_datasource,
+                            "identified": False,
+                        },
                     )
-        # Pause to respect rate limits
-        time.sleep(1)
+                    if created:
+                        subdomains_created += 1
+        time.sleep(1)  # Respect rate limits
 
-    print("Saving {} subdomains to database...".format(organization_name))
-
-    domains_to_save = []
-    for domain_data in found_domains:
-        try:
-            domain_name = domain_data["name"]
-            ip = socket.gethostbyname(domain_name)
-        except (socket.gaierror, UnicodeError) as e:
-            print(e)
-            ip = None
-
-        domain_data["ip"] = ip
-        domain_instance = Domain(**domain_data)
-        domains_to_save.append(domain_instance)
-
-    # Save or update the domains using a helper function that handles DB logic
-    save_domains_to_db(domains_to_save)
     print(
-        "Censys saved or updated {} subdomains for {}".format(
-            len(domains_to_save), organization_name
+        "Censys saved or updated {} subdomains for organization {}".format(
+            subdomains_created, organization_name
         )
     )
