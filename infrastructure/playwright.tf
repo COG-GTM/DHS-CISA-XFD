@@ -1,6 +1,5 @@
 resource "aws_iam_role" "playwright_worker_task_execution_role" {
-  name = "playwright-worker-task-execution-role"
-
+  name = "${var.crossfeed_playwright}-task-execution-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -16,7 +15,7 @@ resource "aws_iam_role" "playwright_worker_task_execution_role" {
 }
 
 resource "aws_iam_role" "playwright_worker_task_role" {
-  name = "playwright-worker-task-role"
+  name = "${var.crossfeed_playwright}-worker-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -33,7 +32,7 @@ resource "aws_iam_role" "playwright_worker_task_role" {
 }
 
 resource "aws_iam_role_policy" "playwright_ecs_task_policy" {
-  name = "playwright-ecs-task-policy"
+  name = "${var.crossfeed_playwright}-ecs-task-policy"
   role = aws_iam_role.playwright_worker_task_role.id
 
   policy = jsonencode({
@@ -43,8 +42,8 @@ resource "aws_iam_role_policy" "playwright_ecs_task_policy" {
         Action = ["s3:ListBucket", "s3:GetObject", "s3:PutObject"]
         Effect = "Allow"
         Resource = [
-          "arn:aws:s3:::${var.automated_test_report_bucket_name}",  # ListBucket on the bucket itself
-          "arn:aws:s3:::${var.automated_test_report_bucket_name}/*" # GetObject and PutObject on all objects within the bucket
+          "arn:aws:s3:::${var.automated_test_reports_bucket_name}",  # ListBucket on the bucket itself
+          "arn:aws:s3:::${var.automated_test_reports_bucket_name}/*" # GetObject and PutObject on all objects within the bucket
         ]
       }
     ]
@@ -56,34 +55,13 @@ resource "aws_iam_role_policy_attachment" "playwright_ecs_execution_policy" {
   role       = aws_iam_role.playwright_worker_task_execution_role.id
 }
 
-resource "aws_ecr_repository" "playwright" {
-  name = "playwright-ui-testing"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  image_tag_mutability = "MUTABLE"
-
-  encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = aws_kms_key.key.arn
-  }
-
-  tags = {
-    Project = var.project
-    Stage   = var.stage
-    Owner   = "Crossfeed managed resource"
-  }
-}
-
 resource "aws_ecs_task_definition" "playwright_worker" {
   family                   = var.worker_ecs_task_definition_family
   container_definitions    = <<EOF
 [
   {
     "name": "playwright",
-    "image": "${aws_ecr_repository.playwright.repository_url}:${var.image_tag}",
+    "image": public.ecr.aws/sphmedia/sphmedia/microsoft-playwright:v1.50.1-jammy
     "essential": true,
     "mountPoints": [],
     "portMappings": [],
@@ -123,4 +101,93 @@ EOF
     Stage   = var.stage
     Owner   = "Crossfeed managed resource"
   }
+}
+
+resource "aws_ecs_cluster" "playwright_ecs_cluster" {
+  name = "${var.crossfeed_playwright}-ecs-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
+  tags = {
+    Project = var.project
+    Stage   = var.stage
+    Owner   = "Crossfeed managed resource"
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "playwright_ecs_cluster_capacity_providers" {
+  cluster_name       = aws_ecs_cluster.playwright_ecs_cluster.name
+  capacity_providers = ["FARGATE"]
+}
+
+resource "aws_s3_bucket" "automated_test_reports_bucket" {
+  bucket = var.automated_test_reports_bucket_name
+  tags = {
+    Project = var.project
+    Stage   = var.stage
+    Owner   = "Crossfeed managed resource"
+  }
+}
+
+resource "aws_s3_bucket_policy" "automated_test_reports_bucket" {
+  bucket = var.automated_test_reports_bucket_name
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "RequireSSLRequests",
+        "Action" : "s3:*",
+        "Effect" : "Deny",
+        "Principal" : "*",
+        "Resource" : [
+          aws_s3_bucket.automated_test_reports_bucket.arn,
+          "${aws_s3_bucket.automated_test_reports_bucket.arn}/*"
+        ],
+        "Condition" : {
+          "Bool" : {
+            "aws:SecureTransport" : "false"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_acl" "automated_test_reports_bucket" {
+  count  = var.is_dmz ? 1 : 0
+  bucket = aws_s3_bucket.automated_test_reports_bucket.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_ownership_controls" "automated_test_reports_bucket" {
+  count  = var.is_dmz ? 1 : 0
+  bucket = aws_s3_bucket.automated_test_reports_bucket.id
+  rule {
+    object_ownership = "ObjectWriter"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "automated_test_reports_bucket" {
+  bucket = aws_s3_bucket.automated_test_reports_bucket.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "automated_test_reports_bucket" {
+  bucket = aws_s3_bucket.automated_test_reports_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_logging" "automated_test_reports_bucket" {
+  bucket        = aws_s3_bucket.automated_test_reports_bucket.id
+  target_bucket = aws_s3_bucket.logging_bucket.id
+  target_prefix = "automated_test_reports_bucket/"
 }

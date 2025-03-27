@@ -160,7 +160,7 @@ services:
   #     - rabbitmq-data:/var/lib/rabbitmq
 
   playwright:
-    image: mcr.microsoft.com/playwright:v1.41.2-jammy
+    image: mcr.microsoft.com/playwright:v1.50.1-jammy
     working_dir: /workspace
     volumes:
       - ./playwright:/workspace

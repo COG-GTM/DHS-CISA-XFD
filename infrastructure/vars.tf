@@ -855,8 +855,12 @@ variable "image_tag" {
   default     = "latest"
 }
 
-variable "automated_test_report_bucket_name" {
-  description = "S3 bucket where test reports will be stored"
+variable "crossfeed_playwright" {
+  description = "The name of the Crossfeed Playwright environment"
   type        = string
-  default     = "cisa-crossfeed-staging-auto-test-reports"
+}
+
+variable "automated_test_reports_bucket_name" {
+  description = "The name of the automated test report S3 bucket"
+  type        = string
 }
