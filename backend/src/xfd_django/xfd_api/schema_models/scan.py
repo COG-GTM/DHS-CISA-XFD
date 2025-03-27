@@ -355,6 +355,6 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Enumerate and sync org assets.",
-        maxConcurrentTasks=1,
+        maxConcurrentTasks=3,
     ),
 }

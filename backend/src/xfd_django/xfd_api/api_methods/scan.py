@@ -264,7 +264,7 @@ def update_scan(scan_id: str, scan_data: NewScan, current_user):
             "createdBy": {"id": current_user.id, "name": current_user.fullName},
             "tags": list(scan.tags.values("id")),
             "organizations": list(scan.organizations.values("id")),
-            "concurrentTasks": scan.concurrentTasks
+            "concurrentTasks": scan.concurrentTasks,
         }
 
     except HTTPException as http_exc:

@@ -41,7 +41,7 @@ def redis_client():
     yield client  # Redis client available for tests
 
     client.flushdb()  # Clean Redis after tests
-    await client.close()
+    client.close()
 
 
 @pytest.fixture(scope="session", autouse=True)
