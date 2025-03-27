@@ -61,7 +61,7 @@ resource "aws_ecs_task_definition" "playwright_worker" {
 [
   {
     "name": "playwright",
-    "image": public.ecr.aws/sphmedia/sphmedia/microsoft-playwright:v1.50.1-jammy
+    "image": "public.ecr.aws/sphmedia/sphmedia/microsoft-playwright:v1.50.1-jammy"
     "essential": true,
     "mountPoints": [],
     "portMappings": [],
