@@ -64,20 +64,11 @@ def main(event):
     try:
         flag_cidr_changes()
 
-        # Query orgs to run on
-        # org_ids = event.get("organizationIds", [])
-        # if org_ids:
-        #     orgs_to_sync = Organization.objects.filter(id__in=org_ids)
-        # else:
-        #     orgs_to_sync = Organization.objects.all()
-
-        # orgs_to_sync = Organization.objects.all()
-        organization_id = event.get("organizationId")
         organization_name = event.get("organizationName")
 
         orgs_to_sync = Organization.objects.filter(name__in=[organization_name])
         for org in orgs_to_sync:
-            LOGGER.info("Running ASM Sync on organization {}".format(org.name))
+            LOGGER.info("Running ASM Sync on organization %s", org.name)
         # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         enumerate_subs(orgs_to_sync)
 

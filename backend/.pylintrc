@@ -32,6 +32,7 @@ disable=C0103,  # Conforms to snake_case
         R1705,  # Unnecessary else
         R1729,  # Use a generator
         R1732,  # Consider using 'with'
+        W0102,  # Default value [] as argument
         W0106,  # Expression not assigned
         W0108,  # Lambda may not be necessary
         W0212,  # Access to a protected member
@@ -40,6 +41,7 @@ disable=C0103,  # Conforms to snake_case
         W0612,  # Unused variable
         W0613,  # Unused argument
         W0621,  # Redefining name from outer scope
+        W0622,  # Redefining built-in print
         W0707,  # Consider explicitly re-raising exception
         W0718,  # Catching too general exception
         W0719,  # Too broad exception
