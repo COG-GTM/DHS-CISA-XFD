@@ -203,6 +203,7 @@ def get_scan(scan_id: str, current_user):
         "manualRunPending": scan.manualRunPending,
         "organizations": related_organizations,
         "tags": list(scan.tags.values()),
+        "concurrentTasks": scan.concurrentTasks,
     }
 
     # Return the scan details along with its related data
@@ -263,6 +264,7 @@ def update_scan(scan_id: str, scan_data: NewScan, current_user):
             "createdBy": {"id": current_user.id, "name": current_user.fullName},
             "tags": list(scan.tags.values("id")),
             "organizations": list(scan.organizations.values("id")),
+            "concurrentTasks": scan.concurrentTasks
         }
 
     except HTTPException as http_exc:
