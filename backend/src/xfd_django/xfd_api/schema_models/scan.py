@@ -351,9 +351,10 @@ SCAN_SCHEMA = {
     "asm_sync": ScanSchema(
         type="fargate",
         isPassive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Enumerate and sync org assets.",
+        maxConcurrentTasks=1,
     ),
 }

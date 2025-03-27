@@ -113,3 +113,5 @@ ssm_redshift_password                = "/crossfeed/staging/REDSHIFT_PASSWORD"
 create_elasticache_cluster           = true
 create_email_sender_instance         = true
 email_sender_instance_type           = "t3.small"
+ssm_whoisxml_thread_count            = "/crossfeed/staging/WHOIS_XML_THREAD_COUNT"
+ssm_whoisxml_api_key                 = "/crossfeed/staging/WHOIS_XML_API_KEY"

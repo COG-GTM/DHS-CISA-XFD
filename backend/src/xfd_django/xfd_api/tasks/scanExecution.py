@@ -27,6 +27,7 @@ SCAN_LIST = [
     "cybersixgill",
     "shodan",
     "xpanse",
+    "asm_sync",
     "asmSync",
     "qualys",
     "censys",

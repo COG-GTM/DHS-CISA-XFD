@@ -72,7 +72,12 @@ def main(event):
         #     orgs_to_sync = Organization.objects.all()
 
         # orgs_to_sync = Organization.objects.all()
-        orgs_to_sync = Organization.objects.filter(acronym__in=["USAGM", "DHS"])
+        organization_id = event.get("organizationId")
+        organization_name = event.get("organizationName")
+
+        orgs_to_sync = Organization.objects.filter(name__in=[organization_name])
+        for org in orgs_to_sync:
+            LOGGER.info("Running ASM Sync on organization {}".format(org.name))
         # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         enumerate_subs(orgs_to_sync)
 

@@ -218,7 +218,8 @@ const ScansView: React.FC = () => {
           ? 'None'
           : `${formatDistanceToNow(parseISO(scan.lastRun))} ago`,
       description: scanSchema[scan.name]?.description,
-      concurrentTasks: scan.concurrentTasks
+      concurrentTasks: scan.concurrentTasks,
+      isSingleScan: scan.isSingleScan
     };
   });
 
@@ -254,7 +255,12 @@ const ScansView: React.FC = () => {
       headerName: 'Frequency',
       minWidth: 100,
       flex: 1,
-      valueFormatter: (params) => formatFrequency(Number(params.value))
+      renderCell: (params: GridRenderCellParams) => {
+        if (params.row.isSingleScan) {
+          return 'Single Scan';
+        }
+        return formatFrequency(Number(params.value));
+      }
     },
     { field: 'lastRun', headerName: 'Last Run', minWidth: 100, flex: 1 },
     {

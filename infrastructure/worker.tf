@@ -92,6 +92,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.xpanse_api_key.arn}",
           "${data.aws_ssm_parameter.xpanse_auth_id.arn}",
           "${data.aws_ssm_parameter.whoisxml_api_key.arn}",
+          "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}",
           "${data.aws_ssm_parameter.qualys_username.arn}",
           "${data.aws_ssm_parameter.qualys_password.arn}",
           "${data.aws_ssm_parameter.sixgill_client_secret.arn}",
@@ -378,6 +379,22 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "DMZ_SYNC_ENDPOINT",
         "valueFrom": "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
+      },
+      {
+        "name": "WHOIS_XML_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.whoisxml_api_key.arn}"
+      },
+      {
+        "name": "WHOIS_XML_THREAD_COUNT",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}"
+      },
+      {
+        "name": "QUALYS_USERNAME",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_username.arn}"
+      },
+      {
+        "name": "QUALYS_PASSWORD",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
       }
     ]
   }
@@ -426,6 +443,8 @@ data "aws_ssm_parameter" "intelx_api_key" { name = var.ssm_intelx_api_key }
 data "aws_ssm_parameter" "xpanse_api_key" { name = var.ssm_xpanse_api_key }
 
 data "aws_ssm_parameter" "whoisxml_api_key" { name = var.ssm_whoisxml_api_key }
+
+data "aws_ssm_parameter" "ssm_whoisxml_thread_count" { name = var.ssm_whoisxml_thread_count }
 
 data "aws_ssm_parameter" "qualys_username" { name = var.ssm_qualys_username }
 
