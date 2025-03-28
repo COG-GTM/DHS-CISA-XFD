@@ -1,21 +1,17 @@
+"""DMZ Sync Tests."""  # Standard Python Libraries
 # Standard Python Libraries
 from datetime import datetime
-import json
+import secrets
 import uuid
 
 # Third-Party Libraries
 from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
-from xfd_mini_dl.models import DataSource, Ip, IpsSubs, SubDomains, Organization
+from xfd_api.auth import create_jwt_token
 from xfd_api.models import User, UserType
 from xfd_django.asgi import app
-import uuid
-from datetime import datetime
-import secrets
-
-from xfd_api.auth import create_jwt_token
-
+from xfd_mini_dl.models import DataSource, Ip, IpsSubs, Organization, SubDomains
 
 client = TestClient(app)
 
@@ -32,7 +28,7 @@ def admin_user():
         updatedAt=datetime.now(),
     )
     yield admin_user
-    admin_user.delete() 
+    admin_user.delete()
 
 
 @pytest.fixture
@@ -46,12 +42,13 @@ def data_source():
     yield data_source
     data_source.delete()
 
+
 @pytest.fixture
 def organization():
     """Create org fixture."""
     organization = Organization.objects.create(
-        name='Test_organization',   
-        acronym='DHS',
+        name="Test_organization",
+        acronym="DHS",
         root_domains=[],
         ip_blocks=[],
         is_passive=False,
@@ -60,18 +57,10 @@ def organization():
     assert organization.name == "Test_organization"
     yield organization
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_list_data_sources_success(admin_user, data_source):
     """Test listing data sources with the correct permissions."""
-
-
-    # # Assuming DataSource model exists and can be created
-    # data_source = DataSource.objects.create(
-    #     name="Test Source",
-    #     description="Test Description",
-    #     last_run=datetime.now(),
-    # )
-
     response = client.get(
         "/dmz_sync/data_sources",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin_user))},
@@ -84,7 +73,7 @@ def test_list_data_sources_success(admin_user, data_source):
     assert data[0]["description"] == data_source.description
 
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_list_data_sources_unauthorized():
     """Test listing data sources without authorization."""
     response = client.get("/dmz_sync/data_sources")
@@ -93,11 +82,9 @@ def test_list_data_sources_unauthorized():
     assert response.json()["detail"] == "No valid authentication credentials provided"
 
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_dmz_asm_sync_success(admin_user, organization):
     """Test DMZ ASM Sync with valid parameters."""
-
-
     # Create a mock request payload (replace this with the actual data structure)
     asm_sync_payload = {
         "acronym": "DHS",
@@ -108,9 +95,10 @@ def test_dmz_asm_sync_success(admin_user, organization):
 
     response = client.post(
         "/dmz_sync/asm_sync",
-        headers={"Authorization": "Bearer {}".format(create_jwt_token(admin_user)),
-                 'Content-Type': 'application/json'
-                 },
+        headers={
+            "Authorization": "Bearer {}".format(create_jwt_token(admin_user)),
+            "Content-Type": "application/json",
+        },
         json=asm_sync_payload,
     )
 
@@ -121,7 +109,7 @@ def test_dmz_asm_sync_success(admin_user, organization):
     assert "loose_subs" in data
 
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_dmz_asm_sync_unauthorized():
     """Test DMZ ASM Sync without authorization."""
     asm_sync_payload = {
@@ -137,11 +125,9 @@ def test_dmz_asm_sync_unauthorized():
     assert response.json()["detail"] == "No valid authentication credentials provided"
 
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_dmz_asm_sync_no_organization(admin_user):
     """Test DMZ ASM Sync with a non-existing organization."""
-    
-
     asm_sync_payload = {
         "acronym": "NON_EXISTENT",
         "page_size": 25,
@@ -159,11 +145,9 @@ def test_dmz_asm_sync_no_organization(admin_user):
     assert response.json()["detail"] == "Parent organization not found"
 
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_dmz_asm_sync_invalid_date_format(admin_user):
     """Test DMZ ASM Sync with an invalid date format."""
-
-
     asm_sync_payload = {
         "acronym": "DHS",
         "page_size": 25,
@@ -176,15 +160,17 @@ def test_dmz_asm_sync_invalid_date_format(admin_user):
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin_user))},
         json=asm_sync_payload,
     )
-    
-    assert response.status_code == 422
-    assert "Input should be a valid datetime or date" in response.json()["detail"][0]['msg']
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+    assert response.status_code == 422
+    assert (
+        "Input should be a valid datetime or date"
+        in response.json()["detail"][0]["msg"]
+    )
+
+
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_asm_sync_success(admin_user, organization, data_source):
     """Test successful ASM sync filtered by `last_seen` date, returning IPs and subdomains."""
-    
-
     # Create some mock IPs with `last_seen_timestamp`
     ip1 = Ip.objects.create(
         id=str(uuid.uuid4()),
@@ -213,26 +199,30 @@ def test_asm_sync_success(admin_user, organization, data_source):
         organization=organization,
         last_seen=datetime(2023, 6, 1, 12, 0, 0),
         data_source=data_source,
-        current=True
+        current=True,
     )
     sub2 = SubDomains.objects.create(
         sub_domain="sub2.example.com",
         organization=organization,
         last_seen=datetime(2023, 7, 1, 12, 0, 0),
         data_source=data_source,
-        current=True
+        current=True,
     )
-    sub3 = SubDomains.objects.create(
+    SubDomains.objects.create(
         sub_domain="sub3.example.com",
         organization=organization,
         last_seen=datetime(2023, 7, 1, 12, 0, 0),
         data_source=data_source,
-        current=True
+        current=True,
     )
 
     # Create the IpsSubs linking IPs and Subdomains
-    IpsSubs.objects.create(ip=ip1, sub_domain=sub1, last_seen=datetime(2023, 6, 1, 12, 0, 0),current=True)
-    IpsSubs.objects.create(ip=ip2, sub_domain=sub2, last_seen=datetime(2023, 7, 1, 12, 0, 0), current=True)
+    IpsSubs.objects.create(
+        ip=ip1, sub_domain=sub1, last_seen=datetime(2023, 6, 1, 12, 0, 0), current=True
+    )
+    IpsSubs.objects.create(
+        ip=ip2, sub_domain=sub2, last_seen=datetime(2023, 7, 1, 12, 0, 0), current=True
+    )
 
     # Prepare request payload with `last_seen` filter (plain date string)
     asm_sync_request_payload = {
@@ -249,12 +239,12 @@ def test_asm_sync_success(admin_user, organization, data_source):
         json=asm_sync_request_payload,
     )
 
-    print('Error in JSON')
+    print("Error in JSON")
     print(response.json())
     # Check response
     assert response.status_code == 200
     data = response.json()
-    
+
     # Validate the response structure
     assert data["total_pages"] > 0
     assert data["current_page"] == 1
@@ -264,21 +254,25 @@ def test_asm_sync_success(admin_user, organization, data_source):
     # Validate IPs in response based on `last_seen` filter
     ip_data = data["ip_data"]
     assert len(ip_data) > 0
-    assert ip_data[0]["ip"] == "10.0.0.1"  # This IP matches the filter (`last_seen` on or after June 1, 2023)
-    assert ip_data[1]["ip"] ==  "192.0.2.1" # This IP should also match (last_seen is after June 1, 2023)
+    assert (
+        ip_data[0]["ip"] == "10.0.0.1"
+    )  # This IP matches the filter (`last_seen` on or after June 1, 2023)
+    assert (
+        ip_data[1]["ip"] == "192.0.2.1"
+    )  # This IP should also match (last_seen is after June 1, 2023)
 
-    assert ip_data[0]['ip_sub_list'][0]['sub_domain'] == 'sub2.example.com'
+    assert ip_data[0]["ip_sub_list"][0]["sub_domain"] == "sub2.example.com"
     # Validate Subdomains in response based on `last_seen` filter
     loose_subs = data["loose_subs"]
     assert len(loose_subs) > 0
-    assert loose_subs[0]["sub_domain"] == "sub3.example.com"  # This subdomain matches the filter
-    
+    assert (
+        loose_subs[0]["sub_domain"] == "sub3.example.com"
+    )  # This subdomain matches the filter
 
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_asm_sync_no_results(admin_user, organization):
     """Test ASM sync when no IPs or subdomains match the `last_seen` filter."""
-    
     # Prepare request payload with a non-matching `last_seen` date filter (plain date string)
     asm_sync_request_payload = {
         "page": 1,
@@ -293,7 +287,7 @@ def test_asm_sync_no_results(admin_user, organization):
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin_user))},
         json=asm_sync_request_payload,
     )
-    
+
     print(response.json())
     # Check response
     assert response.status_code == 200
@@ -304,10 +298,10 @@ def test_asm_sync_no_results(admin_user, organization):
     assert len(data["ip_data"]) == 0
     assert len(data["loose_subs"]) == 0
 
-@pytest.mark.django_db(databases=['default', 'mini_data_lake'], transaction=True)
+
+@pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_asm_sync_invalid_date_format(admin_user):
     """Test ASM sync with an invalid `last_seen` date format in the request."""
-
     # Prepare request payload with an invalid date format
     asm_sync_request_payload = {
         "page": 1,
@@ -325,4 +319,7 @@ def test_asm_sync_invalid_date_format(admin_user):
     print(response.json())
     # Check response
     assert response.status_code == 422  # Assuming it returns a 422 for invalid input
-    assert "Input should be a valid datetime or date" in response.json()["detail"][0]['msg']
+    assert (
+        "Input should be a valid datetime or date"
+        in response.json()["detail"][0]["msg"]
+    )

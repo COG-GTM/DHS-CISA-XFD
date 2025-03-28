@@ -67,9 +67,6 @@ class ECSClient:
                     network_mode="xfd_backend",
                     mem_limit="4g",
                     environment={
-
-                        
-
                         "CROSSFEED_COMMAND_OPTIONS": json.dumps(command_options),
                         "CF_API_KEY": os.getenv("CF_API_KEY"),
                         "CHECKSUM_SALT": os.getenv("CHECKSUM_SALT"),

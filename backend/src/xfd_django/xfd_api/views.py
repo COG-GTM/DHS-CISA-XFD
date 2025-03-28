@@ -1,25 +1,22 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
 from datetime import datetime, timezone
+import hashlib
+import json
 import os
 from typing import List, Optional
 from uuid import UUID
-import json
-import hashlib
-
 
 # Third-Party Libraries
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
-from fastapi.responses import RedirectResponse
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
-from pydantic import TypeAdapter, BaseModel
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
+from .api_methods import dmz_sync as dmz_sync_methods
 from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
-from .api_methods import dmz_sync as dmz_sync_methods
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_cves_by_id, get_cves_by_name
@@ -1395,6 +1392,7 @@ async def get_blocklist(
 #   DMZ Sync Endpoints
 # ========================================
 
+
 @api_router.get(
     "/dmz_sync/data_sources",
     dependencies=[Depends(get_current_active_user)],
@@ -1405,6 +1403,7 @@ async def list_data_sources(current_user: User = Depends(get_current_active_user
     """Retrieve a list of all data sources."""
     return dmz_sync_methods.list_data_sources(current_user)
 
+
 def serialize_custom(obj):
     """Recursively convert objects to JSON-serializable formats."""
     if isinstance(obj, datetime):
@@ -1412,8 +1411,11 @@ def serialize_custom(obj):
     elif isinstance(obj, list):
         return [serialize_custom(item) for item in obj]  # Recursively process lists
     elif isinstance(obj, dict):
-        return {key: serialize_custom(value) for key, value in obj.items()}  # Recursively process dicts
+        return {
+            key: serialize_custom(value) for key, value in obj.items()
+        }  # Recursively process dicts
     return obj
+
 
 # POST
 @api_router.post(
@@ -1434,8 +1436,14 @@ async def asm_sync(
     response_serializable = serialize_custom(response_data)
 
     response_json = json.dumps(response_serializable, default=str, sort_keys=True)
-    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
-    
-    return JSONResponse(content=response_serializable, headers={"X-Salted-Checksum": checksum})
+    if SALT is None:
+        salt = "Test_salt"
+    else:
+        salt = SALT
+    checksum = hashlib.sha256((salt + response_json).encode()).hexdigest()
+
+    return JSONResponse(
+        content=response_serializable, headers={"X-Salted-Checksum": checksum}
+    )
 
     # return dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)

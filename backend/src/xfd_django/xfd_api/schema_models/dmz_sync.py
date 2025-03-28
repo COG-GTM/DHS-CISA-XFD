@@ -1,22 +1,23 @@
 """ASM sync schemas."""
 # Standard Python Libraries
-from typing import Any, List, Optional, Dict
 from datetime import datetime
-import json
+from typing import Dict, List, Optional
 
 # Third-Party Libraries
-from pydantic import BaseModel, Json, Field, field_validator 
+from pydantic import BaseModel, Json
+
 
 class DataSource(BaseModel):
     """DataSourceGet schema."""
+
     name: str
     description: str
     last_run: Optional[datetime]
+
     class Config:
         """Config."""
 
         from_attributes = True
-
 
 
 class AsmSyncRequest(BaseModel):
@@ -24,22 +25,23 @@ class AsmSyncRequest(BaseModel):
 
     page: int = 1
     page_size: Optional[int] = 25
-    acronym: str = 'DHS'
+    acronym: str = "DHS"
     since_date: Optional[datetime] = None
-    
 
     class Config:
         """Config."""
 
         from_attributes = True
 
+
 class IpsSub(BaseModel):
     """IpsSub schema."""
+
     ips_subs_uid: str
     # ip_id: f68d5f74-0380-11f0-8054-0242ac120009
     # sub_domain_id: f6a500d4-0380-11f0-8054-0242ac120009
-    link_first_seen: Optional[datetime] = None 
-    link_last_seen:  Optional[datetime] = None 
+    link_first_seen: Optional[datetime] = None
+    link_last_seen: Optional[datetime] = None
     link_current: Optional[bool] = None
     sub_domain_uid: str
     sub_domain: str
@@ -69,7 +71,6 @@ class IpsSub(BaseModel):
     censys_certificates_results: Optional[Dict] = {}
     trustymail_results: Optional[Dict] = {}
 
-
     class Config:
         """Config."""
 
@@ -79,11 +80,12 @@ class IpsSub(BaseModel):
 
 class IpInsert(BaseModel):
     """Ip schema."""
+
     id: str
-    ip_hash: str 
+    ip_hash: str
     organization_id: str
-    created_timestamp: Optional[datetime] = None 
-    updated_timestamp: Optional[datetime] = None 
+    created_timestamp: Optional[datetime] = None
+    updated_timestamp: Optional[datetime] = None
     last_seen_timestamp: Optional[datetime] = None
     ip: str
     ip_version: Optional[str] = None
@@ -107,6 +109,7 @@ class IpInsert(BaseModel):
 
 class LooseSub(BaseModel):
     """LooseSub schema."""
+
     sub_domain_uid: str
     sub_domain: str
     root_domain_id: Optional[str] = None
@@ -134,7 +137,7 @@ class LooseSub(BaseModel):
     ssl: Optional[Dict] = {}
     censys_certificates_results: Optional[Dict] = {}
     trustymail_results: Optional[Dict] = {}
-    
+
     class Config:
         """Config."""
 
@@ -144,7 +147,8 @@ class LooseSub(BaseModel):
 
 class AsmSyncResponse(BaseModel):
     """Cpe schema."""
-    total_pages:int
+
+    total_pages: int
     current_page: int
     ip_data: Optional[List[IpInsert]] = None
     loose_subs: Optional[List[LooseSub]] = None
