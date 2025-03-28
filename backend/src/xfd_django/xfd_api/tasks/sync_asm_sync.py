@@ -242,19 +242,19 @@ def process_response(response, org):
 
         for sub_dict in ip_sub.get("ip_sub_list", []):
             sub_obj = save_sub(sub_dict, org)
-
-            IpsSubs.objects.update_or_create(
-                ip=ip_obj,
-                sub_domain=sub_obj,
-                defaults={
-                    "first_seen": sub_dict.get("link_first_seen"),
-                    "last_seen": sub_dict.get("link_last_seen"),
-                    "current": sub_dict.get("link_current"),
-                },
-            )
+            if sub_obj:
+                IpsSubs.objects.update_or_create(
+                    ip=ip_obj,
+                    sub_domain=sub_obj,
+                    defaults={
+                        "first_seen": sub_dict.get("link_first_seen"),
+                        "last_seen": sub_dict.get("link_last_seen"),
+                        "current": sub_dict.get("link_current"),
+                    },
+                )
 
     for loose_sub in data.get("loose_subs", []):
-        sub_obj = save_sub(loose_sub, org)
+        save_sub(loose_sub, org)
 
     return data.get("total_pages")
 
@@ -341,6 +341,7 @@ def save_sub(sub_dict, org):
     except Exception as e:
         LOGGER.warning(sub_dict)
         LOGGER.warning("Failed to save sub domain to mdl: %s", e)
+        return None
 
 
 def flag_asset_changes(org):
