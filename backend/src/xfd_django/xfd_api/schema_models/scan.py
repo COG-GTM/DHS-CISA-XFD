@@ -317,6 +317,15 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
+    "updateBlocklist": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        numChunks=0,
+        cpu="1024",
+        memory="8192",
+        description="Updates blocked ip records against blocklist.de global IP blocklist",
+    ),
     "was_sync": ScanSchema(
         type="fargate",
         isPassive=True,
@@ -332,5 +341,13 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Xpanse alert data from commercial mdl",
+    ),
+    "asm_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Enumerate and sync org assets.",
     ),
 }

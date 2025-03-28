@@ -2,6 +2,7 @@
 
 # Standard Python Libraries
 import json
+import re
 from typing import Any, Dict, List
 import uuid
 
@@ -335,7 +336,9 @@ def get_all_regions(current_user):
     """Get all regions."""
     try:
         # Check if user is GlobalViewAdmin or has memberships
-        if not is_global_view_admin(current_user) and not is_analytics_admin(current_user):
+        if not is_global_view_admin(current_user) and not get_org_memberships(
+            current_user
+        ):
             raise HTTPException(status_code=403, detail="Unauthorized")
 
         # Fetch distinct regionId values
@@ -1051,6 +1054,12 @@ def list_organizations_v2(state, regionId, current_user):
 
 
 # POST: /search/organizations
+def escape_special_characters(search_term: str) -> str:
+    """Escape special characters in the search term."""
+    special_chars = r"([\+\-\&\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])"
+    return re.sub(special_chars, r"\\\1", search_term)
+
+
 def search_organizations_task(search_body, current_user: User):
     """Handle the logic for searching organizations in Elasticsearch."""
     try:
@@ -1069,8 +1078,16 @@ def search_organizations_task(search_body, current_user: User):
 
         # Use match_all if searchTerm is empty
         if search_body.searchTerm.strip():
+            sanitized_search_term = escape_special_characters(search_body.searchTerm)
             query_body["query"]["bool"]["must"].append(
-                {"wildcard": {"name": "*{}*".format(search_body.searchTerm)}}
+                {
+                    "query_string": {
+                        "query": "*{}*".format(sanitized_search_term),
+                        "fields": ["name"],
+                        "fuzziness": "AUTO",
+                        "analyze_wildcard": True,
+                    }
+                }
             )
         else:
             query_body["query"]["bool"]["must"].append({"match_all": {}})

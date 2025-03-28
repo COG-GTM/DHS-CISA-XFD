@@ -72,7 +72,9 @@ class ECSClient:
                         "PE_API_KEY": os.getenv("PE_API_KEY"),
                         "DB_DIALECT": os.getenv("DB_DIALECT"),
                         "DB_HOST": os.getenv("DB_HOST"),
+                        "INTELX_KEY": os.getenv("INTELX_KEY"),
                         "IS_LOCAL": "true",
+                        "IS_DMZ": os.getenv("IS_DMZ"),
                         "DB_PORT": os.getenv("DB_PORT"),
                         "DB_NAME": os.getenv("DB_NAME"),
                         "DB_USERNAME": os.getenv("DB_USERNAME"),
@@ -92,6 +94,8 @@ class ECSClient:
                         "SIXGILL_CLIENT_ID": os.getenv("SIXGILL_CLIENT_ID"),
                         "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET"),
                         "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
+                        "WHOIS_XML_KEY": os.getenv("WHOIS_XML_KEY"),
+                        "WHOIS_XML_THREAD_COUNT": os.getenv("WHOIS_XML_THREAD_COUNT"),
                         "WORKER_SIGNATURE_PUBLIC_KEY": os.getenv(
                             "WORKER_SIGNATURE_PUBLIC_KEY"
                         ),
