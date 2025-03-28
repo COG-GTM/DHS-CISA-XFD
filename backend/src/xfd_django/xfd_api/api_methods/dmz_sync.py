@@ -41,14 +41,17 @@ def list_data_sources(current_user):
 def dmz_asm_sync(asm_sync_data, current_user):
     """Return ASM asset data based on the passed org."""
     try:
+
         if not is_global_write_admin(current_user):
-                raise HTTPException(status_code=403, detail="Unauthorized access.")
+            raise HTTPException(status_code=403, detail="Unauthorized access.")
         data_dict = asm_sync_data.dict() if hasattr(asm_sync_data, "dict") else asm_sync_data
         
         acronym = data_dict.get('acronym')
         page_size = data_dict.get('page_size')
         page_num = data_dict.get('page')
         last_seen_after = data_dict.get('since_date')
+        if last_seen_after is None:
+            raise HTTPException(status_code=400, detail="since_date is required.")
         organization = Organization.objects.get(acronym=acronym)
         
         # Prefetch IpsSubs for IP-to-Subdomain relationship, apply filter to IpsSubs directly
@@ -60,7 +63,7 @@ def dmz_asm_sync(asm_sync_data, current_user):
 
         ips = Ip.objects.filter(
             organization=organization,
-            created_timestamp__gte=last_seen_after
+            last_seen_timestamp__gte=last_seen_after
         ).order_by('ip').prefetch_related(
             ips_subs_prefetch,  # Prefetch IpsSubs for linking Ips to SubDomains
             'origin_cidr'  # Prefetch the origin CIDR for the IPs
@@ -70,7 +73,6 @@ def dmz_asm_sync(asm_sync_data, current_user):
         paginator = Paginator(ips, page_size)
         page = paginator.get_page(page_num)
         ip_page_count = paginator.num_pages
-
         ip_results = []
         if page_num <= ip_page_count:
             for ip in page:
@@ -131,7 +133,7 @@ def dmz_asm_sync(asm_sync_data, current_user):
                     retired = ip_dict.get('retired'),
                     last_reverse_lookup = ip_dict.get('last_reverse_lookup'),
                     from_cidr = ip_dict.get('from_cidr'),
-                    origin_cidr_network = str(ip.origin_cidr.network),
+                    origin_cidr_network = str(ip.origin_cidr.network) if ip.origin_cidr else None,
                     has_shodan_results = ip_dict.get('has_shodan_results'),
                     current = ip_dict.get('current'),
                     conflict_alerts = json.dumps(ip_dict.get('conflict_alerts')),
@@ -144,7 +146,7 @@ def dmz_asm_sync(asm_sync_data, current_user):
             current=True
         ).exclude(
             ipssubs__current=True  # Exclude subdomains that have a current IP-SubDomain relationship
-        ).distinct()
+        ).distinct().order_by('sub_domain')
 
         sub_paginator = Paginator(subdomains_without_current_ip, page_size)
         sub_page = sub_paginator.get_page(page_num) 
