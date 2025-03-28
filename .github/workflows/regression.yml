@@ -55,8 +55,8 @@ jobs:
             --overrides '{\
             "containerOverrides":[{\
             "name":"playwright",\
-            "command"\
-            ["npx","playwright","test"]}]}'
+            "command":["sh", "-c", \
+            "npx playwright install && npx playwright test"]}]}'
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
@@ -115,8 +115,8 @@ jobs:
             assignPublicIp=\"ENABLED\"}" \
             --overrides '{"containerOverrides":\
             [{"name":"playwright",\
-            "command":["npx",\
-            "playwright","test"]}]}'
+            "command":["sh", "-c", \
+            "npx playwright install && npx playwright test"]}]}'
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
