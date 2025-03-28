@@ -141,3 +141,5 @@ def handler(command_options):
             subdomains_created, organization_name
         )
     )
+
+    return {"statusCode": 200, "body": "Success running censys."}

@@ -399,7 +399,7 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "INTELX_API_KEY",
         "valueFrom": "${data.aws_ssm_parameter.intelx_api_key.arn}"
-      },
+      }
     ]
   }
 ]
