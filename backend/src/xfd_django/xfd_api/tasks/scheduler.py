@@ -37,6 +37,46 @@ class Scheduler:
 
     def launch_scan_execution(self, scan):
         """Prepare and send scan execution request."""
+        # Get organizations to run on
+        orgs = get_scan_organizations(scan) if scan.isGranular else self.organizations
+        filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
+
+        if not filtered_orgs:
+            print(
+                "Skipping scan execution for {} - No organizations to run on.".format(
+                    scan.name
+                )
+            )
+            return
+
+        # If global scan, ignore queue and start 1 concurrent task
+        scan_schema = SCAN_SCHEMA.get(scan.name, {})
+        global_scan = getattr(scan_schema, "global_scan", False)
+        if global_scan:
+            print("This is a global scan.")
+            # Now pass organizations to scanExecution
+            event_payload = {
+                "scanId": str(scan.id),
+                "scanType": scan.name,
+                "desiredCount": 1,
+                "organizations": list(filtered_orgs),
+                "isPe": False,
+            }
+            try:
+                response = scan_execution_handler(event_payload, None)
+                print("scanExecution handler response: {}".format(response))
+
+                # Set manualRunPending to False since scan is now launched
+                scan.manualRunPending = False
+                scan.lastRun = timezone.now()
+                scan.save()
+                print("Updated scan: manualRunPending set to False")
+
+            except Exception as e:
+                print("Error invoking scanExecution: {}".format(e))
+            
+            return
+
         # Prepare scan specific queue
         queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan.name)
         base_queue_url = os.getenv("QUEUE_URL").rstrip("/")
@@ -57,17 +97,6 @@ class Scheduler:
         )
         queue_url = response["QueueUrl"]
 
-        # Get organizations to run on
-        orgs = get_scan_organizations(scan) if scan.isGranular else self.organizations
-        filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
-
-        if not filtered_orgs:
-            print(
-                "Skipping scan execution for {} - No organizations to run on.".format(
-                    scan.name
-                )
-            )
-            return
 
         # Check queue URL
         print("Queue URL: {}".format(queue_url))
@@ -115,7 +144,7 @@ class Scheduler:
             response = scan_execution_handler(event_payload, None)
             print("scanExecution handler response: {}".format(response))
 
-            # ✅ Set manualRunPending to False since scan is now launched
+            # Set manualRunPending to False since scan is now launched
             scan.manualRunPending = False
             scan.lastRun = timezone.now()
             scan.save()

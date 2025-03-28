@@ -19,19 +19,6 @@ django.setup()
 from xfd_api.models import Scan, ScanTask
 from xfd_api.tasks.ecs_client import ECSClient
 
-# Initialize AWS clients
-
-SCAN_LIST = [
-    "dnstwist",
-    "intelx",
-    "cybersixgill",
-    "shodan",
-    "xpanse",
-    "asm_sync",
-    "asmSync",
-    "qualys",
-    "censys",
-]
 QUEUE_URL = os.getenv("QUEUE_URL")
 
 # Conditionally import Docker if in local environment
@@ -266,13 +253,10 @@ def handler(event, context):
                 shodan_api_keys=[],
             )
 
-        elif scan_type in SCAN_LIST:
+        else:
             start_desired_tasks(
                 scan_type, desired_count, scan_id, organizations, is_pe=is_pe
             )
-        else:
-            print("Invalid scanType. Must be one of: {}".format(", ".join(SCAN_LIST)))
-            return {"statusCode": 400, "body": "Invalid scanType provided."}
 
         return {"statusCode": 200, "body": "Tasks started successfully."}
     except Exception as e:

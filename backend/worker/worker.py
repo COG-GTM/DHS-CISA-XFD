@@ -17,7 +17,6 @@ django.setup()
 
 # ElasticMQ/SQS Configuration
 QUEUE_URL = os.getenv("QUEUE_URL")
-
 if not QUEUE_URL:
     print("QUEUE_URL environment variable is not set. Exiting.")
     sys.exit(1)
@@ -71,37 +70,37 @@ def main():
         command_options = {}
 
     print("Base command options: {}".format(command_options))
-
     scan_name = command_options.get("scanName", "test")
-    SERVICE_QUEUE_URL = command_options.get("SERVICE_QUEUE_URL")
-
-    if not SERVICE_QUEUE_URL:
-        print("SERVICE_QUEUE_URL not set in command options. Exiting.")
-        sys.exit(1)
-
-    is_local = os.getenv("IS_LOCAL")
-
-    full_queue_path_name = (
-        "http://localhost:9324/000000000000/{}-{}-queue".format("dev", scan_name)
-        if is_local
-        else SERVICE_QUEUE_URL
-    )
-
-    print("Polling queue: {}".format(full_queue_path_name))
+    scan_schema = SCAN_SCHEMA.get(scan_name)
+    if not scan_schema:
+        raise ValueError("No schema found for scan name: {}".format(scan_name))
 
     try:
         task_module = importlib.import_module("xfd_api.tasks.{}".format(scan_name))
         scan_fn = getattr(task_module, "handler", None)
         if not callable(scan_fn):
-            raise ValueError(
-                "No handler function found for scan name: {}".format(scan_name)
-            )
+            raise ValueError("No handler function found for scan name: {}".format(scan_name))
     except ModuleNotFoundError:
         raise ValueError("No task handler found for scan name: {}".format(scan_name))
 
-    scan_schema = SCAN_SCHEMA.get(scan_name)
-    if not scan_schema:
-        raise ValueError("No schema found for scan name: {}".format(scan_name))
+    # If global_scan, run the scan one time and exit without queue polling.
+    if getattr(scan_schema, "global_scan", False):
+        print("Global scan detected. Running scan once without queue polling.")
+        scan_fn(command_options)
+        sys.exit(0)
+
+    SERVICE_QUEUE_URL = command_options.get("SERVICE_QUEUE_URL")
+    if not SERVICE_QUEUE_URL:
+        print("SERVICE_QUEUE_URL not set in command options. Exiting.")
+        sys.exit(1)
+
+    is_local = os.getenv("IS_LOCAL")
+    full_queue_path_name = (
+        "http://localhost:9324/000000000000/{}-{}-queue".format("dev", scan_name)
+        if is_local
+        else SERVICE_QUEUE_URL
+    )
+    print("Polling queue: {}".format(full_queue_path_name))
 
     while True:
         message_data = get_message(full_queue_path_name)
@@ -112,36 +111,28 @@ def main():
         message = process_message(message_data)
         org = message.get("org")
         org_id = message.get("id")
-
         if not org:
             print("Invalid message format. Skipping.")
             continue
 
         print("Processing organization: {}".format(org))
+        task_options = dict(command_options)
+        task_options.update({
+            "organizationName": org,
+            "organizationId": org_id,
+            "organizations": [],
+        })
 
         try:
-            task_options = dict(command_options)
-            if not getattr(scan_schema, "global_scan", False):
-                task_options.update(
-                    {
-                        "organizationName": org,
-                        "organizationId": org_id,
-                        "organizations": [],
-                    }
-                )
-
             scan_fn(task_options)
-
             # Delete message after processing
             receipt_handle = message_data.get("ReceiptHandle")
             if receipt_handle:
                 delete_message(full_queue_path_name, receipt_handle)
             else:
                 print("No ReceiptHandle found; cannot delete message.")
-
         except Exception as e:
             print("Error processing {}: {}".format(org, e))
-
         time.sleep(1)
 
 

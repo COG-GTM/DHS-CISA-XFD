@@ -395,7 +395,11 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "QUALYS_PASSWORD",
         "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
-      }
+      },
+      {
+        "name": "INTELX_API_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.intelx_api_key.arn}"
+      },
     ]
   }
 ]
