@@ -25,7 +25,7 @@ django.setup()
 # Constants
 MAX_RETRIES = 3  # Max retries for failed tasks
 TIMEOUT = 60  # Timeout in seconds for waiting on task completion
-
+SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 headers = settings.DMZ_API_HEADER
 
 unknown_data_source, uds_created = DataSource.objects.get_or_create(
@@ -173,8 +173,6 @@ def query_api(acronym, last_seen_after, page_size=50, page_number=1):
 
 def validate_response_checksum(response):
     """Validate the checksum from an API response."""
-    SALT = os.getenv("CHECKSUM_SALT")  # Use the same salt as in the original API
-
     try:
         # Extract response JSON
         response_data = response.json()

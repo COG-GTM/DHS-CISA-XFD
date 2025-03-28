@@ -105,7 +105,7 @@ from .tools.user_logger_decorator import (
 # Define API router
 api_router = APIRouter()
 
-SALT = os.getenv("CHECKSUM_SALT")
+SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
 
 async def get_redis_client(request: Request):
@@ -1436,11 +1436,8 @@ async def asm_sync(
     response_serializable = serialize_custom(response_data)
 
     response_json = json.dumps(response_serializable, default=str, sort_keys=True)
-    if SALT is None:
-        salt = "Test_salt"
-    else:
-        salt = SALT
-    checksum = hashlib.sha256((salt + response_json).encode()).hexdigest()
+
+    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
 
     return JSONResponse(
         content=response_serializable, headers={"X-Salted-Checksum": checksum}
