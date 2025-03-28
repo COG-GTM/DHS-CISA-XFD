@@ -1,5 +1,6 @@
 """Django ORM models."""
 # Standard Python Libraries
+import socket
 import uuid
 
 # Third-Party Libraries
@@ -18,7 +19,9 @@ class ApiKey(models.Model):
     """The ApiKey model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier for an API key object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for an API key object.",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -63,7 +66,9 @@ class Cpe(models.Model):
     """The Cpe model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier for a CPE Product object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for a CPE Product object.",
     )
     name = models.CharField(max_length=255, help_text="Name of the product.")
     version = models.CharField(max_length=255, help_text="Version of the product.")
@@ -87,7 +92,9 @@ class Cve(models.Model):
     """The Cve model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier for a CVE object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for a CVE object.",
     )
     name = models.CharField(
         unique=True, blank=True, null=True, max_length=255, help_text="Name of the CVE."
@@ -317,7 +324,9 @@ class Notification(models.Model):
     """The Notification model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier for a notification object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for a notification object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -377,7 +386,9 @@ class Organization(models.Model):
     """The Organization model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for a stakeholder Organization."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for a stakeholder Organization.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -664,7 +675,9 @@ class OrganizationTag(models.Model):
     """The OrganizationTag model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for an Organization tag object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for an Organization tag object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -721,6 +734,7 @@ class QueryResultCache(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
+        default=uuid.uuid1,
         help_text="Unique identifier for the query result object being cached.",
     )
     identifier = models.CharField(
@@ -750,7 +764,9 @@ class Role(models.Model):
     """The Role model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for the role object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for the role object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -815,7 +831,9 @@ class SavedSearch(models.Model):
     """The SavedSearch model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for the Saved Search object"
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for the Saved Search object",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -875,6 +893,7 @@ class Scan(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
+        default=uuid.uuid1,
         help_text="Unique identifier for a cyhy dashboard scan object.",
     )
     created_at = models.DateTimeField(
@@ -951,7 +970,9 @@ class ScanTask(models.Model):
     """The ScanTask model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for a scan task object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for a scan task object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -1032,6 +1053,7 @@ class Service(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
+        default=uuid.uuid1,
         help_text="Unique identifier for a web service running on a stakeholders attack surface.",
     )
     created_at = models.DateTimeField(
@@ -1112,7 +1134,9 @@ class User(models.Model):
     """The User model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for a user object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for a user object.",
     )
     cognito_id = models.CharField(
         db_column="cognito_id",
@@ -1215,6 +1239,7 @@ class Vulnerability(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
+        default=uuid.uuid1,
         help_text="Unique identifier for a vulnerability object found in the cyhy dashboard",
     )
     created_at = models.DateTimeField(
@@ -1328,7 +1353,9 @@ class Webpage(models.Model):
     """The Webpage model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for the webpage object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for the webpage object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -1402,6 +1429,7 @@ class TicketEvent(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
+        default=uuid.uuid1,
         help_text="Unique id for a ticket event object in the database.",
     )
     reference = models.CharField(
@@ -1767,6 +1795,7 @@ class Cidr(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
+        default=uuid.uuid1,
         editable=False,
         help_text="Unique idenifier for the Cidr object.",
     )
@@ -1824,7 +1853,7 @@ class Cidr(models.Model):
 class CidrOrgs(models.Model):
     """Define CidrOrgs model."""
 
-    cidr_orgs_id = models.UUIDField(primary_key=True)
+    cidr_orgs_id = models.UUIDField(primary_key=True, default=uuid.uuid1)
     cidr = models.ForeignKey(
         Cidr,
         on_delete=models.CASCADE,
@@ -1866,7 +1895,7 @@ class Location(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid4,
+        default=uuid.uuid1,
         help_text="Unique identifier for a location object.",
     )
     name = models.CharField(
@@ -1922,7 +1951,7 @@ class Sector(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid4,
+        default=uuid.uuid1,
         help_text="Unique identifier for a sector object in the database.",
     )
     name = models.CharField(
@@ -2083,9 +2112,14 @@ class Host(models.Model):
 class Ip(models.Model):
     """The Ip model."""
 
-    # id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
+    id = models.UUIDField(
+        primary_key=True,
+        editable=False,
+        default=uuid.uuid1,
+        help_text="Unique identifier for an IP object in the database.",
+    )
     ip_hash = models.TextField(
-        primary_key=True, help_text="A hash of the IP used as a unique identifier."
+        help_text="A hash of the IP used as a unique identifier."
     )
     organization = models.ForeignKey(
         Organization,
@@ -2108,6 +2142,11 @@ class Ip(models.Model):
     )
     ip = models.GenericIPAddressField(
         null=True, blank=True, help_text="The IP address."
+    )
+    ip_version = models.CharField(
+        max_length=4,  # max_length of 'IPv4' or 'IPv6'
+        choices=[("IPv4", "IPv4"), ("IPv6", "IPv6")],
+        default="IPv4",  # Optional, you can set a default if you'd like
     )
     live = models.BooleanField(
         null=True,
@@ -2134,12 +2173,13 @@ class Ip(models.Model):
         null=True,
         help_text="Boolean field that flags if the IP came from a stakeholder provided cidr.",
     )
-    # sub_domains = models.ManyToManyField(
-    #     "SubDomains",
-    #     related_name="ips",
-    #     blank=True,
-    #     help_text="Many to many relationship linking to sub domains that were seen running on the IP.",
-    # )
+    origin_cidr = models.ForeignKey(
+        Cidr,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="Foreign key relationship to the cidr from which the ip was enumerated.",
+    )
     sub_domains = models.ManyToManyField(
         "SubDomains",
         through="IpsSubs",
@@ -2150,19 +2190,31 @@ class Ip(models.Model):
         null=True,
         help_text="A boolean field that flags if shodan has findings for the givenn IP",
     )
-    origin_cidr = models.ForeignKey(
-        Cidr,
-        on_delete=models.CASCADE,
-        db_column="origin_cidr",
-        blank=True,
-        null=True,
-        help_text="Foreign key relationship to the cidr from which the ip was enumerated.",
-    )
     current = models.BooleanField(
         blank=True,
         null=True,
         help_text="A boolean field that flags if the IP is current.",
     )
+    conflict_alerts = models.JSONField(
+        blank=True, null=True, default=list, help_text="List of cidr conflict alerts."
+    )
+
+    def save(self, *args, **kwargs):
+        """Save ip_version based on the saved ip."""
+        # Automatically set ip_version based on ip_address
+        if self.ip:
+            # Check if the IP is IPv4 or IPv6
+            try:
+                socket.inet_pton(socket.AF_INET, self.ip)
+                self.ip_version = "IPv4"
+            except OSError:
+                try:
+                    socket.inet_pton(socket.AF_INET6, self.ip)
+                    self.ip_version = "IPv6"
+                except OSError:
+                    raise ValueError(f"Invalid IP address: {self.ip}")
+
+        super().save(*args, **kwargs)
 
     # domains = models.ManyToManyField("SubDomains", related_name='ips', blank=True)
     # host_scans = models.ManyToManyField("HostScan", related_name='ips', blank=True)
@@ -2184,17 +2236,18 @@ class Ip(models.Model):
 class IpsSubs(models.Model):
     """Define IpsSubs model."""
 
-    ips_subs_uid = models.UUIDField(primary_key=True)
-    ip_hash = models.ForeignKey(Ip, on_delete=models.CASCADE, db_column="ip_hash")
-    sub_domain_uid = models.ForeignKey(
-        "SubDomains", on_delete=models.CASCADE, db_column="sub_domain_uid"
+    ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid1)
+    ip = models.ForeignKey(Ip, on_delete=models.CASCADE, db_column="ip_id")
+    sub_domain = models.ForeignKey(
+        "SubDomains", on_delete=models.CASCADE, db_column="sub_domain_id"
     )
-    first_seen = models.DateField(
+    first_seen = models.DateTimeField(
         blank=True,
         null=True,
         help_text="First date and time the ip was associated with the subdomain.",
+        auto_now_add=True,
     )
-    last_seen = models.DateField(
+    last_seen = models.DateTimeField(
         blank=True,
         null=True,
         help_text="Last date and time the ip was associated with the subdomain.",
@@ -2210,7 +2263,7 @@ class IpsSubs(models.Model):
 
         managed = manage_db
         db_table = "ips_subs"
-        unique_together = (("ip_hash", "sub_domain_uid"),)
+        unique_together = (("ip", "sub_domain"),)
 
 
 class Ticket(models.Model):
@@ -2668,12 +2721,16 @@ class WasFindings(models.Model):
         "SubDomains",
         on_delete=models.CASCADE,
         db_column="sub_domain_id",
+        blank=True,
+        null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
     service = models.ForeignKey(
         "Service",
         on_delete=models.CASCADE,
         db_column="service_id",
+        blank=True,
+        null=True,
         help_text="FK: Foreign Key to the linked service",
     )
 
@@ -3018,7 +3075,9 @@ class PeUsers(models.Model):
     """Define Users model."""
 
     id = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for a PE user object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for a PE user object.",
     )
     email = models.CharField(
         unique=True,
@@ -3089,6 +3148,7 @@ class SixgillAlerts(models.Model):
 
     alerts_uid = models.UUIDField(
         primary_key=True,
+        default=uuid.uuid1,
         help_text="Unique identifier for the cyber sixgill alert object.",
     )
     alert_name = models.TextField(
@@ -3171,7 +3231,9 @@ class Alias(models.Model):
     """Define Alias model."""
 
     alias_uid = models.UUIDField(
-        primary_key=True, help_text="Unique identifier for an alias."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="Unique identifier for an alias.",
     )
     organization = models.ForeignKey(
         "Organization",
@@ -3196,6 +3258,7 @@ class AssetHeaders(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
+        default=uuid.uuid1,
         help_text="Unique identifier for the asset header object.",
     )  # Field renamed because it started with '_'.
     organization = models.ForeignKey(
@@ -3446,6 +3509,8 @@ class CredentialExposures(models.Model):
         "SubDomains",
         on_delete=models.CASCADE,
         db_column="sub_domain_id",
+        blank=True,
+        null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
     breach_name = models.TextField(
@@ -3975,7 +4040,9 @@ class Executives(models.Model):
     """Define Executives model."""
 
     executives_uid = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier for executives"
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for executives",
     )
     organization = models.ForeignKey(
         "Organization",
@@ -3997,7 +4064,9 @@ class Mentions(models.Model):
     """Define Mentions model."""
 
     mentions_uid = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier for cyber sixgill mentions"
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for cyber sixgill mentions",
     )
     category = models.TextField(blank=True, null=True, help_text="Category of mention")
     collection_date = models.TextField(
@@ -4676,12 +4745,16 @@ class ShodanVulns(models.Model):
         "SubDomains",
         on_delete=models.CASCADE,
         db_column="sub_domain_id",
+        blank=True,
+        null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
     service = models.ForeignKey(
         "Service",
         on_delete=models.CASCADE,
         db_column="service_id",
+        blank=True,
+        null=True,
         help_text="FK: Foreign Key to the linked service",
     )
 
@@ -4737,19 +4810,27 @@ class SubDomains(models.Model):
         null=True,
         help_text="T/F: Boolean field flagging if the status is active.???",
     )
-    first_seen = models.DateField(
+    first_seen = models.DateTimeField(
+        auto_now_add=True,
         blank=True,
         null=True,
         help_text="Date and time of the first time teh subdomain was seen.",
     )
-    last_seen = models.DateField(
-        blank=True, null=True, help_text="Date of the last time the subdomain was seen."
+    last_seen = models.DateTimeField(
+        blank=True,
+        null=True,
+        auto_now=True,
+        help_text="Date of the last time the subdomain was seen.",
     )
     created_at = models.DateTimeField(
-        db_column="created_at", help_text="Datetime the subdomain object was created."
+        db_column="created_at",
+        auto_now_add=True,
+        help_text="Datetime the subdomain object was created.",
     )
     updated_at = models.DateTimeField(
-        db_column="updated_at", help_text="Datetime the subdomain was last updated."
+        db_column="updated_at",
+        auto_now=True,
+        help_text="Datetime the subdomain was last updated.",
     )
     current = models.BooleanField(
         blank=True,
@@ -4786,7 +4867,7 @@ class SubDomains(models.Model):
         max_length=255,
         blank=True,
         null=True,
-        help_text="Where teh subdomain originated from.",
+        help_text="Where the subdomain originated from.",
     )  # XFD column
     organization = models.ForeignKey(
         Organization,
@@ -5052,7 +5133,9 @@ class CyhyKevs(models.Model):
     """Define CyhyKevs model."""
 
     cyhy_kevs_uid = models.UUIDField(
-        primary_key=True, help_text="PK: Unique identifier of the cyhy kev object."
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier of the cyhy kev object.",
     )
     kev = models.CharField(
         blank=True, null=True, max_length=255, help_text="CVE id of the KEV."
@@ -5479,6 +5562,8 @@ class XpanseAlerts(models.Model):
         "SubDomains",
         on_delete=models.CASCADE,
         db_column="sub_domain_id",
+        blank=True,
+        null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
     service = models.ForeignKey(
