@@ -79,7 +79,9 @@ def main():
         task_module = importlib.import_module("xfd_api.tasks.{}".format(scan_name))
         scan_fn = getattr(task_module, "handler", None)
         if not callable(scan_fn):
-            raise ValueError("No handler function found for scan name: {}".format(scan_name))
+            raise ValueError(
+                "No handler function found for scan name: {}".format(scan_name)
+            )
     except ModuleNotFoundError:
         raise ValueError("No task handler found for scan name: {}".format(scan_name))
 
@@ -117,11 +119,13 @@ def main():
 
         print("Processing organization: {}".format(org))
         task_options = dict(command_options)
-        task_options.update({
-            "organizationName": org,
-            "organizationId": org_id,
-            "organizations": [],
-        })
+        task_options.update(
+            {
+                "organizationName": org,
+                "organizationId": org_id,
+                "organizations": [],
+            }
+        )
 
         try:
             scan_fn(task_options)

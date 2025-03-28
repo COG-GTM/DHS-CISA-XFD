@@ -74,7 +74,7 @@ class Scheduler:
 
             except Exception as e:
                 print("Error invoking scanExecution: {}".format(e))
-            
+
             return
 
         # Prepare scan specific queue
@@ -96,7 +96,6 @@ class Scheduler:
             },
         )
         queue_url = response["QueueUrl"]
-
 
         # Check queue URL
         print("Queue URL: {}".format(queue_url))
