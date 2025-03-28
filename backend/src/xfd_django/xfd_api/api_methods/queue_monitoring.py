@@ -71,7 +71,11 @@ def list_queues(search_data: QueueSearch, current_user):
                 }
                 queue_data.append(queue_info)
             except Exception as attr_err:
-                print("Error fetching attributes for queue {}: {}".format(queue_name,attr_err))
+                print(
+                    "Error fetching attributes for queue {}: {}".format(
+                        queue_name, attr_err
+                    )
+                )
 
         # Apply filters
         filters = search_data.filters or {}
