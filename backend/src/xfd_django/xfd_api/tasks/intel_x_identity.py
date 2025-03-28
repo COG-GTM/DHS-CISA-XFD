@@ -183,7 +183,7 @@ class IntelX:
                 )
                 LOGGER.error(e)
                 continue
-           
+
             # Insert credential data into the PE database
             LOGGER.info("Inserting IntelX credential data for %s", root.sub_domain)
             try:
@@ -200,8 +200,11 @@ class IntelX:
 
     def query_identity_api(self, domain, start_date, end_date):
         """Create an initial search and return the search id."""
-        url = BASE_URL +"/accounts/csv?selector={domain}&k={api_key}&datefrom={start_date}&dateto={end_date}".format(
-            domain=domain, api_key=api_key, start_date=start_date, end_date=end_date
+        url = (
+            BASE_URL
+            + "/accounts/csv?selector={domain}&k={api_key}&datefrom={start_date}&dateto={end_date}".format(
+                domain=domain, api_key=api_key, start_date=start_date, end_date=end_date
+            )
         )
         payload = {}
         headers = {}
