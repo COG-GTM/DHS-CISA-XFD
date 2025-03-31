@@ -283,6 +283,7 @@ export const ScanTasksView: React.FC = () => {
     'dnstwist',
     'rootDomainSync',
     'was_sync',
+    'was_finding_sync',
     'xpanse_sync'
   ];
 
