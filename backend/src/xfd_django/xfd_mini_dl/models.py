@@ -278,15 +278,14 @@ class Cve(models.Model):
         max_length=255,
         help_text="Numerical value that quantifies the potential impact of the vulnerability.",
     )
-    weaknesses = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Weaknesses (CWE) associated with the vulnerability.",
+    weaknesses = ArrayField(
+        models.TextField(blank=True, null=True), blank=True, null=True
     )
-    references = models.TextField(
-        blank=True,
-        null=True,
-        help_text="URLs to references associated with the vulnerability.",
+    reference_urls = ArrayField(
+        models.TextField(blank=True, null=True), blank=True, null=True
+    )
+    cpe_list = ArrayField(
+        models.TextField(blank=True, null=True), blank=True, null=True
     )
     dve_score = models.DecimalField(
         max_digits=1000,
@@ -5580,65 +5579,6 @@ class XpanseAlerts(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "xpanse_alerts_mdl"
-
-
-class CpeVender(models.Model):
-    """Define CpeVender model."""
-
-    cpe_vender_uid = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid1,
-        help_text="PK: Unique ID of the vender object",
-    )
-    vender_name = models.TextField(
-        unique=True, blank=True, null=True, help_text="Vender name"
-    )
-
-    class Meta:
-        """Set CpeVender model metadata."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "cpe_vender"
-
-
-class CpeProduct(models.Model):
-    """Define CpeProduct model."""
-
-    cpe_product_uid = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid1,
-        help_text="PK: Unique identifier for the Product (CPE)",
-    )
-    cpe_product_name = models.TextField(
-        blank=True, null=True, help_text="Name of the product"
-    )
-    version_number = models.TextField(
-        blank=True, null=True, help_text="Version of the product"
-    )
-    cpe_vender = models.ForeignKey(
-        "CpeVender",
-        on_delete=models.CASCADE,
-        db_column="cpe_vender_uid",
-        default=None,
-        help_text="FK: Foreign key to the related vender object.",
-    )
-
-    # Create linking table for many to many relationship
-    cves = models.ManyToManyField(
-        Cve,
-        related_name="products",
-        help_text="Many to many relationship to the CVEs associated with the product",
-    )
-
-    class Meta:
-        """Set CpeProduct model metadata."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "cpe_product_mdl"
-        unique_together = (("cpe_product_name", "version_number"),)
-
 
 # # THese are all views, so they shouldn't be generated via the ORM
 

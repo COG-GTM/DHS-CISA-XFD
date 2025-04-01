@@ -9,18 +9,11 @@ import time
 
 # Third-Party Libraries
 import django
-from django.conf import settings
-from ..helpers.nist_helpers import (
-    query_all_cves,
-    api_cve_insert,
-    get_cve_and_products
-)
-
 from nested_lookup import nested_lookup
 import pytz
 import requests
 
-# cisagov Libraries
+from ..helpers.nist_helpers import api_cve_insert, get_cve_and_products
 
 api_key = os.environ("NIST_API_KEY")
 # Global variables
@@ -34,6 +27,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
+
 def handler(event):
     """Retrieve and save NIST update alerts from the DMZ."""
     try:
@@ -44,6 +38,7 @@ def handler(event):
         }
     except Exception as e:
         return {"statusCode": 500, "body": str(e)}
+
 
 def initial_fill(start_index=0):
     """Fill the database with CVE data for the first time."""
@@ -89,12 +84,12 @@ def update_cves(hours_back=12):
     last_mod_end_date = now.isoformat()
 
     params = (
-            "?startIndex="
-            + str(start_index)
-            + "&lastModStartDate="
-            + last_mod_start_date
-            + "&lastModEndDate="
-            + last_mod_end_date
+        "?startIndex="
+        + str(start_index)
+        + "&lastModStartDate="
+        + last_mod_start_date
+        + "&lastModEndDate="
+        + last_mod_end_date
     )
 
     payload = {}
@@ -108,12 +103,12 @@ def update_cves(hours_back=12):
         api_cve_insert(cve_dict)
     while start_index < result["totalResults"]:
         params = (
-                "?startIndex="
-                + str(start_index)
-                + "&lastModStartDate="
-                + last_mod_start_date
-                + "&lastModEndDate="
-                + last_mod_end_date
+            "?startIndex="
+            + str(start_index)
+            + "&lastModStartDate="
+            + last_mod_start_date
+            + "&lastModEndDate="
+            + last_mod_end_date
         )
         response = requests.request(
             "GET", nist_url + params, headers=headers, data=payload
@@ -221,7 +216,7 @@ def format_vulnerability(vuln):
 
     cpes_t = list({tuple(cpe.split(":")[3:6]) for cpe in cve["cpe_list"]})
 
-    # Transform it into nested dictionnary
+    # Transform it into nested dictionary
     cpes = {}
     for vendor, product, version in cpes_t:
         if vendor not in cpes:
@@ -250,12 +245,12 @@ def check_cve_is_synced():
         last_mod_end_date = now.isoformat()
 
         params = (
-                "?startIndex="
-                + str(start_index)
-                + "&lastModStartDate="
-                + last_mod_start_date
-                + "&lastModEndDate="
-                + last_mod_end_date
+            "?startIndex="
+            + str(start_index)
+            + "&lastModStartDate="
+            + last_mod_start_date
+            + "&lastModEndDate="
+            + last_mod_end_date
         )
 
         payload = {}

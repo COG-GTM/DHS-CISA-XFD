@@ -1,40 +1,19 @@
-#Standard Library Imports
-import time
+# Standard Library Imports
+# Standard Python Libraries
 import json
+import logging
+import datetime
 
+
+# Third-Party Libraries
 # Third Party Imports
 import requests
+from django.conf import settings
+from django.forms.models import model_to_dict
+from ..models import Cve, Cpe
 
-def query_all_cves(modified_date=None):
-    """Query all CVEs added or changed since provided date."""
-    start_time = time.time()
-    total_num_pages = 1
-    page_num = 1
-    total_data = []
-    # Retrieve data for each page
-    while page_num <= total_num_pages:
-        # Endpoint info
-        create_task_url = "cves_by_modified_date"
-        check_task_url = "cves_by_modified_date/task/"
+LOGGER = logging.getLogger(__name__)
 
-        data = json.dumps(
-            {"modified_datetime": modified_date, "page": page_num, "per_page": 500}
-        )
-        # Make API call
-        result = task_api_call(create_task_url, check_task_url, data, 3)
-        # Once task finishes, append result to total list
-        print(result)
-        total_data += result.get("data")
-        total_num_pages = result.get("total_pages")
-        LOGGER.info("Retrieved page: " + str(page_num) + " of " + str(total_num_pages))
-        page_num += 1
-    # Once all data has been retrieved, return overall tuple list
-    # total_data = pd.DataFrame.from_dict(total_data)
-    total_data = [tuple(dic.values()) for dic in total_data]
-    LOGGER.info("Total time to retrieve cves: %s", (time.time() - start_time))
-    # total_data["first_seen"] = pd.to_datetime(total_data["first_seen"]).dt.date
-    # total_data["last_seen"] = pd.to_datetime(total_data["last_seen"]).dt.date
-    return total_data
 
 def api_cve_insert(cve_dict):
     """
@@ -48,66 +27,130 @@ def api_cve_insert(cve_dict):
     Return:
         Status on if the record was inserted successfully
     """
-    # Endpoint info
-    endpoint_url = pe_api_url + "cve_insert_or_update"
-    headers = {
-        "Content-Type": "application/json",
-        "access_token": pe_api_key,
-    }
-    data = json.dumps(cve_dict, default=str)
+    """Create API endpoint to create a record in database."""
 
-    LOGGER.info(data)
     try:
-        # Call endpoint
-        cve_insert_result = requests.put(
-            endpoint_url, headers=headers, data=data
-        ).json()
-        # print(cve_insert_result)
-        LOGGER.info(
-            "Successfully inserted new record in cves table with associated cpe products and venders"
+
+        # Get WAS record based on tag
+        vender_prod_dict = cve_dict.vender_product
+        cve_object, created = Cve.objects.update_or_create(
+            cve_name=cve_dict.cve_name,
+            defaults={
+                "name": cve_dict.cve_name,
+                "published_at": cve_dict.published_date,
+                "modified_at": cve_dict.last_modified_date,
+                "status": cve_dict.vuln_status,
+                "description": cve_dict.description,
+                "cvss_v2_source": cve_dict.cvss_v2_source,
+                "cvss_v2_type": cve_dict.cvss_v2_type,
+                "cvss_v2_version": cve_dict.cvss_v2_version,
+                "cvss_v2_vector_string": cve_dict.cvss_v2_vector_string,
+                "cvss_v2_base_score": cve_dict.cvss_v2_base_score,
+                "cvss_v2_base_severity": cve_dict.cvss_v2_base_severity,
+                "cvss_v2_exploitability_score": cve_dict.cvss_v2_exploitability_score,
+                "cvss_v2_impact_score": cve_dict.cvss_v2_impact_score,
+                "cvss_v3_source": cve_dict.cvss_v3_source,
+                "cvss_v3_type": cve_dict.cvss_v3_type,
+                "cvss_v3_version": cve_dict.cvss_v3_version,
+                "cvss_v3_vector_string": cve_dict.cvss_v3_vector_string,
+                "cvss_v3_base_score": cve_dict.cvss_v3_base_score,
+                "cvss_v3_base_severity": cve_dict.cvss_v3_base_severity,
+                "cvss_v3_exploitability_score": cve_dict.cvss_v3_exploitability_score,
+                "cvss_v3_impact_score": cve_dict.cvss_v3_impact_score,
+                "cvss_v4_source": cve_dict.cvss_v4_source,
+                "cvss_v4_type": cve_dict.cvss_v4_type,
+                "cvss_v4_version": cve_dict.cvss_v4_version,
+                "cvss_v4_vector_string": cve_dict.cvss_v4_vector_string,
+                "cvss_v4_base_score": cve_dict.cvss_v4_base_score,
+                "cvss_v4_base_severity": cve_dict.cvss_v4_base_severity,
+                "cvss_v4_exploitability_score": cve_dict.cvss_v4_exploitability_score,
+                "cvss_v4_impact_score": cve_dict.cvss_v4_impact_score,
+                "weaknesses": cve_dict.weaknesses,
+                "references_urls": cve_dict.reference_urls,
+                "cpe_list": cve_dict.cpe_list,
+            },
         )
-        return cve_insert_result
-    except requests.exceptions.HTTPError as errh:
-        LOGGER.error(errh)
-    except requests.exceptions.ConnectionError as errc:
-        LOGGER.error(errc)
-    except requests.exceptions.Timeout as errt:
-        LOGGER.error(errt)
-    except requests.exceptions.RequestException as err:
-        LOGGER.error(err)
-    except json.decoder.JSONDecodeError as err:
-        LOGGER.error(err)
+        if created:
+            LOGGER.info("new CVE record created for %s", cve_dict.cve_name)
+
+        prod_obj_list = []
+        for vender, product_list in vender_prod_dict.items():
+
+            for product, version in product_list:
+                product_obj, product_created = Cpe.objects.update_or_create(
+                    vender=vender,
+                    name=product,
+                    version=version,
+                    defaults={
+                    "last_seen_at":datetime.datetime.now(datetime.timezone.utc)},
+                )
+                prod_obj_list.append(product_obj)
+
+        cve_object.cpes.add(*prod_obj_list)
+        cve_object.save()
+
+        #TODO no ticket is needed for this todo, this code may be needed in the future
+        prods = []
+        for prod in list(cve_object.cpes.all()):
+            prods.append(
+                {
+                    "cpe_product_uid": prod.cpe_product_uid,
+                    "cpe_product_name": prod.cpe_product_name,
+                    "version_number": prod.version_number,
+                    "vender_uid": prod.cpe_vender_uid_id,
+                    "vender_name": prod.cpe_vender_uid.vender_name,
+                }
+            )
+        return {
+            "message": "Record updated successfully.",
+            "updated_cve": cve_object,
+            "products": prods,
+        }
+
+    except Exception as e:
+        print(e)
+        print("failed to insert or update")
+        LOGGER.info("API key expired please try again")
+    else:
+        return {"message": "No api key was submitted"}
+
 
 def get_cve_and_products(cve_name):
     """
-    Query API to retrieve a CVE and its associated products data for the specified CVE.
+    Query DB to retrieve a CVE and its associated products data for the specified CVE.
 
     Args:
-        cve_name: The CVE name or code
+        cve_name (str): The CVE name or code.
 
-    Return:
-        CVE data and a dictionary of venders and products
+    Returns:
+        dict: A dictionary containing:
+              - "cve_data": A dict representation of the CVE record.
+              - "products": A dictionary mapping each vendor to a list of related product info.
+              If the CVE does not exist, returns {"message": "CVE does not exist"}.
     """
-    # Endpoint info
-    endpoint_url = pe_api_url + "get_cve"
-    headers = {
-        "Content-Type": "application/json",
-        "access_token": pe_api_key,
-    }
-    data = json.dumps({"cve_name": cve_name})
+    LOGGER.info("Retrieving CVE with name: %s", cve_name)
     try:
-        # Call endpoint
-        result = requests.post(endpoint_url, headers=headers, data=data).json()
-        # Process data and return
+        # Note: the new model uses the field 'name'
+        cve = Cve.objects.get(name=cve_name)
+        # Get all related Cpe records from the ManyToMany field 'cpes'
+        products = cve.cpes.all()
+        vend_prod_dict = {}
+        for prod in products:
+            vendor = prod.vendor  # 'vendor' is a CharField in the new Cpe model
+            if vendor not in vend_prod_dict:
+                vend_prod_dict[vendor] = []
+            vend_prod_dict[vendor].append({
+                "cpe_id": prod.id,
+                "name": prod.name,
+                "version": prod.version,
+                "vendor": prod.vendor,
+                "last_seen_at": prod.last_seen_at,
+            })
+        cve_dict = model_to_dict(cve)
+        return {"cve_data": cve_dict, "products": vend_prod_dict}
+    except Cve.DoesNotExist:
+        return {"message": "CVE does not exist"}
+    except Exception as e:
+        LOGGER.error("An error occurred: %s", e, exc_info=True)
+        return {"message": "An error occurred"}
 
-        return result
-    except requests.exceptions.HTTPError as errh:
-        LOGGER.info(errh)
-    except requests.exceptions.ConnectionError as errc:
-        LOGGER.info(errc)
-    except requests.exceptions.Timeout as errt:
-        LOGGER.info(errt)
-    except requests.exceptions.RequestException as err:
-        LOGGER.info(err)
-    except json.decoder.JSONDecodeError as err:
-        LOGGER.info(err)
