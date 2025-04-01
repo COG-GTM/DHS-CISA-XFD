@@ -1115,8 +1115,8 @@ class User(models.Model):
     id = models.UUIDField(
         primary_key=True, help_text="Unique identifier for a user object."
     )
-    cognitoId = models.CharField(
-        db_column="cognitoId",
+    cognito_id = models.CharField(
+        db_column="cognito_id",
         unique=True,
         blank=True,
         null=True,

@@ -27,7 +27,7 @@ class User(BaseModel):
     """User schema."""
 
     id: UUID
-    cognitoId: Optional[str]
+    cognito_id: Optional[str]
     login_gov_id: Optional[str]
     created_at: datetime
     updated_at: datetime
@@ -51,7 +51,7 @@ class User(BaseModel):
 class UserResponse(BaseModel):
     """User response schema."""
 
-    cognitoId: Optional[str]
+    cognito_id: Optional[str]
     login_gov_id: Optional[str]
     first_name: str
     last_name: str

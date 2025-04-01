@@ -122,7 +122,7 @@ def accept_terms(version_data, current_user):
 
         return {
             "id": str(current_user.id),
-            "cognitoId": current_user.cognitoId,
+            "cognito_id": current_user.cognito_id,
             "okta_id": current_user.okta_id,
             "login_gov_id": current_user.login_gov_id,
             "created_at": current_user.created_at.isoformat()
