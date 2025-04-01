@@ -41,6 +41,7 @@ def list_scans(current_user):
                 "isUserModifiable": scan.isUserModifiable,
                 "isSingleScan": scan.isSingleScan,
                 "manualRunPending": scan.manualRunPending,
+                "concurrentTasks": scan.concurrentTasks,
                 "tags": [
                     {
                         "id": tag.id,
@@ -105,6 +106,23 @@ def create_scan(scan_data: NewScan, current_user):
         if scan_data.name not in SCAN_SCHEMA:
             raise HTTPException(status_code=400, detail="Invalid scan name")
 
+        max_tasks = SCAN_SCHEMA[scan_data.name].maxConcurrentTasks
+        if scan_data.concurrentTasks is None:
+            raise HTTPException(
+                status_code=400, detail="Concurrent tasks must be provided."
+            )
+        if max_tasks is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Server configuration error: max concurrent tasks not set.",
+            )
+
+        if scan_data.concurrentTasks > max_tasks:
+            raise HTTPException(
+                status_code=400,
+                detail="Number of concurrent tasks exceeds the max for this scan.",
+            )
+
         # Create the scan instance
         scan_data_dict = scan_data.dict(
             exclude_unset=True, exclude={"organizations", "tags"}
@@ -131,6 +149,7 @@ def create_scan(scan_data: NewScan, current_user):
             "isGranular": scan.isGranular,
             "isUserModifiable": scan.isUserModifiable,
             "isSingleScan": scan.isSingleScan,
+            "concurrentTasks": scan.concurrentTasks,
             "createdBy": {"id": current_user.id, "name": current_user.fullName},
             "tags": list(scan.tags.values("id")),
             "organizations": list(scan.organizations.values("id")),
@@ -138,7 +157,6 @@ def create_scan(scan_data: NewScan, current_user):
 
     except HTTPException as http_exc:
         raise http_exc
-
     except Organization.DoesNotExist:
         raise HTTPException(status_code=404, detail="Organization not found")
     except OrganizationTag.DoesNotExist:
@@ -185,6 +203,7 @@ def get_scan(scan_id: str, current_user):
         "manualRunPending": scan.manualRunPending,
         "organizations": related_organizations,
         "tags": list(scan.tags.values()),
+        "concurrentTasks": scan.concurrentTasks,
     }
 
     # Return the scan details along with its related data
@@ -245,6 +264,7 @@ def update_scan(scan_id: str, scan_data: NewScan, current_user):
             "createdBy": {"id": current_user.id, "name": current_user.fullName},
             "tags": list(scan.tags.values("id")),
             "organizations": list(scan.organizations.values("id")),
+            "concurrentTasks": scan.concurrentTasks,
         }
 
     except HTTPException as http_exc:

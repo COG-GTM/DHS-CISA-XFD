@@ -352,6 +352,12 @@ variable "ssm_whoisxml_api_key" {
   default     = "/crossfeed/staging/WHOIS_XML_KEY"
 }
 
+variable "ssm_whoisxml_thread_count" {
+  description = "ssm_whoisxml_thread_count"
+  type        = string
+  default     = "/crossfeed/staging/WHOIS_XML_THREAD_COUNT"
+}
+
 variable "ssm_qualys_username" {
   description = "ssm_qualys_username"
   type        = string

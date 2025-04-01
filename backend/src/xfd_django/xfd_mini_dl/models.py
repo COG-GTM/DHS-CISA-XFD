@@ -424,10 +424,12 @@ class Organization(models.Model):
     ip_blocks = models.TextField(
         db_column="ip_blocks",
         help_text="IP blocks attributed to or provided by a stakeholder.",
+        null=True,
     )  # This field type is a guess.
     is_passive = models.BooleanField(
         db_column="is_passive",
         help_text="Boolean to flag if only passive data collection can be used on the stakeholder's assets.",
+        null=True,
     )
     pending_domains = ArrayField(
         models.TextField(blank=True, null=True),
@@ -937,6 +939,7 @@ class Scan(models.Model):
         db_column="manual_run_pending",
         help_text="A boolean to flag if a manually called scan is still waiting to be run.",
     )
+    concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
     created_by = models.ForeignKey(
         "User",
         models.DO_NOTHING,
@@ -1026,6 +1029,7 @@ class ScanTask(models.Model):
         null=True,
         help_text="Date and time the scan task was added to the queue.",
     )
+    concurrency_index = models.IntegerField(db_column="concurrency_index", default=1)
     organizations = models.ManyToManyField(
         Organization,
         related_name="scan_tasks",
