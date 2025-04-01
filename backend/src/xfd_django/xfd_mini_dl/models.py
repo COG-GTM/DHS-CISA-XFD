@@ -1862,11 +1862,13 @@ class CidrOrgs(models.Model):
         Cidr,
         on_delete=models.CASCADE,
         help_text="FK: Foreign key to the Cidr associated with the organization.",
+        related_name="cidrorgs",
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
         help_text="FK: Foreign key to the Organization associated with the Cidr.",
+        related_name="cidrorgs",
     )
     first_seen = models.DateField(
         blank=True,
@@ -1886,7 +1888,7 @@ class CidrOrgs(models.Model):
     )
 
     class Meta:
-        """Set IpsSubs model metadata."""
+        """Set CidrOrgs model metadata."""
 
         managed = manage_db
         db_table = "cidr_orgs"
@@ -2241,9 +2243,14 @@ class IpsSubs(models.Model):
     """Define IpsSubs model."""
 
     ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid1)
-    ip = models.ForeignKey(Ip, on_delete=models.CASCADE, db_column="ip_id")
+    ip = models.ForeignKey(
+        Ip, on_delete=models.CASCADE, db_column="ip_id", related_name="ipssubs"
+    )
     sub_domain = models.ForeignKey(
-        "SubDomains", on_delete=models.CASCADE, db_column="sub_domain_id"
+        "SubDomains",
+        on_delete=models.CASCADE,
+        db_column="sub_domain_id",
+        related_name="ipssubs",
     )
     first_seen = models.DateTimeField(
         blank=True,
@@ -3496,7 +3503,7 @@ class CredentialExposures(models.Model):
     organization = models.ForeignKey(
         "Organization",
         on_delete=models.CASCADE,
-        db_column="organization_uid",
+        db_column="organization_id",
         help_text="FK: Foreign Key to organization",
     )
     root_domain = models.TextField(
@@ -3525,10 +3532,15 @@ class CredentialExposures(models.Model):
         null=True,
         help_text="Date credential exposure information was last modified/updated",
     )
-    credential_breaches = models.ForeignKey(
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_column="created_at",
+        help_text="Date and time the Credential Exposure object was created.",
+    )
+    credential_breach = models.ForeignKey(
         CredentialBreaches,
         on_delete=models.CASCADE,
-        db_column="credential_breaches_uid",
+        db_column="credential_breach_id",
         help_text="FK: Foreign Key to credential_breaches",
     )
     data_source = models.ForeignKey(
@@ -3570,7 +3582,7 @@ class CredentialExposures(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "credential_exposures"
-        unique_together = (("breach_name", "email"),)
+        unique_together = (("breach_name", "email", "organization"),)
 
 
 class CyhyContacts(models.Model):
@@ -4877,6 +4889,7 @@ class SubDomains(models.Model):
         Organization,
         on_delete=models.CASCADE,
         db_column="organization_uid",
+        related_name="sub_domains",
         help_text="FK: Foreign Key to organization",
     )
     ip_only = models.BooleanField(
