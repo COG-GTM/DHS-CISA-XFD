@@ -11,7 +11,9 @@ from fastapi.testclient import TestClient
 import pytest
 from redis import asyncio as aioredis
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import (
+from xfd_api.views import get_redis_client
+from xfd_django.asgi import app
+from xfd_mini_dl.models import (
     Domain,
     Organization,
     Role,
@@ -20,8 +22,6 @@ from xfd_api.models import (
     UserType,
     Vulnerability,
 )
-from xfd_api.views import get_redis_client
-from xfd_django.asgi import app
 
 client = TestClient(app)
 
@@ -68,24 +68,25 @@ def test_get_stats_by_org_user():
     """Test retrieving stats as an organization user."""
     organization = Organization.objects.create(
         name="test-" + secrets.token_hex(4),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization2 = Organization.objects.create(
         name="test-" + secrets.token_hex(4),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
+    # TODO: update with domain mdl swap changes
     domain = Domain.objects.create(
-        name="test-" + secrets.token_hex(4), isFceb=True, organization=organization
+        name="test-" + secrets.token_hex(4), is_fceb=True, organization=organization
     )
 
     Vulnerability.objects.create(
@@ -99,12 +100,12 @@ def test_get_stats_by_org_user():
     )
 
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -131,8 +132,8 @@ def test_get_stats_by_org_user():
     assert response.status_code == 200
     data = response.json()
     assert "domains" in data["result"]
-    assert "numVulnerabilities" in data["result"]["domains"]
-    assert data["result"]["domains"]["numVulnerabilities"][0][
+    assert "num_vulnerabilities" in data["result"]["domains"]
+    assert data["result"]["domains"]["num_vulnerabilities"][0][
         "id"
     ] == "{}|Critical".format(domain.name)
 
@@ -142,24 +143,25 @@ def test_get_stats_by_global_view_user():
     """Test retrieving stats as a GlobalView user with organization filtering."""
     organization = Organization.objects.create(
         name="test-" + secrets.token_hex(4),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization2 = Organization.objects.create(
         name="test-" + secrets.token_hex(4),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
+    # TODO: Update with Domains MDL swapover
     domain = Domain.objects.create(
-        name="test-" + secrets.token_hex(4), isFceb=True, organization=organization
+        name="test-" + secrets.token_hex(4), is_fceb=True, organization=organization
     )
 
     Vulnerability.objects.create(
@@ -168,8 +170,9 @@ def test_get_stats_by_global_view_user():
 
     Service.objects.create(service="http", port=80, domain=domain)
 
+    # TODO: Update with Domains MDL swapover
     domain2 = Domain.objects.create(
-        name="test-" + secrets.token_hex(4), isFceb=True, organization=organization2
+        name="test-" + secrets.token_hex(4), is_fceb=True, organization=organization2
     )
 
     Vulnerability.objects.create(
@@ -179,12 +182,12 @@ def test_get_stats_by_global_view_user():
     Service.objects.create(service="https", port=443, domain=domain2)
 
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Populate redis
@@ -205,7 +208,7 @@ def test_get_stats_by_global_view_user():
     assert response.status_code == 200
     data = response.json()
     assert "domains" in data["result"]
-    assert "numVulnerabilities" in data["result"]["domains"]
-    assert data["result"]["domains"]["numVulnerabilities"][0]["id"] == "{}|High".format(
-        domain.name
-    )
+    assert "num_vulnerabilities" in data["result"]["domains"]
+    assert data["result"]["domains"]["num_vulnerabilities"][0][
+        "id"
+    ] == "{}|High".format(domain.name)

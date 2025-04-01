@@ -79,7 +79,7 @@ def check_user_expiration():
         try:
             cognito_client.admin_set_user_password(
                 UserPoolId=user_pool_id,
-                Username=user.cognitoId,
+                Username=user.cognito_id,
                 Password=os.getenv("REACT_APP_RANDOM_PASSWORD"),
                 Permanent=False,
             )
@@ -115,7 +115,7 @@ def check_user_expiration():
             # Remove from Cognito
             cognito_client.admin_delete_user(
                 UserPoolId=user_pool_id,
-                Username=user.cognitoId,
+                Username=user.cognito_id,
             )
             print("Removed user {} from Cognito.".format(user.email))
 

@@ -16,16 +16,16 @@ class Scan(BaseModel):
     """Scan schema reflecting model."""
 
     id: UUID
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime
+    updated_at: datetime
     name: str
     arguments: Any
     frequency: int
-    lastRun: Optional[datetime]
-    isGranular: bool
-    isUserModifiable: Optional[bool]
-    isSingleScan: bool
-    manualRunPending: bool
+    last_run: Optional[datetime]
+    is_granular: bool
+    is_user_modifiable: Optional[bool]
+    is_single_scan: bool
+    manual_run_pending: bool
     tags: Optional[List[OrganizationalTags]] = []
     organizations: Optional[List[Organization]] = []
 
@@ -37,7 +37,7 @@ class ScanSchema(BaseModel):
     description: str
 
     # Whether scan is passive (not allowed to hit the domain).
-    isPassive: bool
+    is_passive: bool
 
     # Whether scan is global. Global scans run once for all organizations, as opposed
     # to non-global scans, which are run for each organization.
@@ -53,7 +53,7 @@ class ScanSchema(BaseModel):
     # which corresponds to the number of workers that will be created to run the task.
     # Chunked scans can only be run on scans whose implementation takes into account the
     # chunkNumber and numChunks parameters specified in commandOptions.
-    numChunks: Optional[int] = None
+    num_chunks: Optional[int] = None
 
 
 class GranularScan(BaseModel):
@@ -61,7 +61,7 @@ class GranularScan(BaseModel):
 
     id: UUID
     name: str
-    isUserModifiable: Optional[bool]
+    is_user_modifiable: Optional[bool]
 
 
 class GetScansResponseModel(BaseModel):
@@ -93,9 +93,9 @@ class NewScan(BaseModel):
     organizations: Optional[List[UUID]] = []
     tags: Optional[List[IdSchema]] = []
     frequency: Optional[int] = None
-    isGranular: Optional[bool] = None
-    isUserModifiable: Optional[bool] = None
-    isSingleScan: Optional[bool] = None
+    is_granular: Optional[bool] = None
+    is_user_modifiable: Optional[bool] = None
+    is_single_scan: Optional[bool] = None
 
 
 class CreateScanResponseModel(BaseModel):
@@ -105,10 +105,10 @@ class CreateScanResponseModel(BaseModel):
     name: str
     arguments: Any
     frequency: int
-    isGranular: bool
-    isUserModifiable: Optional[bool]
-    isSingleScan: bool
-    createdBy: Optional[Any]
+    is_granular: bool
+    is_user_modifiable: Optional[bool]
+    is_single_scan: bool
+    created_by: Optional[Any]
     tags: Optional[List[IdSchema]]
     organizations: Optional[List[IdSchema]]
 
@@ -131,37 +131,37 @@ class GenericMessageResponseModel(BaseModel):
 SCAN_SCHEMA = {
     "amass": ScanSchema(
         type="fargate",
-        isPassive=False,
+        is_passive=False,
         global_scan=False,
         description="Open source tool that integrates passive APIs and active subdomain enumeration in order to discover target subdomains",
     ),
     "censys": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         description="Passive discovery of subdomains from public certificates",
     ),
     "censysCertificates": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="2048",
         memory="6144",
-        numChunks=20,
+        num_chunks=20,
         description="Fetch TLS certificate data from censys certificates dataset",
     ),
     "censysIpv4": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="2048",
         memory="6144",
-        numChunks=20,
+        num_chunks=20,
         description="Fetch passive port and banner data from censys ipv4 dataset",
     ),
     "cve": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -169,7 +169,7 @@ SCAN_SCHEMA = {
     ),
     "credential_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -177,7 +177,7 @@ SCAN_SCHEMA = {
     ),
     "vulnScanningSync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -185,7 +185,7 @@ SCAN_SCHEMA = {
     ),
     "cveSync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -193,7 +193,7 @@ SCAN_SCHEMA = {
     ),
     "dnstwist": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         cpu="2048",
         memory="16384",
@@ -201,19 +201,19 @@ SCAN_SCHEMA = {
     ),
     "dotgov": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         description='Create organizations based on root domains from the dotgov registrar dataset. All organizations are created with the "dotgov" tag and have a " (dotgov)" suffix added to their name.',
     ),
     "findomain": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         description="Open source tool that integrates passive APIs in order to discover target subdomains",
     ),
     "hibp": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         cpu="2048",
         memory="16384",
@@ -221,7 +221,7 @@ SCAN_SCHEMA = {
     ),
     "intrigueIdent": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         cpu="1024",
         memory="4096",
@@ -229,31 +229,31 @@ SCAN_SCHEMA = {
     ),
     "lookingGlass": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         description="Finds vulnerabilities and malware from the LookingGlass API",
     ),
     "portscanner": ScanSchema(
         type="fargate",
-        isPassive=False,
+        is_passive=False,
         global_scan=False,
         description="Active port scan of common ports",
     ),
     "rootDomainSync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         description="Creates domains from root domains by doing a single DNS lookup for each root domain.",
     ),
     "savedSearch": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         description="Performs saved searches to update their search results",
     ),
     "searchSync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="4096",
@@ -261,7 +261,7 @@ SCAN_SCHEMA = {
     ),
     "shodan": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         cpu="1024",
         memory="8192",
@@ -269,7 +269,7 @@ SCAN_SCHEMA = {
     ),
     "shodan_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -277,25 +277,25 @@ SCAN_SCHEMA = {
     ),
     "sslyze": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         description="SSL certificate inspection",
     ),
     "test": ScanSchema(
         type="fargate",
-        isPassive=False,
+        is_passive=False,
         global_scan=True,
         description="Not a real scan, used to test",
     ),
     "trustymail": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         description="Evaluates SPF/DMARC records and checks MX records for STARTTLS support",
     ),
     "vulnSync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -303,7 +303,7 @@ SCAN_SCHEMA = {
     ),
     "wappalyzer": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         cpu="1024",
         memory="4096",
@@ -311,7 +311,7 @@ SCAN_SCHEMA = {
     ),
     "flagFloatingIps": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="2048",
         memory="16384",
@@ -319,7 +319,7 @@ SCAN_SCHEMA = {
     ),
     "was_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -327,7 +327,7 @@ SCAN_SCHEMA = {
     ),
     "xpanse_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",

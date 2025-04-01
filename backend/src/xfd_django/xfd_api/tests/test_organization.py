@@ -9,7 +9,8 @@ import uuid
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import (
+from xfd_django.asgi import app
+from xfd_mini_dl.models import (
     Organization,
     OrganizationTag,
     Role,
@@ -18,7 +19,6 @@ from xfd_api.models import (
     User,
     UserType,
 )
-from xfd_django.asgi import app
 
 client = TestClient(app)
 
@@ -28,12 +28,12 @@ client = TestClient(app)
 def test_create_org_by_global_admin():
     """Test organization by global admin should succeed."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
@@ -42,11 +42,11 @@ def test_create_org_by_global_admin():
     response = client.post(
         "/organizations/",
         json={
-            "ipBlocks": [],
+            "ip_blocks": [],
             "acronym": acronym,
             "name": name,
-            "rootDomains": ["cisa.gov"],
-            "isPassive": False,
+            "root_domains": ["cisa.gov"],
+            "is_passive": False,
             "tags": [{"name": "test"}],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -54,7 +54,7 @@ def test_create_org_by_global_admin():
 
     assert response.status_code == 200
     data = response.json()
-    assert data["createdBy"]["id"] == str(user.id)
+    assert data["created_by"]["id"] == str(user.id)
     assert data["name"] == name
     assert data["tags"][0]["name"] == "test"
 
@@ -64,12 +64,12 @@ def test_create_org_by_global_admin():
 def test_create_duplicate_org_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
@@ -78,11 +78,11 @@ def test_create_duplicate_org_fails():
     client.post(
         "/organizations/",
         json={
-            "ipBlocks": [],
+            "ip_blocks": [],
             "acronym": acronym,
             "name": name,
-            "rootDomains": ["cisa.gov"],
-            "isPassive": False,
+            "root_domains": ["cisa.gov"],
+            "is_passive": False,
             "tags": [],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -92,11 +92,11 @@ def test_create_duplicate_org_fails():
     response = client.post(
         "/organizations/",
         json={
-            "ipBlocks": [],
+            "ip_blocks": [],
             "acronym": acronym,
             "name": name,
-            "rootDomains": ["cisa.gov"],
-            "isPassive": False,
+            "root_domains": ["cisa.gov"],
+            "is_passive": False,
             "tags": [],
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -110,12 +110,12 @@ def test_create_duplicate_org_fails():
 def test_create_org_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     print(user)
 
@@ -125,11 +125,11 @@ def test_create_org_by_global_view_fails():
     response = client.post(
         "/organizations/",
         json={
-            "ipBlocks": [],
+            "ip_blocks": [],
             "acronym": acronym,
             "name": name,
-            "rootDomains": ["cisa.gov"],
-            "isPassive": False,
+            "root_domains": ["cisa.gov"],
+            "is_passive": False,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -143,22 +143,22 @@ def test_create_org_by_global_view_fails():
 def test_update_org_by_global_admin():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         acronym=secrets.token_hex(2),
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     new_name = "test-{}".format(secrets.token_hex(4))
@@ -173,9 +173,9 @@ def test_update_org_by_global_admin():
         json={
             "name": new_name,
             "acronym": new_acronym,
-            "rootDomains": new_root_domains,
-            "ipBlocks": new_ip_blocks,
-            "isPassive": is_passive,
+            "root_domains": new_root_domains,
+            "ip_blocks": new_ip_blocks,
+            "is_passive": is_passive,
             "tags": tags,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -184,9 +184,9 @@ def test_update_org_by_global_admin():
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == new_name
-    assert data["rootDomains"] == new_root_domains
-    assert data["ipBlocks"] == new_ip_blocks
-    assert data["isPassive"] == is_passive
+    assert data["root_domains"] == new_root_domains
+    assert data["ip_blocks"] == new_ip_blocks
+    assert data["is_passive"] == is_passive
     assert data["tags"][0]["name"] == tags[0]["name"]
 
 
@@ -195,22 +195,22 @@ def test_update_org_by_global_admin():
 def test_update_org_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         acronym=secrets.token_hex(2),
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     new_name = "test-{}".format(secrets.token_hex(4))
@@ -225,9 +225,9 @@ def test_update_org_by_global_view_fails():
         json={
             "name": new_name,
             "acronym": new_acronym,
-            "rootDomains": new_root_domains,
-            "ipBlocks": new_ip_blocks,
-            "isPassive": is_passive,
+            "root_domains": new_root_domains,
+            "ip_blocks": new_ip_blocks,
+            "is_passive": is_passive,
             "tags": tags,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -242,21 +242,21 @@ def test_update_org_by_global_view_fails():
 def test_delete_org_by_global_admin():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.delete(
@@ -272,21 +272,21 @@ def test_delete_org_by_global_admin():
 def test_delete_org_by_org_admin_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign admin role to the user for the organization
@@ -310,22 +310,22 @@ def test_delete_org_by_org_admin_fails():
 def test_delete_org_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         acronym=secrets.token_hex(2),
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.delete(
@@ -342,22 +342,22 @@ def test_delete_org_by_global_view_fails():
 def test_list_orgs_by_global_view_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Create an organization
     Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -375,31 +375,31 @@ def test_list_orgs_by_global_view_succeeds():
 def test_list_orgs_by_org_member_only_gets_their_org():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Create organizations
     organization1 = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign user a role in organization1
@@ -426,21 +426,21 @@ def test_list_orgs_by_org_member_only_gets_their_org():
 def test_get_org_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign admin role to the user for the organization
@@ -465,30 +465,30 @@ def test_get_org_by_org_admin_succeeds():
 def test_get_org_by_org_admin_of_different_org_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization1 = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization2 = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign admin role to the user for organization1
@@ -512,21 +512,21 @@ def test_get_org_by_org_admin_of_different_org_fails():
 def test_get_org_by_org_regular_user_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign regular user role to the user for the organization
@@ -550,21 +550,21 @@ def test_get_org_by_org_regular_user_fails():
 def test_get_org_with_scan_tasks_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-{}".format(secrets.token_hex(4))],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-{}".format(secrets.token_hex(4))],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign admin role to the user for the organization
@@ -603,21 +603,21 @@ def test_get_org_with_scan_tasks_by_org_admin_succeeds():
 def test_enable_user_modifiable_scan_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -651,21 +651,21 @@ def test_enable_user_modifiable_scan_by_org_admin_succeeds():
 def test_disable_user_modifiable_scan_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -705,21 +705,21 @@ def test_disable_user_modifiable_scan_by_org_admin_succeeds():
 def test_enable_user_modifiable_scan_by_org_user_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -750,21 +750,21 @@ def test_enable_user_modifiable_scan_by_org_user_fails():
 def test_enable_user_modifiable_scan_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     scan = Scan.objects.create(
@@ -792,21 +792,21 @@ def test_enable_user_modifiable_scan_by_global_admin_succeeds():
 def test_enable_non_user_modifiable_scan_by_org_admin_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -837,30 +837,30 @@ def test_enable_non_user_modifiable_scan_by_org_admin_fails():
 def test_approve_role_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     role = Role.objects.create(
@@ -882,30 +882,30 @@ def test_approve_role_by_global_admin_succeeds():
 def test_approve_role_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     role = Role.objects.create(
@@ -925,30 +925,30 @@ def test_approve_role_by_global_view_fails():
 def test_approve_role_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -976,30 +976,30 @@ def test_approve_role_by_org_admin_succeeds():
 def test_approve_role_by_org_user_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -1027,30 +1027,30 @@ def test_approve_role_by_org_user_fails():
 def test_remove_role_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     role = Role.objects.create(
@@ -1070,30 +1070,30 @@ def test_remove_role_by_global_admin_succeeds():
 def test_remove_role_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     role = Role.objects.create(
@@ -1114,29 +1114,29 @@ def test_remove_role_by_global_view_fails():
 def test_remove_role_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -1162,30 +1162,30 @@ def test_remove_role_by_org_admin_succeeds():
 def test_remove_role_by_org_user_fails():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user2 = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Role.objects.create(
@@ -1212,12 +1212,12 @@ def test_remove_role_by_org_user_fails():
 def test_get_tags_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     OrganizationTag.objects.create(
@@ -1238,12 +1238,12 @@ def test_get_tags_by_global_admin_succeeds():
 def test_get_tags_by_standard_user_returns_no_tags():
     """Test organization."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     OrganizationTag.objects.create(
@@ -1263,19 +1263,19 @@ def test_get_tags_by_standard_user_returns_no_tags():
 def test_get_organizations_by_state_as_regional_admin():
     """Test that a regional admin can retrieve organizations by state."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
     )
 
@@ -1294,19 +1294,19 @@ def test_get_organizations_by_state_as_regional_admin():
 def test_get_organizations_by_state_as_standard_user_fails():
     """Test that a standard user cannot retrieve organizations by state."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
     )
 
@@ -1323,12 +1323,12 @@ def test_get_organizations_by_state_as_standard_user_fails():
 def test_get_organizations_by_state_not_found():
     """Test that retrieving organizations for a non-existent state returns 404."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -1342,24 +1342,24 @@ def test_get_organizations_by_state_not_found():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_organizations_by_region_as_regional_admin():
-    """Test that a regional admin can retrieve organizations by regionId."""
+    """Test that a regional admin can retrieve organizations by region_id."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        regionId="12345",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        region_id="12345",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -1370,29 +1370,29 @@ def test_get_organizations_by_region_as_regional_admin():
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["id"] == str(organization.id)
-    assert response.json()[0]["regionId"] == "12345"
+    assert response.json()[0]["region_id"] == "12345"
 
 
 @pytest.mark.django_db(transaction=True)
 def test_get_organizations_by_region_as_standard_user_fails():
-    """Test that a standard user cannot retrieve organizations by regionId."""
+    """Test that a standard user cannot retrieve organizations by region_id."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test-" + secrets.token_hex(4)],
-        ipBlocks=[],
-        isPassive=False,
-        regionId="12345",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        root_domains=["test-" + secrets.token_hex(4)],
+        ip_blocks=[],
+        is_passive=False,
+        region_id="12345",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -1408,16 +1408,16 @@ def test_get_organizations_by_region_as_standard_user_fails():
 def test_get_organizations_by_region_not_found():
     """Test that retrieving organizations for a non-existent region returns 404."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
-        "/organizations/regionId/99999",  # Non-existent regionId
+        "/organizations/regionId/99999",  # Non-existent region_id
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
@@ -1429,24 +1429,24 @@ def test_get_organizations_by_region_not_found():
 def test_upsert_organization_create():
     """Test that a GlobalWriteAdmin can create a new organization."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
     acronym = secrets.token_hex(2)
     payload = {
-        "ipBlocks": [],
+        "ip_blocks": [],
         "acronym": acronym,
         "name": name,
-        "isPassive": False,
-        "rootDomains": ["unauthorized.com"],
+        "is_passive": False,
+        "root_domains": ["unauthorized.com"],
         "state": "CA",
-        "stateName": "California",
+        "state_name": "California",
         "country": "USA",
         "type": "Government",
     }
@@ -1469,23 +1469,23 @@ def test_upsert_organization_create():
 def test_upsert_organization_update():
     """Test that a GlobalWriteAdmin can update an existing organization."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         acronym="TEST",
         name="Old Name",
-        rootDomains=["old.com"],
-        ipBlocks=["192.168.2.0/24"],
-        isPassive=True,
+        root_domains=["old.com"],
+        ip_blocks=["192.168.2.0/24"],
+        is_passive=True,
         state="NY",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
@@ -1493,9 +1493,9 @@ def test_upsert_organization_update():
     payload = {
         "acronym": acronym,
         "name": name,
-        "rootDomains": ["updated.com"],
-        "ipBlocks": ["192.168.3.0/24"],
-        "isPassive": False,
+        "root_domains": ["updated.com"],
+        "ip_blocks": ["192.168.3.0/24"],
+        "is_passive": False,
         "state": "CA",
     }
 
@@ -1509,9 +1509,9 @@ def test_upsert_organization_update():
     data = response.json()
     assert data["acronym"] == acronym
     assert data["name"] == name
-    assert data["rootDomains"] == ["updated.com"]
-    assert data["ipBlocks"] == ["192.168.3.0/24"]
-    assert data["isPassive"] is False
+    assert data["root_domains"] == ["updated.com"]
+    assert data["ip_blocks"] == ["192.168.3.0/24"]
+    assert data["is_passive"] is False
     assert data["state"] == "CA"
 
 
@@ -1519,22 +1519,22 @@ def test_upsert_organization_update():
 def test_upsert_organization_unauthorized():
     """Test that a Standard user cannot create or update an organization."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
     acronym = secrets.token_hex(2)
     payload = {
-        "ipBlocks": [],
+        "ip_blocks": [],
         "acronym": acronym,
         "name": name,
-        "isPassive": False,
-        "rootDomains": ["unauthorized.com"],
+        "is_passive": False,
+        "root_domains": ["unauthorized.com"],
         "state": "CA",
     }
 
@@ -1552,22 +1552,22 @@ def test_upsert_organization_unauthorized():
 def test_upsert_organization_invalid_parent():
     """Test that upserting an organization with a non-existent parent fails."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="Admin",
+        first_name="Test",
+        last_name="Admin",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     name = "test-{}".format(secrets.token_hex(4))
     acronym = secrets.token_hex(2)
     payload = {
-        "ipBlocks": [],
+        "ip_blocks": [],
         "acronym": acronym,
         "name": name,
-        "isPassive": False,
-        "rootDomains": ["invalidparent.com"],
+        "is_passive": False,
+        "root_domains": ["invalidparent.com"],
         "state": "CA",
         "parent": str(uuid.uuid4()),  # Random UUID for non-existent parent
     }
@@ -1585,38 +1585,38 @@ def test_upsert_organization_invalid_parent():
 def test_add_user_to_org_v2_success():
     """Test successfully adding a user to an organization by a regional admin."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="Test Organization",
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": str(user.id),
+        "user_id": str(user.id),
         "role": "member",
     }
 
@@ -1639,35 +1639,35 @@ def test_add_user_to_org_v2_success():
 def test_add_user_to_org_v2_unauthorized():
     """Test that a standard user cannot add a user to an organization."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="Test Organization",
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     target_user = User.objects.create(
-        firstName="Target",
-        lastName="User",
+        first_name="Target",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": str(target_user.id),
+        "user_id": str(target_user.id),
         "role": "member",
     }
 
@@ -1685,26 +1685,26 @@ def test_add_user_to_org_v2_unauthorized():
 def test_add_user_to_org_v2_invalid_user_id():
     """Test adding a user with an invalid user ID format."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="Test Organization",
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": "invalid-user-id",
+        "user_id": "invalid-user-id",
         "role": "member",
     }
 
@@ -1722,25 +1722,25 @@ def test_add_user_to_org_v2_invalid_user_id():
 def test_add_user_to_org_v2_invalid_organization_id():
     """Test adding a user with an invalid organization ID format."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": str(user.id),
+        "user_id": str(user.id),
         "role": "member",
     }
 
@@ -1758,26 +1758,26 @@ def test_add_user_to_org_v2_invalid_organization_id():
 def test_add_user_to_org_v2_user_not_found():
     """Test adding a non-existent user to an organization."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="Test Organization",
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": str(uuid.uuid4()),  # Non-existent user
+        "user_id": str(uuid.uuid4()),  # Non-existent user
         "role": "member",
     }
 
@@ -1795,25 +1795,25 @@ def test_add_user_to_org_v2_user_not_found():
 def test_add_user_to_org_v2_organization_not_found():
     """Test adding a user to a non-existent organization."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": str(user.id),
+        "user_id": str(user.id),
         "role": "member",
     }
 
@@ -1831,38 +1831,38 @@ def test_add_user_to_org_v2_organization_not_found():
 def test_add_user_to_org_v2_region_mismatch():
     """Test adding a user to an organization where the region does not match."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.REGIONAL_ADMIN,
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.REGIONAL_ADMIN,
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization = Organization.objects.create(
         name="Test Organization",
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-2",  # Different region
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-2",  # Different region
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        regionId="region-2",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        region_id="region-2",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {
-        "userId": str(user.id),
+        "user_id": str(user.id),
         "role": "member",
     }
 
@@ -1880,34 +1880,34 @@ def test_add_user_to_org_v2_region_mismatch():
 def test_list_organizations_v2_as_global_admin():
     """Test that a GlobalViewAdmin can retrieve all organizations."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization1 = Organization.objects.create(
         name="Test Organization 1",
-        rootDomains=["test1.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test1.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization2 = Organization.objects.create(
         name="Test Organization 2",
-        rootDomains=["test2.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test2.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="NY",
-        regionId="region-2",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-2",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -1927,34 +1927,34 @@ def test_list_organizations_v2_as_global_admin():
 def test_list_organizations_v2_as_member():
     """Test that a user with organization membership can retrieve only their organizations."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization1 = Organization.objects.create(
         name="Test Organization 1",
-        rootDomains=["test1.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test1.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="Test Organization 2",
-        rootDomains=["test2.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test2.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="NY",
-        regionId="region-2",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-2",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Assign user to only one organization
@@ -1975,23 +1975,23 @@ def test_list_organizations_v2_as_member():
 def test_list_organizations_v2_as_user_without_membership():
     """Test that a user with no organization membership gets an empty list."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="Test Organization 1",
-        rootDomains=["test1.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test1.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -2007,34 +2007,34 @@ def test_list_organizations_v2_as_user_without_membership():
 def test_list_organizations_v2_filter_by_state():
     """Test filtering organizations by state."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization1 = Organization.objects.create(
         name="Test Organization 1",
-        rootDomains=["test1.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test1.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="Test Organization 2",
-        rootDomains=["test2.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test2.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="NY",
-        regionId="region-2",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-2",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -2053,34 +2053,34 @@ def test_list_organizations_v2_filter_by_state():
 def test_list_organizations_v2_filter_by_region():
     """Test filtering organizations by region."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="Test Organization 1",
-        rootDomains=["test1.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test1.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     organization2 = Organization.objects.create(
         name="Test Organization 2",
-        rootDomains=["test2.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test2.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="NY",
-        regionId="region-2",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-2",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -2091,7 +2091,7 @@ def test_list_organizations_v2_filter_by_region():
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
-    assert data[0]["regionId"] == "region-2"
+    assert data[0]["region_id"] == "region-2"
     assert data[0]["id"] == str(organization2.id)
 
 
@@ -2106,23 +2106,23 @@ def test_list_organizations_v2_no_auth():
 def test_list_organizations_v2_invalid_filter():
     """Test that an invalid state filter does not return organizations."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="Test Organization",
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
         state="CA",
-        regionId="region-1",
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        region_id="region-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -2139,17 +2139,17 @@ def test_list_organizations_v2_invalid_filter():
 def test_search_organizations_as_global_admin(mock_search):
     """Test that a GlobalViewAdmin can search organizations."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Mock Elasticsearch response
     mock_search.return_value = {
-        "hits": {"hits": [{"_source": {"name": "Test Org", "regionId": "region-1"}}]}
+        "hits": {"hits": [{"_source": {"name": "Test Org", "region_id": "region-1"}}]}
     }
 
     payload = {"searchTerm": "Test Org", "regions": []}
@@ -2172,17 +2172,17 @@ def test_search_organizations_as_global_admin(mock_search):
 def test_search_organizations_filter_by_region(mock_search):
     """Test that the search filters organizations by region."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Mock Elasticsearch response
     mock_search.return_value = {
-        "hits": {"hits": [{"_source": {"name": "Region Org", "regionId": "region-3"}}]}
+        "hits": {"hits": [{"_source": {"name": "Region Org", "region_id": "region-3"}}]}
     }
 
     payload = {"searchTerm": "", "regions": ["region-3"]}
@@ -2197,7 +2197,7 @@ def test_search_organizations_filter_by_region(mock_search):
     data = response.json()
     assert "body" in data
     assert len(data["body"]["hits"]["hits"]) == 1
-    assert data["body"]["hits"]["hits"][0]["_source"]["regionId"] == "region-3"
+    assert data["body"]["hits"]["hits"][0]["_source"]["region_id"] == "region-3"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -2205,12 +2205,12 @@ def test_search_organizations_filter_by_region(mock_search):
 def test_search_organizations_no_results(mock_search):
     """Test searching for organizations when no results are found."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Mock Elasticsearch response (no results)
@@ -2242,12 +2242,12 @@ def test_search_organizations_no_auth():
 def test_search_organizations_no_access():
     """Test that a user without the necessary permissions gets an empty result."""
     user = User.objects.create(
-        firstName="Unauthorized",
-        lastName="User",
+        first_name="Unauthorized",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     payload = {"searchTerm": "Restricted Org", "regions": []}
@@ -2266,28 +2266,28 @@ def test_search_organizations_no_access():
 def test_get_all_regions_as_global_admin():
     """Test that a GlobalViewAdmin can retrieve all regions."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["test.com"],
-        ipBlocks=[],
-        isPassive=False,
-        regionId="region-1",
+        root_domains=["test.com"],
+        ip_blocks=[],
+        is_passive=False,
+        region_id="region-1",
     )
 
     Organization.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
-        rootDomains=["example.com"],
-        ipBlocks=[],
-        isPassive=False,
-        regionId="region-2",
+        root_domains=["example.com"],
+        ip_blocks=[],
+        is_passive=False,
+        region_id="region-2",
     )
 
     response = client.get(
@@ -2298,20 +2298,20 @@ def test_get_all_regions_as_global_admin():
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    assert {"regionId": "region-1"} in data
-    assert {"regionId": "region-2"} in data
+    assert {"region_id": "region-1"} in data
+    assert {"region_id": "region-2"} in data
 
 
 @pytest.mark.django_db(transaction=True)
 def test_get_all_regions_as_standard_user_fails():
     """Test that a standard user cannot retrieve regions (should return 403)."""
     user = User.objects.create(
-        firstName="Test",
-        lastName="User",
+        first_name="Test",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(
@@ -2332,14 +2332,14 @@ def test_get_all_regions_no_auth():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_all_regions_empty():
-    """Test that an empty result is returned if no organizations have regionIds."""
+    """Test that an empty result is returned if no organizations have region_ids."""
     admin = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     response = client.get(

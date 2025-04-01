@@ -8,8 +8,8 @@ import uuid
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import Notification, User, UserType
 from xfd_django.asgi import app
+from xfd_mini_dl.models import Notification, User, UserType
 
 client = TestClient(app)
 
@@ -19,12 +19,12 @@ client = TestClient(app)
 def test_create_notification_as_global_view_admin():
     """Test notification creation by GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.post(
@@ -32,12 +32,12 @@ def test_create_notification_as_global_view_admin():
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
         json={
             "id": str(uuid.uuid4()),
-            "maintenanceType": "Routine",
+            "maintenance_type": "Routine",
             "status": "Active",
-            "updatedBy": "AdminUser",
+            "updated_by": "AdminUser",
             "message": "Scheduled maintenance",
-            "startDatetime": datetime.utcnow().isoformat(),
-            "endDatetime": datetime.utcnow().isoformat(),
+            "start_datetime": datetime.utcnow().isoformat(),
+            "end_datetime": datetime.utcnow().isoformat(),
         },
     )
 
@@ -55,12 +55,12 @@ def test_create_notification_as_global_view_admin():
 def test_create_notification_as_regular_user_fails():
     """Test notification creation should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.post(
@@ -68,12 +68,12 @@ def test_create_notification_as_regular_user_fails():
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
         json={
             "id": str(uuid.uuid4()),
-            "maintenanceType": "Routine",
+            "maintenance_type": "Routine",
             "status": "Active",
-            "updatedBy": "AdminUser",
+            "updated_by": "AdminUser",
             "message": "Scheduled maintenance",
-            "startDatetime": datetime.utcnow().isoformat(),
-            "endDatetime": datetime.utcnow().isoformat(),
+            "start_datetime": datetime.utcnow().isoformat(),
+            "end_datetime": datetime.utcnow().isoformat(),
         },
     )
 
@@ -86,23 +86,23 @@ def test_create_notification_as_regular_user_fails():
 def test_delete_notification_as_global_view_admin():
     """Test notification deletion by GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     notification = Notification.objects.create(
         maintenanceType="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Scheduled maintenance",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.delete(
@@ -125,23 +125,23 @@ def test_delete_notification_as_global_view_admin():
 def test_delete_notification_as_regular_user_fails():
     """Test notification deletion should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     notification = Notification.objects.create(
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Scheduled maintenance",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.delete(
@@ -161,24 +161,24 @@ def test_delete_notification_as_regular_user_fails():
 def test_get_all_notifications():
     """Test retrieving all notifications."""
     Notification.objects.create(
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Test notification 1",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
     Notification.objects.create(
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Test notification 2",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.get("/notifications")
@@ -194,23 +194,23 @@ def test_get_all_notifications():
 def test_get_notification_by_id_as_global_view_admin():
     """Test retrieving a specific notification by ID as GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     notification = Notification.objects.create(
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Test notification",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.get(
@@ -227,23 +227,23 @@ def test_get_notification_by_id_as_global_view_admin():
 def test_get_notification_by_id_as_regular_user_fails():
     """Test retrieving a specific notification by ID should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     notification = Notification.objects.create(
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Scheduled maintenance",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.get(
@@ -259,36 +259,36 @@ def test_get_notification_by_id_as_regular_user_fails():
 def test_update_notification_as_global_view_admin():
     """Test updating a notification by GlobalViewAdmin."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     notification = Notification.objects.create(
         id=uuid.uuid4(),
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Initial message",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.put(
         "/notifications/{}".format(notification.id),
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
         json={
-            "maintenanceType": "Routine",
+            "maintenance_type": "Routine",
             "status": "Updated",
-            "updatedBy": "AdminUser",
+            "updated_by": "AdminUser",
             "message": "Updated message",
-            "startDatetime": datetime.utcnow().isoformat(),
-            "endDatetime": datetime.utcnow().isoformat(),
+            "start_datetime": datetime.utcnow().isoformat(),
+            "end_datetime": datetime.utcnow().isoformat(),
         },
     )
 
@@ -305,36 +305,36 @@ def test_update_notification_as_global_view_admin():
 def test_update_notification_as_regular_user_fails():
     """Test updating a notification should fail for a standard user."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     notification = Notification.objects.create(
         id=uuid.uuid4(),
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
-        updatedBy="AdminUser",
+        updated_by="AdminUser",
         message="Initial message",
-        startDatetime=datetime.utcnow(),
-        endDatetime=datetime.utcnow(),
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        start_datetime=datetime.utcnow(),
+        end_datetime=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     response = client.put(
         "/notifications/{}".format(notification.id),
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
         json={
-            "maintenanceType": "Routine",
+            "maintenance_type": "Routine",
             "status": "Updated",
-            "updatedBy": "AdminUser",
+            "updated_by": "AdminUser",
             "message": "Updated message",
-            "startDatetime": datetime.utcnow().isoformat(),
-            "endDatetime": datetime.utcnow().isoformat(),
+            "start_datetime": datetime.utcnow().isoformat(),
+            "end_datetime": datetime.utcnow().isoformat(),
         },
     )
 
