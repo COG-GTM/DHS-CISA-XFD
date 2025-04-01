@@ -1,16 +1,25 @@
+"""
+Insert or update CVE records and retrieve associated product data.
+
+Define functions to:
+- Insert or update a CVE record in the database along with its related CPE information.
+- Retrieve a CVE and group its associated products by vendor.
+
+Log operations and handle exceptions to ensure smooth API interactions.
+"""
+
 # Standard Library Imports
 # Standard Python Libraries
-import json
-import logging
 import datetime
-
+import logging
 
 # Third-Party Libraries
-# Third Party Imports
-import requests
-from django.conf import settings
 from django.forms.models import model_to_dict
-from ..models import Cve, Cpe
+
+from ..models import Cpe, Cve
+
+# Third Party Imports
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +39,6 @@ def api_cve_insert(cve_dict):
     """Create API endpoint to create a record in database."""
 
     try:
-
         # Get WAS record based on tag
         vender_prod_dict = cve_dict.vender_product
         cve_object, created = Cve.objects.update_or_create(
@@ -75,21 +83,21 @@ def api_cve_insert(cve_dict):
 
         prod_obj_list = []
         for vender, product_list in vender_prod_dict.items():
-
             for product, version in product_list:
                 product_obj, product_created = Cpe.objects.update_or_create(
                     vender=vender,
                     name=product,
                     version=version,
                     defaults={
-                    "last_seen_at":datetime.datetime.now(datetime.timezone.utc)},
+                        "last_seen_at": datetime.datetime.now(datetime.timezone.utc)
+                    },
                 )
                 prod_obj_list.append(product_obj)
 
         cve_object.cpes.add(*prod_obj_list)
         cve_object.save()
 
-        #TODO no ticket is needed for this todo, this code may be needed in the future
+        # TODO no ticket is needed for this todo, this code may be needed in the future
         prods = []
         for prod in list(cve_object.cpes.all()):
             prods.append(
@@ -139,13 +147,15 @@ def get_cve_and_products(cve_name):
             vendor = prod.vendor  # 'vendor' is a CharField in the new Cpe model
             if vendor not in vend_prod_dict:
                 vend_prod_dict[vendor] = []
-            vend_prod_dict[vendor].append({
-                "cpe_id": prod.id,
-                "name": prod.name,
-                "version": prod.version,
-                "vendor": prod.vendor,
-                "last_seen_at": prod.last_seen_at,
-            })
+            vend_prod_dict[vendor].append(
+                {
+                    "cpe_id": prod.id,
+                    "name": prod.name,
+                    "version": prod.version,
+                    "vendor": prod.vendor,
+                    "last_seen_at": prod.last_seen_at,
+                }
+            )
         cve_dict = model_to_dict(cve)
         return {"cve_data": cve_dict, "products": vend_prod_dict}
     except Cve.DoesNotExist:
@@ -153,4 +163,3 @@ def get_cve_and_products(cve_name):
     except Exception as e:
         LOGGER.error("An error occurred: %s", e, exc_info=True)
         return {"message": "An error occurred"}
-

@@ -5580,6 +5580,7 @@ class XpanseAlerts(models.Model):
         managed = manage_db
         db_table = "xpanse_alerts_mdl"
 
+
 # # THese are all views, so they shouldn't be generated via the ORM
 
 # # This should be a view not a table

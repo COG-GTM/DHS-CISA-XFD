@@ -15,7 +15,7 @@ import requests
 
 from ..helpers.nist_helpers import api_cve_insert, get_cve_and_products
 
-api_key = os.environ("NIST_API_KEY")
+api_key = os.getenv("NIST_API_KEY")
 # Global variables
 nist_url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
