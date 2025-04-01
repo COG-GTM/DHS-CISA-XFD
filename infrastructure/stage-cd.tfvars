@@ -115,3 +115,5 @@ create_email_sender_instance         = true
 email_sender_instance_type           = "t3.small"
 ssm_whoisxml_thread_count            = "/crossfeed/staging/WHOIS_XML_THREAD_COUNT"
 ssm_whoisxml_api_key                 = "/crossfeed/staging/WHOIS_XML_API_KEY"
+crossfeed_playwright                 = "crossfeed-playwright-staging-cd"
+automated_test_reports_bucket_name   = "cisa-crossfeed-staging-cd-automated-test-reports"
