@@ -113,3 +113,5 @@ ssm_redshift_password                = "/crossfeed/staging/REDSHIFT_PASSWORD"
 create_elasticache_cluster           = true
 create_email_sender_instance         = true
 email_sender_instance_type           = "t3.small"
+crossfeed_playwright                 = "crossfeed-playwright-staging-cd"
+automated_test_reports_bucket_name   = "cisa-crossfeed-staging-cd-automated-test-reports"
