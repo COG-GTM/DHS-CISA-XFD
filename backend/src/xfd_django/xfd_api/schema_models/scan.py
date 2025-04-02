@@ -26,6 +26,7 @@ class Scan(BaseModel):
     isUserModifiable: Optional[bool]
     isSingleScan: bool
     manualRunPending: bool
+    concurrentTasks: Optional[int]
     tags: Optional[List[OrganizationalTags]] = []
     organizations: Optional[List[Organization]] = []
 
@@ -54,6 +55,8 @@ class ScanSchema(BaseModel):
     # Chunked scans can only be run on scans whose implementation takes into account the
     # chunkNumber and numChunks parameters specified in commandOptions.
     numChunks: Optional[int] = None
+
+    maxConcurrentTasks: Optional[int] = 500
 
 
 class GranularScan(BaseModel):
@@ -96,6 +99,7 @@ class NewScan(BaseModel):
     isGranular: Optional[bool] = None
     isUserModifiable: Optional[bool] = None
     isSingleScan: Optional[bool] = None
+    concurrentTasks: Optional[int] = 1
 
 
 class CreateScanResponseModel(BaseModel):
@@ -111,6 +115,7 @@ class CreateScanResponseModel(BaseModel):
     createdBy: Optional[Any]
     tags: Optional[List[IdSchema]]
     organizations: Optional[List[IdSchema]]
+    concurrentTasks: Optional[int]
 
 
 class GetScanResponseModel(BaseModel):
@@ -140,6 +145,7 @@ SCAN_SCHEMA = {
         isPassive=True,
         global_scan=False,
         description="Passive discovery of subdomains from public certificates",
+        maxConcurrentTasks=5,
     ),
     "censysCertificates": ScanSchema(
         type="fargate",
@@ -166,6 +172,14 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Matches detected software versions to CVEs from NIST NVD and CISA's Known Exploited Vulnerabilities Catalog.",
+    ),
+    "credential_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Credential breach and exposure data from commercial mdl",
     ),
     "vulnScanningSync": ScanSchema(
         type="fargate",
@@ -210,6 +224,14 @@ SCAN_SCHEMA = {
         cpu="2048",
         memory="16384",
         description="Finds emails that have appeared in breaches related to a given domain",
+    ),
+    "intel_x_identity": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Identify credential exposures via IntelX.",
     ),
     "intrigueIdent": ScanSchema(
         type="fargate",
@@ -259,6 +281,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Fetch passive port, banner, and vulnerability data from shodan",
     ),
+    "shodan_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Shodan asset and vulnerability data from commercial mdl",
+    ),
     "sslyze": ScanSchema(
         type="fargate",
         isPassive=True,
@@ -293,14 +323,6 @@ SCAN_SCHEMA = {
         memory="4096",
         description="Open source tool that fingerprints web technologies based on HTTP responses",
     ),
-    "xpanseSync": ScanSchema(
-        type="fargate",
-        isPassive=True,
-        global_scan=True,
-        cpu="1024",
-        memory="8192",
-        description="Pull in xpanse vulnerability data from PEs Vulnerability database",
-    ),
     "flagFloatingIps": ScanSchema(
         type="fargate",
         isPassive=True,
@@ -308,5 +330,39 @@ SCAN_SCHEMA = {
         cpu="2048",
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
+    ),
+    "updateBlocklist": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        numChunks=0,
+        cpu="1024",
+        memory="8192",
+        description="Updates blocked ip records against blocklist.de global IP blocklist",
+    ),
+    "was_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in WAS finding data from commercial mdl",
+    ),
+    "xpanse_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Xpanse alert data from commercial mdl",
+    ),
+    "asm_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Enumerate and sync org assets.",
+        maxConcurrentTasks=1,
     ),
 }

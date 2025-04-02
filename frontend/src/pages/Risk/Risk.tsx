@@ -27,6 +27,10 @@ import {
 } from 'components/RegionAndOrganizationFilters';
 import { withSearch } from '@elastic/react-search-ui';
 import { FilterTags } from 'pages/Search/FilterTags';
+import { useLocation } from 'react-router-dom';
+import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
+import { useStaticsContext } from 'context/StaticsContext';
+import { useUserLevel } from 'hooks/useUserLevel';
 
 export interface Point {
   id: string;
@@ -54,9 +58,10 @@ let colorScale = scaleLinear<string>()
   .domain([0, 1])
   .range(['#c7e8ff', '#135787']);
 
-const Risk: React.FC<ContextType & {}> = ({
+const Risk: React.FC<ContextType> = ({
   filters,
   removeFilter,
+  addFilter,
   searchTerm,
   setSearchTerm
 }) => {
@@ -94,6 +99,8 @@ const Risk: React.FC<ContextType & {}> = ({
     };
   }, [filters]);
 
+  const { pathname } = useLocation();
+
   const filtersToDisplay = useMemo(() => {
     if (searchTerm !== '') {
       return [
@@ -108,19 +115,34 @@ const Risk: React.FC<ContextType & {}> = ({
     return filters;
   }, [filters, searchTerm, setSearchTerm]);
 
+  const userLevel = useUserLevel().userLevel;
+
+  const { regions } = useStaticsContext();
+  const initialFiltersForUser = useUserTypeFilters(regions, user, userLevel);
+
   const fetchStats = useCallback(
     async (orgId?: string) => {
-      const { result } = await apiPost<ApiResponse>('/stats', {
-        body: {
-          filters: riskFilters
-        }
-      });
-      const max = Math.max(...result.vulnerabilities.byOrg.map((p) => p.value));
-      colorScale = scaleLinear<string>()
-        .domain([0, Math.log(max)])
-        .range(['#c7e8ff', '#135787']);
-      setStats(result);
+      if (
+        user?.userType === 'globalAdmin' &&
+        riskFilters.regions.length === 0
+      ) {
+        return;
+      } else {
+        const { result } = await apiPost<ApiResponse>('/stats', {
+          body: {
+            filters: riskFilters
+          }
+        });
+        const max = Math.max(
+          ...result.vulnerabilities.byOrg.map((p) => p.value)
+        );
+        colorScale = scaleLinear<string>()
+          .domain([0, Math.log(max)])
+          .range(['#c7e8ff', '#135787']);
+        setStats(result);
+      }
     },
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [riskFilters]
   );
@@ -136,6 +158,31 @@ const Risk: React.FC<ContextType & {}> = ({
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    filters.forEach((filter) => {
+      if (
+        filter.field !== 'organization.regionId' &&
+        filter.field !== 'organizationId'
+      ) {
+        removeFilter(filter.field, filter.values[0], filter.type);
+      }
+    });
+    if (filters.length === 0) {
+      initialFiltersForUser.forEach((filter) => {
+        filter.values.forEach((val) => {
+          addFilter(filter.field, val, filter.type);
+        });
+      });
+    }
+  }, [
+    pathname,
+    removeFilter,
+    filters,
+    addFilter,
+    riskFilters,
+    initialFiltersForUser
+  ]);
 
   const MapCard = ({
     title,
@@ -382,7 +429,6 @@ export const RiskWithSearch = withSearch(
     removeFilter,
     filters,
     facets,
-    clearFilters,
     searchTerm,
     setSearchTerm
   }: ContextType) => ({
@@ -390,7 +436,6 @@ export const RiskWithSearch = withSearch(
     removeFilter,
     filters,
     facets,
-    clearFilters,
     searchTerm,
     setSearchTerm
   })

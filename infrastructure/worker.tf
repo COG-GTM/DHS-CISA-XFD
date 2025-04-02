@@ -33,7 +33,7 @@ resource "aws_iam_role" "worker_task_execution_role" {
     }
   ]
 }
-  EOF
+EOF
 
   tags = {
     Project = var.project
@@ -92,6 +92,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.xpanse_api_key.arn}",
           "${data.aws_ssm_parameter.xpanse_auth_id.arn}",
           "${data.aws_ssm_parameter.whoisxml_api_key.arn}",
+          "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}",
           "${data.aws_ssm_parameter.qualys_username.arn}",
           "${data.aws_ssm_parameter.qualys_password.arn}",
           "${data.aws_ssm_parameter.sixgill_client_secret.arn}",
@@ -108,7 +109,9 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_redshift_host.arn}",
           "${data.aws_ssm_parameter.ssm_redshift_database.arn}",
           "${data.aws_ssm_parameter.ssm_redshift_user.arn}",
-          "${data.aws_ssm_parameter.ssm_redshift_password.arn}"
+          "${data.aws_ssm_parameter.ssm_redshift_password.arn}",
+          "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
+          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
         ]
     },
     {
@@ -126,19 +129,19 @@ EOF
 resource "aws_iam_role" "worker_task_role" {
   name               = "crossfeed-${var.stage}-worker-task"
   assume_role_policy = <<EOF
-{
-  "Version": "2008-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ecs-tasks.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
+  {
+    "Version": "2008-10-17",
+    "Statement": [
+      {
+        "Sid": "",
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "ecs-tasks.amazonaws.com"
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }
   EOF
 
   tags = {
@@ -368,6 +371,34 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "REDSHIFT_PASSWORD",
         "valueFrom": "${data.aws_ssm_parameter.ssm_redshift_password.arn}"
+      },
+      {
+        "name": "DMZ_API_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}"
+      },
+      {
+        "name": "DMZ_SYNC_ENDPOINT",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
+      },
+      {
+        "name": "WHOIS_XML_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.whoisxml_api_key.arn}"
+      },
+      {
+        "name": "WHOIS_XML_THREAD_COUNT",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}"
+      },
+      {
+        "name": "QUALYS_USERNAME",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_username.arn}"
+      },
+      {
+        "name": "QUALYS_PASSWORD",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
+      },
+      {
+        "name": "INTELX_API_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.intelx_api_key.arn}"
       }
     ]
   }
@@ -417,6 +448,8 @@ data "aws_ssm_parameter" "xpanse_api_key" { name = var.ssm_xpanse_api_key }
 
 data "aws_ssm_parameter" "whoisxml_api_key" { name = var.ssm_whoisxml_api_key }
 
+data "aws_ssm_parameter" "ssm_whoisxml_thread_count" { name = var.ssm_whoisxml_thread_count }
+
 data "aws_ssm_parameter" "qualys_username" { name = var.ssm_qualys_username }
 
 data "aws_ssm_parameter" "qualys_password" { name = var.ssm_qualys_password }
@@ -460,6 +493,10 @@ data "aws_ssm_parameter" "ssm_redshift_database" { name = var.ssm_redshift_datab
 data "aws_ssm_parameter" "ssm_redshift_user" { name = var.ssm_redshift_user }
 
 data "aws_ssm_parameter" "ssm_redshift_password" { name = var.ssm_redshift_password }
+
+data "aws_ssm_parameter" "ssm_dmz_api_key" { name = var.ssm_dmz_api_key }
+
+data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpoint }
 
 
 resource "aws_s3_bucket" "export_bucket" {

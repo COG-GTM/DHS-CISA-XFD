@@ -27,13 +27,14 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['list', { printSteps: true }],
-    ['json', { outputFile: 'test-results/test-results.json' }],
-    ['html', { open: 'always' }]
+    ['json', { outputFile: 'playwright-report/results.json' }],
+    ['html', { outputFolder: 'playwright-report/html', open: 'never' }]
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.PW_XFD_URL,
+    headless: true,
     storageState: 'storageState.json',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

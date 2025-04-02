@@ -123,30 +123,6 @@ def vulnerability(domain, service):
     vulnerability.delete()
 
 
-@pytest.fixture
-def old_vulnerability():
-    """Create vuln fixture."""
-    vulnerability = Vulnerability.objects.create(
-        title="Old Vulnerability",
-        description="Old description.",
-        severity="Medium",
-        cvss=5.0,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
-        needsPopulation=True,
-        source="source1",
-        notes="old notes",
-        actions=[],
-        structuredData={},
-        isKev=False,
-        kevResults={},
-        domain_id="",
-        service_id="",
-    )
-    yield vulnerability
-    vulnerability.delete()
-
-
 @pytest.mark.django_db(transaction=True)
 def test_get_vulnerability_by_id(user, vulnerability):
     """Test vulnerability."""
@@ -599,4 +575,12 @@ def test_search_vulnerabilities_does_not_exist(user, vulnerability):
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data is not None, "Response is empty"
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) == 0, "Result is not an empty array"
+    assert "count" in data, "Response does not contain 'count' key"
+    assert data["count"] == 0, "Count is not 0"
