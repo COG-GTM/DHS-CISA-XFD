@@ -37,8 +37,6 @@ apps.populate(settings.INSTALLED_APPS)
 def set_security_headers(response: Response, isMatomo: bool):
     """Apply security headers to the HTTP response."""
     
-    print("Setting security headers...")
-    print("Response within asgi.py: ", vars(response))
     # Conditionally set Content Security Policy (CSP) based on the request URL
     if isMatomo:
         csp_value = "; ".join(
@@ -49,7 +47,6 @@ def set_security_headers(response: Response, isMatomo: bool):
             ]
         )
         response.headers["Content-Security-Policy"] = csp_value
-        print("Response within asgi.py: ", vars(response))
     else:
     # Set Secure Content Security Policy (CSP)
         csp_value = "; ".join(
@@ -60,7 +57,6 @@ def set_security_headers(response: Response, isMatomo: bool):
             ]
         )
         response.headers["Content-Security-Policy"] = csp_value
-        print("Response within asgi.py: ", vars(response))
 
     # Set Strict-Transport-Security (HSTS)
     hsts_value = "max-age={}".format(settings.SECURE_HSTS_SECONDS)
@@ -105,8 +101,7 @@ def get_application() -> FastAPI:
     async def security_headers_middleware(request: Request, call_next):
         response = await call_next(request)
         # Determine if the request is for Matomo
-        print("Request URL within asgi.py: ", request.url)
-        isMatomo = True if "/matomo" in str(request.url) else False
+        isMatomo = True if request.url.path.startswith("/matomo") else False
         return set_security_headers(response, isMatomo)
 
     app.add_middleware(LoggingMiddleware)
