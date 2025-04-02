@@ -12,4 +12,5 @@ export interface ScanTask {
   finishedAt: string;
   scan: Scan;
   fargateTaskArn: string;
+  concurrencyIndex: Int16Array;
 }
