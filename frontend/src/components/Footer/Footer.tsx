@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Grid, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { Box, Grid, Link, Stack } from '@mui/material';
 import { useAuthContext } from 'context';
 import logo from '../../assets/cyhydashboard.svg';
 import * as FooterStyles from './styleFooter';
@@ -14,13 +15,23 @@ export const CrossfeedFooter: React.FC = (props) => {
       <Box className={footerClasses.footerBox}>
         <Grid className={footerClasses.footerContainer} container>
           <Grid className={footerClasses.footerLogo} item xs={12} sm={3}>
-            <Link href="/" aria-label={`CyHy Dashboard Icon Navigate Home`}>
-              <img src={logo} alt="CyHy Dashboard Icon Navigate Home" />
-            </Link>
+            <Stack direction="row" spacing={1}>
+              <Link
+                to="/"
+                aria-label={`CyHy Dashboard Icon Navigate Home`}
+                component={RouterLink}
+              >
+                <img src={logo} alt="CyHy Dashboard Icon Navigate Home" />
+              </Link>
+            </Stack>
           </Grid>
           {user && (
             <Grid className={footerClasses.footerNavItem} item xs={12} sm={2}>
-              <Link className={footerClasses.footerNavLink} href="/">
+              <Link
+                className={footerClasses.footerNavLink}
+                to="/"
+                component={RouterLink}
+              >
                 Home
               </Link>
             </Grid>
@@ -63,8 +74,9 @@ export const CrossfeedFooter: React.FC = (props) => {
               <p>
                 <Link
                   className={footerClasses.footerNavLink}
-                  href="/"
+                  to="/"
                   onClick={logout}
+                  component={RouterLink}
                 >
                   Logout
                 </Link>
