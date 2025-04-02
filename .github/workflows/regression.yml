@@ -60,7 +60,7 @@ jobs:
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
           path: ./test-results/*.json
@@ -120,7 +120,7 @@ jobs:
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
           path: ./test-results/*.json
