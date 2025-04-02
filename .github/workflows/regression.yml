@@ -35,6 +35,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+          -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version  # To verify installation
+
       - name: Run Playwright tests
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -45,18 +53,27 @@ jobs:
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
         run: |
           aws ecs run-task \
-            --cluster crossfeed-playwright-staging-ecs-cluster \
-            --task-definition playwright \
-            --launch-type FARGATE \
-            --network-configuration \
-            "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
-            securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
-            assignPublicIp=\"ENABLED\"}" \
-            --overrides '{\
-            "containerOverrides":[{\
-            "name":"playwright",\
-            "command":["sh", "-c", \
-            "npx playwright install && npx playwright test"]}]}'
+          --cluster crossfeed-playwright-integration-ecs-cluster \
+          --task-definition playwright \
+          --launch-type FARGATE \
+          --network-configuration \
+          "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
+          securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
+          assignPublicIp=\"ENABLED\"}" \
+          --overrides '{
+            "containerOverrides": [
+            {
+              "name": "playwright",
+              "command": [
+                "sh",
+                "-c",
+                "npx playwright install && npx playwright test"
+              ]
+            }
+          ]
+          }'
+
+
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
@@ -96,6 +113,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+           -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version  # To verify installation
+
       - name: Run Playwright tests
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -113,10 +138,18 @@ jobs:
             "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
             securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
             assignPublicIp=\"ENABLED\"}" \
-            --overrides '{"containerOverrides":\
-            [{"name":"playwright",\
-            "command":["sh", "-c", \
-            "npx playwright install && npx playwright test"]}]}'
+            --overrides '{
+            "containerOverrides": [
+            {
+              "name": "playwright",
+              "command": [
+                "sh",
+                "-c",
+                "npx playwright install && npx playwright test"
+              ]
+            }
+          ]
+          }'
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
