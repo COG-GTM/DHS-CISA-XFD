@@ -57,6 +57,7 @@ export interface ScansRow {
   frequency: number;
   lastRun: string;
   description: string;
+  concurrentTasks: number;
 }
 
 const ScansView: React.FC = () => {
@@ -82,7 +83,8 @@ const ScansView: React.FC = () => {
     isGranular: false,
     isUserModifiable: false,
     isSingleScan: false,
-    tags: []
+    tags: [],
+    concurrentTasks: 1
   });
 
   const fetchScans = useCallback(async () => {
@@ -151,6 +153,21 @@ const ScansView: React.FC = () => {
     }
   };
 
+  const formatFrequency = (frequency: number): string => {
+    if (frequency >= 86400 && frequency % 86400 === 0) {
+      const days = frequency / 86400;
+      return `${days} day${days > 1 ? 's' : ''}`;
+    } else if (frequency >= 3600 && frequency % 3600 === 0) {
+      const hours = frequency / 3600;
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    } else if (frequency >= 60 && frequency % 60 === 0) {
+      const minutes = frequency / 60;
+      return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    } else {
+      return `${frequency} second${frequency !== 1 ? 's' : ''}`;
+    }
+  };
+
   /**
    * Manually runs a single scan, then immediately invokes the
    * scheduler so the scan is run.
@@ -200,7 +217,9 @@ const ScansView: React.FC = () => {
         new Date(scan.lastRun).getTime() === new Date(0).getTime()
           ? 'None'
           : `${formatDistanceToNow(parseISO(scan.lastRun))} ago`,
-      description: scanSchema[scan.name]?.description
+      description: scanSchema[scan.name]?.description,
+      concurrentTasks: scan.concurrentTasks,
+      isSingleScan: scan.isSingleScan
     };
   });
 
@@ -231,8 +250,27 @@ const ScansView: React.FC = () => {
     { field: 'name', headerName: 'Name', minWidth: 100, flex: 1 },
     { field: 'tags', headerName: 'Tags', minWidth: 100, flex: 1 },
     { field: 'mode', headerName: 'Mode', minWidth: 100, flex: 1 },
-    { field: 'frequency', headerName: 'Frequency', minWidth: 100, flex: 1 },
+    {
+      field: 'frequency',
+      headerName: 'Frequency',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => {
+        if (params.row.isSingleScan) {
+          return 'Single Scan';
+        }
+        return formatFrequency(Number(params.value));
+      }
+    },
     { field: 'lastRun', headerName: 'Last Run', minWidth: 100, flex: 1 },
+    {
+      field: 'concurrentTasks',
+      headerName: 'Concurrent Tasks',
+      minWidth: 100,
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center'
+    },
     {
       field: 'delete',
       headerName: 'Delete',

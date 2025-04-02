@@ -1,6 +1,7 @@
 """Syncdb helpers."""
 # File: xfd_api/utils/db_utils.py
 # Standard Python Libraries
+from collections import defaultdict, deque
 from datetime import datetime
 import hashlib
 from itertools import islice
@@ -112,15 +113,23 @@ def create_sample_user(organization):
 
 def create_test_user(organization):
     """Create a test user linked to an organization."""
-    user = User.objects.create(
-        firstName="Test",
-        lastName="User",
-        email=os.environ.get("PW_XFD_USERNAME"),
-        userType=UserType.GLOBAL_ADMIN,
-        state=random.choice(SAMPLE_STATES),
-        regionId=random.choice(SAMPLE_REGION_IDS),
-        organization=organization,
-    )
+    email = os.environ.get("PW_XFD_USERNAME")
+
+    existing_user = User.objects.filter(email=email).first()
+
+    if existing_user:
+        return existing_user
+
+    if not email:
+        user = User.objects.create(
+            firstName="Test",
+            lastName="User",
+            email=os.environ.get("PW_XFD_USERNAME"),
+            userType=UserType.GLOBAL_ADMIN,
+            state=random.choice(SAMPLE_STATES),
+            regionId=random.choice(SAMPLE_REGION_IDS),
+            organization=organization,
+        )
 
     return user
 
@@ -240,6 +249,13 @@ def create_sample_services_and_vulnerabilities(domain):
         )
 
 
+def table_exists_in_db(table_name, database):
+    """Check table exists."""
+    with connections[database].cursor() as cursor:
+        cursor.execute("SELECT to_regclass(%s);", [table_name])
+        return cursor.fetchone()[0] is not None
+
+
 def synchronize(target_app_label=None):
     """
     Synchronize the database schema with Django models.
@@ -277,17 +293,16 @@ def synchronize(target_app_label=None):
 
     # Warning: Cursor automatically closes after use of 'with'
     with connections[database].schema_editor() as schema_editor:
-        # Step 1: Process models in dependency order
         ordered_models = get_ordered_models(target_app_label)
+        # Compute allowed table names from the models we are syncing.
+        allowed_tables = {m._meta.db_table for m in ordered_models}
         for model in ordered_models:
             print("Processing model: {}".format(model.__name__))
-            process_model(schema_editor, model, database)
+            process_model(schema_editor, model, database, allowed_tables)
 
-        # Step 2: Handle Many-to-Many tables
         print("Processing Many-to-Many tables...")
         process_m2m_tables(schema_editor, ordered_models, database)
 
-        # Step 3: Cleanup stale tables
         cleanup_stale_tables(ordered_models, database)
 
     print("Database synchronization complete.")
@@ -297,48 +312,55 @@ def get_ordered_models(target_app_label):
     """
     Get models in dependency order to ensure foreign key constraints are respected.
 
-    Handles circular dependencies gracefully by breaking cycles.
+    Only consider dependencies among models within the same app, and break cycles
+    deterministically (alphabetically by model name).
     """
-    # Standard Python Libraries
-    from collections import defaultdict, deque
+    # Get all models for the app and create a set for quick membership checks.
+    models = list(apps.get_app_config(target_app_label).get_models())
+    model_set = set(models)
 
+    # Build dependency graph, but only include dependencies to models within the app.
     dependencies = defaultdict(set)
     dependents = defaultdict(set)
-
-    models = list(apps.get_app_config(target_app_label).get_models())
-
     for model in models:
         for field in model._meta.get_fields():
-            if field.is_relation and field.related_model:
+            # Only add a dependency if the related model is in our app's set.
+            if field.is_relation and field.related_model in model_set:
                 dependencies[model].add(field.related_model)
                 dependents[field.related_model].add(model)
 
+    # Start with models that have no dependencies.
     ordered = []
-    independent_models = deque(model for model in models if not dependencies[model])
+    independent_models = deque([model for model in models if not dependencies[model]])
 
     while independent_models:
         model = independent_models.popleft()
         ordered.append(model)
+        # Remove this model as a dependency from its dependents.
         for dependent in list(dependents[model]):
-            dependencies[dependent].remove(model)
-            dependents[model].remove(dependent)
+            dependencies[dependent].discard(model)
+            dependents[model].discard(dependent)
             if not dependencies[dependent]:
                 independent_models.append(dependent)
 
-    # Handle circular dependencies
-    if any(dependencies.values()):
-        print("Circular dependencies detected. Breaking cycles arbitrarily.")
-        for model, deps in dependencies.items():
-            if deps:
-                print("Breaking dependency for model: {}".format(model.__name__))
-                dependencies[model] = set()
-
-        ordered.extend(dependencies.keys())
+    # Any models not yet added are in a dependency cycle.
+    remaining = [model for model in models if model not in ordered]
+    if remaining:
+        print(
+            "Circular dependencies detected among: {}".format(
+                ", ".join(m.__name__ for m in remaining)
+            )
+        )
+        # Sort them deterministically (alphabetically) so that, for example, 'User' comes before 'Organization'
+        remaining_sorted = sorted(remaining, key=lambda m: m.__name__)
+        ordered.extend(remaining_sorted)
 
     return ordered
 
 
-def process_model(schema_editor: BaseDatabaseSchemaEditor, model, database):
+def process_model(
+    schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
+):
     """Process a single model: create or update its table."""
     table_name = model._meta.db_table
 
@@ -350,7 +372,7 @@ def process_model(schema_editor: BaseDatabaseSchemaEditor, model, database):
 
             if table_exists:
                 print("Updating table for model: {}".format(model.__name__))
-                update_table(schema_editor, model, database)
+                update_table(schema_editor, model, database, allowed_tables)
             else:
                 print("Creating table for model: {}".format(model.__name__))
                 schema_editor.create_model(model)
@@ -380,7 +402,9 @@ def process_m2m_tables(schema_editor: BaseDatabaseSchemaEditor, models, database
                     )
 
 
-def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database):
+def update_table(
+    schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
+):
     """Update an existing table for the given model. Ensure columns match fields."""
     table_name = model._meta.db_table
     db_fields = {field.column for field in model._meta.fields}
@@ -389,7 +413,7 @@ def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database):
         # Get existing columns
         cursor.execute(
             "SELECT column_name FROM information_schema.columns WHERE table_name = %s;",
-            [table_name],  # Pass the table name as a parameter
+            [table_name],
         )
         existing_columns = {row[0] for row in cursor.fetchall()}
 
@@ -397,6 +421,18 @@ def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database):
         missing_columns = db_fields - existing_columns
         for field in model._meta.fields:
             if field.column in missing_columns:
+                if hasattr(field, "remote_field") and field.remote_field:
+                    related_table = field.remote_field.model._meta.db_table
+                    # If the related table isn't in allowed_tables or doesn't exist yet, skip adding this field.
+                    if related_table not in allowed_tables or not table_exists_in_db(
+                        related_table, database
+                    ):
+                        print(
+                            "Skipping addition of foreign key field '{}' on model '{}' because referenced table '{}' does not exist yet.".format(
+                                field.column, model.__name__, related_table
+                            )
+                        )
+                        continue
                 print(
                     "Adding column '{}' to table '{}'".format(field.column, table_name)
                 )
@@ -409,10 +445,8 @@ def update_table(schema_editor: BaseDatabaseSchemaEditor, model, database):
                 "Removing extra column '{}' from table '{}'".format(column, table_name)
             )
             try:
-                # Safely quote table and column names
                 safe_table_name = connections[database].ops.quote_name(table_name)
                 safe_column_name = connections[database].ops.quote_name(column)
-                # Construct and execute the query without f-strings
                 query = "ALTER TABLE {} DROP COLUMN IF EXISTS {};".format(
                     safe_table_name, safe_column_name
                 )
@@ -498,10 +532,13 @@ def drop_all_tables(app_label=None):
 
 
 def chunked_iterable(iterable, size):
-    """Chunk an iterable."""
+    """Yield successive chunks of size `size` from `iterable`."""
     iterator = iter(iterable)
-    for first in iterator:
-        yield list(islice([first] + list(iterator), size - 1))
+    while True:
+        chunk = list(islice(iterator, size))
+        if not chunk:
+            break
+        yield chunk
 
 
 def update_organization_chunk(es_client, organizations):
