@@ -33,7 +33,7 @@ resource "aws_db_instance" "db" {
   max_allocated_storage               = 10000
   storage_type                        = "gp2"
   engine                              = "postgres"
-  engine_version                      = "15.7"
+  engine_version                      = "15.8"
   allow_major_version_upgrade         = true
   skip_final_snapshot                 = true
   availability_zone                   = data.aws_availability_zones.available.names[0]
@@ -297,7 +297,7 @@ resource "aws_ssm_parameter" "crossfeed_send_db_host" {
 resource "aws_ssm_parameter" "crossfeed_send_db_name" {
   name      = var.ssm_db_name
   type      = "SecureString"
-  value     = aws_db_instance.db.name
+  value     = aws_db_instance.db.db_name
   overwrite = true
 
   tags = {
@@ -445,6 +445,7 @@ resource "aws_s3_bucket_logging" "pe_db_backups_bucket" {
 }
 
 resource "aws_s3_bucket" "crossfeed-lz-sync" {
+  count  = var.is_dmz ? 1 : 0
   bucket = var.crossfeed-lz-sync_name
   tags = {
     Project = var.project
@@ -453,6 +454,7 @@ resource "aws_s3_bucket" "crossfeed-lz-sync" {
 }
 
 resource "aws_s3_bucket_policy" "crossfeed-lz-sync" {
+  count  = var.is_dmz ? 1 : 0
   bucket = var.crossfeed-lz-sync_name
   policy = jsonencode({
     "Version" : "2012-10-17",
@@ -463,8 +465,8 @@ resource "aws_s3_bucket_policy" "crossfeed-lz-sync" {
         "Effect" : "Deny",
         "Principal" : "*",
         "Resource" : [
-          aws_s3_bucket.crossfeed-lz-sync.arn,
-          "${aws_s3_bucket.crossfeed-lz-sync.arn}/*"
+          aws_s3_bucket.crossfeed-lz-sync[0].arn,
+          "${aws_s3_bucket.crossfeed-lz-sync[0].arn}/*"
         ],
         "Condition" : {
           "Bool" : {
@@ -477,12 +479,14 @@ resource "aws_s3_bucket_policy" "crossfeed-lz-sync" {
 }
 
 resource "aws_s3_bucket_acl" "crossfeed-lz-sync" {
-  bucket = aws_s3_bucket.crossfeed-lz-sync.id
+  count  = var.is_dmz ? 1 : 0
+  bucket = aws_s3_bucket.crossfeed-lz-sync[0].id
   acl    = "private"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "crossfeed-lz-sync" {
-  bucket = aws_s3_bucket.crossfeed-lz-sync.id
+  count  = var.is_dmz ? 1 : 0
+  bucket = aws_s3_bucket.crossfeed-lz-sync[0].id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"

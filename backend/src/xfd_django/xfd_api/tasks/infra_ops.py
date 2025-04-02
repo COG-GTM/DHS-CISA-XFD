@@ -13,7 +13,11 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
-from xfd_api.helpers.infra_helpers import create_matomo_scan_user, create_scan_user
+from xfd_api.helpers.infra_helpers import (
+    create_matomo_scan_user,
+    create_readonly_user,
+    create_scan_user,
+)
 
 
 def handler(event, context):
@@ -24,6 +28,9 @@ def handler(event, context):
 
         # Create the Matomo db scanning user if doesn't exist
         create_matomo_scan_user()
+
+        # Create a read-only user for both the default and mini_data_lake databases
+        create_readonly_user()
 
         return {
             "statusCode": 200,
