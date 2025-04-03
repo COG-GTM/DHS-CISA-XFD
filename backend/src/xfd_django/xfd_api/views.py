@@ -68,7 +68,12 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
-from .schema_models.dmz_sync import AsmSyncRequest, AsmSyncResponse, DataSource
+from .schema_models.dmz_sync import (
+    AsmSyncResponse,
+    CredSyncResponse,
+    DataSource,
+    PagedOrgDateRequest,
+)
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1422,11 +1427,10 @@ def serialize_custom(obj):
     "/dmz_sync/asm_sync",
     dependencies=[Depends(get_current_active_user)],
     response_model=AsmSyncResponse,
-    # response_model=AsmSyncRequest,
     tags=["DMZ Sync"],
 )
 async def asm_sync(
-    asm_sync_data: AsmSyncRequest,
+    asm_sync_data: PagedOrgDateRequest,
     current_user: User = Depends(get_current_active_user),
 ):
     """Return ASM_sync findings for a provided org."""
@@ -1443,4 +1447,30 @@ async def asm_sync(
         content=response_serializable, headers={"X-Salted-Checksum": checksum}
     )
 
-    # return dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
+
+# POST
+@api_router.post(
+    "/dmz_sync/cred_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=CredSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def cred_sync(
+    cred_sync_data: PagedOrgDateRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return ASM_sync findings for a provided org."""
+    response_data = dmz_sync_methods.dmz_cred_sync(cred_sync_data, current_user)
+    # # response_json = json.dumps(response_data, sort_keys=True)
+    # Convert response data to a JSON-serializable format
+
+    # return response_data
+    response_serializable = serialize_custom(response_data)
+
+    response_json = json.dumps(response_serializable, default=str, sort_keys=True)
+
+    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
+
+    return JSONResponse(
+        content=response_serializable, headers={"X-Salted-Checksum": checksum}
+    )
