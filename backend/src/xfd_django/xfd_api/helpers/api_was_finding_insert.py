@@ -14,8 +14,6 @@ import requests
 LOGGER = logging.getLogger(__name__)
 
 from dmz_mini_dl.models import WasFindings as MDL_WasFindings
-pe_api_url = os.environ.get("PE_API_URL")
-pe_api_key = os.environ.get("PE_API_KEY")
 
 
 def api_was_finding_insert(finding_dict):
