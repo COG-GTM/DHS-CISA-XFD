@@ -112,6 +112,10 @@ provider:
           Resource: '*'
         - Effect: Allow
           Action:
+            - sqs:listQueues
+          Resource: '*'
+        - Effect: Allow
+          Action:
             - ecs:RunTask
             - ecs:ListTasks
             - ecs:DescribeTasks
