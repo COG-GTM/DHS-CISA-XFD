@@ -8,14 +8,14 @@ on:
       - integration
     paths:
       - backend/**
-      - .github/workflows/backend.yml
+      - .github/workflows/regression.yml
   pull_request:
     branches:
       - develop
       - integration
     paths:
       - backend/**
-      - .github/workflows/backend.yml
+      - .github/workflows/regression.yml
 
 defaults:
   run:
