@@ -236,7 +236,7 @@ SCAN_SCHEMA = {
     "nist": ScanSchema(
         type="fargate",
         isPassive=True,
-        global_scan=False,
+        global_scan=True,
         description="Update CVE data using the NIST API",
     ),
     "portscanner": ScanSchema(
