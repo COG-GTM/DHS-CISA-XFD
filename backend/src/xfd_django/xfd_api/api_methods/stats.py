@@ -27,6 +27,8 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
 
     filtered_org_ids = get_stats_org_ids(current_user, filter_data)
 
+    print("Inside get_stats")
+    print("Filtered org ids: ", filtered_org_ids)
     # Ensure organization_ids is not empty
     if not filtered_org_ids:
         raise HTTPException(
@@ -112,6 +114,7 @@ async def get_user_services_count(
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside get_user_services_count")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -150,6 +153,7 @@ async def get_user_ports_count(
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside get_user_ports_count")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -186,6 +190,7 @@ async def get_num_vulns(filter_data, current_user, redis_client, filtered_org_id
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside get_num_vulns")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -224,6 +229,7 @@ async def get_severity_stats(
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside get_severity_stats")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -267,6 +273,7 @@ async def stats_latest_vulns(
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside stats_latest_vulns")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -329,6 +336,7 @@ async def stats_most_common_vulns(
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside stats_most_common_vulns")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -381,6 +389,7 @@ async def get_by_org_stats(
 
             # Ensure organization_ids is not empty
             if not filtered_org_ids:
+                print("Inside get_by_org_stats")
                 raise HTTPException(
                     status_code=404,
                     detail="No organizations found for the user with the specified filters.",
@@ -399,6 +408,7 @@ async def get_by_org_stats(
                 )  # Directly append the Redis data
 
         if not by_org_data:
+            print("Inside get_by_org_stats 2")
             raise HTTPException(
                 status_code=404,
                 detail="No organization data found in cache.",

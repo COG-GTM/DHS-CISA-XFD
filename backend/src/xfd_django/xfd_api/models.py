@@ -530,7 +530,7 @@ class TypeormMetadata(models.Model):
 
 class UserType(models.TextChoices):
     """User type definition."""
-    
+
     ANALYTICS = "analytics"
     GLOBAL_ADMIN = "globalAdmin"
     GLOBAL_VIEW = "globalView"

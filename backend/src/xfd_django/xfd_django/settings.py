@@ -154,7 +154,7 @@ MATOMO_CSP_POLICY = {
     "img-src": ["*"],
     "style-src": ["*", "'unsafe-inline'"],
     "frame-ancestors": ["*"],
-    "frame-src": ["*"]
+    "frame-src": ["*"],
 }
 
 # SameSite policy to prevent CSRF via cross-origin requests
@@ -213,7 +213,6 @@ SECURE_CSP_POLICY = {
         # "'unsafe-inline'",
         "https://www.dhs.gov",
         # "https://localhost:3000/matomo/",
-
     ],
     "style-src": [
         "'self'",

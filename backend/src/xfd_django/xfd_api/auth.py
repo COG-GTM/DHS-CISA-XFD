@@ -283,11 +283,13 @@ def is_regional_admin(current_user) -> bool:
     """Check if the user has regional admin permissions."""
     return current_user and current_user.userType in ["regionalAdmin", "globalAdmin"]
 
-def is_analytics_admin (current_user) -> bool:
+
+def is_analytics_admin(current_user) -> bool:
     """Check if the user has analytics permissions."""
     print("Inside is_analytics_admin")
     print("current_user.userType: ", current_user.userType)
     return current_user and current_user.userType in ["analytics", "globalAdmin"]
+
 
 def is_org_admin(current_user, organization_id) -> bool:
     """Check if the user is an admin of the given organization."""
@@ -407,11 +409,18 @@ def get_stats_org_ids(current_user, filters):
     if organizations_filter:
         # Check user type restrictions for provided organization IDs
         for org_id in organizations_filter:
+            print("Inside get_stats_org_ids")
+            print("current_user.userType: ", current_user.userType)
+            print("org_id: ", org_id)
+            print(
+                "is_analytics_admin(current_user): ", is_analytics_admin(current_user)
+            )
             if (
                 is_global_view_admin(current_user)
                 or (is_regional_admin_for_organization(current_user, org_id))
                 or (is_org_admin(current_user, org_id))
                 or (get_org_memberships(current_user))
+                or (is_analytics_admin(current_user))
             ):
                 organization_ids.add(org_id)
 
@@ -434,7 +443,20 @@ def get_stats_org_ids(current_user, filters):
         for tag_id in tags_filter:
             organizations_by_tag = get_tag_organizations(current_user, tag_id)
             organization_ids.update(organizations_by_tag)
+    ###
+    elif is_analytics_admin(current_user):
+        # Get organizations by region
+        if regions_filter:
+            organizations_by_region = Organization.objects.filter(
+                regionId__in=regions_filter
+            ).values_list("id", flat=True)
+            organization_ids.update(organizations_by_region)
 
+        # Get organizations by tag
+        for tag_id in tags_filter:
+            organizations_by_tag = get_tag_organizations(current_user, tag_id)
+            organization_ids.update(organizations_by_tag)
+    ###
     # Case 3: Regional admin
     elif current_user.userType in ["regionalAdmin"]:
         user_region_id = current_user.regionId

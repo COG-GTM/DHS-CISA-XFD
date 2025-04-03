@@ -7,8 +7,8 @@ from uuid import UUID
 
 # Third-Party Libraries
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
-from redis import asyncio as aioredis
 from fastapi.responses import RedirectResponse
+from redis import asyncio as aioredis
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
@@ -111,14 +111,19 @@ async def get_redis_client(request: Request):
 #   Analytic Endpoints
 # ========================================
 
-#Matomo Redirect
+
+# Matomo Redirect
 @api_router.get("/plugins/Morpheus/images/logo.svg")
 async def redirect_logo():
-    return RedirectResponse(url="/matomo/plugins/Morpheus/images/logo.svg?matomo", status_code=308)
+    return RedirectResponse(
+        url="/matomo/plugins/Morpheus/images/logo.svg?matomo", status_code=308
+    )
+
 
 @api_router.get("/index.php")
 async def redirect_index():
     return RedirectResponse(url="/matomo/index.php", status_code=308)
+
 
 # Matomo Proxy
 @api_router.api_route(

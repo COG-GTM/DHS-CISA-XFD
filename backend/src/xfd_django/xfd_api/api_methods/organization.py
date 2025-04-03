@@ -41,14 +41,18 @@ def list_organizations(current_user):
     """List organizations that the user is a member of or has access to."""
     try:
         # Check if user is GlobalViewAdmin or has memberships
-        if not is_global_view_admin(current_user) and not get_org_memberships(
-            current_user
+        if (
+            not is_global_view_admin(current_user)
+            and not is_analytics_admin(current_user)
+            and not get_org_memberships(current_user)
         ):
             return []
 
         # Define filter for organizations based on admin status
         org_filter = {}
-        if not is_global_view_admin(current_user):
+        if not is_global_view_admin(current_user) and not is_analytics_admin(
+            current_user
+        ):
             org_filter["id__in"] = get_org_memberships(current_user)
         org_filter["parent"] = None
 
@@ -127,9 +131,10 @@ def get_organization(organization_id, current_user):
     try:
         # Authorization checks
         if not (
+            is_analytics_admin(current_user),
             is_org_admin(current_user, organization_id)
             or is_global_view_admin(current_user)
-            or is_regional_admin_for_organization(current_user, organization_id)
+            or is_regional_admin_for_organization(current_user, organization_id),
         ):
             raise HTTPException(status_code=403, detail="Unauthorized")
 
@@ -336,8 +341,11 @@ def get_all_regions(current_user):
     """Get all regions."""
     try:
         # Check if user is GlobalViewAdmin or has memberships
-        if not is_global_view_admin(current_user) and not get_org_memberships(
-            current_user
+        print("Analytics Admin Status: ", is_analytics_admin(current_user))
+        if (
+            not is_global_view_admin(current_user)
+            and not is_analytics_admin(current_user)
+            and not get_org_memberships(current_user)
         ):
             raise HTTPException(status_code=403, detail="Unauthorized")
 
@@ -995,15 +1003,19 @@ def list_organizations_v2(state, regionId, current_user):
     """List organizations that the user is a member of or has access to."""
     try:
         # Check if user is GlobalViewAdmin or has memberships
-        if not is_global_view_admin(current_user) and not get_org_memberships(
-            current_user
+        if (
+            not is_global_view_admin(current_user)
+            and not is_analytics_admin(current_user)
+            and not get_org_memberships(current_user)
         ):
             return []
 
         # Prepare the filter criteria
         filter_criteria = Q()
 
-        if not is_global_view_admin(current_user):
+        if not is_global_view_admin(current_user) and not is_analytics_admin(
+            current_user
+        ):
             filter_criteria &= Q(id__in=get_org_memberships(current_user))
 
         if state:
@@ -1064,8 +1076,10 @@ def search_organizations_task(search_body, current_user: User):
     """Handle the logic for searching organizations in Elasticsearch."""
     try:
         # Check if user is GlobalViewAdmin or has memberships
-        if not is_global_view_admin(current_user) and not get_org_memberships(
-            current_user
+        if (
+            not is_global_view_admin(current_user)
+            and not is_analytics_admin(current_user)
+            and not get_org_memberships(current_user)
         ):
             return []
 

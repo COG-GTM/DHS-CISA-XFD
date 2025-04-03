@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 from ..auth import (
     can_access_user,
+    is_analytics_admin,
     is_global_view_admin,
     is_global_write_admin,
     is_org_admin,
@@ -184,7 +185,9 @@ def get_users(current_user):
     """Retrieve a list of all users."""
     try:
         # Check if user is a regional admin or global admin
-        if not is_global_view_admin(current_user):
+        if not is_global_view_admin(current_user) or not is_analytics_admin(
+            current_user
+        ):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         users = User.objects.all().prefetch_related("roles__organization")
@@ -347,7 +350,7 @@ def get_users_v2(state, regionId, invitePending, current_user):
     """Retrieve a list of users based on optional filter parameters."""
     try:
         # Check if user is a regional admin or global admin
-        if not is_regional_admin(current_user):
+        if not is_regional_admin(current_user) or not is_analytics_admin(current_user):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         filters = {}
