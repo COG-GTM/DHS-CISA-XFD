@@ -183,17 +183,25 @@ async def process_user(decoded_token):
         # Create a new user if they don't exist from Okta fields in SAML Response
         user = User(
             email=decoded_token["email"],
-            oktaId=decoded_token["sub"],
-            firstName=decoded_token.get("given_name"),
-            lastName=decoded_token.get("family_name"),
-            userType="standard",
-            invitePending=True,
+            okta_id=decoded_token["sub"],
+            first_name=decoded_token.get("given_name"),
+            last_name=decoded_token.get("family_name"),
+            user_type="standard",
+            invite_pending=True,
+            cognito_username=decoded_token.get("cognito:username"),
+            cognito_use_case_description=decoded_token.get("nickname"),
+            cognito_email_verified=decoded_token.get("email_verified"),
+            cognito_groups=decoded_token.get("cognito:groups"),
         )
         user.save()
     else:
         # Update user oktaId (legacy users) and login time
-        user.oktaId = decoded_token["sub"]
-        user.lastLoggedIn = datetime.now()
+        user.okta_id = decoded_token["sub"]
+        user.last_logged_in = datetime.now()
+        user.cognito_username = decoded_token.get("cognito:username")
+        user.cognito_use_case_description = decoded_token.get("nickname")
+        user.cognito_email_verified = decoded_token.get("email_verified")
+        user.cognito_groups = decoded_token.get("cognito:groups")
         user.save()
 
     if user:
