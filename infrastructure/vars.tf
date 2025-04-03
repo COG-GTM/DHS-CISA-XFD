@@ -352,6 +352,12 @@ variable "ssm_whoisxml_api_key" {
   default     = "/crossfeed/staging/WHOIS_XML_KEY"
 }
 
+variable "ssm_whoisxml_thread_count" {
+  description = "ssm_whoisxml_thread_count"
+  type        = string
+  default     = "/crossfeed/staging/WHOIS_XML_THREAD_COUNT"
+}
+
 variable "ssm_qualys_username" {
   description = "ssm_qualys_username"
   type        = string
@@ -852,4 +858,20 @@ variable "crossfeed-lz-sync_name" {
   type        = string
   description = "The name of the S3 bucket for Crossfeed LZ sync"
   default     = "crossfeed-lz-sync"
+}
+
+variable "image_tag" {
+  description = "The tag for the image in ECR"
+  type        = string
+  default     = "latest"
+}
+
+variable "crossfeed_playwright" {
+  description = "The name of the Crossfeed Playwright environment"
+  type        = string
+}
+
+variable "automated_test_reports_bucket_name" {
+  description = "The name of the automated test report S3 bucket"
+  type        = string
 }

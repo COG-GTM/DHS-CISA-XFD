@@ -64,6 +64,7 @@ MESSAGE_TAGS = {
 # Application definition
 
 INSTALLED_APPS = [
+    "netfields",
     "django.contrib.contenttypes",
     "xfd_api.apps.XfdApiConfig",
     "xfd_mini_dl.apps.XfdMiniDlConfig",

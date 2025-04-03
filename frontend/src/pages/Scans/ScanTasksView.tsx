@@ -170,7 +170,7 @@ export const ScanTasksView: React.FC = () => {
   const scansTasksRows: ScansTaskRow[] = scanTasks.map((scanTask) => ({
     id: scanTask.id,
     status: scanTask.status,
-    name: scanTask.scan?.name ?? 'None',
+    name: `${scanTask.scan?.name ?? 'None'}-${scanTask.concurrencyIndex ?? 1}`,
     input: scanTask.input,
     output: scanTask.output,
     createdAt: dateAccessor(scanTask.createdAt),
@@ -266,8 +266,10 @@ export const ScanTasksView: React.FC = () => {
   const scanNameValues = [
     'censys',
     'amass',
+    'asm_sync',
     'credential_sync',
     'findomain',
+    'intel_x_identity',
     'portscanner',
     'wappalyzer',
     'censysIpv4',
