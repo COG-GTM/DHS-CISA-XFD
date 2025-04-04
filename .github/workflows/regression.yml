@@ -62,6 +62,7 @@ jobs:
           "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
           securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
           assignPublicIp=\"ENABLED\"}" \
+          --region ${{ secrets.AWS_REGION }} \
           --overrides '{
             "containerOverrides": [
             {
@@ -140,6 +141,7 @@ jobs:
             "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
             securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
             assignPublicIp=\"ENABLED\"}" \
+            --region ${{ secrets.AWS_REGION }} \
             --overrides '{
             "containerOverrides": [
             {
