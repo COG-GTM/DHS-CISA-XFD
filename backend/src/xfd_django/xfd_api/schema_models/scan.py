@@ -280,7 +280,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Fetch passive port, banner, and vulnerability data from shodan",
-        maxConcurrentTasks=3,
+        maxConcurrentTasks=10,
     ),
     "shodan_sync": ScanSchema(
         type="fargate",
