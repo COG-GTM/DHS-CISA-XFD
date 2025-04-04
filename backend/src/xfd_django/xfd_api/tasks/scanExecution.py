@@ -95,6 +95,7 @@ def start_desired_tasks(
     while remaining_count > 0:
         current_batch_count = min(remaining_count, batch_size)
         shodan_api_key = shodan_api_keys[remaining_count - 1] if shodan_api_keys else ""
+
         if is_pe:
             if os.getenv("IS_LOCAL"):
                 # Use local Docker environment (old method)
@@ -151,6 +152,11 @@ def start_desired_tasks(
                 "SERVICE_TYPE": scan_type,
                 "count": current_batch_count,
             }
+
+            if scan_type == "shodan":
+                command_options["SHODAN_API_KEY"] = ",".join(
+                    shodan_api_keys[:current_batch_count]
+                )
 
             result = ecs.run_command(command_options)
 
@@ -232,7 +238,10 @@ def handler(event, context):
             return {"statusCode": 400, "body": "Failed: no scanType provided."}
 
         if scan_type == "shodan":
-            api_key_list = event.get("apiKeyList", "")
+            if is_pe:
+                api_key_list = event.get("apiKeyList", "")
+            else:
+                api_key_list = os.getenv("PE_SHODAN_API_KEYS", "")
             shodan_api_keys = (
                 [key.strip() for key in api_key_list.split(",")] if api_key_list else []
             )

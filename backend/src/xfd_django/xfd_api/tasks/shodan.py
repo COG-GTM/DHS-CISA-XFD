@@ -1,15 +1,23 @@
 """Shodan scan."""
 # Standard Python Libraries
 import datetime
+import logging
 import os
-import re
 import time
 
 # Third-Party Libraries
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 import requests
+import shodan
 from xfd_api.tasks.helpers.get_ips import get_ips
-from xfd_mini_dl.models import DataSource, Organization, SubDomains
+from xfd_mini_dl.models import (
+    CredentialBreaches,
+    CredentialExposures,
+    DataSource,
+    Organization,
+    ShodanAssets,
+)
 
 # Constants controlling pagination and rate limiting
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -18,6 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 def handler(command_options):
     """Run the Shodan scan."""
+    failed = []
     organization_name = command_options.get("organizationName")
     if not organization_name:
         return {"statusCode": 400, "body": "Organization name not provided."}
@@ -26,9 +35,13 @@ def handler(command_options):
     if not orgs_to_sync.exists():
         return {"statusCode": 500, "body": "Organization not found."}
     organization = orgs_to_sync.first()
-    organization_id = organization.id
+    org_uid = organization.id
+    org_name = organization.name
 
     print("Running Shodan on organization: {}".format(organization_name))
+
+    # Get dates for Shodan query (30 days)
+    start, end = get_dates()
 
     # Retrieve IPs for this org
     try:
@@ -36,6 +49,7 @@ def handler(command_options):
     except Exception as e:
         LOGGER.error("Failed fetching IPs for {}.".format(org_name))
         LOGGER.error("{} - {}".format(e, org_name))
+        failed.append("{} fetching IPs".format(org_name))
         return {
             "statusCode": 500,
             "body": "Error - {}".format(e),
@@ -47,10 +61,20 @@ def handler(command_options):
             "statusCode": 500,
             "body": "No Ips for {}".format(org_name),
         }
+
+    # Get initialized API object
+    api_key = os.getenv("SHODAN_API_KEY", "")
+    api = shodan_api_init(api_key)
+
+    if not api:
+        LOGGER.warning("Not a valid API key: {}.".format(api_key))
+        return {
+            "statusCode": 500,
+            "body": "No Ips for {}".format(org_name),
+        }
+
     # Otherwise run shodan search on the IPs
-    failed = search_shodan(
-        ips, api, start, end, org_uid, org_name, failed
-    )
+    failed = search_shodan(ips, api, start, end, org_uid, org_name, failed)
 
     # Log all failures for this thread
     if len(failed) > 0:
@@ -62,6 +86,18 @@ def handler(command_options):
     return {"statusCode": 200, "body": "Success running Shodan."}
 
 
+def shodan_api_init(api_key):
+    """Connect to Shodan API."""
+    try:
+        api = shodan.Shodan(api_key)
+        # Test api key
+        api.info()
+    except Exception:
+        LOGGER.error("Invalid Shodan API key: {}".format(api_key))
+        return None
+    return api
+
+
 def search_shodan(ips, api, start, end, org_uid, org_name, failed):
     """Search IPs in the Shodan API."""
     # Build dictionaries for naming conventions and definitions
@@ -71,11 +107,7 @@ def search_shodan(ips, api, start, end, org_uid, org_name, failed):
     tot_ips = len(ips)
     ip_chunks = [ips[i : i + 10] for i in range(0, tot_ips, 10)]
     tot = len(ip_chunks)
-    LOGGER.info(
-        "Split {} IPs into {} chunks - {}".format(
-            tot_ips, tot, org_name
-        )
-    )
+    LOGGER.info("Split {} IPs into {} chunks - {}".format(tot_ips, tot, org_name))
 
     # Loop through chunks and query Shodan
     # Fetch or create the Censys data source record.
@@ -230,20 +262,22 @@ def search_shodan(ips, api, start, end, org_uid, org_name, failed):
                 all_vulns = vuln_data + risk_data
 
                 # *** USITC PE inbox request 11/20/2024 to omit port80/http (Akamai) findings
-                if org_uid == '7d2dbd06-f247-11ec-bb6e-02c6a3fe975b':
-                    all_vulns = [d for d in all_vulns if (d.get("port") != 80 and d.get("http") != "http")]
+                if org_uid == "7d2dbd06-f247-11ec-bb6e-02c6a3fe975b":
+                    all_vulns = [
+                        d
+                        for d in all_vulns
+                        if (d.get("port") != 80 and d.get("http") != "http")
+                    ]
 
                 # Insert shodan assets/vulns for this ip chunk
-                failed = insert_shodan_assets(data, failed)
-                failed = insert_shodan_vulns(all_vulns, failed)
+                failed = insert_shodan_assets(data)
+                failed = insert_shodan_vulns(all_vulns)
                 time.sleep(1)
                 break
             except shodan.APIError as e:
                 if try_count == 5:
                     LOGGER.error(
-                        "Failed 5 times. Continuing to next chunk - {}".format(
-                            org_name
-                        )
+                        "Failed 5 times. Continuing to next chunk - {}".format(org_name)
                     )
                     failed.append(
                         "{} chunk {} failed 5 times and skipped".format(org_name, count)
@@ -261,14 +295,14 @@ def search_shodan(ips, api, start, end, org_uid, org_name, failed):
             except Exception as e:
                 LOGGER.error("{} - {}".format(e, org_name))
                 LOGGER.error(
-                    "{} Not a shodan API error. Continuing to next chunk - {}".format(
+                    "Not a shodan API error. Continuing to next chunk - {}".format(
                         org_name
                     )
                 )
                 failed.append("{} chunk {} failed and skipped".format(org_name, count))
                 break
 
-        LOGGER.info("{} chunk {}/{} complete - {}".format(count, tot, org_name))
+        LOGGER.info("chunk {}/{} complete - {}".format(count, tot, org_name))
 
     return failed
 
@@ -297,7 +331,7 @@ def time_to_utc(in_time):
 
 def search_circl(cve):
     """Fetch CVE info from Circl."""
-    re = requests.get(f"https://cve.circl.lu/api/cve/{cve}")
+    re = requests.get(f"https://cve.circl.lu/api/cve/{cve}", timeout=10)
     return re
 
 
@@ -441,3 +475,92 @@ def get_shodan_dicts():
         "COMPLETE": "There is total information disclosure, resulting in all system files being revealed. The attacker is able to read all of the system's data (memory, files, etc.).",
     }
     return risky_ports, name_dict, risk_dict, av_dict, ac_dict, ci_dict
+
+
+def insert_shodan_assets(data):
+    """Insert Shodan data into the shodan_assets table."""
+    create_cnt = 0
+
+    for row in data.exp_data:
+        row_dict = row.__dict__ if hasattr(row, "__dict__") else row
+
+        try:
+            ShodanAssets.objects.get(
+                organizations_uid=row_dict["organizations_uid"],
+                ip=row_dict["ip"],
+                port=row_dict["port"],
+                protocol=row_dict["protocol"],
+                timestamp=row_dict["timestamp"],
+            )
+            # Record already exists
+        except ShodanAssets.DoesNotExist:
+            try:
+                curr_org_inst = Organization.objects.get(
+                    organizations_uid=row_dict["organizations_uid"]
+                )
+            except Organization.DoesNotExist:
+                LOGGER.warning(
+                    f"Organization not found: {row_dict['organizations_uid']}"
+                )
+                continue
+
+            ShodanAssets.objects.create(
+                email=row_dict.get("email"),
+                organizations_uid=curr_org_inst,
+                root_domain=row_dict.get("root_domain"),
+                sub_domain=row_dict.get("sub_domain"),
+                modified_date=row_dict.get("modified_date"),
+                breach_name=row_dict.get("breach_name"),
+                name=row_dict.get("name"),
+                ip=row_dict.get("ip"),
+                port=row_dict.get("port"),
+                protocol=row_dict.get("protocol"),
+                timestamp=row_dict.get("timestamp"),
+            )
+            create_cnt += 1
+
+    return "{} records created in the shodan_assets table".format(create_cnt)
+
+
+def insert_shodan_vulns(data):
+    """Insert Shodan vulnerability data into the credential_exposures table."""
+    create_cnt = 0
+
+    for row in data.exp_data:
+        row_dict = row.__dict__ if hasattr(row, "__dict__") else row
+
+        try:
+            CredentialExposures.objects.get(
+                breach_name=row_dict["breach_name"],
+                email=row_dict["email"],
+            )
+            # Already exists, skip
+        except CredentialExposures.DoesNotExist:
+            try:
+                curr_org_inst = Organization.objects.get(
+                    organizations_uid=row_dict["organizations_uid"]
+                )
+                curr_source_inst = DataSource.objects.get(
+                    data_source_uid=row_dict["data_source_uid"]
+                )
+                curr_breach_inst = CredentialBreaches.objects.get(
+                    breach_name=row_dict["breach_name"]
+                )
+            except ObjectDoesNotExist as e:
+                LOGGER.warning(f"FK lookup failed: {e}")
+                continue
+
+            CredentialExposures.objects.create(
+                email=row_dict.get("email"),
+                organizations_uid=curr_org_inst,
+                root_domain=row_dict.get("root_domain"),
+                sub_domain=row_dict.get("sub_domain"),
+                modified_date=row_dict.get("modified_date"),
+                breach_name=row_dict.get("breach_name"),
+                credential_breaches_uid=curr_breach_inst,
+                data_source_uid=curr_source_inst,
+                name=row_dict.get("name"),
+            )
+            create_cnt += 1
+
+    return "{} records created in the credential_exposures table".format(create_cnt)

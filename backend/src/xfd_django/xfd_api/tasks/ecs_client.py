@@ -152,7 +152,17 @@ class ECSClient:
                                 if memory
                                 else "",
                             },
-                        ],
+                        ]
+                        + (
+                            [
+                                {
+                                    "name": "SHODAN_API_KEY",
+                                    "value": command_options["SHODAN_API_KEY"],
+                                }
+                            ]
+                            if "SHODAN_API_KEY" in command_options
+                            else []
+                        ),
                     }
                 ],
             },

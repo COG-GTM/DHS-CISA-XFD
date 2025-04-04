@@ -1,7 +1,6 @@
 """Get Ips per organization."""
 # Third-Party Libraries
 from xfd_mini_dl.models import Ip
-from django.db.models import Q
 
 
 def get_ips_by_cidr(organization_id):
