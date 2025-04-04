@@ -378,6 +378,10 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "DMZ_SYNC_ENDPOINT",
         "valueFrom": "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
+      },
+      {
+        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
+        "value": "${var.crossfeed-xpanse-org-sync}"
       }
     ]
   }

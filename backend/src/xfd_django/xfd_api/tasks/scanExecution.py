@@ -27,6 +27,8 @@ SCAN_LIST = [
     "xpanse",
     "asmSync",
     "qualys",
+    "xpanseOrgSync",
+    "xpanseAlertPull",
 ]
 QUEUE_URL = os.getenv("QUEUE_URL")
 

@@ -849,6 +849,12 @@ variable "crossfeed-lz-sync_name" {
   default     = "crossfeed-lz-sync"
 }
 
+variable "crossfeed-xpanse-org-sync" {
+  type        = string
+  description = "The name of the S3 bucket for Crossfeed Xpanse Org sync"
+  default     = "crossfeed-xpanse-org-sync"
+}
+
 variable "image_tag" {
   description = "The tag for the image in ECR"
   type        = string

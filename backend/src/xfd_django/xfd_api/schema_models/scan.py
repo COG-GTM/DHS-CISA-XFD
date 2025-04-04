@@ -350,4 +350,20 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Enumerate and sync org assets.",
     ),
+    "xpanse_alert_pull": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Xpanse alert data from Xpanse API",
+    ),
+    "xpanse_org_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Xpanse business units and link them to organizations",
+    ),
 }

@@ -5364,173 +5364,6 @@ class XpanseCvesMdl(models.Model):
         db_table = "xpanse_cves_mdl"
 
 
-class XpanseServicesMdl(models.Model):
-    """Define XpanseServicesMdl model."""
-
-    xpanse_service_uid = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid1,
-        help_text="PK: Unique identifier for a Xpanse Service object.",
-    )
-    service_id = models.TextField(
-        unique=True,
-        blank=True,
-        null=True,
-        help_text="Xpanse Identifier for the service.",
-    )
-    service_name = models.TextField(
-        blank=True, null=True, help_text="Name of the service."
-    )
-    service_type = models.TextField(blank=True, null=True, help_text="Type of service")
-    ip_address = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="List of IP addresses where the service is hosted, if applicable.",
-    )
-    domain = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="List of domains where the service is hosted, if applicable.",
-    )
-    externally_detected_providers = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="List of externally detected providers.",
-    )
-    is_active = models.TextField(
-        blank=True, null=True, help_text="State of the service (Active, Inactive)."
-    )
-    first_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Datetime the service was first observed by Xpanse",
-    )
-    last_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Datetime the service was last observed by Xpanse",
-    )
-    port = models.IntegerField(
-        blank=True,
-        null=True,
-        help_text="Number of the port where the service is running.",
-    )
-    protocol = models.TextField(
-        blank=True, null=True, help_text="Protocol running on the port."
-    )
-    active_classifications = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="Current, actively detected and recognized software, technologies, or behaviors observed on a service based on the most recent data collected",
-    )
-    inactive_classifications = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="previously detected and recognized software, technologies, or behaviors observed on a service previously, but not on the most recent data collected",
-    )
-    discovery_type = models.TextField(
-        blank=True, null=True, help_text="How the service was detected."
-    )
-    externally_inferred_vulnerability_score = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="vulnerability score assigned to a service based on publicly available information about its product name and version, compared against known vulnerabilities in the National Vulnerability Database (NVD)",
-    )
-    externally_inferred_cves = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="potential vulnerabilities identified by comparing the publicly visible version information of a service discovered on an organization's external attack surface with known vulnerabilities listed in the National Vulnerability Database (NVD)",
-    )
-    service_key = models.TextField(
-        blank=True,
-        null=True,
-        help_text="identifier associated with a specific service that allows for access and interaction with that service within the Xpanse environment",
-    )
-    service_key_type = models.TextField(
-        blank=True, null=True, help_text="Type of service key."
-    )
-
-    cves = models.ManyToManyField(
-        XpanseCvesMdl,
-        through="XpanseCveServiceMdl",
-        help_text="Many to many linking table to the cve table.",
-    )
-
-    class Meta:
-        """Set XpanseServicesMdl metadata."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "xpanse_services_mdl"
-
-
-class XpanseCveServiceMdl(models.Model):
-    """Define XpanseCves-Service linking table model."""
-
-    xpanse_inferred_cve = models.ForeignKey(
-        XpanseCvesMdl,
-        on_delete=models.CASCADE,
-        help_text="FK: Foreign key to the CVE associated with the service.",
-    )
-    xpanse_service = models.ForeignKey(
-        XpanseServicesMdl,
-        on_delete=models.CASCADE,
-        help_text="FK: Foreign key to the service associated with the CVEs.",
-    )
-    inferred_cve_match_type = models.TextField(
-        blank=True,
-        null=True,
-        help_text="If the match between service and CVE is approximate or exact.",
-    )
-    product = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Vulnerable product on the service that triggered the finding.",
-    )
-    confidence = models.TextField(
-        blank=True,
-        null=True,
-        help_text="How confident Xpanse is the vulnerability is present.",
-    )
-    vendor = models.TextField(
-        blank=True, null=True, help_text="Vendor who makes the compromised product."
-    )
-    version_number = models.TextField(
-        blank=True, null=True, help_text="Version number of the compromised product."
-    )
-    activity_status = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Current activity status of the vulnerable product. (Inactive, Active)",
-    )
-    first_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="First time the vulnerable product was seen running on the service.",
-    )
-    last_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Last time the vulnerable product was seen running on the service.",
-    )
-
-    class Meta:
-        """Set XpanseCveServiceMdl metadata."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "xpanse_cve_services_mdl"
-        unique_together = (("xpanse_inferred_cve", "xpanse_service"),)
-
-
 class XpanseAlerts(models.Model):
     """Define XpanseAlerts model."""
 
@@ -5557,20 +5390,6 @@ class XpanseAlerts(models.Model):
     )
     host_name = models.TextField(
         blank=True, null=True, help_text="IP or domain where the alert points."
-    )
-    sub_domain = models.ForeignKey(
-        "SubDomains",
-        on_delete=models.CASCADE,
-        db_column="sub_domain_id",
-        blank=True,
-        null=True,
-        help_text="FK: Foreign Key to the linked subdomain",
-    )
-    service = models.ForeignKey(
-        "Service",
-        on_delete=models.CASCADE,
-        db_column="service_id",
-        help_text="FK: Foreign Key to the linked service",
     )
     alert_action = models.TextField(
         blank=True,
@@ -5755,11 +5574,6 @@ class XpanseAlerts(models.Model):
         related_name="alerts",
         help_text="Many to many relationship to the related business units.",
     )
-    services = models.ManyToManyField(
-        XpanseServicesMdl,
-        related_name="alerts",
-        help_text="Many to many relationsthip to the services associated with the alert.",
-    )
     assets = models.ManyToManyField(
         XpanseAssetsMdl,
         related_name="alerts",
@@ -5772,6 +5586,180 @@ class XpanseAlerts(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "xpanse_alerts_mdl"
+
+
+class XpanseServicesMdl(models.Model):
+    """Define XpanseServicesMdl model."""
+
+    xpanse_service_uid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for a Xpanse Service object.",
+    )
+    service_id = models.TextField(
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="Xpanse Identifier for the service.",
+    )
+    service_name = models.TextField(
+        blank=True, null=True, help_text="Name of the service."
+    )
+    service_type = models.TextField(blank=True, null=True, help_text="Type of service")
+    ip_address = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="List of IP addresses where the service is hosted, if applicable.",
+    )
+    domain = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="List of domains where the service is hosted, if applicable.",
+    )
+    externally_detected_providers = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="List of externally detected providers.",
+    )
+    is_active = models.TextField(
+        blank=True, null=True, help_text="State of the service (Active, Inactive)."
+    )
+    first_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Datetime the service was first observed by Xpanse",
+    )
+    last_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Datetime the service was last observed by Xpanse",
+    )
+    port = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="Number of the port where the service is running.",
+    )
+    protocol = models.TextField(
+        blank=True, null=True, help_text="Protocol running on the port."
+    )
+    active_classifications = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="Current, actively detected and recognized software, technologies, or behaviors observed on a service based on the most recent data collected",
+    )
+    inactive_classifications = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="previously detected and recognized software, technologies, or behaviors observed on a service previously, but not on the most recent data collected",
+    )
+    discovery_type = models.TextField(
+        blank=True, null=True, help_text="How the service was detected."
+    )
+    externally_inferred_vulnerability_score = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="vulnerability score assigned to a service based on publicly available information about its product name and version, compared against known vulnerabilities in the National Vulnerability Database (NVD)",
+    )
+    externally_inferred_cves = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="potential vulnerabilities identified by comparing the publicly visible version information of a service discovered on an organization's external attack surface with known vulnerabilities listed in the National Vulnerability Database (NVD)",
+    )
+    service_key = models.TextField(
+        blank=True,
+        null=True,
+        help_text="identifier associated with a specific service that allows for access and interaction with that service within the Xpanse environment",
+    )
+    service_key_type = models.TextField(
+        blank=True, null=True, help_text="Type of service key."
+    )
+    cves = models.ManyToManyField(
+        XpanseCvesMdl,
+        through="XpanseCveServiceMdl",
+        help_text="Many to many linking table to the cve table.",
+    )
+    sub_domains = models.ManyToManyField(
+        SubDomains,
+        related_name="XpanseServicesMdl",
+        help_text="Many to many linking to sub domains",
+    )
+    alert = models.ForeignKey(
+        XpanseAlerts, on_delete=models.CASCADE, db_column="xpanse_alert_uid", null=True
+    )
+
+    class Meta:
+        """Set XpanseServicesMdl metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "xpanse_services_mdl"
+
+
+class XpanseCveServiceMdl(models.Model):
+    """Define XpanseCves-Service linking table model."""
+
+    xpanse_inferred_cve = models.ForeignKey(
+        XpanseCvesMdl,
+        on_delete=models.CASCADE,
+        help_text="FK: Foreign key to the CVE associated with the service.",
+    )
+    xpanse_service = models.ForeignKey(
+        XpanseServicesMdl,
+        on_delete=models.CASCADE,
+        help_text="FK: Foreign key to the service associated with the CVEs.",
+    )
+    inferred_cve_match_type = models.TextField(
+        blank=True,
+        null=True,
+        help_text="If the match between service and CVE is approximate or exact.",
+    )
+    product = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Vulnerable product on the service that triggered the finding.",
+    )
+    confidence = models.TextField(
+        blank=True,
+        null=True,
+        help_text="How confident Xpanse is the vulnerability is present.",
+    )
+    vendor = models.TextField(
+        blank=True, null=True, help_text="Vendor who makes the compromised product."
+    )
+    version_number = models.TextField(
+        blank=True, null=True, help_text="Version number of the compromised product."
+    )
+    activity_status = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Current activity status of the vulnerable product. (Inactive, Active)",
+    )
+    first_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="First time the vulnerable product was seen running on the service.",
+    )
+    last_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Last time the vulnerable product was seen running on the service.",
+    )
+
+    class Meta:
+        """Set XpanseCveServiceMdl metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "xpanse_cve_services_mdl"
+        unique_together = (("xpanse_inferred_cve", "xpanse_service"),)
 
 
 class CpeVender(models.Model):

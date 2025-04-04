@@ -113,3 +113,4 @@ ssm_redshift_password                = "/crossfeed/staging/REDSHIFT_PASSWORD"
 create_elasticache_cluster           = true
 create_email_sender_instance         = true
 email_sender_instance_type           = "t3.small"
+crossfeed-xpanse-org-sync            = "crossfeed-xpanse-org-sync-staging-cd"

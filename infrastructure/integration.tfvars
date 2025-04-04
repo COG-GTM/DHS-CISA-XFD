@@ -111,3 +111,4 @@ matomo_availability_zone             = "us-east-1a"
 create_email_sender_instance         = false
 email_sender_instance_type           = "t3.small"
 crossfeed-lz-sync_name               = "crossfeed-integration-lz-sync"
+crossfeed-xpanse-org-sync            = "crossfeed-integration-xpanse-org-sync"
