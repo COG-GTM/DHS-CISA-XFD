@@ -6,16 +6,18 @@ on:
     branches:
       - develop
       - integration
+      - CRASM-2286_Bug_fix_regression_yaml
     paths:
-      - backend/**
+      - frontend/**
       - .github/workflows/regression.yml
   pull_request:
     branches:
       - develop
       - integration
+      - CRASM-2286_Bug_fix_regression_yaml
     paths:
-      - backend/**
-      - .github/workflows/regression.yml
+      - frontend/**
+      - .github/workflows/frontend.yml
 
 defaults:
   run:
@@ -40,7 +42,7 @@ jobs:
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
           -o "awscliv2.zip"
           unzip awscliv2.zip
-          sudo ./aws/install
+          sudo ./aws/install --update
           aws --version  # To verify installation
 
       - name: Run Playwright tests
@@ -118,7 +120,7 @@ jobs:
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
            -o "awscliv2.zip"
           unzip awscliv2.zip
-          sudo ./aws/install
+          sudo ./aws/install --update
           aws --version  # To verify installation
 
       - name: Run Playwright tests
