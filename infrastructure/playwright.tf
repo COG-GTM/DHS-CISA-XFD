@@ -56,11 +56,11 @@ resource "aws_iam_role_policy_attachment" "playwright_ecs_execution_policy" {
 }
 
 resource "aws_ecs_task_definition" "playwright_worker" {
-  family                   = var.worker_ecs_task_definition_family
+  family                   = var.playwright_worker_ecs_task_definition_family
   container_definitions    = <<EOF
 [
   {
-    "name": "playwright",
+    "name": "main",
     "image": "public.ecr.aws/sphmedia/sphmedia/microsoft-playwright:v1.50.1-jammy",
     "essential": true,
     "mountPoints": [],
