@@ -38,11 +38,7 @@ class S3Client:
 
     def get_xpanse_business_units(self):
         """Retrieve CSV File from S3. Returns the file contents (as bytes)."""
-        bucket_name = None
-        try:
-            bucket_name = os.getenv("XPANSE_ORG_SYNC_BUCKET_NAME")
-        except Exception:
-            pass
+        bucket_name = os.getenv("XPANSE_ORG_SYNC_BUCKET_NAME")
         try:
             response = self.s3.list_objects_v2(Bucket=bucket_name)
             contents = response.get("Contents", [])
