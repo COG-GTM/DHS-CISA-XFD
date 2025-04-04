@@ -37,6 +37,7 @@ class ScanTaskList(BaseModel):
     started_at: Optional[datetime]
     finished_at: Optional[datetime]
     queued_at: Optional[datetime]
+    concurrency_index: Optional[int]
     scan: Optional[Scan]
     organization: Optional[List[Organization]] = []
 

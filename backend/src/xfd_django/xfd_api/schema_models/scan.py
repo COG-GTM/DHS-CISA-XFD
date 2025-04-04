@@ -26,6 +26,7 @@ class Scan(BaseModel):
     is_user_modifiable: Optional[bool]
     is_single_scan: bool
     manual_run_pending: bool
+    concurrent_tasks: Optional[int]
     tags: Optional[List[OrganizationalTags]] = []
     organizations: Optional[List[Organization]] = []
 
@@ -54,6 +55,8 @@ class ScanSchema(BaseModel):
     # Chunked scans can only be run on scans whose implementation takes into account the
     # chunkNumber and numChunks parameters specified in commandOptions.
     num_chunks: Optional[int] = None
+
+    maxConcurrentTasks: Optional[int] = 500
 
 
 class GranularScan(BaseModel):
@@ -96,6 +99,7 @@ class NewScan(BaseModel):
     is_granular: Optional[bool] = None
     is_user_modifiable: Optional[bool] = None
     is_single_scan: Optional[bool] = None
+    concurrent_tasks: Optional[int] = 1
 
 
 class CreateScanResponseModel(BaseModel):
@@ -111,6 +115,7 @@ class CreateScanResponseModel(BaseModel):
     created_by: Optional[Any]
     tags: Optional[List[IdSchema]]
     organizations: Optional[List[IdSchema]]
+    concurrent_tasks: Optional[int]
 
 
 class GetScanResponseModel(BaseModel):
@@ -140,6 +145,7 @@ SCAN_SCHEMA = {
         is_passive=True,
         global_scan=False,
         description="Passive discovery of subdomains from public certificates",
+        maxConcurrentTasks=5,
     ),
     "censysCertificates": ScanSchema(
         type="fargate",
@@ -218,6 +224,14 @@ SCAN_SCHEMA = {
         cpu="2048",
         memory="16384",
         description="Finds emails that have appeared in breaches related to a given domain",
+    ),
+    "intel_x_identity": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Identify credential exposures via IntelX.",
     ),
     "intrigueIdent": ScanSchema(
         type="fargate",
@@ -317,6 +331,15 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
+    "updateBlocklist": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        numChunks=0,
+        cpu="1024",
+        memory="8192",
+        description="Updates blocked ip records against blocklist.de global IP blocklist",
+    ),
     "was_sync": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -332,5 +355,14 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Xpanse alert data from commercial mdl",
+    ),
+    "asm_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Enumerate and sync org assets.",
+        maxConcurrentTasks=1,
     ),
 }
