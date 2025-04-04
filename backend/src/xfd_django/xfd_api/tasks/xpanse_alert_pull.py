@@ -10,7 +10,6 @@ from uuid import uuid1, uuid4
 
 # Third-Party Libraries
 import django
-import pytz
 import requests
 
 # End Standalone Django Setup
@@ -46,7 +45,7 @@ def get_or_create_data_source(name):
             data_source_uid=uuid4(),
             name=name,
             description="Xpanse Data Source",
-            last_run=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
+            last_run=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc),
         )
         return data_source_obj
 
@@ -373,7 +372,7 @@ def format_alerts(alerts):
         try:
             service_ids += alert.get("service_ids", [])
             alert_services_dict[alert["alert_id"]] = alert.get("service_ids", [])
-        except Exception:
+        except (KeyError, TypeError):
             continue
 
     services = []
@@ -489,23 +488,23 @@ def format_alerts(alerts):
             for tag in tags[0]:
                 if tag.startswith("BU:"):
                     business_units_list.append(tag[3:].strip())
-        except Exception:
+        except (KeyError, TypeError):
             business_units_list = []
 
         assets = []
         current_services = []
-        try:
-            for service in alert.get("service_ids", []):
+        for service in alert.get("service_ids", []):
+            try:
                 service_identified = next(
                     (d for d in services if d.get("service_id") == service), None
                 )
                 if service_identified:
                     current_services.append(service_identified)
-        except Exception:
-            pass
+            except (TypeError, AttributeError) as e:
+                LOGGER.warning(f"Failed to process service ID '{service}': {e}")
         alert_dict = {
             "time_pulled_from_xpanse": datetime.datetime.utcnow().replace(
-                tzinfo=pytz.utc
+                tzinfo=datetime.timezone.utc
             ),
             "alert_id": alert.get("alert_id", None),
             "detection_timestamp": alert.get("detection_timestamp", None),
