@@ -56,7 +56,7 @@ jobs:
         run: |
           aws ecs run-task \
           --cluster crossfeed-playwright-integration-ecs-cluster \
-          --task-definition playwright \
+          --task-definition playwright_worker \
           --launch-type FARGATE \
           --network-configuration \
           "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
@@ -135,7 +135,7 @@ jobs:
         run: |
           aws ecs run-task \
             --cluster crossfeed-playwright-integration-ecs-cluster \
-            --task-definition playwright \
+            --task-definition playwright_worker \
             --launch-type FARGATE \
             --network-configuration \
             "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
