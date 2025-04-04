@@ -496,7 +496,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "crossfeed-lz-sync
 
 resource "aws_s3_bucket" "crossfeed-xpanse-org-sync" {
   count  = var.is_dmz ? 1 : 0
-  bucket = var.crossfeed-lz-xpanse-org-sync
+  bucket = var.crossfeed-xpanse-org-sync
   tags = {
     Project = var.project
     Stage   = var.stage
