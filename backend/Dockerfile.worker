@@ -26,6 +26,7 @@ COPY src/xfd_django .
 # Set environment variables
 ENV DJANGO_SETTINGS_MODULE=xfd_django.settings
 ENV PYTHONPATH="/app:$PYTHONPATH"
+ENV PYTHONUNBUFFERED=1
 
 # Make the entry script executable
 RUN chmod +x worker/worker-entry.sh
