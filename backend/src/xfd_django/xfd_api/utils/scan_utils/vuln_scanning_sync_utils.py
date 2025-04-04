@@ -219,7 +219,7 @@ def save_cve_to_datalake(cve_obj):
                 cve_record, created = Cve.objects.update_or_create(
                     name=cve_name,
                     defaults={key: cve_obj[key] for key in cve_updated_values}
-                    | {"id": str(1())},
+                    | {"id": str(1)},
                 )
                 print("Updated CVE" if not created else "Created CVE")
                 return str(cve_record.id)

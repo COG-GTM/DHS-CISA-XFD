@@ -352,6 +352,12 @@ variable "ssm_whoisxml_api_key" {
   default     = "/crossfeed/staging/WHOIS_XML_KEY"
 }
 
+variable "ssm_whoisxml_thread_count" {
+  description = "ssm_whoisxml_thread_count"
+  type        = string
+  default     = "/crossfeed/staging/WHOIS_XML_THREAD_COUNT"
+}
+
 variable "ssm_qualys_username" {
   description = "ssm_qualys_username"
   type        = string
@@ -861,8 +867,18 @@ variable "image_tag" {
   default     = "latest"
 }
 
-variable "automated_test_report_bucket_name" {
-  description = "S3 bucket where test reports will be stored"
+variable "crossfeed_playwright" {
+  description = "The name of the Crossfeed Playwright environment"
   type        = string
-  default     = "cisa-crossfeed-staging-auto-test-reports"
+}
+
+variable "automated_test_reports_bucket_name" {
+  description = "The name of the automated test report S3 bucket"
+  type        = string
+}
+
+variable "playwright_worker_ecs_task_definition_family" {
+  description = "playwright_worker_ecs_task_definition_family"
+  type        = string
+  default     = "crossfeed-playwright-worker-staging-cd"
 }

@@ -1,0 +1,163 @@
+---
+name: Regression Testing
+
+on:
+  push:
+    branches:
+      - develop
+      - integration
+    paths:
+      - frontend/**
+      - .github/workflows/regression.yml
+  pull_request:
+    branches:
+      - develop
+      - integration
+    paths:
+      - frontend/**
+      - .github/workflows/frontend.yml
+
+defaults:
+  run:
+    working-directory: ./playwright
+
+jobs:
+  test_staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Playwright tests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          PW_XFD_2FA_ISSUER: ${{ secrets.PW_XFD_2FA_ISSUER }}
+          PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
+          PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
+          PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
+        run: |
+          aws ecs run-task \
+          --cluster crossfeed-playwright-staging-cd-ecs-cluster \
+          --task-definition crossfeed-staging-cd-playwright-worker \
+          --launch-type FARGATE \
+          --network-configuration \
+          "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
+          securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
+          assignPublicIp=\"ENABLED\"}" \
+          --region ${{ secrets.AWS_REGION }} \
+          --overrides '{
+            "containerOverrides": [
+            {
+              "name": "playwright",
+              "command": [
+                "sh",
+                "-c",
+                "npx playwright install && npx playwright test"
+              ]
+            }
+          ]
+          }'
+
+
+        continue-on-error: false  # Ensure it stops if the ECS task fails
+
+      - name: Upload test results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: ./test-results/*.json
+
+      - name: Upload HTML report to S3
+        run: |
+          aws s3 cp ./playwright-report/html \
+            s3://${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}/\
+            playwright-reports/html/ --recursive || \
+          { echo "HTML report upload failed"; exit 1; }
+
+      - name: Upload JSON report to S3
+        run: |
+          if aws s3 cp ./playwright-report/results.json \
+            s3://${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}/\
+            playwright-reports/results.json; then \
+            echo "JSON report uploaded successfully."; \
+          else \
+            echo "Failed to upload JSON report to S3." >&2; \
+            exit 1; \
+          fi
+
+  test_integration:
+    runs-on: ubuntu-latest
+    environment: integration
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Playwright tests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          PW_XFD_2FA_ISSUER: ${{ secrets.PW_XFD_2FA_ISSUER }}
+          PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
+          PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
+          PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
+        run: |
+          aws ecs run-task \
+            --cluster crossfeed-playwright-integration-ecs-cluster \
+            --task-definition crossfeed-integration-playwright-worker \
+            --launch-type FARGATE \
+            --network-configuration \
+            "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
+            securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
+            assignPublicIp=\"ENABLED\"}" \
+            --region ${{ secrets.AWS_REGION }} \
+            --overrides '{
+            "containerOverrides": [
+            {
+              "name": "playwright",
+              "command": [
+                "sh",
+                "-c",
+                "npx playwright install && npx playwright test"
+              ]
+            }
+          ]
+          }'
+        continue-on-error: false  # Ensure it stops if the ECS task fails
+
+      - name: Upload test results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: ./test-results/*.json
+
+      - name: Upload HTML report to S3
+        run: |
+          aws s3 cp ./playwright-report/html \
+            s3://${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}/\
+            playwright-reports/html/ --recursive || \
+          { echo "HTML report upload failed"; exit 1; }
+
+      - name: Upload JSON report to S3
+        run: |
+          if aws s3 cp ./playwright-report/results.json \
+            s3://${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}/\
+            playwright-reports/results.json; then \
+            echo "JSON report uploaded successfully."; \
+          else \
+            echo "Failed to upload JSON report to S3." >&2; \
+            exit 1; \
+          fi
