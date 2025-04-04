@@ -6,7 +6,6 @@ on:
     branches:
       - develop
       - integration
-      - CRASM-2286_Bug_fix_regression_yaml
     paths:
       - frontend/**
       - .github/workflows/regression.yml
@@ -14,7 +13,6 @@ on:
     branches:
       - develop
       - integration
-      - CRASM-2286_Bug_fix_regression_yaml
     paths:
       - frontend/**
       - .github/workflows/frontend.yml
