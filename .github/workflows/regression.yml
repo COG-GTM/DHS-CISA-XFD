@@ -7,15 +7,15 @@ on:
       - develop
       - integration
     paths:
-      - backend/**
+      - frontend/**
       - .github/workflows/regression.yml
   pull_request:
     branches:
       - develop
       - integration
     paths:
-      - backend/**
-      - .github/workflows/regression.yml
+      - frontend/**
+      - .github/workflows/frontend.yml
 
 defaults:
   run:
@@ -35,14 +35,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install AWS CLI
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
-          -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
-          aws --version  # To verify installation
-
       - name: Run Playwright tests
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -53,17 +45,18 @@ jobs:
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
         run: |
           aws ecs run-task \
-          --cluster crossfeed-playwright-integration-ecs-cluster \
-          --task-definition playwright \
+          --cluster crossfeed-playwright-staging-cd-ecs-cluster \
+          --task-definition crossfeed-staging-cd-playwright-worker \
           --launch-type FARGATE \
           --network-configuration \
           "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
           securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
           assignPublicIp=\"ENABLED\"}" \
+          --region ${{ secrets.AWS_REGION }} \
           --overrides '{
             "containerOverrides": [
             {
-              "name": "playwright",
+              "name": "main",
               "command": [
                 "sh",
                 "-c",
@@ -113,14 +106,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install AWS CLI
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
-           -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
-          aws --version  # To verify installation
-
       - name: Run Playwright tests
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -132,16 +117,17 @@ jobs:
         run: |
           aws ecs run-task \
             --cluster crossfeed-playwright-integration-ecs-cluster \
-            --task-definition playwright \
+            --task-definition crossfeed-integration-playwright-worker \
             --launch-type FARGATE \
             --network-configuration \
             "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
             securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
             assignPublicIp=\"ENABLED\"}" \
+            --region ${{ secrets.AWS_REGION }} \
             --overrides '{
             "containerOverrides": [
             {
-              "name": "playwright",
+              "name": "main",
               "command": [
                 "sh",
                 "-c",
