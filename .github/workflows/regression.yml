@@ -56,7 +56,7 @@ jobs:
           --overrides '{
             "containerOverrides": [
             {
-              "name": "playwright",
+              "name": "main",
               "command": [
                 "sh",
                 "-c",
@@ -127,7 +127,7 @@ jobs:
             --overrides '{
             "containerOverrides": [
             {
-              "name": "playwright",
+              "name": "main",
               "command": [
                 "sh",
                 "-c",
