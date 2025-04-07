@@ -5871,6 +5871,24 @@ class Blocklist(models.Model):
         ]
 
 
+class Log(models.Model):
+    """The Log model."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    payload = models.TextField()
+    created_at = models.DateTimeField(db_column="created_at", auto_now_add=True)
+    event_type = models.CharField(
+        db_column="event_type", max_length=255, null=True, blank=True
+    )
+    result = models.CharField(max_length=255)
+
+    class Meta:
+        """The Meta class for Log."""
+
+        managed = True
+        db_table = "log"
+
+
 # # THese are all views, so they shouldn't be generated via the ORM
 
 # # This should be a view not a table
