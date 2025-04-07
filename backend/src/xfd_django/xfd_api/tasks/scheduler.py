@@ -38,17 +38,6 @@ class Scheduler:
     def launch_scan_execution(self, scan):
         """Prepare and send scan execution request."""
         # Get organizations to run on
-        orgs = get_scan_organizations(scan) if scan.isGranular else self.organizations
-        filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
-
-        if not filtered_orgs:
-            print(
-                "Skipping scan execution for {} - No organizations to run on.".format(
-                    scan.name
-                )
-            )
-            return
-
         # If global scan, ignore queue and start 1 concurrent task
         scan_schema = SCAN_SCHEMA.get(scan.name, {})
         global_scan = getattr(scan_schema, "global_scan", False)
@@ -59,7 +48,7 @@ class Scheduler:
                 "scanId": str(scan.id),
                 "scanType": scan.name,
                 "desiredCount": 1,
-                "organizations": list(filtered_orgs),
+                "organizations": list(),
                 "isPe": False,
             }
             try:
@@ -75,6 +64,17 @@ class Scheduler:
             except Exception as e:
                 print("Error invoking scanExecution: {}".format(e))
 
+            return
+
+        orgs = get_scan_organizations(scan) if scan.isGranular else self.organizations
+        filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
+
+        if not filtered_orgs:
+            print(
+                "Skipping scan execution for {} - No organizations to run on.".format(
+                    scan.name
+                )
+            )
             return
 
         # Prepare scan specific queue

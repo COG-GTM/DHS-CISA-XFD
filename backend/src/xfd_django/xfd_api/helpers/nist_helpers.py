@@ -15,8 +15,7 @@ import logging
 
 # Third-Party Libraries
 from django.forms.models import model_to_dict
-
-from ..models import Cpe, Cve
+from xfd_mini_dl.models import Cpe, Cve
 
 # Third Party Imports
 
@@ -40,52 +39,57 @@ def api_cve_insert(cve_dict):
 
     try:
         # Get WAS record based on tag
-        vender_prod_dict = cve_dict.vender_product
+        vender_prod_dict = cve_dict.get("vender_product", {})
         cve_object, created = Cve.objects.update_or_create(
-            cve_name=cve_dict.cve_name,
+            name=cve_dict.get("cve_name"),
             defaults={
-                "name": cve_dict.cve_name,
-                "published_at": cve_dict.published_date,
-                "modified_at": cve_dict.last_modified_date,
-                "status": cve_dict.vuln_status,
-                "description": cve_dict.description,
-                "cvss_v2_source": cve_dict.cvss_v2_source,
-                "cvss_v2_type": cve_dict.cvss_v2_type,
-                "cvss_v2_version": cve_dict.cvss_v2_version,
-                "cvss_v2_vector_string": cve_dict.cvss_v2_vector_string,
-                "cvss_v2_base_score": cve_dict.cvss_v2_base_score,
-                "cvss_v2_base_severity": cve_dict.cvss_v2_base_severity,
-                "cvss_v2_exploitability_score": cve_dict.cvss_v2_exploitability_score,
-                "cvss_v2_impact_score": cve_dict.cvss_v2_impact_score,
-                "cvss_v3_source": cve_dict.cvss_v3_source,
-                "cvss_v3_type": cve_dict.cvss_v3_type,
-                "cvss_v3_version": cve_dict.cvss_v3_version,
-                "cvss_v3_vector_string": cve_dict.cvss_v3_vector_string,
-                "cvss_v3_base_score": cve_dict.cvss_v3_base_score,
-                "cvss_v3_base_severity": cve_dict.cvss_v3_base_severity,
-                "cvss_v3_exploitability_score": cve_dict.cvss_v3_exploitability_score,
-                "cvss_v3_impact_score": cve_dict.cvss_v3_impact_score,
-                "cvss_v4_source": cve_dict.cvss_v4_source,
-                "cvss_v4_type": cve_dict.cvss_v4_type,
-                "cvss_v4_version": cve_dict.cvss_v4_version,
-                "cvss_v4_vector_string": cve_dict.cvss_v4_vector_string,
-                "cvss_v4_base_score": cve_dict.cvss_v4_base_score,
-                "cvss_v4_base_severity": cve_dict.cvss_v4_base_severity,
-                "cvss_v4_exploitability_score": cve_dict.cvss_v4_exploitability_score,
-                "cvss_v4_impact_score": cve_dict.cvss_v4_impact_score,
-                "weaknesses": cve_dict.weaknesses,
-                "references_urls": cve_dict.reference_urls,
-                "cpe_list": cve_dict.cpe_list,
+                "published_at": cve_dict.get("published_date"),
+                "modified_at": cve_dict.get("last_modified_date"),
+                "status": cve_dict.get("vuln_status"),
+                "description": cve_dict.get("description"),
+                "cvss_v2_source": cve_dict.get("cvss_v2_source"),
+                "cvss_v2_type": cve_dict.get("cvss_v2_type"),
+                "cvss_v2_version": cve_dict.get("cvss_v2_version"),
+                "cvss_v2_vector_string": cve_dict.get("cvss_v2_vector_string"),
+                "cvss_v2_base_score": cve_dict.get("cvss_v2_base_score"),
+                "cvss_v2_base_severity": cve_dict.get("cvss_v2_base_severity"),
+                "cvss_v2_exploitability_score": cve_dict.get(
+                    "cvss_v2_exploitability_score"
+                ),
+                "cvss_v2_impact_score": cve_dict.get("cvss_v2_impact_score"),
+                "cvss_v3_source": cve_dict.get("cvss_v3_source"),
+                "cvss_v3_type": cve_dict.get("cvss_v3_type"),
+                "cvss_v3_version": cve_dict.get("cvss_v3_version"),
+                "cvss_v3_vector_string": cve_dict.get("cvss_v3_vector_string"),
+                "cvss_v3_base_score": cve_dict.get("cvss_v3_base_score"),
+                "cvss_v3_base_severity": cve_dict.get("cvss_v3_base_severity"),
+                "cvss_v3_exploitability_score": cve_dict.get(
+                    "cvss_v3_exploitability_score"
+                ),
+                "cvss_v3_impact_score": cve_dict.get("cvss_v3_impact_score"),
+                "cvss_v4_source": cve_dict.get("cvss_v4_source"),
+                "cvss_v4_type": cve_dict.get("cvss_v4_type"),
+                "cvss_v4_version": cve_dict.get("cvss_v4_version"),
+                "cvss_v4_vector_string": cve_dict.get("cvss_v4_vector_string"),
+                "cvss_v4_base_score": cve_dict.get("cvss_v4_base_score"),
+                "cvss_v4_base_severity": cve_dict.get("cvss_v4_base_severity"),
+                "cvss_v4_exploitability_score": cve_dict.get(
+                    "cvss_v4_exploitability_score"
+                ),
+                "cvss_v4_impact_score": cve_dict.get("cvss_v4_impact_score"),
+                "weaknesses": cve_dict.get("weaknesses"),
+                "reference_urls": cve_dict.get("reference_urls"),
+                "cpe_list": cve_dict.get("cpe_list"),
             },
         )
         if created:
-            LOGGER.info("new CVE record created for %s", cve_dict.cve_name)
+            LOGGER.info("new CVE record created for %s", cve_dict.get("cve_name"))
 
         prod_obj_list = []
-        for vender, product_list in vender_prod_dict.items():
+        for vendor, product_list in vender_prod_dict.items():
             for product, version in product_list:
                 product_obj, product_created = Cpe.objects.update_or_create(
-                    vender=vender,
+                    vendor=vendor,
                     name=product,
                     version=version,
                     defaults={
@@ -98,29 +102,27 @@ def api_cve_insert(cve_dict):
         cve_object.save()
 
         # TODO no ticket is needed for this todo, this code may be needed in the future
-        prods = []
-        for prod in list(cve_object.cpes.all()):
-            prods.append(
-                {
-                    "cpe_product_uid": prod.cpe_product_uid,
-                    "cpe_product_name": prod.cpe_product_name,
-                    "version_number": prod.version_number,
-                    "vender_uid": prod.cpe_vender_uid_id,
-                    "vender_name": prod.cpe_vender_uid.vender_name,
-                }
-            )
-        return {
-            "message": "Record updated successfully.",
-            "updated_cve": cve_object,
-            "products": prods,
-        }
+        # prods = []
+        # for prod in list(cve_object.cpes.all()):
+        #     prods.append(
+        #         {
+        #             "cpe_product_uid": prod.cpe_product_uid,
+        #             "cpe_product_name": prod.cpe_product_name,
+        #             "version_number": prod.version_number,
+        #             "vender_uid": prod.cpe_vender_uid_id,
+        #             "vender_name": prod.cpe_vender_uid.vender_name,
+        #         }
+        #     )
+        # return {
+        #     "message": "Record updated successfully.",
+        #     "updated_cve": cve_object,
+        #     "products": prods,
+        # }
 
     except Exception as e:
         print(e)
         print("failed to insert or update")
         LOGGER.info("API key expired please try again")
-    else:
-        return {"message": "No api key was submitted"}
 
 
 def get_cve_and_products(cve_name):

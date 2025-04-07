@@ -97,6 +97,7 @@ def update_cves(hours_back=12):
     response = requests.request("GET", nist_url + params, headers=headers, data=payload)
 
     result = response.json()
+    logging.info(result)
     start_index += result["resultsPerPage"]
     for vuln in result["vulnerabilities"]:
         cve_dict = format_vulnerability(vuln)
