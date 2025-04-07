@@ -112,7 +112,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_redshift_password.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}",
-          "${data.aws_ssm_parameter.ssm_nist_api_key.arn}",
+          "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
         ]
     },
     {
