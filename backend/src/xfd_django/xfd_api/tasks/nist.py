@@ -1,7 +1,7 @@
 """Update CVE data using the NIST API."""
 
 # Standard Python Libraries
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import os
 import sys
@@ -10,7 +10,6 @@ import time
 # Third-Party Libraries
 import django
 from nested_lookup import nested_lookup
-import pytz
 import requests
 
 from ..helpers.nist_helpers import api_cve_insert, get_cve_and_products
@@ -131,7 +130,7 @@ def format_vulnerability(vuln):
         "published_date": vuln["cve"]["published"],
         "last_modified_date": datetime.fromisoformat(
             vuln["cve"]["lastModified"]
-        ).replace(tzinfo=pytz.UTC),
+        ).replace(tzinfo=timezone.utc),
         "vuln_status": vuln["cve"]["vulnStatus"],
         "description": None,
         "cvss_v2_source": None,
@@ -278,7 +277,7 @@ def check_cve_is_synced():
 
     last_vuln = result["vulnerabilities"][-1]
     live_mod_date = datetime.fromisoformat(last_vuln["cve"]["lastModified"]).replace(
-        tzinfo=pytz.UTC
+        tzinfo=timezone.utc
     )
     cve_name = last_vuln["cve"]["id"]
 
@@ -287,7 +286,7 @@ def check_cve_is_synced():
     if cve_from_db:
         db_mod_date = datetime.fromisoformat(
             cve_from_db["cve_data"]["last_modified_date"]
-        ).replace(tzinfo=pytz.UTC)
+        ).replace(tzinfo=timezone.utc)
         if db_mod_date == live_mod_date:
             print(db_mod_date)
             print(live_mod_date)
