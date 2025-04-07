@@ -87,7 +87,7 @@ resource "aws_ecs_task_definition" "playwright_worker" {
     "command": [
       "sh",
       "-c",
-      "echo 'Installing Playwright...'; npx playwright install"
+      "echo 'Installing Playwright...'; npx playwright install --with-deps"
     ]
   }
 ]
