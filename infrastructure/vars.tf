@@ -875,3 +875,9 @@ variable "automated_test_reports_bucket_name" {
   description = "The name of the automated test report S3 bucket"
   type        = string
 }
+
+variable "playwright_worker_ecs_task_definition_family" {
+  description = "playwright_worker_ecs_task_definition_family"
+  type        = string
+  default     = "crossfeed-playwright-worker-staging-cd"
+}
