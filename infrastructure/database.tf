@@ -159,6 +159,7 @@ resource "aws_iam_role_policy" "db_accessor_s3_policy" {
         "ecs:DescribeTasks",
         "ecs:ListClusters",
         "ecs:DescribeClusters"
+        "sts:AssumeRole"
       ],
       "Resource": "*"
     }
