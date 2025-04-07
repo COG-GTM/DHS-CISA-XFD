@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/4.1/howto/deployment/asgi/
 # Standard Python Libraries
 import asyncio
 from asyncio import Semaphore
+import functools
 import os
 import threading
 
@@ -26,6 +27,8 @@ from xfd_api.tasks.scheduler import handler as scheduler_handler
 from xfd_django.docker_events import listen_for_docker_events
 from xfd_django.middleware.middleware import LoggingMiddleware
 
+print = functools.partial(print, flush=True)
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
@@ -36,6 +39,7 @@ apps.populate(settings.INSTALLED_APPS)
 
 def set_security_headers(response: Response, isMatomo: bool):
     """Apply security headers to the HTTP response."""
+    
     # Conditionally set Content Security Policy (CSP) based on the request URL
     if isMatomo:
         csp_value = "; ".join(
@@ -100,7 +104,7 @@ def get_application() -> FastAPI:
     async def security_headers_middleware(request: Request, call_next):
         response = await call_next(request)
         # Determine if the request is for Matomo
-        isMatomo = True if "/matomo" in str(request.url) else False
+        isMatomo = True if request.url.path.startswith("/matomo") else False
         return set_security_headers(response, isMatomo)
 
     app.add_middleware(LoggingMiddleware)
