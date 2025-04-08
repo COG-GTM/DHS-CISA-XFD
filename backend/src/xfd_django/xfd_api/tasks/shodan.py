@@ -95,7 +95,7 @@ def shodan_api_init(api_key):
 
 def search_shodan(
     ips, api, start, end, org_uid, org_name, failed
-):  # pylint: disable=R0913
+):  # pylint: disable=R0913, R0915
     """Search IPs in the Shodan API."""
     # Build dictionaries for naming conventions and definitions
     risky_ports, name_dict, risk_dict, av_dict, ac_dict, ci_dict = get_shodan_dicts()
