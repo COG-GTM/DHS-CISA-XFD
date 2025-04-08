@@ -84,7 +84,7 @@ class ECSClient:
                             "CENSYS_API_ID": os.getenv("CENSYS_API_ID"),
                             "CENSYS_API_SECRET": os.getenv("CENSYS_API_SECRET"),
                             "WORKER_USER_AGENT": os.getenv("WORKER_USER_AGENT"),
-                            "SHODAN_API_KEY": os.getenv("SHODAN_API_KEY"),
+                            "SHODAN_API_KEY": command_options["SHODAN_API_KEY"],
                             "SIXGILL_CLIENT_ID": os.getenv("SIXGILL_CLIENT_ID"),
                             "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET"),
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
