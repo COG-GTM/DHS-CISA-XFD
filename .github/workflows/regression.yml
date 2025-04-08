@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 60
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -102,6 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: integration
     timeout-minutes: 60
+    if: github.event_name == 'push' && github.ref == 'refs/heads/integration'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -139,9 +141,7 @@ jobs:
                 "command": [
                   "sh",
                   "-c",
-                  "echo 'Cloning Playwright tests from GitHub...'; \
-                  git clone https://github.com/cisagov/xfd.git /app/xfd; \
-                  cd /app/xfd/playwright && \
+                  "cd /app/xfd/playwright && \
                   echo 'Running Playwright tests'; \
                   npx playwright test"
                 ]
