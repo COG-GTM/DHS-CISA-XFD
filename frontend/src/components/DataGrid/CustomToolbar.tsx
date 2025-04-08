@@ -17,6 +17,7 @@ export default function CustomToolbar(props: any) {
         csvOptions={{
           fileName: 'CyHy Dashboard ' + props.exportTitle
         }}
+        printOptions={{ disableToolbarButton: true }}
       />
       {props.children}
     </GridToolbarContainer>
