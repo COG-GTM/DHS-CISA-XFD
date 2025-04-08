@@ -63,11 +63,8 @@ jobs:
                 "command": [
                   "sh",
                   "-c",
-                  "echo 'Cloning Playwright tests from GitHub...'; \
-                  git clone https://github.com/cisagov/xfd.git /app/xfd; \
-                  cd /app/xfd/playwright && \
-                  echo 'Running Playwright tests'; \
-                  npx playwright test"
+                  "echo "Running Playwright Tests"; \
+                  cd /app/xfd/playwright && npx playwright test"
                 ]
               }
             ]
@@ -150,11 +147,8 @@ jobs:
                 "command": [
                   "sh",
                   "-c",
-                  "echo 'Cloning Playwright tests from GitHub...'; \
-                  git clone https://github.com/cisagov/xfd.git /app/xfd; \
-                  cd /app/xfd/playwright && \
-                  echo 'Running Playwright tests'; \
-                  npx playwright test"
+                  "echo "Running Playwright Tests"; \
+                  cd /app/xfd/playwright && npx playwright test"
                 ]
               }
             ]
