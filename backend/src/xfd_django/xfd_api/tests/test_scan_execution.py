@@ -239,6 +239,7 @@ def test_manual_run_pending_ignores_frequency():
 
 @pytest.mark.django_db(transaction=True)
 def test_shodan_fails_if_api_keys_insufficient():
+    """Test Shodan fails if API key is insufficient."""
     scan = Scan.objects.create(name="shodan", concurrentTasks=3, frequency=86400)
     os.environ["PE_SHODAN_API_KEYS"] = "k1,k2"
     with patch("xfd_api.tasks.scanExecution.ECSClient.run_command") as mock_run:

@@ -136,7 +136,7 @@ def search_shodan(
                         )
                         shodan_utc = time_to_utc(shodan_datetime)
                         # Only include results in the timeframe
-                        if shodan_utc > start and shodan_utc < end:
+                        if start < shodan_utc < end:
                             prod = d.get("product", None)
                             serv = d.get("http", {}).get("server")
                             asn = d.get("ASN", None)
@@ -280,16 +280,14 @@ def search_shodan(
                 # Most likely too many API calls per second so sleep
                 time.sleep(5)
             except Exception as e:
-                LOGGER.error("{} - {}".format(e, org_name))
+                LOGGER.error("%s - %s", e, org_name)
                 LOGGER.error(
-                    "Not a shodan API error. Continuing to next chunk - {}".format(
-                        org_name
-                    )
+                    "Not a shodan API error. Continuing to next chunk - %s", org_name
                 )
                 failed.append("{} chunk {} failed and skipped".format(org_name, count))
                 break
 
-        LOGGER.info("chunk {}/{} complete - {}".format(count, tot, org_name))
+        LOGGER.info("chunk %s/%s complete - %s", count, tot, org_name)
 
     return failed
 
@@ -324,7 +322,7 @@ def search_circl(cve):
 
 def is_verified(
     vulns, cve, av_dict, ac_dict, ci_dict, vuln_data, org_uid, r, d, asn, unverified
-):
+):  # pylint: disable=R0913
     """Check if a CVE is verified."""
     v = vulns[cve]
     if v["verified"]:
