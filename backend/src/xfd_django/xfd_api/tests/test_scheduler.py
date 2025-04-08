@@ -1,7 +1,7 @@
 """Test scheduler."""
 # Standard Python Libraries
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 # Third-Party Libraries
 from django.utils import timezone
@@ -19,6 +19,17 @@ def org():
         rootDomains=["example.com"],
         ipBlocks=["192.168.0.0/24"],
     )
+
+
+@pytest.fixture(autouse=True)
+def patch_boto3_client():
+    """Mock SQS."""
+    with patch("xfd_api.tasks.scheduler.boto3.client") as mock_boto3_client:
+        mock_sqs = MagicMock()
+        mock_boto3_client.return_value = mock_sqs
+        mock_sqs.create_queue.return_value = {"QueueUrl": "https://mock-sqs-url"}
+        mock_sqs.send_message_batch.return_value = {}
+        yield
 
 
 @pytest.mark.django_db
