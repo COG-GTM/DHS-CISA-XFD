@@ -1,14 +1,19 @@
-import pytest
-from unittest.mock import patch
+"""Test scheduler."""
+# Standard Python Libraries
 from datetime import timedelta
+from unittest.mock import patch
+
+# Third-Party Libraries
 from django.utils import timezone
-from xfd_api.models import Scan, ScanTask, Organization
-from xfd_api.tasks.scheduler import Scheduler, handler
+import pytest
+from xfd_api.models import Organization, Scan, ScanTask
 from xfd_api.schema_models.scan import SCAN_SCHEMA
+from xfd_api.tasks.scheduler import Scheduler, handler
 
 
 @pytest.fixture
 def org():
+    """Org fixture."""
     return Organization.objects.create(
         name="org1",
         rootDomains=["example.com"],
@@ -31,7 +36,9 @@ def test_scheduler_skips_when_no_organizations():
 @pytest.mark.django_db
 def test_manual_run_pending_forces_execution(org):
     """Test manual run pending forces execution."""
-    scan = Scan.objects.create(name="censys", concurrentTasks=1, frequency=1, manualRunPending=True)
+    scan = Scan.objects.create(
+        name="censys", concurrentTasks=1, frequency=1, manualRunPending=True
+    )
     scheduler = Scheduler()
     scheduler.initialize([scan], [org])
 
@@ -94,7 +101,9 @@ def test_scan_skips_if_recent_task_running(org):
 @pytest.mark.django_db
 def test_scan_skips_if_single_scan_and_already_finished(org):
     """Test scan skips if single scan and already finished."""
-    scan = Scan.objects.create(name="censys", concurrentTasks=1, frequency=1, isSingleScan=True)
+    scan = Scan.objects.create(
+        name="censys", concurrentTasks=1, frequency=1, isSingleScan=True
+    )
     ScanTask.objects.create(
         scan=scan,
         status="finished",
@@ -115,8 +124,11 @@ def test_handler_filters_scan_and_org_ids(org):
     scan = Scan.objects.create(name="censys", concurrentTasks=1, frequency=1)
 
     with patch("xfd_api.tasks.scheduler.Scheduler.run") as mock_run:
-        handler({
-            "scanIds": [str(scan.id)],
-            "organizationIds": [str(org.id)],
-        }, None)
+        handler(
+            {
+                "scanIds": [str(scan.id)],
+                "organizationIds": [str(org.id)],
+            },
+            None,
+        )
         mock_run.assert_called_once()
