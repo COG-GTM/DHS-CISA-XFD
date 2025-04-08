@@ -482,6 +482,8 @@ def insert_shodan_assets(data):
                 "isp": row_dict.get("isn"),
                 "organization_name": row_dict.get("organization"),
                 "product": row_dict.get("product"),
+                "server": row_dict.get("server"),
+                "asn": row_dict.get("asn"),
                 "tags": row_dict.get("tags", []),
                 "country_code": row_dict.get("country_code"),
                 "location": row_dict.get("location"),
