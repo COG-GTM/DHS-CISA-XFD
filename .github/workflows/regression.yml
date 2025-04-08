@@ -45,33 +45,43 @@ jobs:
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
         run: |
-          aws ecs run-task \
-          --cluster crossfeed-playwright-staging-cd-ecs-cluster \
-          --task-definition crossfeed-staging-cd-playwright-worker \
-          --launch-type FARGATE \
-          --network-configuration \
-          "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
-          securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
-          assignPublicIp=\"ENABLED\"}" \
-          --region ${{ secrets.AWS_REGION }} \
-          --overrides '{
-            "containerOverrides": [
-            {
-              "name": "main",
-              "command": [
-                "sh",
-                "-c",
-                "echo 'Cloning Playwright tests from GitHub...'; \
-                git clone https://github.com/cisagov/xfd.git /app/xfd; \
-                cd /app/xfd/playwright && \
-                echo 'Running Playwright tests'; \
-                npx playwright test"
+          # Start the ECS task and capture the task ARN
+          TASK_ARN=$(aws ecs run-task \
+            --cluster crossfeed-playwright-staging-cd-ecs-cluster \
+            --task-definition crossfeed-staging-cd-playwright-worker \
+            --launch-type FARGATE \
+            --network-configuration 'awsvpcConfiguration={
+              "subnets": ["${{ secrets.AWS_SUBNET }}"],
+              "securityGroups": ["${{ secrets.AWS_SECURITY_GROUP }}"],
+              "assignPublicIp": "ENABLED"
+            }' \
+            --region ${{ secrets.AWS_REGION }} \
+            --overrides '{
+              "containerOverrides": [
+              {
+                "name": "main",
+                "command": [
+                  "sh",
+                  "-c",
+                  "echo 'Cloning Playwright tests from GitHub...'; \
+                  git clone https://github.com/cisagov/xfd.git /app/xfd; \
+                  cd /app/xfd/playwright && \
+                  echo 'Running Playwright tests'; \
+                  npx playwright test"
+                ]
+              }
+            ]
+            }' \
+            --query 'tasks[0].taskArn' --output text)
 
-              ]
-            }
-          ]
-          }'
+          echo "Started ECS Task with ARN: $TASK_ARN"
 
+          # Wait for the ECS task to complete
+          aws ecs wait tasks-stopped \
+          --cluster crossfeed-playwright-staging-cd-ecs-cluster\
+          --tasks $TASK_ARN --region ${{ secrets.AWS_REGION }}
+
+          echo "ECS task completed. Continuing with the next steps."
 
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
@@ -122,32 +132,44 @@ jobs:
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
         run: |
-          aws ecs run-task \
-            --cluster crossfeed-playwright-integration-ecs-cluster \
-            --task-definition crossfeed-integration-playwright-worker \
+          # Start the ECS task and capture the task ARN
+          TASK_ARN=$(aws ecs run-task \
+            --cluster crossfeed-playwright-staging-cd-ecs-cluster \
+            --task-definition crossfeed-staging-cd-playwright-worker \
             --launch-type FARGATE \
-            --network-configuration \
-            "awsvpcConfiguration={subnets=[\"${{ secrets.AWS_SUBNET }}\"], \
-            securityGroups=[\"${{ secrets.AWS_SECURITY_GROUP }}\"], \
-            assignPublicIp=\"ENABLED\"}" \
+            --network-configuration 'awsvpcConfiguration={
+              "subnets": ["${{ secrets.AWS_SUBNET }}"],
+              "securityGroups": ["${{ secrets.AWS_SECURITY_GROUP }}"],
+              "assignPublicIp": "ENABLED"
+            }' \
             --region ${{ secrets.AWS_REGION }} \
             --overrides '{
-            "containerOverrides": [
-            {
-              "name": "main",
-              "command": [
+              "containerOverrides": [
               {
                 "name": "main",
                 "command": [
                   "sh",
                   "-c",
-                  "cd /app/xfd/playwright && \
+                  "echo 'Cloning Playwright tests from GitHub...'; \
+                  git clone https://github.com/cisagov/xfd.git /app/xfd; \
+                  cd /app/xfd/playwright && \
                   echo 'Running Playwright tests'; \
                   npx playwright test"
                 ]
               }
             ]
-          }'
+            }' \
+            --query 'tasks[0].taskArn' --output text)
+
+          echo "Started ECS Task with ARN: $TASK_ARN"
+
+          # Wait for the ECS task to complete
+          aws ecs wait tasks-stopped \
+          --cluster crossfeed-playwright-staging-cd-ecs-cluster\
+          --tasks $TASK_ARN --region ${{ secrets.AWS_REGION }}
+
+          echo "ECS task completed. Continuing with the next steps."
+
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Upload test results as artifact
