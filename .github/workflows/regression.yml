@@ -147,7 +147,7 @@ jobs:
                 "command": [
                   "sh",
                   "-c",
-                  "echo 'Running Playwright Tests'; \
+                  "echo \"Running Playwright Tests\""; \
                   cd /app/xfd/playwright && npx playwright test"
                 ]
               }
