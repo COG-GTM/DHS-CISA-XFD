@@ -588,12 +588,14 @@ class Organization(models.Model):
     )
     enrolled_in_vs_timestamp = models.DateTimeField(
         db_column="enrolled_in_vs_timestamp",
-        auto_now=True,
+        null=True,
+        blank=True,
         help_text="Date the stakeholder enrolled in VS.",
     )
     period_start_vs_timestamp = models.DateTimeField(
         db_column="period_start_vs_timestamp",
-        auto_now=True,
+        null=True,
+        blank=True,
         help_text="Period start for the last report period VS ran.?????",
     )
     report_types = models.JSONField(
@@ -3710,7 +3712,7 @@ class DataSource(models.Model):
         default=uuid.uuid1,
         help_text="PK: Unique identifier for data_sources",
     )
-    name = models.TextField(help_text="Name of data source")
+    name = models.TextField(unique=True, help_text="Name of data source")
     description = models.TextField(help_text="Description of data source")
     last_run = models.DateField(help_text="Date that data source was last ran")
 
@@ -4827,7 +4829,6 @@ class SubDomains(models.Model):
         help_text="T/F: Boolean field flagging if the status is active.???",
     )
     first_seen = models.DateTimeField(
-        auto_now_add=True,
         blank=True,
         null=True,
         help_text="Date and time of the first time teh subdomain was seen.",
@@ -4835,7 +4836,6 @@ class SubDomains(models.Model):
     last_seen = models.DateTimeField(
         blank=True,
         null=True,
-        auto_now=True,
         help_text="Date of the last time the subdomain was seen.",
     )
     created_at = models.DateTimeField(

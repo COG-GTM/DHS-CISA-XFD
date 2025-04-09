@@ -1,17 +1,20 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
 from datetime import datetime, timezone
+import hashlib
+import json
 import os
 from typing import List, Optional
 from uuid import UUID
 
 # Third-Party Libraries
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
+from .api_methods import dmz_sync as dmz_sync_methods
 from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
@@ -66,6 +69,7 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
+from .schema_models.dmz_sync import AsmSyncRequest, AsmSyncResponse, DataSource
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -102,6 +106,8 @@ from .tools.user_logger_decorator import (
 
 # Define API router
 api_router = APIRouter()
+
+SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
 
 async def get_redis_client(request: Request):
@@ -1401,3 +1407,61 @@ async def get_blocklist(
 ):
     """Determine if IP is on the blocklist."""
     return await handle_check_ip(ip_address)
+
+
+# ========================================
+#   DMZ Sync Endpoints
+# ========================================
+
+
+@api_router.get(
+    "/dmz_sync/data_sources",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=List[DataSource],
+    tags=["Data Sources"],
+)
+async def list_data_sources(current_user: User = Depends(get_current_active_user)):
+    """Retrieve a list of all data sources."""
+    return dmz_sync_methods.list_data_sources(current_user)
+
+
+def serialize_custom(obj):
+    """Recursively convert objects to JSON-serializable formats."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()  # Convert datetime to ISO 8601 string
+    elif isinstance(obj, list):
+        return [serialize_custom(item) for item in obj]  # Recursively process lists
+    elif isinstance(obj, dict):
+        return {
+            key: serialize_custom(value) for key, value in obj.items()
+        }  # Recursively process dicts
+    return obj
+
+
+# POST
+@api_router.post(
+    "/dmz_sync/asm_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=AsmSyncResponse,
+    # response_model=AsmSyncRequest,
+    tags=["DMZ Sync"],
+)
+async def asm_sync(
+    asm_sync_data: AsmSyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return ASM_sync findings for a provided org."""
+    response_data = dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
+    # # response_json = json.dumps(response_data, sort_keys=True)
+    # Convert response data to a JSON-serializable format
+    response_serializable = serialize_custom(response_data)
+
+    response_json = json.dumps(response_serializable, default=str, sort_keys=True)
+
+    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
+
+    return JSONResponse(
+        content=response_serializable, headers={"X-Salted-Checksum": checksum}
+    )
+
+    # return dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
