@@ -632,6 +632,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       headerName: 'Details',
       minWidth: 75,
       flex: 0.5,
+      disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -691,7 +692,8 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
                 toolbar: {
                   children: onlyOpenVulns
                     ? showAllVulnsButton
-                    : showOpenVulnsButton
+                    : showOpenVulnsButton,
+                  exportTitle: 'Vulnerabilities'
                 },
                 noRowsOverlay: { children: noRowsOverlay }
               }}
