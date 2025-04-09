@@ -338,7 +338,7 @@ exports[`Layout component matches snapshot 1`] = `
                   <p>
                     <a
                       class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-smdm7r-MuiTypography-root-MuiLink-root"
-                      href="mailto:vulnerability@cisa.dhs.gov"
+                      href="mailto:vulnerability@mail.cisa.dhs.gov"
                     >
                       Contact Us
                     </a>
