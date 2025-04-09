@@ -156,6 +156,7 @@ export const Users: React.FC = () => {
       headerName: 'View/Edit',
       minWidth: 50,
       flex: 0.5,
+      disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `View or edit user ${cellValues.row.fullName}`;
         const descriptionId = `description-${cellValues.row.id}`;
@@ -198,6 +199,7 @@ export const Users: React.FC = () => {
     userCols.push({
       field: 'delete',
       headerName: 'Delete',
+      disableExport: true,
       minWidth: 50,
       flex: 0.4,
       renderCell: (cellValues: GridRenderCellParams) => {
@@ -338,7 +340,7 @@ export const Users: React.FC = () => {
                 columns={userCols}
                 slots={{ toolbar: CustomToolbar }}
                 slotProps={{
-                  toolbar: { children: addUserButton }
+                  toolbar: { children: addUserButton, exportTitle: 'Users' }
                 }}
                 initialState={{
                   pagination: { paginationModel: { pageSize: 15 } }
