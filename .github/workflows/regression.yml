@@ -50,11 +50,11 @@ jobs:
             --cluster crossfeed-playwright-staging-cd-ecs-cluster \
             --task-definition crossfeed-staging-cd-playwright-worker \
             --launch-type FARGATE \
-            --network-configuration 'awsvpcConfiguration={
-              "subnets": ["${{ secrets.AWS_SUBNET }}"],
-              "securityGroups": ["${{ secrets.AWS_SECURITY_GROUP }}"],
-              "assignPublicIp": "ENABLED"
-            }' \
+            --network-configuration "awsvpcConfiguration={
+              \"subnets\": [\"${{ secrets.AWS_SUBNET }}\"],
+              \"securityGroups\": [\"${{ secrets.AWS_SECURITY_GROUP }}\"],
+              \"assignPublicIp\": \"ENABLED\"
+            }" \
             --region ${{ secrets.AWS_REGION }} \
             --overrides '{
               "containerOverrides": [
@@ -63,8 +63,9 @@ jobs:
                 "command": [
                   "sh",
                   "-c",
-                  "echo \"Running Playwright Tests\""; \
-                  cd /app/xfd/playwright && npx playwright test"
+                  "echo \"Running Playwright Tests\"; \
+                  cd /app/xfd/playwright && \
+                  npx playwright test"
                 ]
               }
             ]
@@ -134,11 +135,11 @@ jobs:
             --cluster crossfeed-playwright-staging-cd-ecs-cluster \
             --task-definition crossfeed-staging-cd-playwright-worker \
             --launch-type FARGATE \
-            --network-configuration 'awsvpcConfiguration={
-              "subnets": ["${{ secrets.AWS_SUBNET }}"],
-              "securityGroups": ["${{ secrets.AWS_SECURITY_GROUP }}"],
-              "assignPublicIp": "ENABLED"
-            }' \
+            --network-configuration "awsvpcConfiguration={
+              \"subnets\": [\"${{ secrets.AWS_SUBNET }}\"],
+              \"securityGroups\": [\"${{ secrets.AWS_SECURITY_GROUP }}\"],
+              \"assignPublicIp\": \"ENABLED\"
+            }" \
             --region ${{ secrets.AWS_REGION }} \
             --overrides '{
               "containerOverrides": [
@@ -147,8 +148,9 @@ jobs:
                 "command": [
                   "sh",
                   "-c",
-                  "echo \"Running Playwright Tests\""; \
-                  cd /app/xfd/playwright && npx playwright test"
+                  "echo \"Running Playwright Tests\"; \
+                  cd /app/xfd/playwright && \
+                  npx playwright test"
                 ]
               }
             ]
