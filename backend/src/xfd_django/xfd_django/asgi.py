@@ -39,7 +39,7 @@ apps.populate(settings.INSTALLED_APPS)
 
 def set_security_headers(response: Response, isMatomo: bool):
     """Apply security headers to the HTTP response."""
-    
+
     # Conditionally set Content Security Policy (CSP) based on the request URL
     if isMatomo:
         csp_value = "; ".join(

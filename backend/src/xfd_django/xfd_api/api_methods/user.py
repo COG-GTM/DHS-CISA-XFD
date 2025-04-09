@@ -351,7 +351,11 @@ def get_users_v2(state, regionId, invitePending, current_user):
     try:
         # Check if user is a regional admin or global admin
         # if not is_regional_admin(current_user) or not is_analytics_admin(current_user):
-        if not is_regional_admin(current_user) | is_global_view_admin(current_user) | is_analytics_admin(current_user):
+        if (
+            not is_regional_admin(current_user)
+            | is_global_view_admin(current_user)
+            | is_analytics_admin(current_user)
+        ):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         filters = {}
