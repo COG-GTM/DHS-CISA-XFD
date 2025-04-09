@@ -143,6 +143,7 @@ export const Domains: React.FC = () => {
       headerName: 'Details',
       minWidth: 100,
       flex: 0.5,
+      disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -209,7 +210,8 @@ export const Domains: React.FC = () => {
                 noRowsOverlay: CustomNoRowsOverlay
               }}
               slotProps={{
-                noRowsOverlay: { children: noRowsOverlay }
+                noRowsOverlay: { children: noRowsOverlay },
+                toolbar: { exportTitle: 'Domains' }
               }}
               paginationMode="server"
               paginationModel={paginationModel}

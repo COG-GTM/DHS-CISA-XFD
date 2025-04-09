@@ -65,6 +65,7 @@ export const OrgMembers: React.FC<OrgMemberProps> = ({
     {
       headerName: 'Remove',
       field: 'remove',
+      disableExport: true,
       flex: 0.5,
       renderCell: (cellValues: GridRenderCellParams) => {
         const descriptionId = `description-${cellValues.row.id}`;
@@ -124,6 +125,9 @@ export const OrgMembers: React.FC<OrgMemberProps> = ({
           rows={userRoles}
           columns={userRoleColumns}
           slots={{ toolbar: CustomToolbar }}
+          slotProps={{
+            toolbar: { exportTitle: organization?.name + ' Members' }
+          }}
           initialState={{
             pagination: { paginationModel: { pageSize: 15 } }
           }}

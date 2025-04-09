@@ -71,7 +71,7 @@ export const CrossfeedFooter: React.FC = (props) => {
             <p>
               <Link
                 className={footerClasses.footerNavLink}
-                href="mailto:vulnerability@cisa.dhs.gov"
+                href="mailto:vulnerability@mail.cisa.dhs.gov"
               >
                 Contact Us
               </Link>
