@@ -305,6 +305,7 @@ def insert_xpanse_alert(alert, org_record, business_unit):
             len(linked_services),
             xpanse_alert.alert_id,
         )
+    return xpanse_alert
 
 
 def pull_alerts_data(linked_org_list, business_units_list=[]):
@@ -337,7 +338,9 @@ def pull_alerts_data(linked_org_list, business_units_list=[]):
             "Content-Type": "application/json",
         }
         try:
-            response = requests.request("POST", url, headers=headers, data=payload)
+            response = requests.request(
+                "POST", url, headers=headers, data=payload, timeout=60
+            )
             resp_dict = response.json()
             page_token = resp_dict["reply"]["next_page_token"]
             formatted_alerts = format_alerts(resp_dict["reply"]["alerts"])
@@ -349,7 +352,9 @@ def pull_alerts_data(linked_org_list, business_units_list=[]):
 
                 payload = json.dumps({"request_data": request_data})
 
-                response = requests.request("POST", url, headers=headers, data=payload)
+                response = requests.request(
+                    "POST", url, headers=headers, data=payload, timeout=60
+                )
                 resp_dict = response.json()
 
                 page_token = resp_dict["reply"]["next_page_token"]
@@ -366,6 +371,22 @@ def pull_alerts_data(linked_org_list, business_units_list=[]):
 
 def format_alerts(alerts):
     """Format Xpanse alerts to match db tables."""
+    alert_services_dict, service_ids = extract_service_ids(alerts)
+    services = fetch_services_with_cves(service_ids)
+
+    alert_list = []
+    for alert in alerts:
+        business_units_list = extract_business_units(alert)
+        current_services = match_services(alert.get("service_ids", []), services)
+
+        alert_dict = build_alert_dict(alert, business_units_list, current_services)
+        alert_list.append(alert_dict)
+
+    return alert_list
+
+
+def extract_service_ids(alerts):
+    """Extract service IDs."""
     alert_services_dict = {}
     service_ids = []
     for alert in alerts:
@@ -374,193 +395,200 @@ def format_alerts(alerts):
             alert_services_dict[alert["alert_id"]] = alert.get("service_ids", [])
         except (KeyError, TypeError):
             continue
+    return alert_services_dict, service_ids
 
+
+def fetch_services_with_cves(service_ids):
+    """Fetch services with CVEs from the Xpanse API."""
     services = []
+    if not service_ids:
+        return services
+
     max_n = 5000
-    if service_ids is not None:
-        service_id_chunks = [
-            service_ids[i : i + max_n] for i in range(0, len(service_ids), max_n)
-        ]
+    service_id_chunks = [
+        service_ids[i : i + max_n] for i in range(0, len(service_ids), max_n)
+    ]
 
-        for service_chunk in service_id_chunks:
-            max_retries = 3
-            retry_delay = 5
-            for retry_count in range(max_retries):
-                try:
-                    service_response = pull_service_data(service_chunk)
-                    if service_response is not None:
-                        break
-                except Exception as e:
-                    LOGGER.error(f"Error querying services: {e}")
+    for chunk in service_id_chunks:
+        service_response = retry_pull_service_data(chunk)
+        if service_response is None:
+            continue
 
-                    if retry_count < max_retries - 1:
-                        LOGGER.info("Retrying...")
-                        time.sleep(retry_delay)
-                    else:
-                        service_response = None
+        for service_obj in service_response:
+            cves = extract_cves(service_obj)
+            services.append(build_service(service_obj, cves))
+    return services
 
-            if service_response is None:
-                continue
-            for service_obj in service_response:
-                cves = []
-                if service_obj["details"].get("inferredCvesObserved", None) is not None:
-                    for cve in service_obj["details"].get("inferredCvesObserved", None):
-                        cves.append(
-                            (
-                                {
-                                    "cve_id": cve["inferredCve"]["cveId"],
-                                    "cvss_score_v2": cve["inferredCve"].get(
-                                        "cvssScoreV2", None
-                                    ),
-                                    "cve_severity_v2": cve["inferredCve"].get(
-                                        "cveSeverityV2", None
-                                    ),
-                                    "cvss_score_v3": cve["inferredCve"].get(
-                                        "cvssScoreV3", None
-                                    ),
-                                    "cve_severity_v3": cve["inferredCve"].get(
-                                        "cveSeverityV3", None
-                                    ),
-                                },
-                                {
-                                    "inferred_cve_match_type": cve["inferredCve"][
-                                        "inferredCveMatchMetadata"
-                                    ].get("inferredCveMatchType", None),
-                                    "product": cve["inferredCve"][
-                                        "inferredCveMatchMetadata"
-                                    ].get("product", None),
-                                    "confidence": cve["inferredCve"][
-                                        "inferredCveMatchMetadata"
-                                    ].get("confidence", None),
-                                    "vendor": cve["inferredCve"][
-                                        "inferredCveMatchMetadata"
-                                    ].get("vendor", None),
-                                    "version_number": cve["inferredCve"][
-                                        "inferredCveMatchMetadata"
-                                    ].get("version", None),
-                                    "activity_status": cve.get("activityStatus", None),
-                                    "first_observed": cve.get("firstObserved", None),
-                                    "last_observed": cve.get("lastObserved", None),
-                                },
-                            )
-                        )
-                services.append(
-                    {
-                        "service_id": service_obj.get("service_id", None),
-                        "service_name": service_obj.get("service_name", None),
-                        "service_type": service_obj.get("service_type", None),
-                        "ip_address": service_obj.get("ip_address", None),
-                        "domain": service_obj.get("domain", None),
-                        "externally_detected_providers": service_obj.get(
-                            "externally_detected_providers", None
-                        ),
-                        "is_active": service_obj.get("is_active", None),
-                        "first_observed": service_obj.get("first_observed", None),
-                        "last_observed": service_obj.get("last_observed", None),
-                        "port": service_obj.get("port", None),
-                        "protocol": service_obj.get("protocol", None),
-                        "active_classifications": service_obj.get(
-                            "active_classifications", None
-                        ),
-                        "inactive_classifications": service_obj.get(
-                            "inactive_classifications", None
-                        ),
-                        "discovery_type": service_obj.get("discovery_type", None),
-                        "externally_inferred_vulnerability_score": service_obj.get(
-                            "externally_inferred_vulnerability_score", None
-                        ),
-                        "externally_inferred_cves": service_obj.get(
-                            "externally_inferred_cves", None
-                        ),
-                        "service_key": service_obj["details"].get("serviceKey", None),
-                        "service_key_type": service_obj["details"].get(
-                            "serviceKeyType", None
-                        ),
-                        "cves": cves,
-                    }
-                )
 
-    alert_list = []
-    for alert in alerts:
-        tags = (alert.get("tags", None),)
-        business_units_list = []
+def retry_pull_service_data(service_chunk, max_retries=3, retry_delay=5):
+    """Fetch service data pull with retry."""
+    for retry_count in range(max_retries):
         try:
-            for tag in tags[0]:
-                if tag.startswith("BU:"):
-                    business_units_list.append(tag[3:].strip())
-        except (KeyError, TypeError):
-            business_units_list = []
+            service_response = pull_service_data(service_chunk)
+            if service_response is not None:
+                return service_response
+        except Exception as e:
+            LOGGER.error(f"Error querying services: {e}")
+            if retry_count < max_retries - 1:
+                LOGGER.info("Retrying...")
+                time.sleep(retry_delay)
+    return None
 
-        assets = []
-        current_services = []
-        for service in alert.get("service_ids", []):
-            try:
-                service_identified = next(
-                    (d for d in services if d.get("service_id") == service), None
+
+def extract_cves(service_obj):
+    """Extrac CVE data from service records."""
+    cves = []
+    inferred_cves = service_obj["details"].get("inferredCvesObserved", None)
+    if inferred_cves:
+        for cve in inferred_cves:
+            cves.append(
+                (
+                    {
+                        "cve_id": cve["inferredCve"]["cveId"],
+                        "cvss_score_v2": cve["inferredCve"].get("cvssScoreV2", None),
+                        "cve_severity_v2": cve["inferredCve"].get(
+                            "cveSeverityV2", None
+                        ),
+                        "cvss_score_v3": cve["inferredCve"].get("cvssScoreV3", None),
+                        "cve_severity_v3": cve["inferredCve"].get(
+                            "cveSeverityV3", None
+                        ),
+                    },
+                    {
+                        "inferred_cve_match_type": cve["inferredCve"][
+                            "inferredCveMatchMetadata"
+                        ].get("inferredCveMatchType", None),
+                        "product": cve["inferredCve"]["inferredCveMatchMetadata"].get(
+                            "product", None
+                        ),
+                        "confidence": cve["inferredCve"][
+                            "inferredCveMatchMetadata"
+                        ].get("confidence", None),
+                        "vendor": cve["inferredCve"]["inferredCveMatchMetadata"].get(
+                            "vendor", None
+                        ),
+                        "version_number": cve["inferredCve"][
+                            "inferredCveMatchMetadata"
+                        ].get("version", None),
+                        "activity_status": cve.get("activityStatus", None),
+                        "first_observed": cve.get("firstObserved", None),
+                        "last_observed": cve.get("lastObserved", None),
+                    },
                 )
-                if service_identified:
-                    current_services.append(service_identified)
-            except (TypeError, AttributeError) as e:
-                LOGGER.warning(f"Failed to process service ID '{service}': {e}")
-        alert_dict = {
-            "time_pulled_from_xpanse": datetime.datetime.utcnow().replace(
-                tzinfo=datetime.timezone.utc
-            ),
-            "alert_id": alert.get("alert_id", None),
-            "detection_timestamp": alert.get("detection_timestamp", None),
-            "alert_name": alert.get("name", None),
-            "description": alert.get("description", None),
-            "host_name": alert.get("host_name", None),
-            "alert_action": alert.get("action", None),
-            "action_pretty": alert.get("action_pretty", None),
-            "action_country": alert.get("action_country", None),
-            "action_remote_port": alert.get("action_remote_port", None),
-            "starred": alert.get("starred", None),
-            "external_id": alert.get("external_id", None),
-            "related_external_id": None,
-            "alert_occurrence": None,
-            "severity": alert.get("severity", None),
-            "matching_status": alert.get("matching_status", None),
-            "local_insert_ts": alert.get("local_insert_ts", None),
-            "last_modified_ts": alert.get("last_modified_ts")
-            if alert.get("last_modified_ts") is not None
-            else alert.get("local_insert_ts", None),
-            "case_id": alert.get("case_id", None),
-            "event_timestamp": alert.get("event_timestamp", None),
-            "alert_type": alert.get("alert_type", None),
-            "resolution_status": alert.get("resolution_status", None),
-            "resolution_comment": alert.get("resolution_comment", None),
-            "tags": alert.get("tags", None),
-            "last_observed": alert.get("last_observed", None),
-            "country_codes": alert.get("country_codes", None),
-            "cloud_providers": alert.get("cloud_providers", None),
-            "ipv4_addresses": alert.get("ipv4_addresses", None),
-            "domain_names": alert.get("domain_names", None),
-            "service_ids": alert.get("service_ids", None),
-            "asset_ids": alert.get("asset_ids", None),
-            "certificate": alert.get("certificate", None),
-            "port_protocol": alert.get("port_protocol", None),
-            "attack_surface_rule_name": alert.get("attack_surface_rule_name", None),
-            "remediation_guidance": alert.get("remediation_guidance", None),
-            "asset_identifiers": alert.get("asset_identifiers", None),
-            "business_units": business_units_list,
-            "services": current_services,
-            "assets": assets,
-        }
-
-        if alert_dict["external_id"] is not None:
-            alert_dict["related_external_id"] = "-".join(
-                alert_dict["external_id"].split("-")[:-1]
             )
-            alert_dict["alert_occurrence"] = (
-                int(alert_dict["external_id"].split("-")[-1]) / 2
-            )
-        else:
-            alert_dict["related_external_id"] = None
-            alert_dict["alert_occurrence"] = None
+    return cves
 
-        alert_list.append(alert_dict)
-    return alert_list
+
+def build_service(service_obj, cves):
+    """Build service object for processing."""
+    return {
+        "service_id": service_obj.get("service_id", None),
+        "service_name": service_obj.get("service_name", None),
+        "service_type": service_obj.get("service_type", None),
+        "ip_address": service_obj.get("ip_address", None),
+        "domain": service_obj.get("domain", None),
+        "externally_detected_providers": service_obj.get(
+            "externally_detected_providers", None
+        ),
+        "is_active": service_obj.get("is_active", None),
+        "first_observed": service_obj.get("first_observed", None),
+        "last_observed": service_obj.get("last_observed", None),
+        "port": service_obj.get("port", None),
+        "protocol": service_obj.get("protocol", None),
+        "active_classifications": service_obj.get("active_classifications", None),
+        "inactive_classifications": service_obj.get("inactive_classifications", None),
+        "discovery_type": service_obj.get("discovery_type", None),
+        "externally_inferred_vulnerability_score": service_obj.get(
+            "externally_inferred_vulnerability_score", None
+        ),
+        "externally_inferred_cves": service_obj.get("externally_inferred_cves", None),
+        "service_key": service_obj["details"].get("serviceKey", None),
+        "service_key_type": service_obj["details"].get("serviceKeyType", None),
+        "cves": cves,
+    }
+
+
+def extract_business_units(alert):
+    """Extract and link Xpanse business units."""
+    tags = alert.get("tags", None)
+    if not tags:
+        return []
+
+    business_units = []
+    try:
+        for tag in tags:
+            if tag.startswith("BU:"):
+                business_units.append(tag[3:].strip())
+    except Exception:
+        return []
+    return business_units
+
+
+def match_services(service_ids, services):
+    """Match services to service ID."""
+    matched = []
+    for service_id in service_ids:
+        try:
+            match = next(
+                (d for d in services if d.get("service_id") == service_id), None
+            )
+            if match:
+                matched.append(match)
+        except (TypeError, AttributeError) as e:
+            LOGGER.warning(f"Failed to process service ID '{service_id}': {e}")
+    return matched
+
+
+def build_alert_dict(alert, business_units_list, current_services):
+    """Shape alert dictionary given bu's and services."""
+    external_id = alert.get("external_id", None)
+    related_external_id = "-".join(external_id.split("-")[:-1]) if external_id else None
+    alert_occurrence = int(external_id.split("-")[-1]) / 2 if external_id else None
+
+    return {
+        "time_pulled_from_xpanse": datetime.datetime.utcnow().replace(
+            tzinfo=datetime.timezone.utc
+        ),
+        "alert_id": alert.get("alert_id", None),
+        "detection_timestamp": alert.get("detection_timestamp", None),
+        "alert_name": alert.get("name", None),
+        "description": alert.get("description", None),
+        "host_name": alert.get("host_name", None),
+        "alert_action": alert.get("action", None),
+        "action_pretty": alert.get("action_pretty", None),
+        "action_country": alert.get("action_country", None),
+        "action_remote_port": alert.get("action_remote_port", None),
+        "starred": alert.get("starred", None),
+        "external_id": external_id,
+        "related_external_id": related_external_id,
+        "alert_occurrence": alert_occurrence,
+        "severity": alert.get("severity", None),
+        "matching_status": alert.get("matching_status", None),
+        "local_insert_ts": alert.get("local_insert_ts", None),
+        "last_modified_ts": alert.get("last_modified_ts")
+        or alert.get("local_insert_ts", None),
+        "case_id": alert.get("case_id", None),
+        "event_timestamp": alert.get("event_timestamp", None),
+        "alert_type": alert.get("alert_type", None),
+        "resolution_status": alert.get("resolution_status", None),
+        "resolution_comment": alert.get("resolution_comment", None),
+        "tags": alert.get("tags", None),
+        "last_observed": alert.get("last_observed", None),
+        "country_codes": alert.get("country_codes", None),
+        "cloud_providers": alert.get("cloud_providers", None),
+        "ipv4_addresses": alert.get("ipv4_addresses", None),
+        "domain_names": alert.get("domain_names", None),
+        "service_ids": alert.get("service_ids", None),
+        "asset_ids": alert.get("asset_ids", None),
+        "certificate": alert.get("certificate", None),
+        "port_protocol": alert.get("port_protocol", None),
+        "attack_surface_rule_name": alert.get("attack_surface_rule_name", None),
+        "remediation_guidance": alert.get("remediation_guidance", None),
+        "asset_identifiers": alert.get("asset_identifiers", None),
+        "business_units": business_units_list,
+        "services": current_services,
+        "assets": [],
+    }
 
 
 def pull_service_data(service_id_list):
@@ -577,7 +605,7 @@ def pull_service_data(service_id_list):
         "Content-Type": "application/json",
     }
 
-    response = requests.request("POST", url, headers=headers, data=payload)
+    response = requests.request("POST", url, headers=headers, data=payload, timeout=60)
 
     resp_dict = response.json()
 
@@ -600,7 +628,7 @@ def pull_asset_data(xpanse_asset_id_list=[]):
         "Content-Type": "application/json",
     }
 
-    response = requests.request("POST", url, headers=headers, data=payload)
+    response = requests.request("POST", url, headers=headers, data=payload, timeout=60)
 
     resp_dict = response.json()
 
@@ -664,6 +692,7 @@ def get_linked_business_units(org_list):
         return XpanseBusinessUnits.objects.filter(cyhy_db_name__in=org_records)
     except Exception as e:
         LOGGER.error("Error querying linked business units: %s", e)
+        return None
 
 
 def main(event):

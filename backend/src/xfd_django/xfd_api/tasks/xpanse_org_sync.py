@@ -40,9 +40,9 @@ def insert_or_update_business_unit(business_unit_dict):
             entity_name=entity_name, defaults=business_unit_dict
         )
         if created:
-            LOGGER.info("Created %s" % entity_name)
+            LOGGER.info("Created %s", entity_name)
         else:
-            LOGGER.info("Updated %s" % entity_name)
+            LOGGER.info("Updated %s", entity_name)
     except Exception as e:
         LOGGER.error("Unknown error saving: %s", e)
 
@@ -86,8 +86,6 @@ def main(_event):
         except Exception as e:
             LOGGER.error("Failure saving %s", org["Entity Name"])
             LOGGER.error("Unknown error saving: %s", e)
-        except FileNotFoundError:
-            LOGGER.error("File not found")
             continue
 
     LOGGER.info("Finished Updating Xpanse Organizations")
