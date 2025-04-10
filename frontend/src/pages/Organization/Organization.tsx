@@ -34,8 +34,8 @@ export const Organization: React.FC = () => {
   const [userRoles, setUserRoles] = useState<Role[]>([]);
   const [scanTasks, setScanTasks] = useState<ScanTask[]>([]);
   const [tabValue, setTabValue] = React.useState('1');
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
-    setTabValue(newValue);
+  const handleTabChange = (event: React.SyntheticEvent, new_value: string) => {
+    setTabValue(new_value);
   };
 
   const fetchOrganization = useCallback(async () => {
@@ -45,7 +45,7 @@ export const Organization: React.FC = () => {
       );
       organization.scanTasks.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setOrganization(organization);
       setUserRoles(organization.userRoles);

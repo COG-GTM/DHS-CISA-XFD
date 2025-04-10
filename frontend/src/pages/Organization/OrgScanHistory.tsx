@@ -47,7 +47,7 @@ export const OrgScanHistory: React.FC<OrgScanHistoryProps> = ({
       let { scans } = response;
       const { schema } = response;
 
-      if (user?.userType !== 'globalAdmin')
+      if (user?.user_type !== 'globalAdmin')
         scans = scans.filter(
           (scan) =>
             scan.name !== 'censysIpv4' && scan.name !== 'censysCertificates'
@@ -107,7 +107,7 @@ export const OrgScanHistory: React.FC<OrgScanHistoryProps> = ({
     {
       Header: 'Mode',
       accessor: ({ name }) =>
-        scanSchema[name] && scanSchema[name].isPassive ? 'Passive' : 'Active',
+        scanSchema[name] && scanSchema[name].is_passive ? 'Passive' : 'Active',
       width: 150,
       minWidth: 150,
       id: 'mode',
@@ -160,25 +160,25 @@ export const OrgScanHistory: React.FC<OrgScanHistoryProps> = ({
     },
     {
       Header: 'Created At',
-      accessor: ({ createdAt }) => dateAccessor(createdAt),
+      accessor: ({ created_at }) => dateAccessor(created_at),
       disableFilters: true,
       disableSortBy: true
     },
     {
       Header: 'Requested At',
-      accessor: ({ requestedAt }) => dateAccessor(requestedAt),
+      accessor: ({ requested_at }) => dateAccessor(requested_at),
       disableFilters: true,
       disableSortBy: true
     },
     {
       Header: 'Started At',
-      accessor: ({ startedAt }) => dateAccessor(startedAt),
+      accessor: ({ started_at }) => dateAccessor(started_at),
       disableFilters: true,
       disableSortBy: true
     },
     {
       Header: 'Finished At',
-      accessor: ({ finishedAt }) => dateAccessor(finishedAt),
+      accessor: ({ finished_at }) => dateAccessor(finished_at),
       disableFilters: true,
       disableSortBy: true
     },

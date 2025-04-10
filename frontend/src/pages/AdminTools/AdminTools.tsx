@@ -10,8 +10,8 @@ import { Logs } from 'components/Logs/Logs';
 export const AdminTools: React.FC = () => {
   const [value, setValue] = React.useState('1');
 
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
-    setValue(newValue);
+  const handleChange = (event: React.SyntheticEvent, new_value: string) => {
+    setValue(new_value);
   };
   return (
     <Container maxWidth="lg" sx={{ py: '10px' }}>

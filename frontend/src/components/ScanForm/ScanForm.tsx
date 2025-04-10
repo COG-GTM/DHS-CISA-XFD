@@ -20,10 +20,10 @@ export interface ScanFormValues {
   arguments: any;
   frequency: number;
   frequencyUnit: string;
-  isGranular: boolean;
-  isUserModifiable: boolean;
-  isSingleScan: boolean;
-  concurrentTasks: number;
+  is_granular: boolean;
+  is_user_modifiable: boolean;
+  is_single_scan: boolean;
+  concurrent_tasks: number;
 }
 
 export const ScanForm: React.FC<{
@@ -50,12 +50,12 @@ export const ScanForm: React.FC<{
     arguments: scan ? scan.arguments : '{}',
     frequency: scan ? scan.frequency : 1,
     frequencyUnit: scan ? propValues.frequencyUnit : 'day',
-    isGranular: scan ? scan.isGranular : false,
-    isUserModifiable: scan ? scan.isUserModifiable : false,
-    isSingleScan: scan ? scan.isSingleScan : false,
+    is_granular: scan ? scan.is_granular : false,
+    is_user_modifiable: scan ? scan.is_user_modifiable : false,
+    is_single_scan: scan ? scan.is_single_scan : false,
     organizations: scan ? propValues.organizations : [],
     tags: scan ? propValues.tags : [],
-    concurrentTasks: scan ? scan.concurrentTasks : 1
+    concurrent_tasks: scan ? scan.concurrent_tasks : 1
   });
   const [organizationOptions, setOrganizationOptions] =
     useState<OrganizationOption[]>(organizationOption);
@@ -69,7 +69,7 @@ export const ScanForm: React.FC<{
     onChange(e.target.name, e.target.value);
     //Ensures global scans can't be granular
     if (type === 'create' && scanSchema[e.target.value]) {
-      onChange('isGranular', false);
+      onChange('is_granular', false);
     }
   };
 
@@ -93,12 +93,12 @@ export const ScanForm: React.FC<{
           name: scan.name,
           frequency: propValues.frequency,
           frequencyUnit: propValues.frequencyUnit,
-          isGranular: scan.isGranular,
-          isUserModifiable: scan.isUserModifiable,
-          isSingleScan: scan.isSingleScan,
+          is_granular: scan.is_granular,
+          is_user_modifiable: scan.is_user_modifiable,
+          is_single_scan: scan.is_single_scan,
           organizations: propValues.organizations,
           tags: propValues.tags,
-          concurrentTasks: scan.concurrentTasks
+          concurrent_tasks: scan.concurrent_tasks
         }));
       }
     } catch (e) {
@@ -131,10 +131,10 @@ export const ScanForm: React.FC<{
           tags: values.tags,
           frequency: values.frequency,
           frequencyUnit: values.frequencyUnit,
-          isGranular: values.isGranular,
-          isUserModifiable: values.isUserModifiable,
-          isSingleScan: values.isSingleScan,
-          concurrentTasks: values.concurrentTasks
+          is_granular: values.is_granular,
+          is_user_modifiable: values.is_user_modifiable,
+          is_single_scan: values.is_single_scan,
+          concurrent_tasks: values.concurrent_tasks
         });
       }}
       className={classes.form}
@@ -177,20 +177,20 @@ export const ScanForm: React.FC<{
         (schemaUpdated && !scanSchema[values.name].global) ||
         !global) && (
         <Checkbox
-          id="isGranular"
+          id="is_granular"
           label="Limit enabled organizations"
-          name="isGranular"
-          checked={values.isGranular}
+          name="is_granular"
+          checked={values.is_granular}
           onChange={(e) => {
-            onChange('isGranular', e.target.checked);
+            onChange('is_granular', e.target.checked);
             if (!e.target.checked) {
               // Only granular scans can be user-modifiable.
-              onChange('isUserModifiable', false);
+              onChange('is_user_modifiable', false);
             }
           }}
         />
       )}
-      {values.isGranular && (
+      {values.is_granular && (
         <>
           <Label htmlFor="organizations">Enabled Organizations</Label>
           <MultiSelect
@@ -211,26 +211,26 @@ export const ScanForm: React.FC<{
           <br />
         </>
       )}
-      {values.isGranular && (
+      {values.is_granular && (
         <>
           <Checkbox
-            id="isUserModifiable"
+            id="is_user_modifiable"
             label="Allow any organization's admins to toggle this scan on/off"
-            name="isUserModifiable"
-            checked={values.isUserModifiable}
-            onChange={(e) => onChange('isUserModifiable', e.target.checked)}
+            name="is_user_modifiable"
+            checked={values.is_user_modifiable}
+            onChange={(e) => onChange('is_user_modifiable', e.target.checked)}
           />
           <br />
         </>
       )}
       <Checkbox
-        id="isSingleScan"
+        id="is_single_scan"
         label="Run scan once"
-        name="isSingleScan"
-        checked={values.isSingleScan}
-        onChange={(e) => onChange('isSingleScan', e.target.checked)}
+        name="is_single_scan"
+        checked={values.is_single_scan}
+        onChange={(e) => onChange('is_single_scan', e.target.checked)}
       />
-      {!values.isSingleScan && (
+      {!values.is_single_scan && (
         <div className="form-group form-inline">
           <label style={{ marginRight: '10px' }} htmlFor="frequency">
             Run every
@@ -264,15 +264,15 @@ export const ScanForm: React.FC<{
         </div>
       )}
       <div className="form-group">
-        <Label htmlFor="concurrentTasks">Number of Concurrent Tasks</Label>
+        <Label htmlFor="concurrent_tasks">Number of Concurrent Tasks</Label>
         <TextInput
-          id="concurrentTasks"
+          id="concurrent_tasks"
           maxLength={250}
-          name="concurrentTasks"
+          name="concurrent_tasks"
           type="number"
           className={classes.textField}
           style={{ width: '150px' }}
-          value={values.concurrentTasks}
+          value={values.concurrent_tasks}
           onChange={(e) => {
             onChange(e.target.name, Number(e.target.value));
           }}

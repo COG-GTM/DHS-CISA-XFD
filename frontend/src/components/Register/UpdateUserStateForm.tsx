@@ -23,9 +23,9 @@ export interface UpdateStateFormValues {
 
 export const UpdateStateForm: React.FC<{
   open: boolean;
-  userId: string;
+  user_id: string;
   onClose: () => void;
-}> = ({ open, userId, onClose }) => {
+}> = ({ open, user_id, onClose }) => {
   const defaultValues = () => ({
     state: ''
   });
@@ -49,7 +49,7 @@ export const UpdateStateForm: React.FC<{
     };
 
     try {
-      await apiPut(`/v2/users/${userId}`, {
+      await apiPut(`/v2/users/${user_id}`, {
         body
       });
       setIsLoading(false);
@@ -104,7 +104,7 @@ export const UpdateStateForm: React.FC<{
         <Button
           variant="outlined"
           onClick={onClose}
-          disabled={user?.invitePending === true}
+          disabled={user?.invite_pending === true}
         >
           Cancel
         </Button>

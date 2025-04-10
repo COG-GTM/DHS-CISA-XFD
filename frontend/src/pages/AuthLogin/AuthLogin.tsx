@@ -53,7 +53,7 @@ export const AuthLogin: React.FC<{ showSignUp?: boolean }> = () => {
   const MaintenanceAlert: React.FC<any> = ({ notification }) => {
     // Determine the conditional title
     const isLoginUnavailable =
-      notification?.maintenanceType === 'major' &&
+      notification?.maintenance_type === 'major' &&
       notification?.status === 'active';
     const titleText = isLoginUnavailable
       ? 'CyHy Dashboard Major Maintenance: Login Not Available'

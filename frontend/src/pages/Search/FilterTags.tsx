@@ -35,14 +35,16 @@ const ellipsisPastIndex: EllipsisPastIndex<string> = (source, index) => {
 };
 
 const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
-  'organization.regionId': {
+  'organization.region_id': {
     labelAccessor: (t) => {
       return 'Region';
     },
     filterValueAccssor: (t) => {
       if (Array.isArray(t)) {
         return t.sort((a: string, b: string) => {
-          return a.localeCompare(b);
+          const numA = parseInt(a, 10);
+          const numB = parseInt(b, 10);
+          return numA - numB;
         });
       }
       return t;
@@ -99,7 +101,7 @@ const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
       return t;
     }
   },
-  fromRootDomain: {
+  from_root_domain: {
     labelAccessor: (t) => {
       return 'Root Domain(s)';
     },
