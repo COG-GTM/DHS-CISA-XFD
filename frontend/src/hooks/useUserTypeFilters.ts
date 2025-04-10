@@ -1,5 +1,10 @@
 import { AuthContextType } from 'context';
-import { GLOBAL_ADMIN, REGIONAL_ADMIN, STANDARD_USER } from './useUserLevel';
+import {
+  ANALYTICS_ADMIN,
+  GLOBAL_ADMIN,
+  REGIONAL_ADMIN,
+  STANDARD_USER
+} from './useUserLevel';
 import { GLOBAL_VIEW } from 'context/userStateUtils';
 import { OrganizationShallow } from 'components/RegionAndOrganizationFilters';
 
@@ -105,7 +110,19 @@ export const useUserTypeFilters: UseUserTypeFilters = (
           type: 'any'
         }
       ];
-
+    case ANALYTICS_ADMIN:
+      return [
+        {
+          field: 'organization.regionId',
+          values: regions,
+          type: 'any'
+        },
+        {
+          field: 'organizationId',
+          values: userOrgs,
+          type: 'any'
+        }
+      ];
     default:
       return [];
       break;
