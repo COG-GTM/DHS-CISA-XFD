@@ -279,17 +279,17 @@ async def get_jwt_from_code(auth_code: str):
 
 def is_global_write_admin(current_user) -> bool:
     """Check if the user has global write admin permissions."""
-    return current_user and current_user.userType == "globalAdmin"
+    return current_user and current_user.user_type == "globalAdmin"
 
 
 def is_global_view_admin(current_user) -> bool:
     """Check if the user has global view permissions."""
-    return current_user and current_user.userType in ["globalView", "globalAdmin"]
+    return current_user and current_user.user_type in ["globalView", "globalAdmin"]
 
 
 def is_regional_admin(current_user) -> bool:
     """Check if the user has regional admin permissions."""
-    return current_user and current_user.userType in ["regionalAdmin", "globalAdmin"]
+    return current_user and current_user.user_type in ["regionalAdmin", "globalAdmin"]
 
 
 def is_org_admin(current_user, organization_id) -> bool:
@@ -439,7 +439,7 @@ def get_stats_org_ids(current_user, filters):
             organization_ids.update(organizations_by_tag)
 
     # Case 3: Regional admin
-    elif current_user.userType in ["regionalAdmin"]:
+    elif current_user.user_type in ["regionalAdmin"]:
         user_region_id = current_user.region_id
 
         # Allow only organizations in the user's region

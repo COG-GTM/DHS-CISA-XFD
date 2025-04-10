@@ -31,7 +31,7 @@ from ..tools.serializers import serialize_user
 def is_valid_uuid(val: str) -> bool:
     """Check if the given string is a valid UUID."""
     try:
-        uuid_obj = uuid.UUID(val, version=4)
+        uuid_obj = uuid.UUID(val)
     except ValueError:
         return False
     return str(uuid_obj) == val
@@ -430,7 +430,7 @@ def update_user_v2(user_id, user_data, current_user):
         print(user_data.dict())
         # Check for invitePending explicitly
         if "invite_pending" in user_data.dict():
-            user.invite_pending = user_data.invitePending
+            user.invite_pending = user_data.invite_pending
         for field, value in user_data.dict(exclude_defaults=True).items():
             setattr(user, field, value)
 

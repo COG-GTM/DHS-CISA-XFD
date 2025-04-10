@@ -1185,10 +1185,12 @@ class User(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the user object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the user object was updated in the database.",
     )
     first_name = models.CharField(
@@ -1209,6 +1211,7 @@ class User(models.Model):
     )
     login_blocked_by_maintenance = models.BooleanField(
         db_column="login_blocked_by_maintenance",
+        default=False,
         help_text="A boolean flag identifying whether the user is blocked by maintenance to login",
     )
     date_accepted_terms = models.DateTimeField(

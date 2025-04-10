@@ -227,7 +227,7 @@ SCAN_SCHEMA = {
     ),
     "intel_x_identity": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -334,7 +334,7 @@ SCAN_SCHEMA = {
     ),
     "updateBlocklist": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         numChunks=0,
         cpu="1024",
@@ -359,7 +359,7 @@ SCAN_SCHEMA = {
     ),
     "asm_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=False,
         cpu="1024",
         memory="8192",
