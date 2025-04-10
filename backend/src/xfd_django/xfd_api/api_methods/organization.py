@@ -341,7 +341,6 @@ def get_all_regions(current_user):
     """Get all regions."""
     try:
         # Check if user is GlobalViewAdmin or has memberships
-        print("Analytics Admin Status: ", is_analytics_admin(current_user))
         if (
             not is_global_view_admin(current_user)
             and not is_analytics_admin(current_user)

@@ -286,8 +286,6 @@ def is_regional_admin(current_user) -> bool:
 
 def is_analytics_admin(current_user) -> bool:
     """Check if the user has analytics permissions."""
-    print("Inside is_analytics_admin")
-    print("current_user.userType: ", current_user.userType)
     return current_user and current_user.userType in ["analytics", "globalAdmin"]
 
 
@@ -409,12 +407,6 @@ def get_stats_org_ids(current_user, filters):
     if organizations_filter:
         # Check user type restrictions for provided organization IDs
         for org_id in organizations_filter:
-            print("Inside get_stats_org_ids")
-            print("current_user.userType: ", current_user.userType)
-            print("org_id: ", org_id)
-            print(
-                "is_analytics_admin(current_user): ", is_analytics_admin(current_user)
-            )
             if (
                 is_global_view_admin(current_user)
                 or (is_regional_admin_for_organization(current_user, org_id))
@@ -443,7 +435,7 @@ def get_stats_org_ids(current_user, filters):
         for tag_id in tags_filter:
             organizations_by_tag = get_tag_organizations(current_user, tag_id)
             organization_ids.update(organizations_by_tag)
-    ###
+    # Case 3: Analytics admin
     elif is_analytics_admin(current_user):
         # Get organizations by region
         if regions_filter:
@@ -456,8 +448,7 @@ def get_stats_org_ids(current_user, filters):
         for tag_id in tags_filter:
             organizations_by_tag = get_tag_organizations(current_user, tag_id)
             organization_ids.update(organizations_by_tag)
-    ###
-    # Case 3: Regional admin
+    # Case 4: Regional admin
     elif current_user.userType in ["regionalAdmin"]:
         user_region_id = current_user.regionId
 
@@ -481,7 +472,7 @@ def get_stats_org_ids(current_user, filters):
             ]
             organization_ids.update(regional_tag_organizations)
 
-    # Case 4: Standard user
+    # Case 5: Standard user
     else:
         # Allow only organizations where the user is a member
         user_organization_ids = current_user.roles.values_list(
