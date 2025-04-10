@@ -117,6 +117,7 @@ async def get_redis_client(request: Request):
 # Matomo Redirect
 @api_router.get("/plugins/Morpheus/images/logo.svg")
 async def redirect_logo():
+    """Redirect to the Matomo logo."""
     return RedirectResponse(
         url="/matomo/plugins/Morpheus/images/logo.svg?matomo", status_code=308
     )
@@ -124,6 +125,7 @@ async def redirect_logo():
 
 @api_router.get("/index.php")
 async def redirect_index():
+    """Redirect to the Matomo index page."""
     return RedirectResponse(url="/matomo/index.php", status_code=308)
 
 
