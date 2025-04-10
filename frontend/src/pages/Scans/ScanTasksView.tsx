@@ -393,7 +393,8 @@ export const ScanTasksView: React.FC = () => {
                 toolbar: {
                   children: [scanNameDropdown, scanStatusDropdown].map(
                     (child, index) => <Box key={index}>{child}</Box>
-                  )
+                  ),
+                  exportTitle: 'Scans'
                 }
               }}
               paginationMode="server"

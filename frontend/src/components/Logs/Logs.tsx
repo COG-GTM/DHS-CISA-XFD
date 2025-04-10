@@ -11,15 +11,12 @@ import {
   DataGrid,
   GridColDef,
   GridFilterItem,
-  GridRenderEditCellParams,
-  GridToolbar,
-  GridToolbarColumnsButton,
-  GridToolbarDensitySelector,
-  GridToolbarFilterButton
+  GridRenderEditCellParams
 } from '@mui/x-data-grid';
 import { useAuthContext } from 'context';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import React, { FC, useCallback, useEffect, useState } from 'react';
+import CustomToolbar from 'components/DataGrid/CustomToolbar';
 
 interface LogsProps {}
 
@@ -29,16 +26,6 @@ interface LogDetails {
   result: string;
   payload: string;
 }
-
-const CustomToolbar = () => {
-  return (
-    <GridToolbar>
-      <GridToolbarColumnsButton />
-      <GridToolbarFilterButton />
-      <GridToolbarDensitySelector />
-    </GridToolbar>
-  );
-};
 
 export const Logs: FC<LogsProps> = () => {
   const { apiPost } = useAuthContext();
