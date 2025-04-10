@@ -6,9 +6,9 @@ export const summaryData: SummaryStats = {
     name: 'Name of Org',
     acronym: 'TEST',
     rootDomains: [],
-    ipBlocks: [],
-    stateName: 'Name of State',
-    regionId: '1',
+    ip_blocks: [],
+    state_name: 'Name of State',
+    region_id: '1',
     members: '10',
     rootDomainCount: 10
   }
@@ -23,7 +23,7 @@ export const vulnSummaryData: VulnSummaryStats = {
 export const wasFindingsData = {
   scanDate: '5 Jul 2024',
   activeVulns: '10',
-  newVulns: '10',
+  new_vulns: '10',
   reopenedVulns: '10',
   sensitiveContent: '10'
 };

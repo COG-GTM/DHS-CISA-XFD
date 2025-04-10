@@ -35,9 +35,9 @@ export interface SummaryStats {
     name: string;
     acronym: string;
     rootDomains: [];
-    ipBlocks: [];
-    stateName: string;
-    regionId: string;
+    ip_blocks: [];
+    state_name: string;
+    region_id: string;
     members: string;
     rootDomainCount: number;
   };

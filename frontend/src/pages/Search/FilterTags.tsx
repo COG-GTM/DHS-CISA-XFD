@@ -35,7 +35,7 @@ const ellipsisPastIndex: EllipsisPastIndex<string> = (source, index) => {
 };
 
 const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
-  'organization.regionId': {
+  'organization.region_id': {
     labelAccessor: (t) => {
       return 'Region';
     },
@@ -101,7 +101,7 @@ const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
       return t;
     }
   },
-  fromRootDomain: {
+  from_root_domain: {
     labelAccessor: (t) => {
       return 'Root Domain(s)';
     },
