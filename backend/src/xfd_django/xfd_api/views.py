@@ -113,6 +113,7 @@ async def get_redis_client(request: Request):
 #   Analytic Endpoints
 # ========================================
 
+
 # Matomo Logo Redirect
 @api_router.get("/plugins/Morpheus/images/logo.svg")
 async def redirect_logo():
@@ -120,6 +121,7 @@ async def redirect_logo():
     return RedirectResponse(
         url="/matomo/plugins/Morpheus/images/logo.svg?matomo", status_code=308
     )
+
 
 # Matomo Index Redirect
 @api_router.get("/index.php")
