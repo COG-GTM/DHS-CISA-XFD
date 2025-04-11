@@ -8,8 +8,15 @@ from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import Domain, Organization, Service, User, UserType, Vulnerability
 from xfd_django.asgi import app
+from xfd_mini_dl.models import (
+    Domain,
+    Organization,
+    Service,
+    User,
+    UserType,
+    Vulnerability,
+)
 
 client = TestClient(app)
 
@@ -17,9 +24,9 @@ client = TestClient(app)
 bad_id = "960b7db7-f3af-411d-a247-33371"
 search_fields = {
     "port": "80",
-    "reverseName": "local.crossfeed.quizzical-wing",
+    "reverse_name": "local.crossfeed.quizzical-wing",
     "ip": "127.116.195.151",
-    "organizationName": "Wizardly Agency",
+    "organization_name": "Wizardly Agency",
     "tag": "",
 }
 
@@ -28,12 +35,12 @@ search_fields = {
 def user():
     """Create user fixture."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     yield user
     user.delete()  # Clean up after the test
@@ -43,13 +50,13 @@ def user():
 def organization():
     """Create org fixture."""
     organization = Organization.objects.create(
-        name=search_fields["organizationName"],
-        rootDomains=["crossfeed.local"],
-        ipBlocks=[],
-        isPassive=False,
+        name=search_fields["organization_name"],
+        root_domains=["crossfeed.local"],
+        ip_blocks=[],
+        is_passive=False,
     )
     transaction.commit()
-    assert organization.name == search_fields["organizationName"]
+    assert organization.name == search_fields["organization_name"]
     yield organization
 
 
@@ -57,7 +64,7 @@ def organization():
 def domain(organization):
     """Create domain fixture."""
     domain = Domain.objects.create(
-        reverseName="local.crossfeed.example",
+        reverse_name="local.crossfeed.example",
         ip=search_fields["ip"],  # Ensure this IP is the one you expect
         organization=organization,
         name="example.crossfeed.local",
@@ -72,14 +79,14 @@ def domain(organization):
 def service(domain):
     """Create service fixture."""
     service = Service.objects.create(
-        serviceSource="shodan",
+        service_source="shodan",
         port=search_fields["port"],
         service="http",
         products="test test test",
-        censysIpv4Results={},
-        intrigueIdentResults={},
-        shodanResults={},
-        wappalyzerResults=[],
+        censys_ipv4_results={},
+        intrigue_ident_results={},
+        shodan_results={},
+        wappalyzer_results=[],
         domain=domain,
     )
     transaction.commit()
@@ -95,13 +102,13 @@ def vulnerability(domain, service):
         title="Vulnerability title",
         description="Test description",
         references=[],
-        needsPopulation=False,
+        needs_population=False,
         state="open",
         substate="unconfirmed",
         source="test",
         notes="test",
         actions=[],
-        structuredData={},
+        structured_data={},
         isKev=False,
         domain=domain,
         service=service,
@@ -146,7 +153,7 @@ def test_search_domain_by_ip(user, vulnerability):
     # Search for the domain by IP
     response = client.post(
         "/domain/search",
-        json={"page": 1, "filters": {"ip": search_fields["ip"]}, "pageSize": 25},
+        json={"page": 1, "filters": {"ip": search_fields["ip"]}, "page_size": 25},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -168,7 +175,7 @@ def test_search_domain_by_port(user, vulnerability):
     """Test domain by port."""
     response = client.post(
         "/domain/search",
-        json={"page": 1, "filters": {"port": search_fields["port"]}, "pageSize": 25},
+        json={"page": 1, "filters": {"port": search_fields["port"]}, "page_size": 25},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
     assert response.status_code == 200
@@ -198,7 +205,7 @@ def test_search_domain_by_service(user, vulnerability):
         json={
             "page": 1,
             "filters": {"service": str(vulnerability.service.products)},
-            "pageSize": 25,
+            "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -231,7 +238,7 @@ def test_search_domain_by_organization(user, vulnerability):
         json={
             "page": 1,
             "filters": {"organization": str(vulnerability.domain.organization.id)},
-            "pageSize": 25,
+            "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -254,8 +261,8 @@ def test_search_domain_by_organization_name(user, vulnerability):
         "/domain/search",
         json={
             "page": 1,
-            "filters": {"organizationName": search_fields["organizationName"]},
-            "pageSize": 25,
+            "filters": {"organization_name": search_fields["organization_name"]},
+            "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -270,9 +277,9 @@ def test_search_domain_by_organization_name(user, vulnerability):
         ), "Response domain did not include an Organization ID"
         organization = Organization.objects.get(id=domain["organization"]["id"])
         assert (
-            organization.name == search_fields["organizationName"]
+            organization.name == search_fields["organization_name"]
         ), "Domain with ID {} did not contain Organization Id {}".format(
-            domain["id"], search_fields["organizationName"]
+            domain["id"], search_fields["organization_name"]
         )
 
 
@@ -285,7 +292,7 @@ def test_search_domain_by_vulnerabilities(user, vulnerability):
         json={
             "page": 1,
             "filters": {"vulnerabilities": str(vulnerability.title)},
-            "pageSize": 25,
+            "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -311,7 +318,7 @@ def test_search_domains_multiple_criteria(user, vulnerability):
         json={
             "page": 1,
             "filters": {"ip": search_fields["ip"], "port": search_fields["port"]},
-            "pageSize": 25,
+            "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -344,7 +351,7 @@ def test_search_domains_does_not_exist(user, vulnerability):
     # Test search domains if record does not exist
     response = client.post(
         "/domain/search",
-        json={"page": 1, "filters": {"ip": "Does not exist"}, "pageSize": 25},
+        json={"page": 1, "filters": {"ip": "Does not exist"}, "page_size": 25},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
