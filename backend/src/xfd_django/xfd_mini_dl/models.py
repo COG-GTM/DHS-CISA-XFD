@@ -417,8 +417,16 @@ class Organization(models.Model):
         help_text="Boolean field to flag organizations that have been retired a",
     )
     name = models.CharField(max_length=255, help_text="Full name of the organization")
-    root_domains = ArrayField(models.CharField(max_length=255), db_column="root_domains", help_text="List of root domains attributed to the organization")
-    ip_blocks = ArrayField(models.CharField(max_length=255), db_column="ip_blocks", help_text="IP blocks attributed to or provided by a stakeholder.")
+    root_domains = ArrayField(
+        models.CharField(max_length=255),
+        db_column="root_domains",
+        help_text="List of root domains attributed to the organization",
+    )
+    ip_blocks = ArrayField(
+        models.CharField(max_length=255),
+        db_column="ip_blocks",
+        help_text="IP blocks attributed to or provided by a stakeholder.",
+    )
     is_passive = models.BooleanField(
         db_column="is_passive",
         help_text="Boolean to flag if only passive data collection can be used on the stakeholder's assets.",
@@ -4116,9 +4124,9 @@ class Domain(models.Model):
         unique_together = (("name", "organization"),)  # Unique constraint
 
     def save(self, *args, **kwargs):
-        """Save domain ith reverseName."""
+        """Save domain ith reverse_name."""
         self.name = self.name.lower()
-        self.reverseName = ".".join(reversed(self.name.split(".")))
+        self.reverse_name = ".".join(reversed(self.name.split(".")))
         super().save(*args, **kwargs)
 
 
@@ -6003,7 +6011,7 @@ class VwCombinedVulns(models.Model):
     )
     vuln_id = models.TextField(
         primary_key=True, unique=True, help_text="Id of the vulnerability"
-    ) # Maybe shouldn't be unique
+    )  # Maybe shouldn't be unique
     first_seen = models.DateTimeField(
         help_text="Date and time the vulnerability was first seen",
     )
