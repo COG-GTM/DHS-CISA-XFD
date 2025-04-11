@@ -352,7 +352,6 @@ def get_users_v2(state, regionId, invitePending, current_user):
     """Retrieve a list of users based on optional filter parameters."""
     try:
         # Check if user is a regional admin or global admin
-        # if not is_regional_admin(current_user) or not is_analytics_admin(current_user):
         if (
             not is_regional_admin(current_user)
             | is_global_view_admin(current_user)
