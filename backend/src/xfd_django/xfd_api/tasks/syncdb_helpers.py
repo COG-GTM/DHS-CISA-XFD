@@ -589,27 +589,37 @@ def create_vuln_normal_views(database):
             CREATE OR REPLACE VIEW vw_ticket_vulns AS
             -- Query for VS Ticket Vulns
             SELECT
-                'vuln_scanning_tickets' as scan_source,
                 t.id as vuln_id,
-                t.opened_timestamp::timestamp as first_seen,
+                'vuln_scanning_tickets' as scan_source,
+                t.opened_timestamp::timestamp as created_at,
+                t.updated_timestamp::timestamp as updated_at,
                 coalesce(t.closed_timestamp::timestamp, t.updated_timestamp::timestamp) as last_seen,
                 t.cve_string as cve,
                 t.vuln_name as title,
                 vs.cpe as product,
-                t.ip_string as domain,
+                t.ip_string as domain_string,
                 t.ip_id as domain_id,
                 t.port_protocol as protocol,
                 t.vuln_port::text as port,
                 t.cvss_base_score,
                 t.cvss_severity::text as severity,
                 t.organization_id,
-                --t.kev, as is_kev,
-                --t.service,
-                --t.risky_service = is_risky_service,
-                --t.os as os --Not seeing this in the ticket
                 te."action" as state,
                 t.vuln_source as data_source,
-                vs.description
+                vs.description,
+                t.kev as is_kev,
+                t.service as service_string,
+                null as service_id,
+                t.risky_service as is_risky_service,
+                null as os, --t.os as os --Not seeing this in the ticket
+                null as cwe,
+                vs.cpe as cpe,
+                null as references,
+                null as substate,
+                null as needs_population,
+                null as actions,
+                null as structured_data,
+                null as kev_results
             FROM ticket t
             LEFT JOIN ticket_event te
             ON te.ticket_id = t.id
@@ -630,7 +640,8 @@ def create_vuln_normal_views(database):
             SELECT
                 'shodan_vulnerability' as scan_source,
                 sv.shodan_vuln_uid::text as vuln_id,
-                null::timestamp as first_seen,
+                null::timestamp as created_at,
+                sv."timestamp"::timestamp as updated_at
                 sv."timestamp"::timestamp as last_seen,
                 sv.cve as cve,
                 sv.name as title,
@@ -644,7 +655,20 @@ def create_vuln_normal_views(database):
                 sv.organization_uid as organization_id,
                 'open' as state,
                 'Shodan' as data_source,
-                null as description
+                null as description,
+                null as is_kev,
+                null as service_string,
+                null as service_id,
+                null as is_risky_service,
+                null as os, --t.os as os --Not seeing this in the ticket
+                null as cwe,
+                array_to_string(sv.cpe, ', ') as cpe,
+                null as references,
+                null as substate,
+                null as needs_population,
+                null as actions,
+                null as structured_data,
+                null as kev_results
             FROM shodan_vulns as sv
         """
         )
@@ -655,7 +679,7 @@ def create_vuln_normal_views(database):
             SELECT
                 scan_source,
                 vuln_id,
-                first_seen,
+                created_at,
                 last_seen,
                 cve,
                 title,
@@ -669,12 +693,26 @@ def create_vuln_normal_views(database):
                 organization_id,
                 state,
                 data_source,
-                description
+                description,
+                null as is_kev,
+                null as service_string,
+                null as service_id,
+                null as is_risky_service,
+                null as os, --t.os as os --Not seeing this in the ticket
+                null as cwe,
+                null as cpe,
+                null as references,
+                null as substate,
+                null as needs_population,
+                null as actions,
+                null as structured_data,
+                null as kev_results
             FROM (
                 SELECT
                     'credential_breach' AS scan_source,
                     ce.credential_exposures_uid::text AS vuln_id,
-                    cb.breach_date AS first_seen,
+                    cb.breach_date AS created_at,
+                    cb.modified_date AS updated_at,
                     cb.modified_date AS last_seen,
                     NULL AS cve,
                     cb.breach_name AS title,
@@ -686,7 +724,7 @@ def create_vuln_normal_views(database):
                     NULL::float AS cvss_base_score,
                     'Medium' AS severity,
                     ce.organization_id,
-                    'Open' AS state,
+                    'open' AS state,
                     ds.name AS data_source,
                     cb.description,
                     ROW_NUMBER() OVER (
