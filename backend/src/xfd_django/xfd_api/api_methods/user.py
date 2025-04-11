@@ -12,7 +12,7 @@ from fastapi import HTTPException
 
 from ..auth import (
     can_access_user,
-    is_analytics_admin,
+    is_analytics_user,
     is_global_view_admin,
     is_global_write_admin,
     is_org_admin,
@@ -188,7 +188,7 @@ def get_users(current_user):
         if (
             not is_global_view_admin(current_user)
             | is_regional_admin(current_user)
-            | is_analytics_admin(current_user)
+            | is_analytics_user(current_user)
         ):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -237,7 +237,7 @@ def get_users(current_user):
 def get_users_by_region_id(region_id, current_user):
     """List users with specific regionId."""
     try:
-        if not is_regional_admin(current_user) | is_analytics_admin(current_user):
+        if not is_regional_admin(current_user) | is_analytics_user(current_user):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         if not region_id:
@@ -355,7 +355,7 @@ def get_users_v2(state, regionId, invitePending, current_user):
         if (
             not is_regional_admin(current_user)
             | is_global_view_admin(current_user)
-            | is_analytics_admin(current_user)
+            | is_analytics_user(current_user)
         ):
             raise HTTPException(status_code=401, detail="Unauthorized")
 

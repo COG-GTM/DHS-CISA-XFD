@@ -1,6 +1,6 @@
 import { AuthContextType } from 'context';
 import {
-  ANALYTICS_ADMIN,
+  ANALYTICS,
   GLOBAL_ADMIN,
   REGIONAL_ADMIN,
   STANDARD_USER
@@ -110,7 +110,7 @@ export const useUserTypeFilters: UseUserTypeFilters = (
           type: 'any'
         }
       ];
-    case ANALYTICS_ADMIN:
+    case ANALYTICS:
       return [
         {
           field: 'organization.regionId',
