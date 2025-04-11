@@ -20,7 +20,7 @@ const Settings: React.FC = () => {
             .join(', ')}
       </h2>
       <h2>Region: {user && user.regionId ? user.regionId : 'None'} </h2>
-      {user?.userType === 'globalAdmin' && (
+      {user?.userType === 'analytics' && (
         <>
           <Button
             type="button"

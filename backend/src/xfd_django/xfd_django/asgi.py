@@ -20,7 +20,6 @@ from django.apps import apps
 from django.conf import settings
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from mangum import Mangum
 from redis import asyncio as aioredis
 from xfd_api.tasks.scheduler import handler as scheduler_handler
@@ -39,7 +38,6 @@ apps.populate(settings.INSTALLED_APPS)
 
 def set_security_headers(response: Response, isMatomo: bool):
     """Apply security headers to the HTTP response."""
-    
     # Conditionally set Content Security Policy (CSP) based on the request URL
     if isMatomo:
         csp_value = "; ".join(
@@ -51,7 +49,7 @@ def set_security_headers(response: Response, isMatomo: bool):
         )
         response.headers["Content-Security-Policy"] = csp_value
     else:
-    # Set Secure Content Security Policy (CSP)
+        # Set Secure Content Security Policy (CSP)
         csp_value = "; ".join(
             [
                 "{} {}".format(key, " ".join(map(str, value)))

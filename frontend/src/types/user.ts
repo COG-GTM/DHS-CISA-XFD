@@ -9,7 +9,12 @@ export interface User {
   lastName: string;
   fullName: string;
   invitePending: boolean;
-  userType: 'standard' | 'globalView' | 'globalAdmin' | 'regionalAdmin';
+  userType:
+    | 'standard'
+    | 'globalView'
+    | 'globalAdmin'
+    | 'regionalAdmin'
+    | 'analytics';
   email: string;
   roles: Role[];
   dateAcceptedTerms: string | null;
@@ -49,7 +54,12 @@ export type UserFormValues = {
   firstName: string;
   lastName: string;
   email: string;
-  userType: 'standard' | 'globalView' | 'globalAdmin' | 'regionalAdmin';
+  userType:
+    | 'standard'
+    | 'globalView'
+    | 'globalAdmin'
+    | 'regionalAdmin'
+    | 'analytics';
   state: string;
   regionId: string;
   orgName: string;
