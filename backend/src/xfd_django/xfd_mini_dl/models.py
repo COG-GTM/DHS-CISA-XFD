@@ -331,12 +331,12 @@ class Notification(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
-         auto_now_add=True,
+        auto_now_add=True,
         help_text="Datetime the notification object was created.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
-         auto_now=True,
+        auto_now=True,
         help_text="Datetime the notification object was last updated in the database.",
     )
     start_datetime = models.DateTimeField(
@@ -1146,6 +1146,7 @@ class Service(models.Model):
         db_table = "vw_service"
         unique_together = (("port", "domain"),)
 
+
 class UserType(models.TextChoices):
     """User type definition."""
 
@@ -1153,6 +1154,7 @@ class UserType(models.TextChoices):
     GLOBAL_VIEW = "globalView"
     REGIONAL_ADMIN = "regionalAdmin"
     STANDARD = "standard"
+
 
 class User(models.Model):
     """The User model."""
@@ -4072,6 +4074,7 @@ class DomainPermutations(models.Model):
         db_table = "domain_permutations"
         unique_together = (("domain_permutation", "organization"),)
 
+
 class Domain(models.Model):
     """The Domain view of subs/ips."""
 
@@ -4097,8 +4100,6 @@ class Domain(models.Model):
     asn = models.CharField(max_length=255, blank=True, null=True)
     cloud_hosted = models.BooleanField(db_column="cloud_hosted", default=False)
     from_cidr = models.BooleanField(db_column="from_cidr", default=False)
-    is_fceb = models.BooleanField(db_column="is_fceb", default=False)
-
     ssl = models.JSONField(blank=True, null=True)
     censys_certificates_results = models.JSONField(
         db_column="censys_certificates_results", default=dict
@@ -6005,12 +6006,17 @@ class Log(models.Model):
 
 class VwCombinedVulns(models.Model):
     """Define VwCombinedVulns model."""
+
     scan_source = models.TextField(
         blank=True, null=True, help_text="Scan that identified the data."
     )
     vuln_id = models.TextField(
-        primary_key=True, unique=True, blank=True, null=True, help_text="Id of the vulnerability"
-    ) # Maybe shouldn't be unique
+        primary_key=True,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="Id of the vulnerability",
+    )  # Maybe shouldn't be unique
     first_seen = models.DateTimeField(
         help_text="Date and time the vulnerability was first seen",
     )
@@ -6019,7 +6025,7 @@ class VwCombinedVulns(models.Model):
     )
     cve = models.CharField(blank=True, null=True, max_length=255)
     title = models.TextField(blank=True, null=True)
-    product	= models.CharField(blank=True, null=True, max_length=255)
+    product = models.CharField(blank=True, null=True, max_length=255)
     domain = models.TextField(blank=True, null=True)
     # domain_id = models.ForeignKey(
     #     Domain,
@@ -6062,13 +6068,15 @@ class VwCombinedVulns(models.Model):
     state = models.CharField(blank=True, null=True, max_length=255)
     data_source = models.CharField(blank=True, null=True, max_length=255)
     description = models.TextField(blank=True, null=True)
+
     class Meta:
         """Set VwCombinedVulns model metadata."""
+
         app_label = app_label_name
         managed = False
         db_table = "mat_vw_combined_vulns"
 
-        
+
 # # This should be a view not a table
 # class VwPshttDomainsToRun(models.Model):
 #     """Define VwPshttDomainsToRun model."""

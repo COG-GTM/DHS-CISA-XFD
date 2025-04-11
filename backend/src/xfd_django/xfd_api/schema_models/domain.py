@@ -14,26 +14,25 @@ class Domain(BaseModel):
     """Domain schema."""
 
     id: UUID
-    createdAt: datetime
-    updatedAt: datetime
-    syncedAt: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    synced_at: Optional[datetime] = None
     ip: str
-    fromRootDomain: Optional[str]
-    subdomainSource: Optional[str]
-    ipOnly: bool
-    reverseName: Optional[str]
+    from_root_domain: Optional[str]
+    subdomain_source: Optional[str]
+    ip_only: bool
+    reverse_name: Optional[str]
     name: Optional[str]
     screenshot: Optional[str]
     country: Optional[str]
     asn: Optional[str]
-    cloudHosted: bool
+    cloud_hosted: bool
     ssl: Optional[Any]
-    censysCertificatesResults: Optional[dict]
-    trustymailResults: Optional[dict]
-    discoveredBy_id: Optional[UUID]
+    censys_certificates_results: Optional[dict]
+    trustymail_results: Optional[dict]
+    discovered_by_id: Optional[UUID]
     organization_id: Optional[UUID]
-    isFceb: Optional[bool]
-    fromCidr: Optional[bool]
+    from_cidr: Optional[bool]
 
     class Config:
         """Domain base schema config."""
@@ -47,10 +46,10 @@ class DomainFilters(BaseModel):
 
     port: Optional[int] = None
     service: Optional[str] = None
-    reverseName: Optional[str] = None
+    reverse_name: Optional[str] = None
     ip: Optional[str] = None
     organization: Optional[str] = None
-    organizationName: Optional[str] = None
+    organization_name: Optional[str] = None
     vulnerabilities: Optional[str] = None
     tag: Optional[str] = None
     name: Optional[str] = None
@@ -68,7 +67,7 @@ class DomainSearch(BaseModel):
     sort: Optional[str] = "ASC"
     order: Optional[str] = "id"
     filters: Optional[DomainFilters] = None
-    pageSize: Optional[int] = 25
+    page_size: Optional[int] = 25
 
     class Config:
         """Config."""
@@ -119,7 +118,7 @@ class ServiceResponse(BaseModel):
 
     id: UUID
     port: int
-    lastSeen: Optional[datetime] = None
+    last_seen: Optional[datetime] = None
     products: Any
 
     class Config:
@@ -136,7 +135,7 @@ class VulnerabilityResponse(BaseModel):
     title: str
     severity: Optional[str] = None
     state: str
-    createdAt: Optional[datetime] = None
+    created_at: Optional[datetime] = None
     cve: Optional[str] = None
 
     class Config:
@@ -166,10 +165,10 @@ class GetDomainResponse(BaseModel):
     id: UUID
     name: str
     ip: Optional[str] = None
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime
+    updated_at: datetime
     country: Optional[str] = None
-    cloudHosted: Optional[bool] = False
+    cloud_hosted: Optional[bool] = False
     organization: Optional[OrganizationResponse]
     vulnerabilities: Optional[List[VulnerabilityResponse]] = []
     services: Optional[List[ServiceResponse]] = []

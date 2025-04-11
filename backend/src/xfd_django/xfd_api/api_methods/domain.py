@@ -6,13 +6,13 @@ import io
 
 # Third-Party Libraries
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch
 from fastapi import HTTPException
+from xfd_mini_dl.models import Domain, Service
 
 from ..auth import get_org_memberships, is_global_view_admin
 from ..helpers.filter_helpers import apply_domain_filters, sort_direction
 from ..helpers.s3_client import S3Client
-from ..models import Domain, Service
 from ..schema_models.domain import DomainSearch
 
 
@@ -31,7 +31,7 @@ def get_domain_by_id(domain_id: str):
                 Prefetch(
                     "services",
                     queryset=Service.objects.only(
-                        "id", "port", "service", "lastSeen", "products"
+                        "id", "port", "service", "last_seen", "products"
                     ),
                 ),
             )
@@ -50,10 +50,10 @@ def get_domain_by_id(domain_id: str):
             "id": domain.id,
             "name": domain.name,
             "ip": domain.ip,
-            "createdAt": domain.createdAt,
-            "updatedAt": domain.updatedAt,
+            "created_at": domain.created_at,
+            "updated_at": domain.updated_at,
             "country": domain.country,
-            "cloudHosted": domain.cloudHosted,
+            "cloud_hosted": domain.cloud_hosted,
             "organization": {
                 "id": domain.organization.id,
                 "name": domain.organization.name,
@@ -67,7 +67,7 @@ def get_domain_by_id(domain_id: str):
                     "severity": vulnerability.severity,
                     "description": vulnerability.description,
                     "state": vulnerability.state,
-                    "createdAt": vulnerability.createdAt,
+                    "created_at": vulnerability.created_at,
                 }
                 for vulnerability in domain.vulnerabilities.all()
             ],
@@ -75,7 +75,7 @@ def get_domain_by_id(domain_id: str):
                 {
                     "id": service.id,
                     "port": service.port,
-                    "lastSeen": service.lastSeen,
+                    "last_seen": service.last_seen,
                     "products": service.products,
                 }
                 for service in domain.services.all()
@@ -84,7 +84,7 @@ def get_domain_by_id(domain_id: str):
                 {
                     "url": webpage.url,
                     "status": webpage.status,
-                    "responseSize": webpage.responseSize,
+                    "response_size": webpage.response_size,
                 }
                 for webpage in domain.webpages.all()
             ],
@@ -112,15 +112,12 @@ def search_domains(domain_search: DomainSearch, current_user):
                 return [], 0
             domains = domains.filter(organization__id__in=orgs)
 
-        # Apply the isFceb/fromCidr condition:
-        domains = domains.filter(Q(isFceb=True) | Q(isFceb=False, fromCidr=True))
-
         # Apply filters if provided
         if domain_search.filters:
             domains = apply_domain_filters(domains, domain_search.filters)
 
         # Handle pagination
-        page_size = domain_search.pageSize
+        page_size = domain_search.page_size
         # If pageSize == -1, return all results without pagination
         if page_size == -1:
             result = list(domains)
@@ -143,7 +140,7 @@ def export_domains(domain_search: DomainSearch, current_user):
     """Export domains into a CSV and upload to S3."""
     try:
         # Set pageSize to -1 to fetch all domains without pagination
-        domain_search.pageSize = -1
+        domain_search.page_size = -1
 
         # Fetch domains using search_domains function
         domains, count = search_domains(domain_search, current_user)
@@ -183,11 +180,11 @@ def export_domains(domain_search: DomainSearch, current_user):
                         "id": str(domain.id),
                         "ports": ports,
                         "products": products,
-                        "createdAt": domain.createdAt.isoformat()
-                        if domain.createdAt
+                        "created_at": domain.created_at.isoformat()
+                        if domain.created_at
                         else "",
-                        "updatedAt": domain.updatedAt.isoformat()
-                        if domain.updatedAt
+                        "updated_at": domain.updated_at.isoformat()
+                        if domain.updated_at
                         else "",
                         "organization": organization_name,
                     }
@@ -200,8 +197,8 @@ def export_domains(domain_search: DomainSearch, current_user):
                 "id",
                 "ports",
                 "products",
-                "createdAt",
-                "updatedAt",
+                "created_at",
+                "updated_at",
                 "organization",
             ]
 

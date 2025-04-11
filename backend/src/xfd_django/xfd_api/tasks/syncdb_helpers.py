@@ -306,7 +306,8 @@ def synchronize(target_app_label=None):
         if target_app_label == "xfd_mini_dl":
             create_vuln_normal_views(database)
             create_vuln_materialized_views(database)
-        
+            create_domain_view(database)
+
         cleanup_stale_tables(ordered_models, database)
 
     print("Database synchronization complete.")
@@ -581,21 +582,24 @@ def sync_es_organizations():
         print("Error syncing organizations: {}".format(e))
         raise e
 
+
 def create_vuln_normal_views(database):
+    """Create vuln normal views."""
     with connections[database].cursor() as cursor:
         print("Creating normal views...")
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE OR REPLACE VIEW vw_ticket_vulns AS
             -- Query for VS Ticket Vulns
-            SELECT 
+            SELECT
                 'vuln_scanning_tickets' as scan_source,
                 t.id as vuln_id,
                 t.opened_timestamp::timestamp as first_seen,
                 coalesce(t.closed_timestamp::timestamp, t.updated_timestamp::timestamp) as last_seen,
                 t.cve_string as cve,
                 t.vuln_name as title,
-                vs.cpe as product,	
+                vs.cpe as product,
                 t.ip_string as domain,
                 t.ip_id as domain_id,
                 t.port_protocol as protocol,
@@ -611,18 +615,20 @@ def create_vuln_normal_views(database):
                 t.vuln_source as data_source,
                 vs.description
             FROM ticket t
-            LEFT JOIN ticket_event te 
+            LEFT JOIN ticket_event te
             ON te.ticket_id = t.id
-            LEFT JOIN vuln_scan vs 
+            LEFT JOIN vuln_scan vs
             ON vs.id = te.vuln_scan_id
             WHERE te.event_timestamp = (
                 SELECT MAX(event_timestamp)
                 FROM ticket_event
                 WHERE ticket_id = t.id
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE OR REPLACE VIEW vw_shodan_vulns AS
             -- Query for ShodanVulns
             SELECT
@@ -644,9 +650,11 @@ def create_vuln_normal_views(database):
                 'Shodan' as data_source,
                 null as description
             FROM shodan_vulns as sv
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE OR REPLACE VIEW vw_credential_breaches AS
             SELECT
                 scan_source,
@@ -694,27 +702,108 @@ def create_vuln_normal_views(database):
                 JOIN sub_domains sd ON ce.sub_domain_id = sd.sub_domain_uid
                 JOIN data_source ds ON ds.data_source_uid = cb.data_source_uid
             ) t
-            WHERE row_num = 1;       
-        """)
+            WHERE row_num = 1;
+        """
+        )
         print("Normal views created.")
 
+
 def create_vuln_materialized_views(database):
+    """Create vuln materialized views."""
     with connections[database].cursor() as cursor:
         print("Creating materialized views...")
 
         cursor.execute("DROP MATERIALIZED VIEW IF EXISTS mat_vw_combined_vulns;")
 
         # Example materialized view
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE MATERIALIZED VIEW IF NOT EXISTS mat_vw_combined_vulns AS
             SELECT * from vw_ticket_vulns
             union
             SELECT * from vw_shodan_vulns
-            union 
+            union
             SELECT * from vw_credential_breaches
-        """)
+        """
+        )
 
         # Optional refresh
         cursor.execute("REFRESH MATERIALIZED VIEW mat_vw_combined_vulns;")
 
         print("Materialized views created.")
+
+
+def create_domain_view(database):
+    """Create vw_domain view."""
+    with connections[database].cursor() as cursor:
+        print("Creating domain view...")
+
+        cursor.execute("DROP VIEW IF EXISTS vw_domain;")
+
+        # Example materialized view
+        cursor.execute(
+            """
+            CREATE OR REPLACE VIEW vw_domain AS
+
+            -- Subdomains (with or without linked IP)
+            SELECT
+                sub.sub_domain_uid AS id,
+                sub.created_at,
+                sub.updated_at,
+                sub.synced_at,
+                CAST(ip.ip AS TEXT) AS ip,
+                sub.from_root_domain,
+                sub.subdomain_source,
+                sub.ip_only,
+                sub.reverse_name,
+                sub.sub_domain AS name,
+                sub.screenshot,
+                sub.country,
+                sub.asn,
+                sub.cloud_hosted,
+                ip.from_cidr,
+                sub.ssl,
+                sub.censys_certificates_results,
+                sub.trustymail_results,
+                NULL AS discovered_by_id,
+                sub.organization_uid AS organization_id
+
+            FROM
+                sub_domains sub
+            LEFT JOIN
+                ips_subs link ON sub.sub_domain_uid = link.sub_domain_id
+            LEFT JOIN
+                ip ON ip.id = link.ip_id
+
+            UNION ALL
+
+            -- IPs with no linked subdomain
+            SELECT
+                ip.id,
+                ip.created_timestamp AS created_at,
+                ip.updated_timestamp AS updated_at,
+                NULL AS synced_at,
+                CAST(ip.ip AS TEXT) AS ip,
+                NULL AS from_root_domain,
+                NULL AS subdomain_source,
+                TRUE AS ip_only,
+                NULL AS reverse_name,
+                host(ip.ip) AS name,
+                NULL AS screenshot,
+                NULL AS country,
+                NULL AS asn,
+                NULL AS cloud_hosted,
+                ip.from_cidr,
+                NULL AS ssl,
+                NULL AS censys_certificates_results,
+                NULL AS trustymail_results,
+                NULL AS discovered_by_id,
+                ip.organization_id
+
+            FROM
+                ip
+            WHERE
+                ip.id NOT IN (SELECT ip_id FROM ips_subs);
+        """
+        )
+        print("Domain view created.")
