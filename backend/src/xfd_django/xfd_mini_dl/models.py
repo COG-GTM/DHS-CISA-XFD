@@ -6002,6 +6002,73 @@ class Log(models.Model):
 
 # # THese are all views, so they shouldn't be generated via the ORM
 
+
+class VwCombinedVulns(models.Model):
+    """Define VwCombinedVulns model."""
+    scan_source = models.TextField(
+        blank=True, null=True, help_text="Scan that identified the data."
+    )
+    vuln_id = models.TextField(
+        primary_key=True, unique=True, blank=True, null=True, help_text="Id of the vulnerability"
+    ) # Maybe shouldn't be unique
+    first_seen = models.DateTimeField(
+        help_text="Date and time the vulnerability was first seen",
+    )
+    last_seen = models.DateTimeField(
+        help_text="Date and time the vulnerability was first seen",
+    )
+    cve = models.CharField(blank=True, null=True, max_length=255)
+    title = models.TextField(blank=True, null=True)
+    product	= models.CharField(blank=True, null=True, max_length=255)
+    domain = models.TextField(blank=True, null=True)
+    # domain_id = models.ForeignKey(
+    #     Domain,
+    #     models.DO_NOTHING,
+    #     db_column="domain_id",
+    #     blank=True,
+    #     null=True,
+    #     help_text="Foreign key to the domain or IP where the vulnerablily was found.",
+    # )
+    protocol = models.CharField(blank=True, null=True, max_length=255)
+    port = models.CharField(blank=True, null=True, max_length=255)
+    cvss_base_score = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="CVSS base score](https://nvd.nist.gov/vuln-metrics)",
+    )
+    severity = models.CharField(blank=True, null=True, max_length=255)
+    organization = models.ForeignKey(
+        Organization,
+        models.DO_NOTHING,
+        db_column="organization_id",
+        blank=True,
+        null=True,
+        help_text="Foreign key to the organization that owns the vulnerable asset   .",
+    )
+    # is_kev = models.BooleanField(
+    #     blank=True,
+    #     null=True,
+    #     help_text="T/F if the vulnerability is known to be exloited.",
+    # )
+    # service = models.CharField(blank=True, null=True, max_length=255)
+    # is_risky_service = models.BooleanField(
+    #     blank=True,
+    #     null=True,
+    #     help_text="T/F if the vulnerability is a known risky service.",
+    # )
+    # os = models.CharField(blank=True, null=True, max_length=255)
+    state = models.CharField(blank=True, null=True, max_length=255)
+    data_source = models.CharField(blank=True, null=True, max_length=255)
+    description = models.TextField(blank=True, null=True)
+    class Meta:
+        """Set VwCombinedVulns model metadata."""
+        app_label = app_label_name
+        managed = False
+        db_table = "mat_vw_combined_vulns"
+
+        
 # # This should be a view not a table
 # class VwPshttDomainsToRun(models.Model):
 #     """Define VwPshttDomainsToRun model."""

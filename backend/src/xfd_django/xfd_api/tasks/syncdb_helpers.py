@@ -303,8 +303,9 @@ def synchronize(target_app_label=None):
         print("Processing Many-to-Many tables...")
         process_m2m_tables(schema_editor, ordered_models, database)
 
-        create_normal_views(database)
-        create_materialized_views(database)
+        if target_app_label == "xfd_mini_dl":
+            create_vuln_normal_views(database)
+            create_vuln_materialized_views(database)
         
         cleanup_stale_tables(ordered_models, database)
 
@@ -580,7 +581,7 @@ def sync_es_organizations():
         print("Error syncing organizations: {}".format(e))
         raise e
 
-def create_normal_views(database):
+def create_vuln_normal_views(database):
     with connections[database].cursor() as cursor:
         print("Creating normal views...")
 
@@ -589,9 +590,9 @@ def create_normal_views(database):
             -- Query for VS Ticket Vulns
             SELECT 
                 'vuln_scanning_tickets' as scan_source,
-                t.id as id,
-                t.opened_timestamp as first_seen,
-                coalesce(t.closed_timestamp, t.updated_timestamp) as last_seen,
+                t.id as vuln_id,
+                t.opened_timestamp::timestamp as first_seen,
+                coalesce(t.closed_timestamp::timestamp, t.updated_timestamp::timestamp) as last_seen,
                 t.cve_string as cve,
                 t.vuln_name as title,
                 vs.cpe as product,	
@@ -626,20 +627,20 @@ def create_normal_views(database):
             -- Query for ShodanVulns
             SELECT
                 'shodan_vulnerability' as scan_source,
-                sv.shodan_vuln_uid::text as id,
-                null as first_seen,
-                sv."timestamp" as last_seen,
+                sv.shodan_vuln_uid::text as vuln_id,
+                null::timestamp as first_seen,
+                sv."timestamp"::timestamp as last_seen,
                 sv.cve as cve,
                 sv.name as title,
                 array_to_string(sv.cpe, ', ') as product,
                 sv.ip_string as domain,
-                sv.ip_id as domain_id,
+                sv.ip_uid as domain_id,
                 sv.protocol as protocol,
                 sv.port as port,
                 sv.cvss as cvss_base_score,
                 sv.severity as severity,
                 sv.organization_uid as organization_id,
-                'Open' as state,
+                'open' as state,
                 'Shodan' as data_source,
                 null as description
             FROM shodan_vulns as sv
@@ -647,31 +648,57 @@ def create_normal_views(database):
 
         cursor.execute("""
             CREATE OR REPLACE VIEW vw_credential_breaches AS
-            SELECT DISTINCT 
-                'credential_breach' as scan_source,
-                cb.credential_breaches_uid::text as id,
-                cb.breach_date as first_seen,
-                cb.modified_date as last_seen,
-                null as cve,
-                cb.breach_name as title,
-                null as product,
-                ce.sub_domain_string as domain,
-                ce.sub_domain_id as domain_id,
-                'SMTP,IMAP,POP3' as protocol, --"Unsure on this one"
-                null as port,
-                null::float as cvss_base_score,
-                'Medium' as severity,
-                ce.organization_id,
-                'Open' as state,
-                ds.name as data_source,
-                cb.description 
-            FROM credential_breaches cb
-            JOIN credential_exposures ce on cb.credential_breaches_uid = ce.credential_breach_id
-            JOIN data_source ds on ds.data_source_uid = cb.data_source_uid
+            SELECT
+                scan_source,
+                vuln_id,
+                first_seen,
+                last_seen,
+                cve,
+                title,
+                product,
+                domain,
+                domain_id,
+                protocol,
+                port,
+                cvss_base_score,
+                severity,
+                organization_id,
+                state,
+                data_source,
+                description
+            FROM (
+                SELECT
+                    'credential_breach' AS scan_source,
+                    ce.credential_exposures_uid::text AS vuln_id,
+                    cb.breach_date AS first_seen,
+                    cb.modified_date AS last_seen,
+                    NULL AS cve,
+                    cb.breach_name AS title,
+                    NULL AS product,
+                    COALESCE(sd.from_root_domain, sd.sub_domain) AS domain,
+                    COALESCE(sd.root_domain_id, sd.sub_domain_uid) AS domain_id,
+                    'SMTP,IMAP,POP3' AS protocol,
+                    NULL AS port,
+                    NULL::float AS cvss_base_score,
+                    'Medium' AS severity,
+                    ce.organization_id,
+                    'Open' AS state,
+                    ds.name AS data_source,
+                    cb.description,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY cb.credential_breaches_uid, ce.sub_domain_id
+                        ORDER BY ce.credential_exposures_uid
+                    ) AS row_num
+                FROM credential_breaches cb
+                JOIN credential_exposures ce ON cb.credential_breaches_uid = ce.credential_breach_id
+                JOIN sub_domains sd ON ce.sub_domain_id = sd.sub_domain_uid
+                JOIN data_source ds ON ds.data_source_uid = cb.data_source_uid
+            ) t
+            WHERE row_num = 1;       
         """)
         print("Normal views created.")
 
-def create_materialized_views(database):
+def create_vuln_materialized_views(database):
     with connections[database].cursor() as cursor:
         print("Creating materialized views...")
 
@@ -680,6 +707,8 @@ def create_materialized_views(database):
         # Example materialized view
         cursor.execute("""
             CREATE MATERIALIZED VIEW IF NOT EXISTS mat_vw_combined_vulns AS
+            SELECT * from vw_ticket_vulns
+            union
             SELECT * from vw_shodan_vulns
             union 
             SELECT * from vw_credential_breaches
