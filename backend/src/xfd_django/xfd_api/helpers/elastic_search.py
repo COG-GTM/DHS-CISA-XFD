@@ -44,7 +44,7 @@ def get_term_filter_value(field, field_value):
     """
     Determine the appropriate term filter value based on the field and its value.
 
-    Handles specific cases for boolean values, 'organization.regionId', numeric values, the 'name' field, and 'vulnerabilities.severity'.
+    Handles specific cases for boolean values, 'organization.region_id', numeric values, the 'name' field, and 'vulnerabilities.severity'.
     """
     if field_value in ["false", "true"]:
         return {field: field_value == "true"}

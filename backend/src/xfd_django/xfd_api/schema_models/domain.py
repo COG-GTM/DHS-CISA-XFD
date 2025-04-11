@@ -32,7 +32,6 @@ class Domain(BaseModel):
     trustymail_results: Optional[dict]
     discovered_by_id: Optional[UUID]
     organization_id: Optional[UUID]
-    from_cidr: Optional[bool]
 
     class Config:
         """Domain base schema config."""
@@ -150,7 +149,7 @@ class WebpageResponse(BaseModel):
 
     url: str
     status: str
-    responseSize: Optional[int] = None
+    response_size: Optional[int] = None
 
     class Config:
         """Config."""

@@ -17,15 +17,11 @@ from django.db import connections, transaction
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.utils import OperationalError
 from xfd_api.models import (
-    ApiKey,
     Domain,
-    Organization,
-    OrganizationTag,
     Service,
-    User,
-    UserType,
     Vulnerability,
 )
+from xfd_mini_dl.models import ApiKey, Organization, OrganizationTag, User, UserType
 from xfd_api.tasks.es_client import ESClient
 
 # Constants for sample data generation
@@ -71,18 +67,18 @@ def populate_sample_data():
             org = Organization.objects.create(
                 acronym="".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=5)),
                 name=generate_random_name(),
-                rootDomains=["crossfeed.local"],
-                ipBlocks=[],
-                isPassive=False,
+                root_domains=["crossfeed.local"],
+                ip_blocks=[],
+                is_passive=False,
                 state=random.choice(SAMPLE_STATES),
-                regionId=random.choice(SAMPLE_REGION_IDS),
+                region_id=random.choice(SAMPLE_REGION_IDS),
             )
-            org.tags.add(tag)
+            org.organization_tags.add(tag)
 
             # Create sample domains, services, and vulnerabilities
-            for _ in range(NUM_SAMPLE_DOMAINS):
-                domain = create_sample_domain(org)
-                create_sample_services_and_vulnerabilities(domain)
+            # for _ in range(NUM_SAMPLE_DOMAINS):
+            #     domain = create_sample_domain(org)
+            #     create_sample_services_and_vulnerabilities(domain)
 
         # Create a user for the organization
         user = create_sample_user(org)
@@ -90,23 +86,23 @@ def populate_sample_data():
         # Create an API key for the user
         create_api_key_for_user(user)
 
-        test_user = create_test_user(org)
+        # test_user = create_test_user(org)
 
-        create_api_key_for_user(test_user)
+        # create_api_key_for_user(test_user)
 
 
 def create_sample_user(organization):
     """Create a sample user linked to an organization."""
     user = User.objects.create(
-        firstName="Sample",
-        lastName="User",
+        first_name="Sample",
+        last_name="User",
         email="user{}@example.com".format(random.randint(1, 1000)),
-        userType=UserType.GLOBAL_ADMIN,
+        user_type=UserType.GLOBAL_ADMIN,
         state=random.choice(SAMPLE_STATES),
-        regionId=random.choice(SAMPLE_REGION_IDS),
+        region_id=random.choice(SAMPLE_REGION_IDS),
     )
     # Set user as the creator of the organization (optional)
-    organization.createdBy = user
+    organization.created_by = user
     organization.save()
     return user
 
@@ -122,12 +118,12 @@ def create_test_user(organization):
 
     if not email:
         user = User.objects.create(
-            firstName="Test",
-            lastName="User",
+            first_name="Test",
+            last_name="User",
             email=os.environ.get("PW_XFD_USERNAME"),
-            userType=UserType.GLOBAL_ADMIN,
+            user_type=UserType.GLOBAL_ADMIN,
             state=random.choice(SAMPLE_STATES),
-            regionId=random.choice(SAMPLE_REGION_IDS),
+            region_id=random.choice(SAMPLE_REGION_IDS),
             organization=organization,
         )
 
@@ -144,11 +140,11 @@ def create_api_key_for_user(user):
 
     # Create the API key record
     ApiKey.objects.create(
-        hashedKey=hashed_key,
-        lastFour=key[-4:],
+        hashed_key=hashed_key,
+        last_four=key[-4:],
         user=user,
-        createdAt=datetime.utcnow(),
-        updatedAt=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
 
     # Print the raw key for debugging or manual testing
@@ -173,7 +169,6 @@ def create_sample_domain(organization):
         name=domain_name,
         ip=ip,
         fromRootDomain="crossfeed.local",
-        isFceb=True,
         subdomainSource="findomain",
         organization=organization,
     )
@@ -307,7 +302,8 @@ def synchronize(target_app_label=None):
             create_vuln_normal_views(database)
             create_vuln_materialized_views(database)
             create_domain_view(database)
-
+            create_service_view(database)
+        
         cleanup_stale_tables(ordered_models, database)
 
     print("Database synchronization complete.")
@@ -321,7 +317,7 @@ def get_ordered_models(target_app_label):
     deterministically (alphabetically by model name).
     """
     # Get all models for the app and create a set for quick membership checks.
-    models = list(apps.get_app_config(target_app_label).get_models())
+    models = [m for m in apps.get_app_config(target_app_label).get_models() if m._meta.managed]
     model_set = set(models)
 
     # Build dependency graph, but only include dependencies to models within the app.
@@ -566,7 +562,7 @@ def sync_es_organizations():
                 # Fetch full organization data for the current chunk
                 organizations = list(
                     Organization.objects.filter(id__in=organization_chunk).values(
-                        "id", "name", "country", "state", "regionId", "tags"
+                        "id", "name", "country", "state", "region_id", "organization_tags"
                     )
                 )
                 print("Syncing {} organizations...".format(len(organizations)))
@@ -737,7 +733,7 @@ def create_domain_view(database):
     """Create vw_domain view."""
     with connections[database].cursor() as cursor:
         print("Creating domain view...")
-
+        cursor.execute("DROP VIEW IF EXISTS vw_service;")
         cursor.execute("DROP VIEW IF EXISTS vw_domain;")
 
         # Example materialized view
@@ -783,7 +779,7 @@ def create_domain_view(database):
                 ip.created_timestamp AS created_at,
                 ip.updated_timestamp AS updated_at,
                 NULL AS synced_at,
-                CAST(ip.ip AS TEXT) AS ip,
+                regexp_replace(ip::text, '/32$', '') AS ip,
                 NULL AS from_root_domain,
                 NULL AS subdomain_source,
                 TRUE AS ip_only,
@@ -807,3 +803,35 @@ def create_domain_view(database):
         """
         )
         print("Domain view created.")
+
+def create_service_view(database):
+    """Create or replace the unified 'service' view (starting with Shodan data)."""
+    with connections[database].cursor() as cursor:
+        print("Creating 'service' view from ShodanAssets...")
+
+        cursor.execute("""
+            CREATE OR REPLACE VIEW vw_service AS
+            SELECT
+                s.shodan_asset_uid AS id,
+                s.timestamp AS "created_at",
+                s.timestamp AS "updated_at",
+                s.port,
+                COALESCE(s.product, s.server) AS service,
+                s.server AS banner,
+                jsonb_build_array(s.product) AS products,
+                NULL::jsonb AS "censysMetadata",
+                NULL::jsonb AS "censysIpv4Results",
+                NULL::jsonb AS "intrigueIdentResults",
+                NULL::jsonb AS "shodanResults",
+                NULL::jsonb AS "wappalyzerResults",
+                s.timestamp AS "last_seen",
+                s.ip_string AS "ip_string",
+                d.id AS domain_id,
+                NULL::uuid AS discovered_by_id
+            FROM shodan_assets s
+            LEFT JOIN vw_domain d
+              ON s.ip_string = d.ip AND s.organization_uid = d."organization_id"
+            WHERE s.port IS NOT NULL;
+        """)
+        print("View 'vw_service' created.")
+        

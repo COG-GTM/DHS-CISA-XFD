@@ -429,7 +429,7 @@ def get_stats_org_ids(current_user, filters):
         # Get organizations by region
         if regions_filter:
             organizations_by_region = Organization.objects.filter(
-                regionId__in=regions_filter
+                region_id__in=regions_filter
             ).values_list("id", flat=True)
             organization_ids.update(organizations_by_region)
 
@@ -444,7 +444,7 @@ def get_stats_org_ids(current_user, filters):
 
         # Allow only organizations in the user's region
         organizations_in_region = Organization.objects.filter(
-            regionId=user_region_id
+            region_id=user_region_id
         ).values_list("id", flat=True)
         organization_ids.update(organizations_in_region)
 

@@ -1076,8 +1076,8 @@ def search_organizations_task(search_body, current_user: User):
         query_body: Dict[str, Any] = {"query": {"bool": {"must": [], "filter": []}}}
 
         # Use match_all if searchTerm is empty
-        if search_body.searchTerm.strip():
-            sanitized_search_term = escape_special_characters(search_body.searchTerm)
+        if search_body.search_term.strip():
+            sanitized_search_term = escape_special_characters(search_body.search_term)
             query_body["query"]["bool"]["must"].append(
                 {
                     "query_string": {

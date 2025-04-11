@@ -8,7 +8,7 @@ import json
 from django.conf import settings
 from django.db.models import Count, Q
 import redis
-from xfd_api.models import Domain
+from xfd_mini_dl.models import Domain
 
 
 async def safe_redis_mget(redis_client, redis_keys, redis_semaphore):
@@ -72,9 +72,7 @@ def populate_stats_cache(
         # Build queryset with optional filters
         queryset = model.objects.all()
         if filters:
-            queryset = queryset.filter(**filters).filter(
-                Q(domain__isFceb=True) | Q(domain__fromCidr=True)  # Apply OR condition
-            )
+            queryset = queryset.filter(**filters)
 
         # Apply custom ID annotation if provided
         if custom_id:
@@ -122,7 +120,6 @@ async def get_total_count(filtered_org_ids):
         # Query the database for the total count of domains in the filtered organizations
         total_count = (
             Domain.objects.filter(organization__in=filtered_org_ids)
-            .filter(Q(isFceb=True) | Q(fromCidr=True))
             .count()
         )
         return total_count

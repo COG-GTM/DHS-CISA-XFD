@@ -61,7 +61,6 @@ def domain(organization):
         ip=search_fields["ip"],  # Ensure this IP is the one you expect
         organization=organization,
         name="example.crossfeed.local",
-        isFceb=True,
     )
     transaction.commit()
     # Debugging: Ensure the domain is created correctly

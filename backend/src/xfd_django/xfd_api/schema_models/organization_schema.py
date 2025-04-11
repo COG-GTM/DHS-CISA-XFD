@@ -99,8 +99,8 @@ class GetOrganizationSchema(BaseModel):
     updated_at: datetime
     acronym: Optional[str] = None
     name: str
-    root_domains: List[str]
-    ip_blocks: List[str]
+    root_domains: Optional[Any] = None
+    ip_blocks: Optional[Any] = None
     is_passive: bool
     pending_domains: Optional[Any] = []
     country: Optional[str] = None
@@ -187,7 +187,7 @@ class NewOrgScan(BaseModel):
 class RegionSchema(BaseModel):
     """Update an organization scan schema."""
 
-    regionId: str
+    region_id: str
 
 
 class GenericMessageResponseModel(BaseModel):
@@ -216,7 +216,7 @@ class OrganizationSearchBody(BaseModel):
     """Elastic search orgnaization model."""
 
     regions: Optional[List[str]]
-    searchTerm: str
+    search_term: str
 
 
 class FilterSchema(BaseModel):

@@ -6,7 +6,7 @@ import os
 # Third-Party Libraries
 from django.db.models import F, Q
 from django.utils.timezone import now
-from xfd_api.models import Domain
+from xfd_mini_dl.models import Domain
 
 from .es_client import ESClient
 
@@ -32,13 +32,13 @@ def handler(command_options):
     # Query to find domains that need to be synced
     domain_queryset = Domain.objects.annotate(
         should_sync=(
-            Q(syncedAt__isnull=True)
-            | Q(updatedAt__gt=F("syncedAt"))
-            | Q(organization__updatedAt__gt=F("syncedAt"))
-            | Q(vulnerabilities__updatedAt__gt=F("syncedAt"))
-            | Q(services__updatedAt__gt=F("syncedAt"))
+            Q(synced_at__isnull=True)
+            | Q(updated_at__gt=F("synced_at"))
+            | Q(organization__updated_at__gt=F("synced_at"))
+            | Q(vulnerabilities__updated_at__gt=F("synced_at"))
+            | Q(services__updated_at__gt=F("synced_at"))
         )
-    ).filter(should_sync=True, isFceb=True)
+    ).filter(should_sync=True)
 
     # Additional filters for testing
     if organization_id:
@@ -63,40 +63,40 @@ def handler(command_options):
                 [
                     {
                         "id": str(domain.id),
-                        "createdAt": domain.createdAt,
-                        "updatedAt": domain.updatedAt,
+                        "created_at": domain.created_at,
+                        "updated_at": domain.updated_at,
                         "name": domain.name,
-                        "reverseName": domain.reverseName,
+                        "reverse_name": domain.reverse_name,
                         "ip": domain.ip,
-                        "fromRootDomain": domain.fromRootDomain,
-                        "subdomainSource": domain.subdomainSource,
-                        "ipOnly": domain.ipOnly,
+                        "from_root_domain": domain.from_root_domain,
+                        "subdomain_source": domain.subdomain_source,
+                        "ip_only": domain.ip_only,
                         "screenshot": domain.screenshot,
                         "country": domain.country,
                         "asn": domain.asn,
-                        "cloudHosted": domain.cloudHosted,
-                        "fromCidr": domain.fromCidr,
-                        "isFceb": domain.isFceb,
-                        "syncedAt": domain.syncedAt.isoformat()
-                        if domain.syncedAt
+                        "cloud_hosted": domain.cloud_hosted,
+                        "from_cidr": domain.from_cidr,
+                        "is_fceb": domain.is_fceb,
+                        "synced_at": domain.synced_at.isoformat()
+                        if domain.synced_at
                         else None,
                         "ssl": domain.ssl,
-                        "censysCertificatesResults": domain.censysCertificatesResults,
-                        "trustymailResults": domain.trustymailResults,
+                        "censys_certificates_results": domain.censys_certificates_results,
+                        "trustymail_results": domain.trustymail_results,
                         "organization": {
                             "id": str(domain.organization.id),
                             "name": domain.organization.name,
                             "acronym": domain.organization.acronym,
-                            "rootDomains": domain.organization.rootDomains,
-                            "ipBlocks": domain.organization.ipBlocks,
-                            "isPassive": domain.organization.isPassive,
+                            "root_domains": domain.organization.root_domains,
+                            "ip_blocks": domain.organization.ip_blocks,
+                            "is_passive": domain.organization.is_passive,
                             "country": domain.organization.country,
                             "state": domain.organization.state,
-                            "regionId": domain.organization.regionId,
-                            "stateFips": domain.organization.stateFips,
-                            "stateName": domain.organization.stateName,
+                            "region_id": domain.organization.region_id,
+                            "state_fips": domain.organization.state_fips,
+                            "state_name": domain.organization.state_name,
                             "county": domain.organization.county,
-                            "countyFips": domain.organization.countyFips,
+                            "county_fips": domain.organization.county_fips,
                             "type": domain.organization.type,
                             "parent": {
                                 "id": str(domain.organization.parent.id)
@@ -109,29 +109,29 @@ def handler(command_options):
                             if domain.organization.parent
                             else None,
                         },
-                        "discoveredBy": {
-                            "id": str(domain.discoveredBy.id)
-                            if domain.discoveredBy
+                        "discovered_by": {
+                            "id": str(domain.discovered_by.id)
+                            if domain.discovered_by
                             else None,
-                            "name": domain.discoveredBy.name
-                            if domain.discoveredBy
+                            "name": domain.discovered_by.name
+                            if domain.discovered_by
                             else None,
-                            "arguments": domain.discoveredBy.arguments
-                            if domain.discoveredBy
+                            "arguments": domain.discovered_by.arguments
+                            if domain.discovered_by
                             else None,
                         }
-                        if domain.discoveredBy
+                        if domain.discovered_by
                         else None,
                         "services": [
                             {
                                 "id": str(service.id),
                                 "port": service.port,
                                 "service": service.service,
-                                "lastSeen": service.lastSeen.isoformat()
-                                if service.lastSeen
+                                "last_seen": service.lastSeen.isoformat()
+                                if service.last_seen
                                 else None,
                                 "products": service.products,
-                                "censysMetadata": service.censysMetadata,
+                                "censys_metadata": service.censys_metadata,
                             }
                             for service in domain.services.all()
                         ],
@@ -145,7 +145,7 @@ def handler(command_options):
                                 "state": vulnerability.state,
                                 "substate": vulnerability.substate,
                                 "description": vulnerability.description,
-                                "lastSeen": vulnerability.lastSeen.isoformat()
+                                "last_seen": vulnerability.last_seen.isoformat()
                                 if vulnerability.lastSeen
                                 else None,
                                 "references": vulnerability.references,
@@ -162,7 +162,7 @@ def handler(command_options):
 
         # Mark domains as synced
         Domain.objects.filter(id__in=[domain.id for domain in domains]).update(
-            syncedAt=now()
+            synced_at=now()
         )
 
     print("Domain sync complete.")

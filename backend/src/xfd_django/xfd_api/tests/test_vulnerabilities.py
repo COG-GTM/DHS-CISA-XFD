@@ -65,7 +65,6 @@ def domain(organization):
         ip="127.116.195.151",  # Ensure this IP is the one you expect
         organization=organization,
         name="example.crossfeed.local",
-        isFceb=True,
     )
     assert domain.organization == organization
     yield domain

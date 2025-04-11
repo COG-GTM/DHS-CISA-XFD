@@ -96,7 +96,7 @@ def test_get_stats_by_org_user():
     Service.objects.create(service="http", port=80, domain=domain)
 
     Domain.objects.create(
-        name="test-" + secrets.token_hex(4), isFceb=True, organization=organization2
+        name="test-" + secrets.token_hex(4), organization=organization2
     )
 
     user = User.objects.create(

@@ -417,18 +417,8 @@ class Organization(models.Model):
         help_text="Boolean field to flag organizations that have been retired a",
     )
     name = models.CharField(max_length=255, help_text="Full name of the organization")
-    root_domains = ArrayField(
-        models.TextField(blank=True, null=True),
-        blank=True,
-        null=True,
-        db_column="root_domains",
-        help_text="List of root domains attributed to the organization",
-    )
-    ip_blocks = models.TextField(
-        db_column="ip_blocks",
-        help_text="IP blocks attributed to or provided by a stakeholder.",
-        null=True,
-    )  # This field type is a guess.
+    root_domains = ArrayField(models.CharField(max_length=255), db_column="root_domains", help_text="List of root domains attributed to the organization")
+    ip_blocks = ArrayField(models.CharField(max_length=255), db_column="ip_blocks", help_text="IP blocks attributed to or provided by a stakeholder.")
     is_passive = models.BooleanField(
         db_column="is_passive",
         help_text="Boolean to flag if only passive data collection can be used on the stakeholder's assets.",
@@ -1390,6 +1380,7 @@ class Vulnerability(models.Model):
         db_column="domain_id",
         blank=True,
         null=True,
+        related_name="vulnerabilities",
         help_text="Foreign key relationship to the domain the vulnerability was found on.",
     )
     service = models.ForeignKey(
@@ -1405,7 +1396,7 @@ class Vulnerability(models.Model):
         """The Meta class for Vulnerability."""
 
         app_label = app_label_name
-        managed = manage_db
+        managed = False
         db_table = "vulnerability"
         unique_together = (("domain", "title"),)
 
@@ -6011,12 +6002,8 @@ class VwCombinedVulns(models.Model):
         blank=True, null=True, help_text="Scan that identified the data."
     )
     vuln_id = models.TextField(
-        primary_key=True,
-        unique=True,
-        blank=True,
-        null=True,
-        help_text="Id of the vulnerability",
-    )  # Maybe shouldn't be unique
+        primary_key=True, unique=True, help_text="Id of the vulnerability"
+    ) # Maybe shouldn't be unique
     first_seen = models.DateTimeField(
         help_text="Date and time the vulnerability was first seen",
     )
