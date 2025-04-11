@@ -77,10 +77,11 @@ def handler(command_options):
       - Creates or updates SubDomains records.
     """
     organization_name = command_options.get("organizationName")
+    organization_id = command_options.get("organizationId")
     if not organization_name:
         return {"statusCode": 400, "body": "Organization name not provided."}
 
-    orgs_to_sync = Organization.objects.filter(name=organization_name)
+    orgs_to_sync = Organization.objects.filter(id=organization_id)
     if not orgs_to_sync.exists():
         return {"statusCode": 500, "body": "Organization not found."}
     organization = orgs_to_sync.first()

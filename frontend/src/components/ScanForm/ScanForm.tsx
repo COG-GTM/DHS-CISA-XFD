@@ -282,9 +282,9 @@ export const ScanForm: React.FC<{
           style={{ marginTop: '0.5rem', display: 'block' }}
         >
           {schemaUpdated
-            ? scanSchema[values.name].maxConcurrentTasks
+            ? scanSchema[values.name].max_concurrent_tasks
               ? `This scan allows a maximum of ${
-                  scanSchema[values.name].maxConcurrentTasks
+                  scanSchema[values.name].max_concurrent_tasks
                 } concurrent scans`
               : 'This scan allows no limit of concurrent tasks'
             : 'This scan allows a maximum of 10 concurrent scans'}

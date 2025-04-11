@@ -42,6 +42,6 @@ export interface ScanSchema {
     numChunks?: number;
 
     // Maximum number of tasks that can run in parallel.
-    maxConcurrentTasks?: number;
+    max_concurrent_tasks?: number;
   };
 }

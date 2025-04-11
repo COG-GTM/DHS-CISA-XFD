@@ -84,11 +84,11 @@ def list_scan_tasks(search_data: Optional[ScanTaskSearch], current_user):
                     "last_run": task.scan.last_run.isoformat()
                     if task.scan.last_run
                     else None,
-                    "is_granular": task.scan.isGranular,
-                    "is_user_modifiable": task.scan.isUserModifiable,
-                    "is_single_scan": task.scan.isSingleScan,
-                    "manual_run_pending": task.scan.manualRunPending,
-                    "concurrent_tasks": task.scan.concurrentTasks,
+                    "is_granular": task.scan.is_granular,
+                    "is_user_modifiable": task.scan.is_user_modifiable,
+                    "is_single_scan": task.scan.is_single_scan,
+                    "manual_run_pending": task.scan.manual_run_pending,
+                    "concurrent_tasks": task.scan.concurrent_tasks,
                 }
             results.append(
                 {
@@ -117,7 +117,7 @@ def list_scan_tasks(search_data: Optional[ScanTaskSearch], current_user):
                     if task.finished_at
                     else None,
                     "queued_at": task.queued_at.isoformat() if task.queued_at else None,
-                    "concurrency_index": task.concurrencyIndex,
+                    "concurrency_index": task.concurrency_index,
                     "scan": scan_data,
                     "organizations": [
                         {

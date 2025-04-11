@@ -36,12 +36,12 @@ def list_scans(current_user):
                 "name": scan.name,
                 "arguments": scan.arguments,
                 "frequency": scan.frequency,
-                "last_run": scan.lastRun,
-                "is_granular": scan.isGranular,
-                "is_user_modifiable": scan.isUserModifiable,
-                "is_single_scan": scan.isSingleScan,
-                "manual_run_pending": scan.manualRunPending,
-                "concurrent_tasks": scan.concurrentTasks,
+                "last_run": scan.last_run,
+                "is_granular": scan.is_granular,
+                "is_user_modifiable": scan.is_user_modifiable,
+                "is_single_scan": scan.is_single_scan,
+                "manual_run_pending": scan.manual_run_pending,
+                "concurrent_tasks": scan.concurrent_tasks,
                 "tags": [
                     {
                         "id": tag.id,
@@ -106,8 +106,8 @@ def create_scan(scan_data: NewScan, current_user):
         if scan_data.name not in SCAN_SCHEMA:
             raise HTTPException(status_code=400, detail="Invalid scan name")
 
-        max_tasks = SCAN_SCHEMA[scan_data.name].maxConcurrentTasks
-        if scan_data.concurrentTasks is None:
+        max_tasks = SCAN_SCHEMA[scan_data.name].max_concurrent_tasks
+        if scan_data.concurrent_tasks is None:
             raise HTTPException(
                 status_code=400, detail="Concurrent tasks must be provided."
             )
@@ -117,7 +117,7 @@ def create_scan(scan_data: NewScan, current_user):
                 detail="Server configuration error: max concurrent tasks not set.",
             )
 
-        if scan_data.concurrentTasks > max_tasks:
+        if scan_data.concurrent_tasks > max_tasks:
             raise HTTPException(
                 status_code=400,
                 detail="Number of concurrent tasks exceeds the max for this scan.",
@@ -146,11 +146,11 @@ def create_scan(scan_data: NewScan, current_user):
             "name": scan.name,
             "arguments": scan.arguments,
             "frequency": scan.frequency,
-            "is_granular": scan.isGranular,
-            "is_user_modifiable": scan.isUserModifiable,
-            "is_single_scan": scan.isSingleScan,
-            "concurrent_tasks": scan.concurrentTasks,
-            "created_by": {"id": current_user.id, "name": current_user.fullName},
+            "is_granular": scan.is_granular,
+            "is_user_modifiable": scan.is_user_modifiable,
+            "is_single_scan": scan.is_single_scan,
+            "concurrent_tasks": scan.concurrent_tasks,
+            "created_by": {"id": current_user.id, "name": current_user.full_name},
             "tags": list(scan.tags.values("id")),
             "organizations": list(scan.organizations.values("id")),
         }
@@ -203,7 +203,7 @@ def get_scan(scan_id: str, current_user):
         "manual_run_pending": scan.manual_run_pending,
         "organizations": related_organizations,
         "tags": list(scan.tags.values()),
-        "concurrentTasks": scan.concurrentTasks,
+        "concurrent_tasks": scan.concurrent_tasks,
     }
 
     # Return the scan details along with its related data
@@ -264,7 +264,7 @@ def update_scan(scan_id: str, scan_data: NewScan, current_user):
             "created_by": {"id": current_user.id, "name": current_user.full_name},
             "tags": list(scan.tags.values("id")),
             "organizations": list(scan.organizations.values("id")),
-            "concurrentTasks": scan.concurrentTasks,
+            "concurrent_tasks": scan.concurrent_tasks,
         }
 
     except HTTPException as http_exc:
@@ -316,7 +316,7 @@ def run_scan(scan_id: str, current_user):
         except Scan.DoesNotExist:
             raise HTTPException(status_code=404, detail="Scan not found")
 
-        scan.manualRunPending = True
+        scan.manual_run_pending = True
         scan.save()
         return {
             "status": "success",

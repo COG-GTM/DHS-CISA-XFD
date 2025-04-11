@@ -35,7 +35,7 @@ def patch_boto3_client():
 @pytest.mark.django_db
 def test_scheduler_skips_when_no_organizations():
     """Test scheduler skips when no organizations."""
-    scan = Scan.objects.create(name="censys", concurrentTasks=2, frequency=1)
+    scan = Scan.objects.create(name="censys", concurrent_tasks=2, frequency=1)
     scheduler = Scheduler()
     scheduler.initialize([scan], [])
 
@@ -48,7 +48,7 @@ def test_scheduler_skips_when_no_organizations():
 def test_manual_run_pending_forces_execution(org):
     """Test manual run pending forces execution."""
     scan = Scan.objects.create(
-        name="censys", concurrentTasks=1, frequency=1, manualRunPending=True
+        name="censys", concurrent_tasks=1, frequency=1, manualRunPending=True
     )
     scheduler = Scheduler()
     scheduler.initialize([scan], [org])
@@ -64,7 +64,7 @@ def test_scheduler_respects_frequency_window(org):
     """Test scheduler respects frequency."""
     scan = Scan.objects.create(
         name="censys",
-        concurrentTasks=1,
+        concurrent_tasks=1,
         frequency=1,
         lastRun=timezone.now() - timedelta(hours=12),
     )
@@ -80,7 +80,7 @@ def test_scheduler_respects_frequency_window(org):
 def test_global_scan_triggers_single_execution(org):
     """Test global scan triggers single execution."""
     SCAN_SCHEMA["censys"].global_scan = True
-    scan = Scan.objects.create(name="censys", concurrentTasks=5, frequency=1)
+    scan = Scan.objects.create(name="censys", concurrent_tasks=5, frequency=1)
     scheduler = Scheduler()
     scheduler.initialize([scan], [org])
 
@@ -95,7 +95,7 @@ def test_global_scan_triggers_single_execution(org):
 @pytest.mark.django_db
 def test_scan_skips_if_recent_task_running(org):
     """Test scan skips if recent task running."""
-    scan = Scan.objects.create(name="censys", concurrentTasks=1, frequency=1)
+    scan = Scan.objects.create(name="censys", concurrent_tasks=1, frequency=1)
     ScanTask.objects.create(
         scan=scan,
         status="started",
@@ -113,7 +113,7 @@ def test_scan_skips_if_recent_task_running(org):
 def test_scan_skips_if_single_scan_and_already_finished(org):
     """Test scan skips if single scan and already finished."""
     scan = Scan.objects.create(
-        name="censys", concurrentTasks=1, frequency=1, isSingleScan=True
+        name="censys", concurrent_tasks=1, frequency=1, isSingleScan=True
     )
     ScanTask.objects.create(
         scan=scan,
@@ -132,7 +132,7 @@ def test_scan_skips_if_single_scan_and_already_finished(org):
 @pytest.mark.django_db
 def test_handler_filters_scan_and_org_ids(org):
     """Test handler filters scan and org ids."""
-    scan = Scan.objects.create(name="censys", concurrentTasks=1, frequency=1)
+    scan = Scan.objects.create(name="censys", concurrent_tasks=1, frequency=1)
 
     with patch("xfd_api.tasks.scheduler.Scheduler.run") as mock_run:
         handler(

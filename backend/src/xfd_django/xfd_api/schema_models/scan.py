@@ -56,7 +56,7 @@ class ScanSchema(BaseModel):
     # chunkNumber and numChunks parameters specified in commandOptions.
     num_chunks: Optional[int] = None
 
-    maxConcurrentTasks: Optional[int] = 500
+    max_concurrent_tasks: Optional[int] = 500
 
 
 class GranularScan(BaseModel):
@@ -145,7 +145,7 @@ SCAN_SCHEMA = {
         is_passive=True,
         global_scan=False,
         description="Passive discovery of subdomains from public certificates",
-        maxConcurrentTasks=5,
+        max_concurrent_tasks=5,
     ),
     "censysCertificates": ScanSchema(
         type="fargate",
@@ -280,7 +280,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Fetch passive port, banner, and vulnerability data from shodan",
-        maxConcurrentTasks=10,
+        max_concurrent_tasks=10,
     ),
     "shodan_sync": ScanSchema(
         type="fargate",
@@ -364,6 +364,6 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Enumerate and sync org assets.",
-        maxConcurrentTasks=1,
+        max_concurrent_tasks=1,
     ),
 }

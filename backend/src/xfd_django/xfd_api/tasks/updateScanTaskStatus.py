@@ -13,7 +13,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
-from xfd_api.models import ScanTask
+from xfd_mini_dl.models import ScanTask
 
 
 def handler(event, context):
@@ -75,7 +75,7 @@ def retry_find_scan_task(task_arn, retries=3):
     """Retry logic to find a ScanTask by its Fargate Task ARN."""
     for attempt in range(retries):
         try:
-            scan_task = ScanTask.objects.filter(fargateTaskArn=task_arn).first()
+            scan_task = ScanTask.objects.filter(fargate_task_arn=task_arn).first()
             if scan_task:
                 return scan_task
         except OperationalError as e:

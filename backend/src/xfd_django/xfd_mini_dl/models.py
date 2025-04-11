@@ -902,7 +902,7 @@ class Scan(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a cyhy dashboard scan object.",
     )
     created_at = models.DateTimeField(
@@ -918,9 +918,10 @@ class Scan(models.Model):
     name = models.CharField(
         max_length=255, help_text="The name of the cyhy dashboard scan."
     )
-    arguments = models.JSONField(
+    arguments = models.TextField(
+        default="{}",
         help_text="A dictionary of arguments to pass to the scan."
-    )
+    ) # JSON in the database but fails: the JSON object must be str, bytes or bytearray, not dict
     frequency = models.IntegerField(
         help_text="How often the scan should run in seconds."
     )
@@ -932,6 +933,7 @@ class Scan(models.Model):
     )
     is_granular = models.BooleanField(
         db_column="is_granular",
+        default=False,
         help_text="A boolean flag to specify if the scan is granular. Granular scans are only run on specified organizations. Global scans cannot be granular scans.",
     )
     is_user_modifiable = models.BooleanField(
@@ -942,10 +944,12 @@ class Scan(models.Model):
     )
     is_single_scan = models.BooleanField(
         db_column="is_single_scan",
+        default=False,
         help_text="A boolean to flag scans that should only be run once and not on a reoccuring basis.",
     )
     manual_run_pending = models.BooleanField(
         db_column="manual_run_pending",
+        default=False,
         help_text="A boolean to flag if a manually called scan is still waiting to be run.",
     )
     concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
@@ -963,10 +967,11 @@ class Scan(models.Model):
         blank=True,
         help_text="A many to many relationship linking to all the organizations the scan should be run on.",
     )
-    organization_tags = models.ManyToManyField(
+    tags = models.ManyToManyField(
         OrganizationTag,
         related_name="scans",
         blank=True,
+        db_table="scan_tags_organization_tag",
         help_text="A many to many relationship linking to all the organization tags that should be run on.",
     )
 
@@ -1281,7 +1286,7 @@ class User(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Save user with fullName."""
+        """Save user with full_name."""
         self.full_name = "{} {}".format(self.first_name, self.last_name)
         super().save(*args, **kwargs)
 
@@ -3990,7 +3995,7 @@ class Domain(models.Model):
 
     discovered_by = models.ForeignKey(
         "Scan",
-        on_delete=models.SET_NULL,
+        on_delete=models.DO_NOTHING,
         null=True,
         blank=True,
         db_column="discovered_by_id",
