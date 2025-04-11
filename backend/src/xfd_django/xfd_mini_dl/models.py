@@ -331,10 +331,12 @@ class Notification(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+         auto_now_add=True,
         help_text="Datetime the notification object was created.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+         auto_now=True,
         help_text="Datetime the notification object was last updated in the database.",
     )
     start_datetime = models.DateTimeField(
@@ -684,10 +686,12 @@ class OrganizationTag(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the organization tag was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the organization tag object was updated in the database.",
     )
     name = models.CharField(
@@ -773,10 +777,12 @@ class Role(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the role object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the role object was updated in the database.",
     )
     role = models.CharField(
@@ -840,10 +846,12 @@ class SavedSearch(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the saved search object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the saved search object was updated in the database.",
     )
     name = models.CharField(
@@ -901,10 +909,12 @@ class Scan(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the scan object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the scan object was updated in the database.",
     )
     name = models.CharField(
@@ -980,10 +990,12 @@ class ScanTask(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the scan task object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the scan task object was updated in the database.",
     )
     status = models.TextField(
@@ -1054,7 +1066,7 @@ class ScanTask(models.Model):
 
 
 class Service(models.Model):
-    """The Service model."""
+    """The Service View."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -1110,7 +1122,7 @@ class Service(models.Model):
         help_text="Details about the service identified by the wappalyzer scan.",
     )
     domain = models.ForeignKey(
-        "SubDomains",
+        "Domain",
         models.DO_NOTHING,
         db_column="domain_id",
         blank=True,
@@ -1130,10 +1142,17 @@ class Service(models.Model):
         """The Meta class for Service."""
 
         app_label = app_label_name
-        managed = manage_db
-        db_table = "service"
+        managed = False
+        db_table = "vw_service"
         unique_together = (("port", "domain"),)
 
+class UserType(models.TextChoices):
+    """User type definition."""
+
+    GLOBAL_ADMIN = "globalAdmin"
+    GLOBAL_VIEW = "globalView"
+    REGIONAL_ADMIN = "regionalAdmin"
+    STANDARD = "standard"
 
 class User(models.Model):
     """The User model."""
@@ -1207,6 +1226,7 @@ class User(models.Model):
     )
     invite_pending = models.BooleanField(
         db_column="invite_pending",
+        default=False,
         help_text="A boolean field flagging if the user's invite is pending.",
     )
     login_blocked_by_maintenance = models.BooleanField(
@@ -1232,10 +1252,6 @@ class User(models.Model):
         null=True,
         help_text="Datetime the last time the user logged in.",
     )
-    user_type = models.TextField(
-        db_column="user_type",
-        help_text="The type of user. This determines what parts of the cyhy dashboard can view and what data he is permitted to see.",
-    )
     region_id = models.CharField(
         db_column="region_id",
         blank=True,
@@ -1257,6 +1273,17 @@ class User(models.Model):
         max_length=255,
         help_text="The Okta id associated with the user.",
     )
+    user_type = models.CharField(
+        db_column="user_type",
+        max_length=50,
+        choices=UserType.choices,
+        default=UserType.STANDARD,
+    )
+
+    def save(self, *args, **kwargs):
+        """Save user with fullName."""
+        self.full_name = "{} {}".format(self.first_name, self.last_name)
+        super().save(*args, **kwargs)
 
     class Meta:
         """The Meta class for User."""
@@ -4044,6 +4071,63 @@ class DomainPermutations(models.Model):
         managed = manage_db
         db_table = "domain_permutations"
         unique_together = (("domain_permutation", "organization"),)
+
+class Domain(models.Model):
+    """The Domain view of subs/ips."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_column="created_at")
+    updated_at = models.DateTimeField(auto_now=True, db_column="updated_at")
+
+    synced_at = models.DateTimeField(db_column="synced_at", blank=True, null=True)
+    ip = models.CharField(max_length=255, blank=True, null=True)
+    from_root_domain = models.CharField(
+        max_length=255, db_column="from_root_domain", blank=True, null=True
+    )
+    subdomain_source = models.CharField(
+        db_column="subdomain_source", max_length=255, blank=True, null=True
+    )
+    ip_only = models.BooleanField(db_column="ip_only", default=False)
+
+    reverse_name = models.CharField(db_column="reverse_name", max_length=512)
+    name = models.CharField(max_length=512)
+
+    screenshot = models.CharField(max_length=512, blank=True, null=True)
+    country = models.CharField(max_length=255, blank=True, null=True)
+    asn = models.CharField(max_length=255, blank=True, null=True)
+    cloud_hosted = models.BooleanField(db_column="cloud_hosted", default=False)
+    from_cidr = models.BooleanField(db_column="from_cidr", default=False)
+    is_fceb = models.BooleanField(db_column="is_fceb", default=False)
+
+    ssl = models.JSONField(blank=True, null=True)
+    censys_certificates_results = models.JSONField(
+        db_column="censys_certificates_results", default=dict
+    )
+    trustymail_results = models.JSONField(db_column="trustymail_results", default=dict)
+
+    discovered_by = models.ForeignKey(
+        "Scan",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="discovered_by_id",
+    )
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.CASCADE, db_column="organization_id"
+    )
+
+    class Meta:
+        """The meta class for Domain."""
+
+        db_table = "vw_domain"
+        managed = False
+        unique_together = (("name", "organization"),)  # Unique constraint
+
+    def save(self, *args, **kwargs):
+        """Save domain ith reverseName."""
+        self.name = self.name.lower()
+        self.reverseName = ".".join(reversed(self.name.split(".")))
+        super().save(*args, **kwargs)
 
 
 class DotgovDomains(models.Model):
