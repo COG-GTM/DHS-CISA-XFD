@@ -140,6 +140,7 @@ provider:
           Resource: '*'
         - Effect: Allow
           Action:
+            - sqs:ListQueues
             - sqs:ReceiveMessage
             - sqs:DeleteMessage
             - sqs:SendMessage
