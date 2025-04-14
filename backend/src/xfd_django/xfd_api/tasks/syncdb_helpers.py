@@ -647,7 +647,7 @@ def create_vuln_normal_views(database):
                 t.vuln_name as title,
                 vs.cpe as product,
                 t.ip_string as domain_string,
-                t.ip_id as domain_id,
+                COALESCE(sub_link.sub_domain_id, t.ip_id) AS domain_id,
                 t.port_protocol as protocol,
                 t.vuln_port::text as port,
                 t.cvss_base_score,
@@ -687,6 +687,13 @@ def create_vuln_normal_views(database):
             ON vs.id = te.vuln_scan_id
             LEFT JOIN port_scan ps
             ON ps.id = te.port_scan_id
+            LEFT JOIN LATERAL (
+                SELECT sub_domain_id
+                FROM ips_subs ipsubs
+                WHERE ipsubs.ip_id = t.ip_id
+                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
+                LIMIT 1
+            ) AS sub_link ON TRUE
             WHERE te.event_timestamp = (
                 SELECT MAX(event_timestamp)
                 FROM ticket_event

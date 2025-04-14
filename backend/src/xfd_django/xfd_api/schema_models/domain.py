@@ -7,7 +7,7 @@ from typing import Any, List, Optional
 from uuid import UUID
 
 # Third-Party Libraries
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 
 class Domain(BaseModel):
@@ -130,12 +130,23 @@ class ServiceResponse(BaseModel):
 class VulnerabilityResponse(BaseModel):
     """Vulnerability response."""
 
-    id: UUID
+    id: str
+    scan_source: str
     title: str
     severity: Optional[str] = None
     state: str
     created_at: Optional[datetime] = None
     cve: Optional[str] = None
+
+    @model_validator(mode='after')
+    def validate_id_based_on_scan_source(self):
+        if self.scan_source != 'vuln_scanning_tickets':
+            try:
+                UUID(self.id)
+            except ValueError:
+                raise ValueError(f"`id` must be a valid UUID when scan_source is 'vuln_scanning_tickets', got: {self.id}")
+        return self
+    
 
     class Config:
         """Config."""
