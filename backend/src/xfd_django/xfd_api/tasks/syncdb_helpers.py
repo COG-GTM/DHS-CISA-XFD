@@ -15,7 +15,8 @@ from django.apps import apps
 from django.conf import settings
 from django.db import connections, transaction
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
-from django.db.utils import OperationalError
+from django.db.utils import OperationalError, ProgrammingError
+from psycopg2.errors import WrongObjectType
 from xfd_api.models import (
     Domain,
     Service,
@@ -465,10 +466,12 @@ def cleanup_stale_tables(models, database):
     print("Checking for stale tables...")
 
     with connections[database].cursor() as cursor:
-        model_tables = {model._meta.db_table for model in models}
+        model_tables = {model._meta.db_table for model in models if model._meta.managed}
+        # [m for m in apps.get_app_config(target_app_label).get_models() if m._meta.managed]
         m2m_tables = {
             field.m2m_db_table()
             for model in models
+            # if model._meta.managed
             for field in model._meta.local_many_to_many
         }
         expected_tables = model_tables.union(m2m_tables)
@@ -476,6 +479,25 @@ def cleanup_stale_tables(models, database):
         cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
         existing_tables = {row[0] for row in cursor.fetchall()}
 
+        # Get regular views
+        cursor.execute("""
+            SELECT table_name
+            FROM information_schema.views
+            WHERE table_schema = 'public';
+        """)
+        regular_views = {row[0] for row in cursor.fetchall()}
+
+        # Get materialized views
+        cursor.execute("""
+            SELECT matviewname
+            FROM pg_matviews
+            WHERE schemaname = 'public';
+        """)
+        materialized_views = {row[0] for row in cursor.fetchall()}
+
+        # Combine both
+        all_views = regular_views.union(materialized_views)
+        existing_tables = existing_tables - all_views
         stale_tables = existing_tables - expected_tables
         for table in stale_tables:
             print("Removing stale table: {}".format(table))
@@ -488,7 +510,10 @@ def cleanup_stale_tables(models, database):
                 )
             except OperationalError as e:
                 print("Error dropping stale table {}: {}".format(table, e))
-
+            except WrongObjectType as e:
+                print("Tried to drop a non table entity {}: {}".format(table, e))
+            except ProgrammingError as e:
+                print("Issue dropping entity {}: {}".format(table, e))
 
 def drop_all_tables(app_label=None):
     """Drop all tables in the database. Used with `dangerouslyforce`."""
@@ -583,7 +608,17 @@ def create_vuln_normal_views(database):
     """Create vuln normal views."""
     with connections[database].cursor() as cursor:
         print("Creating normal views...")
+        cursor.execute("""
+            DROP VIEW IF EXISTS vw_ticket_vulns CASCADE;
+        """)
 
+        cursor.execute("""
+            DROP VIEW IF EXISTS vw_shodan_vulns CASCADE;
+        """)
+
+        cursor.execute("""
+            DROP VIEW IF EXISTS vw_credential_breaches CASCADE;
+        """)
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_ticket_vulns AS
@@ -607,10 +642,10 @@ def create_vuln_normal_views(database):
                 te."action" as state,
                 t.vuln_source as data_source,
                 vs.description,
-                t.kev as is_kev,
-                t.service as service_string,
+                t.is_kev::bool as is_kev,
+                t.service_name as service_string,
                 null as service_id,
-                t.risky_service as is_risky_service,
+                t.is_risky::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
                 null as cwe,
                 vs.cpe as cpe,
@@ -638,10 +673,10 @@ def create_vuln_normal_views(database):
             CREATE OR REPLACE VIEW vw_shodan_vulns AS
             -- Query for ShodanVulns
             SELECT
-                'shodan_vulnerability' as scan_source,
                 sv.shodan_vuln_uid::text as vuln_id,
+                'shodan_vulnerability' as scan_source,
                 null::timestamp as created_at,
-                sv."timestamp"::timestamp as updated_at
+                sv."timestamp"::timestamp as updated_at,
                 sv."timestamp"::timestamp as last_seen,
                 sv.cve as cve,
                 sv.name as title,
@@ -656,10 +691,10 @@ def create_vuln_normal_views(database):
                 'open' as state,
                 'Shodan' as data_source,
                 null as description,
-                null as is_kev,
+                null::bool as is_kev,
                 null as service_string,
                 null as service_id,
-                null as is_risky_service,
+                null::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
                 null as cwe,
                 array_to_string(sv.cpe, ', ') as cpe,
@@ -677,9 +712,10 @@ def create_vuln_normal_views(database):
             """
             CREATE OR REPLACE VIEW vw_credential_breaches AS
             SELECT
-                scan_source,
                 vuln_id,
+                scan_source,
                 created_at,
+                updated_at,
                 last_seen,
                 cve,
                 title,
@@ -694,10 +730,10 @@ def create_vuln_normal_views(database):
                 state,
                 data_source,
                 description,
-                null as is_kev,
+                null::bool as is_kev,
                 null as service_string,
                 null as service_id,
-                null as is_risky_service,
+                null::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
                 null as cwe,
                 null as cpe,
@@ -709,8 +745,8 @@ def create_vuln_normal_views(database):
                 null as kev_results
             FROM (
                 SELECT
-                    'credential_breach' AS scan_source,
                     ce.credential_exposures_uid::text AS vuln_id,
+                    'credential_breach' AS scan_source,
                     cb.breach_date AS created_at,
                     cb.modified_date AS updated_at,
                     cb.modified_date AS last_seen,

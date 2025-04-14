@@ -419,11 +419,15 @@ class Organization(models.Model):
     name = models.CharField(max_length=255, help_text="Full name of the organization")
     root_domains = ArrayField(
         models.CharField(max_length=255),
+        null=True,
+        blank=True,
         db_column="root_domains",
         help_text="List of root domains attributed to the organization",
     )
     ip_blocks = ArrayField(
         models.CharField(max_length=255),
+        null=True,
+        blank=True,
         db_column="ip_blocks",
         help_text="IP blocks attributed to or provided by a stakeholder.",
     )
@@ -1390,6 +1394,15 @@ class TicketEvent(models.Model):
         "VulnScan",
         on_delete=models.CASCADE,
         db_column="vuln_scan_id",
+        null=True,
+        blank=True,
+        related_name="ticket_events",
+        help_text="A foreign key relationship to the Vuln scan related to the event.",
+    )
+    port_scan = models.ForeignKey(
+        "PortScan",
+        on_delete=models.CASCADE,
+        db_column="port_scan_id",
         null=True,
         blank=True,
         related_name="ticket_events",
@@ -2366,7 +2379,23 @@ class Ticket(models.Model):
     )
     # snapshots = models.ManyToManyField(Snapshot, related_name='tickets', blank=True)
     # ticket_events = models.ManyToManyField(TicketEvent, related_name='tickets', blank=True)
-
+    is_kev = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Boolean field that flags if this ticket is a KEV (Known Exploited Vulnerability) ticket",
+     )
+    is_risky = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Boolean field that flags if this ticket is a risky ticket",
+     )
+    service_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of the service associated with this ticket",
+     )
+    
     class Meta:
         """The Meta class for Ticket."""
 
@@ -2680,14 +2709,14 @@ class WasFindings(models.Model):
         null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
-    service = models.ForeignKey(
-        "Service",
-        on_delete=models.CASCADE,
-        db_column="service_id",
-        blank=True,
-        null=True,
-        help_text="FK: Foreign Key to the linked service",
-    )
+    # service = models.ForeignKey(
+    #     "Service",
+    #     on_delete=models.CASCADE,
+    #     db_column="service_id",
+    #     blank=True,
+    #     null=True,
+    #     help_text="FK: Foreign Key to the linked service",
+    # )
 
     class Meta:
         """Set WasFindings model metadata."""
@@ -5583,12 +5612,12 @@ class XpanseAlerts(models.Model):
         null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
-    service = models.ForeignKey(
-        "Service",
-        on_delete=models.CASCADE,
-        db_column="service_id",
-        help_text="FK: Foreign Key to the linked service",
-    )
+    # service = models.ForeignKey(
+    #     "Service",
+    #     on_delete=models.CASCADE,
+    #     db_column="service_id",
+    #     help_text="FK: Foreign Key to the linked service",
+    # )
     alert_action = models.TextField(
         blank=True,
         null=True,
@@ -5954,7 +5983,7 @@ class Vulnerability(models.Model):
     service_string = models.CharField(blank=True, null=True, max_length=255)
     service = models.ForeignKey(
         Service,
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="service_id",
         blank=True,
         null=True,
