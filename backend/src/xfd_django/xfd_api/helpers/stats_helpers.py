@@ -1,12 +1,11 @@
 """Stats helper methods."""
 # Standard Python Libraries
-import asyncio
 from collections import defaultdict
 import json
 
 # Third-Party Libraries
 from django.conf import settings
-from django.db.models import Count, Q
+from django.db.models import Count
 import redis
 from xfd_mini_dl.models import Domain
 
@@ -25,10 +24,7 @@ async def get_stats_count_from_cache(redis_client, redis_key_prefix, filtered_or
     redis_keys = [
         "{}:{}".format(redis_key_prefix, org_id) for org_id in filtered_org_ids
     ]
-    redis_responses = await asyncio.gather(
-        *(redis_client.get(redis_key) for redis_key in redis_keys),
-        return_exceptions=True,
-    )
+    redis_responses = await redis_client.mget(*redis_keys)
 
     for response in redis_responses:
         if isinstance(response, Exception):
@@ -118,10 +114,7 @@ async def get_total_count(filtered_org_ids):
     """Retrieve the total count of domains associated with the filtered organizations."""
     try:
         # Query the database for the total count of domains in the filtered organizations
-        total_count = (
-            Domain.objects.filter(organization__in=filtered_org_ids)
-            .count()
-        )
+        total_count = Domain.objects.filter(organization__in=filtered_org_ids).count()
         return total_count
 
     except Exception as e:

@@ -6,7 +6,7 @@ import os
 # Third-Party Libraries
 import django
 from django.conf import settings
-from django.db.models import CharField, Count, F, Q, Value
+from django.db.models import CharField, Count, F, Value
 from django.db.models.functions import Concat
 import redis
 
@@ -60,7 +60,7 @@ def populate_num_vulns_cache(event, context):
         redis_key_prefix="vulnerabilities_stats",
         annotate_field="severity",
         custom_id=Concat(
-            F("domain_id"),
+            F("domain__name"),
             Value("|"),
             F("severity"),
             output_field=CharField(),

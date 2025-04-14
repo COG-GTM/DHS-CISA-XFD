@@ -14,14 +14,14 @@ export interface Stats {
   domains: {
     services: Point[];
     ports: Point[];
-    numVulnerabilities: Point[];
+    num_vulnerabilities: Point[];
     total: number;
   };
   vulnerabilities: {
     severity: Point[];
-    byOrg: Point[];
-    latestVulnerabilities: Vulnerability[];
-    mostCommonVulnerabilities: VulnerabilityCount[];
+    by_org: Point[];
+    latest_vulnerabilities: Vulnerability[];
+    most_common_vulnerabilities: VulnerabilityCount[];
   };
 }
 

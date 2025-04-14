@@ -107,7 +107,7 @@ export const Domains: React.FC = () => {
     service: domain.services.map((service) =>
       service.products.map((p) => p.name).join(', ')
     ),
-    vulnerabilities: domain.vulnerabilities.map((vuln) => vuln.cve),
+    vulnerabilities: domain.vulnerabilities.map((vuln) => vuln.title),
     updated_at: `${differenceInCalendarDays(
       Date.now(),
       parseISO(domain.updated_at)

@@ -17,13 +17,9 @@ from django.db import connections, transaction
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.utils import OperationalError, ProgrammingError
 from psycopg2.errors import WrongObjectType
-from xfd_api.models import (
-    Domain,
-    Service,
-    Vulnerability,
-)
-from xfd_mini_dl.models import ApiKey, Organization, OrganizationTag, User, UserType
+from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.tasks.es_client import ESClient
+from xfd_mini_dl.models import ApiKey, Organization, OrganizationTag, User, UserType
 
 # Constants for sample data generation
 SAMPLE_TAG_NAME = "Sample Data"
@@ -304,7 +300,7 @@ def synchronize(target_app_label=None):
             create_vuln_materialized_views(database)
             create_domain_view(database)
             create_service_view(database)
-        
+
         cleanup_stale_tables(ordered_models, database)
 
     print("Database synchronization complete.")
@@ -318,7 +314,9 @@ def get_ordered_models(target_app_label):
     deterministically (alphabetically by model name).
     """
     # Get all models for the app and create a set for quick membership checks.
-    models = [m for m in apps.get_app_config(target_app_label).get_models() if m._meta.managed]
+    models = [
+        m for m in apps.get_app_config(target_app_label).get_models() if m._meta.managed
+    ]
     model_set = set(models)
 
     # Build dependency graph, but only include dependencies to models within the app.
@@ -480,19 +478,23 @@ def cleanup_stale_tables(models, database):
         existing_tables = {row[0] for row in cursor.fetchall()}
 
         # Get regular views
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT table_name
             FROM information_schema.views
             WHERE table_schema = 'public';
-        """)
+        """
+        )
         regular_views = {row[0] for row in cursor.fetchall()}
 
         # Get materialized views
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT matviewname
             FROM pg_matviews
             WHERE schemaname = 'public';
-        """)
+        """
+        )
         materialized_views = {row[0] for row in cursor.fetchall()}
 
         # Combine both
@@ -514,6 +516,7 @@ def cleanup_stale_tables(models, database):
                 print("Tried to drop a non table entity {}: {}".format(table, e))
             except ProgrammingError as e:
                 print("Issue dropping entity {}: {}".format(table, e))
+
 
 def drop_all_tables(app_label=None):
     """Drop all tables in the database. Used with `dangerouslyforce`."""
@@ -587,7 +590,12 @@ def sync_es_organizations():
                 # Fetch full organization data for the current chunk
                 organizations = list(
                     Organization.objects.filter(id__in=organization_chunk).values(
-                        "id", "name", "country", "state", "region_id", "organization_tags"
+                        "id",
+                        "name",
+                        "country",
+                        "state",
+                        "region_id",
+                        "organization_tags",
                     )
                 )
                 print("Syncing {} organizations...".format(len(organizations)))
@@ -608,24 +616,30 @@ def create_vuln_normal_views(database):
     """Create vuln normal views."""
     with connections[database].cursor() as cursor:
         print("Creating normal views...")
-        cursor.execute("""
+        cursor.execute(
+            """
             DROP VIEW IF EXISTS vw_ticket_vulns CASCADE;
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             DROP VIEW IF EXISTS vw_shodan_vulns CASCADE;
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             DROP VIEW IF EXISTS vw_credential_breaches CASCADE;
-        """)
+        """
+        )
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_ticket_vulns AS
             -- Query for VS Ticket Vulns
             SELECT
-                t.id as vuln_id,
                 'vuln_scanning_tickets' as scan_source,
+                t.id as vuln_id,
                 t.opened_timestamp::timestamp as created_at,
                 t.updated_timestamp::timestamp as updated_at,
                 coalesce(t.closed_timestamp::timestamp, t.updated_timestamp::timestamp) as last_seen,
@@ -637,14 +651,13 @@ def create_vuln_normal_views(database):
                 t.port_protocol as protocol,
                 t.vuln_port::text as port,
                 t.cvss_base_score,
-                t.cvss_severity::text as severity,
+                COALESCE(t.cvss_severity::text, 'N/A') as severity,
                 t.organization_id,
                 te."action" as state,
                 t.vuln_source as data_source,
                 vs.description,
                 t.is_kev::bool as is_kev,
                 t.service_name as service_string,
-                null as service_id,
                 t.is_risky::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
                 null as cwe,
@@ -668,32 +681,32 @@ def create_vuln_normal_views(database):
         """
         )
 
+        # TODO: Fix created_at with real value
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_shodan_vulns AS
             -- Query for ShodanVulns
             SELECT
-                sv.shodan_vuln_uid::text as vuln_id,
                 'shodan_vulnerability' as scan_source,
-                null::timestamp as created_at,
+                sv.shodan_vuln_uid::text as vuln_id,
+                sv."timestamp"::timestamp as created_at,
                 sv."timestamp"::timestamp as updated_at,
                 sv."timestamp"::timestamp as last_seen,
                 sv.cve as cve,
                 sv.name as title,
                 array_to_string(sv.cpe, ', ') as product,
                 sv.ip_string as domain,
-                sv.ip_uid as domain_id,
+                COALESCE(sub_link.sub_domain_id, sv.ip_uid) AS domain_id,
                 sv.protocol as protocol,
                 sv.port as port,
                 sv.cvss as cvss_base_score,
-                sv.severity as severity,
+                COALESCE(sv.severity, 'N/A') as severity,
                 sv.organization_uid as organization_id,
                 'open' as state,
                 'Shodan' as data_source,
-                null as description,
+                COALESCE(sv.summary, sv.mitigation, 'N/A') as description,
                 null::bool as is_kev,
                 null as service_string,
-                null as service_id,
                 null::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
                 null as cwe,
@@ -705,6 +718,13 @@ def create_vuln_normal_views(database):
                 null as structured_data,
                 null as kev_results
             FROM shodan_vulns as sv
+            LEFT JOIN LATERAL (
+                SELECT sub_domain_id
+                FROM ips_subs ipsubs
+                WHERE ipsubs.ip_id = sv.ip_uid
+                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
+                LIMIT 1
+            ) AS sub_link ON TRUE
         """
         )
 
@@ -732,7 +752,6 @@ def create_vuln_normal_views(database):
                 description,
                 null::bool as is_kev,
                 null as service_string,
-                null as service_id,
                 null::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
                 null as cwe,
@@ -758,7 +777,7 @@ def create_vuln_normal_views(database):
                     'SMTP,IMAP,POP3' AS protocol,
                     NULL AS port,
                     NULL::float AS cvss_base_score,
-                    'Medium' AS severity,
+                    'N/A' AS severity,
                     ce.organization_id,
                     'open' AS state,
                     ds.name AS data_source,
@@ -821,7 +840,7 @@ def create_domain_view(database):
                 sub.created_at,
                 sub.updated_at,
                 sub.synced_at,
-                CAST(ip.ip AS TEXT) AS ip,
+                COALESCE(string_agg(DISTINCT host(ip.ip), ', '), NULL) AS ip,
                 sub.from_root_domain,
                 sub.subdomain_source,
                 sub.ip_only,
@@ -836,7 +855,8 @@ def create_domain_view(database):
                 sub.censys_certificates_results,
                 sub.trustymail_results,
                 NULL AS discovered_by_id,
-                sub.organization_uid AS organization_id
+                sub.organization_uid AS organization_id,
+                'subdomain' as source
 
             FROM
                 sub_domains sub
@@ -844,6 +864,14 @@ def create_domain_view(database):
                 ips_subs link ON sub.sub_domain_uid = link.sub_domain_id
             LEFT JOIN
                 ip ON ip.id = link.ip_id
+            GROUP BY
+                sub.sub_domain_uid, sub.created_at, sub.updated_at, sub.synced_at,
+                sub.from_root_domain, sub.subdomain_source, sub.ip_only,
+                sub.reverse_name, sub.sub_domain, sub.screenshot, sub.country,
+                sub.asn, sub.cloud_hosted, sub.ssl,
+                sub.censys_certificates_results, sub.trustymail_results,
+                sub.organization_uid, ip.from_cidr
+
 
             UNION ALL
 
@@ -852,8 +880,8 @@ def create_domain_view(database):
                 ip.id,
                 ip.created_timestamp AS created_at,
                 ip.updated_timestamp AS updated_at,
-                NULL AS synced_at,
-                regexp_replace(ip::text, '/32$', '') AS ip,
+                ip.synced_at AS synced_at,
+                host(ip.ip) AS ip,
                 NULL AS from_root_domain,
                 NULL AS subdomain_source,
                 TRUE AS ip_only,
@@ -868,7 +896,8 @@ def create_domain_view(database):
                 NULL AS censys_certificates_results,
                 NULL AS trustymail_results,
                 NULL AS discovered_by_id,
-                ip.organization_id
+                ip.organization_id,
+                'ip' as source
 
             FROM
                 ip
@@ -878,34 +907,57 @@ def create_domain_view(database):
         )
         print("Domain view created.")
 
+
 def create_service_view(database):
     """Create or replace the unified 'service' view (starting with Shodan data)."""
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE OR REPLACE VIEW vw_service AS
             SELECT
                 s.shodan_asset_uid AS id,
                 s.timestamp AS "created_at",
                 s.timestamp AS "updated_at",
+                'shodan' AS "service_source",
                 s.port,
                 COALESCE(s.product, s.server) AS service,
                 s.server AS banner,
-                jsonb_build_array(s.product) AS products,
-                NULL::jsonb AS "censysMetadata",
-                NULL::jsonb AS "censysIpv4Results",
-                NULL::jsonb AS "intrigueIdentResults",
-                NULL::jsonb AS "shodanResults",
-                NULL::jsonb AS "wappalyzerResults",
+                jsonb_build_array(
+                jsonb_build_object(
+                        'name', COALESCE(s.product, s.server),
+                        'cpe', NULL,
+                        'tags', COALESCE(s.tags, '[]'::jsonb),
+                        'vendor',
+                            CASE
+                                WHEN s.product ILIKE 'apache%' THEN 'apache'
+                                WHEN s.product ILIKE 'microsoft%' THEN 'microsoft'
+                                WHEN s.product ILIKE 'nginx%' THEN 'nginx'
+                                WHEN s.product ILIKE 'jquery%' THEN 'jquery'
+                                ELSE split_part(lower(s.product), ' ', 1)
+                            END
+                    )
+                ) AS products,
+                NULL::jsonb AS "censys_metadata",
+                NULL::jsonb AS "censys_ipv4_results",
+                NULL::jsonb AS "intrigue_ident_results",
+                NULL::jsonb AS "shodan_results",
+                NULL::jsonb AS "wappalyzer_results",
                 s.timestamp AS "last_seen",
                 s.ip_string AS "ip_string",
-                d.id AS domain_id,
+                COALESCE(sub_link.sub_domain_id,s.ip_uid) AS domain_id,
                 NULL::uuid AS discovered_by_id
             FROM shodan_assets s
-            LEFT JOIN vw_domain d
-              ON s.ip_string = d.ip AND s.organization_uid = d."organization_id"
-            WHERE s.port IS NOT NULL;
-        """)
+            LEFT JOIN LATERAL (
+                SELECT sub_domain_id
+                FROM ips_subs ipsubs
+                WHERE ipsubs.ip_id = s.ip_uid
+                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
+                LIMIT 1
+            ) AS sub_link ON TRUE
+            WHERE s.port IS NOT NULL AND
+            (s.product IS NOT NULL OR s.server IS NOT NULL);
+        """
+        )
         print("View 'vw_service' created.")
-        

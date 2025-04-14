@@ -923,9 +923,8 @@ class Scan(models.Model):
         max_length=255, help_text="The name of the cyhy dashboard scan."
     )
     arguments = models.TextField(
-        default="{}",
-        help_text="A dictionary of arguments to pass to the scan."
-    ) # JSON in the database but fails: the JSON object must be str, bytes or bytearray, not dict
+        default="{}", help_text="A dictionary of arguments to pass to the scan."
+    )  # JSON in the database but fails: the JSON object must be str, bytes or bytearray, not dict
     frequency = models.IntegerField(
         help_text="How often the scan should run in seconds."
     )
@@ -1134,6 +1133,7 @@ class Service(models.Model):
         db_column="domain_id",
         blank=True,
         null=True,
+        related_name="services",
         help_text="Foreign key relationship to the domain the service is running on.",
     )
     discovered_by = models.ForeignKey(
@@ -1300,6 +1300,7 @@ class User(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "user"
+
 
 class Webpage(models.Model):
     """The Webpage model."""
@@ -2161,6 +2162,7 @@ class Ip(models.Model):
     conflict_alerts = models.JSONField(
         blank=True, null=True, default=list, help_text="List of cidr conflict alerts."
     )
+    synced_at = models.DateTimeField(db_column="synced_at", blank=True, null=True)
 
     def save(self, *args, **kwargs):
         """Save ip_version based on the saved ip."""
@@ -2268,6 +2270,18 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         help_text="CVSS version used for the CVSS base score",
+    )
+    kev = models.BooleanField(
+        db_column="kev",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
+    )
+    risky_service = models.BooleanField(
+        db_column="risky_service",
+        blank=True,
+        null=True,
+        help_text="Boolean risky_service",
     )
     # kev = models.ForeignKey(Kev, related_name='tickets', null=True, blank=True, on_delete=models.CASCADE)
     vuln_name = models.CharField(
@@ -2383,19 +2397,19 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         help_text="Boolean field that flags if this ticket is a KEV (Known Exploited Vulnerability) ticket",
-     )
+    )
     is_risky = models.BooleanField(
         null=True,
         blank=True,
         help_text="Boolean field that flags if this ticket is a risky ticket",
-     )
+    )
     service_name = models.CharField(
         max_length=255,
         null=True,
         blank=True,
         help_text="Name of the service associated with this ticket",
-     )
-    
+    )
+
     class Meta:
         """The Meta class for Ticket."""
 
@@ -4032,6 +4046,7 @@ class Domain(models.Model):
     organization = models.ForeignKey(
         "Organization", on_delete=models.CASCADE, db_column="organization_id"
     )
+    source = models.CharField(max_length=20)
 
     class Meta:
         """The meta class for Domain."""
@@ -5922,9 +5937,12 @@ class Log(models.Model):
 
 class Vulnerability(models.Model):
     """Define VwCombinedVulns model."""
-    
+
     id = models.TextField(
-        primary_key=True, unique=True, help_text="Id of the vulnerability", db_column='vuln_id'
+        primary_key=True,
+        unique=True,
+        help_text="Id of the vulnerability",
+        db_column="vuln_id",
     )
     scan_source = models.TextField(
         blank=True, null=True, help_text="Scan that identified the data."
@@ -5940,7 +5958,7 @@ class Vulnerability(models.Model):
     )
     cve = models.CharField(blank=True, null=True, max_length=255)
     title = models.TextField(blank=True, null=True)
-    product	= models.CharField(blank=True, null=True, max_length=255)
+    product = models.CharField(blank=True, null=True, max_length=255)
     domain_string = models.TextField(blank=True, null=True)
     domain = models.ForeignKey(
         Domain,
@@ -5958,7 +5976,7 @@ class Vulnerability(models.Model):
         decimal_places=5,
         blank=True,
         null=True,
-        db_column='cvss_base_score',
+        db_column="cvss_base_score",
         help_text="CVSS (Common Vulnerability Scoring System) is the score reperesenting the severity of the vulnerability from 0 (None) to 10 (Critical)",
     )
     severity = models.CharField(blank=True, null=True, max_length=255)
@@ -5972,7 +5990,9 @@ class Vulnerability(models.Model):
         help_text="Foreign key to the organization that owns the vulnerable asset.",
     )
     state = models.CharField(blank=True, null=True, max_length=255)
-    source = models.CharField(blank=True, null=True, max_length=255, db_column='data_source')
+    source = models.CharField(
+        blank=True, null=True, max_length=255, db_column="data_source"
+    )
     description = models.TextField(blank=True, null=True)
     is_kev = models.BooleanField(
         db_column="is_kev",
@@ -5981,15 +6001,15 @@ class Vulnerability(models.Model):
         help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
     )
     service_string = models.CharField(blank=True, null=True, max_length=255)
-    service = models.ForeignKey(
-        Service,
-        models.CASCADE,
-        db_column="service_id",
-        blank=True,
-        null=True,
-        help_text="Foreign key relationship to the service the vulnerability was found on.",
-        related_name="vulnerabilities",
-    )
+    # service = models.ForeignKey(
+    #     Service,
+    #     models.DO_NOTHING,
+    #     db_column="service_id",
+    #     blank=True,
+    #     null=True,
+    #     help_text="Foreign key relationship to the service the vulnerability was found on.",
+    #     related_name="vulnerabilities",
+    # )
     is_risky_service = models.BooleanField(
         blank=True,
         null=True,
@@ -6005,12 +6025,12 @@ class Vulnerability(models.Model):
     references = models.JSONField(
         blank=True,
         null=True,
-        help_text="Additional links to references and sources associates with the vulnerability."
+        help_text="Additional links to references and sources associates with the vulnerability.",
     )
     substate = models.TextField(
         blank=True,
         null=True,
-        help_text="Substate of the vulnerability ('unconfirmed', 'exploitable', 'false-positive', 'accepted-risk', 'remediated')"
+        help_text="Substate of the vulnerability ('unconfirmed', 'exploitable', 'false-positive', 'accepted-risk', 'remediated')",
     )
     needs_population = models.BooleanField(
         blank=True,
@@ -6021,7 +6041,7 @@ class Vulnerability(models.Model):
     actions = models.JSONField(
         blank=True,
         null=True,
-        help_text="A list of state changes of the vulnerability, tracking its status from intially created to closed."
+        help_text="A list of state changes of the vulnerability, tracking its status from intially created to closed.",
     )
     structured_data = models.JSONField(
         blank=True,
@@ -6035,12 +6055,14 @@ class Vulnerability(models.Model):
         null=True,
         help_text="The CISA provided KEV information assocaited with KEV vulnerabilities.",
     )
+
     class Meta:
         """Set Vulnerability model metadata."""
 
         app_label = app_label_name
         managed = False
         db_table = "mat_vw_combined_vulns"
+
 
 # # This should be a view not a table
 # class VwPshttDomainsToRun(models.Model):

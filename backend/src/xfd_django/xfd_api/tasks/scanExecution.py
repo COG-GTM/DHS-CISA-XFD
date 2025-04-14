@@ -16,8 +16,8 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
-from xfd_mini_dl.models import Scan, ScanTask
 from xfd_api.tasks.ecs_client import ECSClient
+from xfd_mini_dl.models import Scan, ScanTask
 
 QUEUE_URL = os.getenv("QUEUE_URL")
 

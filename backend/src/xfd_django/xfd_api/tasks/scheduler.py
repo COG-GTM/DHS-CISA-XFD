@@ -15,11 +15,11 @@ django.setup()
 
 # Third-Party Libraries
 from xfd_api.helpers.getScanOrganizations import get_scan_organizations
+from xfd_api.schema_models.scan import SCAN_SCHEMA
+from xfd_api.tasks.scanExecution import handler as scan_execution_handler
 
 # Import Django models and helper functions
 from xfd_mini_dl.models import Organization, Scan, ScanTask
-from xfd_api.schema_models.scan import SCAN_SCHEMA
-from xfd_api.tasks.scanExecution import handler as scan_execution_handler
 
 
 class Scheduler:
@@ -37,7 +37,6 @@ class Scheduler:
 
     def launch_scan_execution(self, scan):
         """Prepare and send scan execution request."""
-
         # If global scan, ignore queue and start 1 concurrent task
         scan_schema = SCAN_SCHEMA.get(scan.name, {})
         global_scan = getattr(scan_schema, "global_scan", False)

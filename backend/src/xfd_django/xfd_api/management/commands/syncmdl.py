@@ -14,6 +14,7 @@ from xfd_api.tasks.syncdb_helpers import (
     synchronize,
 )
 
+
 class Command(BaseCommand):
     """Syncmdl command."""
 

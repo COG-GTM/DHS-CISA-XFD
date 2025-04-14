@@ -134,7 +134,7 @@ const Risk: React.FC<ContextType> = ({
           }
         });
         const max = Math.max(
-          ...result.vulnerabilities.byOrg.map((p) => p.value)
+          ...result.vulnerabilities.by_org.map((p) => p.value)
         );
         colorScale = scaleLinear<string>()
           .domain([0, Math.log(max)])
@@ -269,7 +269,7 @@ const Risk: React.FC<ContextType> = ({
     [key: string]: VulnerabilityCount;
   } = {};
   if (stats) {
-    for (const vuln of stats.vulnerabilities.latestVulnerabilities) {
+    for (const vuln of stats.vulnerabilities.latest_vulnerabilities) {
       if (vuln.title in latestVulnsGrouped)
         latestVulnsGrouped[vuln.title].count++;
       else {
@@ -285,7 +285,7 @@ const Risk: React.FC<ContextType> = ({
 
   if (stats) {
     for (const sev of severities) {
-      sev.disable = !stats.domains.numVulnerabilities.some((i) =>
+      sev.disable = !stats.domains.num_vulnerabilities.some((i) =>
         sev.sevList.includes(i.id.split('|')[1])
       );
     }
@@ -369,15 +369,15 @@ const Risk: React.FC<ContextType> = ({
                   <div className={content}>
                     <div className={panel}>
                       <Paper elevation={0} className={cardRoot}>
-                        {stats.domains.numVulnerabilities.length > 0 && (
+                        {stats.domains.num_vulnerabilities.length > 0 && (
                           <TopVulnerableDomains
-                            data={stats.domains.numVulnerabilities}
+                            data={stats.domains.num_vulnerabilities}
                           />
                         )}
                       </Paper>
                       <VulnerabilityCard
                         title={'Most Common Vulnerabilities'}
-                        data={stats.vulnerabilities.mostCommonVulnerabilities}
+                        data={stats.vulnerabilities.most_common_vulnerabilities}
                         showLatest={false}
                         showCommon={true}
                       ></VulnerabilityCard>
@@ -390,7 +390,7 @@ const Risk: React.FC<ContextType> = ({
                                 title={'State Vulnerabilities'}
                                 geoUrl={geoStateUrl}
                                 findFn={(geo) =>
-                                  stats?.vulnerabilities.byOrg.find(
+                                  stats?.vulnerabilities.by_org.find(
                                     (p) => p.label === geo.properties.name
                                   )
                                 }
@@ -400,7 +400,7 @@ const Risk: React.FC<ContextType> = ({
                                 title={'County Vulnerabilities'}
                                 geoUrl={geoStateUrl}
                                 findFn={(geo) =>
-                                  stats?.vulnerabilities.byOrg.find(
+                                  stats?.vulnerabilities.by_org.find(
                                     (p) =>
                                       p.label ===
                                       geo.properties.name + ' Counties'

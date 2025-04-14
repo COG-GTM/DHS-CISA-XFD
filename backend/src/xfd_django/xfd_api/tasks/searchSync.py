@@ -6,7 +6,7 @@ import os
 # Third-Party Libraries
 from django.db.models import F, Q
 from django.utils.timezone import now
-from xfd_mini_dl.models import Domain
+from xfd_mini_dl.models import Domain, Ip, SubDomains
 
 from .es_client import ESClient
 
@@ -75,8 +75,6 @@ def handler(command_options):
                         "country": domain.country,
                         "asn": domain.asn,
                         "cloud_hosted": domain.cloud_hosted,
-                        "from_cidr": domain.from_cidr,
-                        "is_fceb": domain.is_fceb,
                         "synced_at": domain.synced_at.isoformat()
                         if domain.synced_at
                         else None,
@@ -127,7 +125,7 @@ def handler(command_options):
                                 "id": str(service.id),
                                 "port": service.port,
                                 "service": service.service,
-                                "last_seen": service.lastSeen.isoformat()
+                                "last_seen": service.last_seen.isoformat()
                                 if service.last_seen
                                 else None,
                                 "products": service.products,
@@ -146,7 +144,7 @@ def handler(command_options):
                                 "substate": vulnerability.substate,
                                 "description": vulnerability.description,
                                 "last_seen": vulnerability.last_seen.isoformat()
-                                if vulnerability.lastSeen
+                                if vulnerability.last_seen
                                 else None,
                                 "references": vulnerability.references,
                             }
@@ -161,8 +159,15 @@ def handler(command_options):
             continue
 
         # Mark domains as synced
-        Domain.objects.filter(id__in=[domain.id for domain in domains]).update(
-            synced_at=now()
-        )
+        subdomain_ids = [d.id for d in domains if d.source == "subdomain"]
+        ip_ids = [d.id for d in domains if d.source == "ip"]
+
+        if subdomain_ids:
+            SubDomains.objects.filter(sub_domain_uid__in=subdomain_ids).update(
+                synced_at=now()
+            )
+
+        if ip_ids:
+            Ip.objects.filter(id__in=ip_ids).update(synced_at=now())
 
     print("Domain sync complete.")

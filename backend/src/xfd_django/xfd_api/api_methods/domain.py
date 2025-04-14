@@ -80,14 +80,6 @@ def get_domain_by_id(domain_id: str):
                 }
                 for service in domain.services.all()
             ],
-            "webpages": [
-                {
-                    "url": webpage.url,
-                    "status": webpage.status,
-                    "response_size": webpage.response_size,
-                }
-                for webpage in domain.webpages.all()
-            ],
         }
         return domain_data
 

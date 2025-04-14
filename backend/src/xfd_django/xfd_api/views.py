@@ -1324,7 +1324,7 @@ async def call_search_vulnerabilities(
     """Search vulnerabilities."""
     vulnerabilities, count = search_vulnerabilities(vulnerability_search, current_user)
 
-    if vulnerability_search.groupBy:
+    if vulnerability_search.group_by:
         # Handle grouped results appropriately
         return VulnerabilitySearchResponse(result=vulnerabilities, count=count)
 

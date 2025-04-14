@@ -76,11 +76,11 @@ interface LocationState {
   title: string;
 }
 
-export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
-  groupBy = undefined
+export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
+  group_by = undefined
 }: {
   children?: React.ReactNode;
-  groupBy?: string;
+  group_by?: string;
 }) => {
   const { currentOrganization, apiPost, user } = useAuthContext();
   // To-do: Re-enable this as part of Status dropdown once the feature is approved.
@@ -120,14 +120,14 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       page,
       pageSize = PAGE_SIZE,
       doExport = false,
-      groupBy = undefined,
+      group_by = undefined,
       showAll = false
     }: {
       filters: GridFilterItem[];
       page: number;
       pageSize?: number;
       doExport?: boolean;
-      groupBy?: string;
+      group_by?: string;
       showAll?: boolean;
     }): Promise<ApiResponse | undefined> => {
       try {
@@ -179,7 +179,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
               page,
               filters: tableFilters,
               pageSize,
-              groupBy,
+              group_by,
               showAll
             }
           }
@@ -200,7 +200,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
           filters: query.filters,
           page: query.page,
           pageSize: query.pageSize ?? PAGE_SIZE,
-          groupBy,
+          group_by,
           showAll: query.showAll
         });
         if (!resp) return;
@@ -235,7 +235,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         setIsLoading(false);
       }
     },
-    [vulnerabilitiesSearch, groupBy]
+    [vulnerabilitiesSearch, group_by]
   );
 
   const history = useHistory();

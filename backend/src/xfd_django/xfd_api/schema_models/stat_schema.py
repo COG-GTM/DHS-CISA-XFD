@@ -86,7 +86,7 @@ class ByOrgStat(BaseModel):
     """By org stat."""
 
     id: str
-    orgId: str
+    org_id: str
     value: int
     label: str
 
