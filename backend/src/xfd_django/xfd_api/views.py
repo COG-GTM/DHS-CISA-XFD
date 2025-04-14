@@ -556,8 +556,8 @@ async def delete_organization(
         "userPerformedAssignment": serialize_user(current_user),
         "organization": serialize_organization(get_organization_sync(organization_id)),
         "role": user_data.role,
-        "user": serialize_user(get_user_sync(user_data.userId))
-        if user_data.userId
+        "user": serialize_user(get_user_sync(user_data.user_id))
+        if user_data.user_id
         else None,
     },
 )
@@ -1161,24 +1161,24 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 
 @api_router.delete(
-    "/users/{userId}",
+    "/users/{user_id}",
     response_model=OrganizationSchema.DeleteUserResponseModel,
     dependencies=[Depends(get_current_active_user)],
     tags=["Users"],
 )
 @log_action(
     action="USER DENY/REMOVE",
-    message_or_cb=lambda current_user, response, userId, **kwargs: {
+    message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "userPerformedRemoval": serialize_user(current_user) if current_user else None,
         "removalResult": response,
     },
 )
 async def call_delete_user(
-    userId: str, current_user: User = Depends(get_current_active_user)
+    user_id: str, current_user: User = Depends(get_current_active_user)
 ):
     """Delete user."""
-    return delete_user(userId, current_user)
+    return delete_user(user_id, current_user)
 
 
 @api_router.get(

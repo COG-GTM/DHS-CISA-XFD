@@ -174,7 +174,7 @@ class NewOrganization(BaseModel):
 class NewOrgUser(BaseModel):
     """Add a user to organization schema."""
 
-    userId: str
+    user_id: str
     role: str
 
 

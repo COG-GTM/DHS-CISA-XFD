@@ -748,7 +748,7 @@ def add_user_to_org_v2(organization_id: str, user_data, current_user):
             raise HTTPException(status_code=404, detail="Organization not found.")
 
         # Validate the user ID in the body
-        user_id = user_data.userId
+        user_id = user_data.user_id
         if not is_valid_uuid(user_id):
             raise HTTPException(status_code=404, detail="Invalid user ID.")
 
