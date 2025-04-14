@@ -49,15 +49,15 @@ async def sync_post(sync_body, request: Request):
                     org_dict=item,
                     network_list=item["cidrs"],
                     location=item["location"],
-                    db_name="mini_data_lake",
+                    db_name="mini_data_lake_secondary",
                 )
 
                 if org:
                     link_parent_organization(
-                        org, item.get("parent"), db_name="mini_data_lake"
+                        org, item.get("parent"), db_name="mini_data_lake_secondary"
                     )
                     link_sectors_to_organization(
-                        org, item.get("sectors", []), db_name="mini_data_lake"
+                        org, item.get("sectors", []), db_name="mini_data_lake_secondary"
                     )
 
             except Exception:
