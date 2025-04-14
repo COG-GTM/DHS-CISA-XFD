@@ -83,6 +83,11 @@ resource "aws_ecs_task_definition" "playwright_worker" {
         "name": "TEST_URL",
         "value": "${var.frontend_domain}"
       }
+    ],
+    "command": [
+      "sh",
+      "-c",
+      "echo 'Installing Playwright...'; npx playwright install --with-deps; echo 'Cloning Playwright tests from GitHub...'; git clone https://github.com/cisagov/xfd.git /app/xfd; "
     ]
   }
 ]

@@ -40,6 +40,7 @@ export const OrganizationList: React.FC<{
       headerName: 'View/Edit',
       minWidth: 100,
       flex: 1,
+      disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `View or edit organization ${cellValues.row.name}`;
         const descriptionId = `description-${cellValues.row.id}`;
@@ -119,7 +120,7 @@ export const OrganizationList: React.FC<{
           columns={orgCols}
           slots={{ toolbar: CustomToolbar }}
           slotProps={{
-            toolbar: { children: addOrgButton }
+            toolbar: { children: addOrgButton, exportTitle: 'Organizations' }
           }}
           initialState={{
             pagination: { paginationModel: { pageSize: 15 } }

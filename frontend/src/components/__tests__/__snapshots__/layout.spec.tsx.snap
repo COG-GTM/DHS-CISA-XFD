@@ -297,7 +297,7 @@ exports[`Layout component matches snapshot 1`] = `
                     class="MuiStack-root css-niqf4j-MuiStack-root"
                   >
                     <a
-                      aria-label="CyHy Dashboard version 0.3.16"
+                      aria-label="CyHy Dashboard Icon Navigate Home"
                       class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-smdm7r-MuiTypography-root-MuiLink-root"
                       href="/"
                     >
@@ -306,12 +306,6 @@ exports[`Layout component matches snapshot 1`] = `
                         src="cyhydashboard.svg"
                       />
                     </a>
-                    <span
-                      class="MuiTypography-root MuiTypography-caption css-190nz9y-MuiTypography-root"
-                      tabindex="0"
-                    >
-                      v. 0.3.16
-                    </span>
                   </div>
                 </div>
                 <div
@@ -344,7 +338,7 @@ exports[`Layout component matches snapshot 1`] = `
                   <p>
                     <a
                       class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-smdm7r-MuiTypography-root-MuiLink-root"
-                      href="mailto:vulnerability@cisa.dhs.gov"
+                      href="mailto:vulnerability@mail.cisa.dhs.gov"
                     >
                       Contact Us
                     </a>

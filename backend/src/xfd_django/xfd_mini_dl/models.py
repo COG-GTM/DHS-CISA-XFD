@@ -4524,7 +4524,7 @@ class ShodanAssets(models.Model):
     organization_name = models.TextField(
         blank=True, null=True, help_text="Organization name"
     )  # New field to store the name or acronym
-    ip = models.TextField(blank=True, null=True, help_text="IP address")
+    ip_string = models.TextField(blank=True, null=True, help_text="IP address")
     port = models.IntegerField(blank=True, null=True, help_text="Port number")
     protocol = models.TextField(
         blank=True, null=True, help_text="Protocol running on the port"
@@ -4567,6 +4567,14 @@ class ShodanAssets(models.Model):
     location = models.TextField(
         blank=True, null=True, help_text="Location where the IP hosted."
     )
+    ip = models.ForeignKey(
+        Ip,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text="FK: Reference to resolved IP object",
+        db_column="ip_uid",
+    )
 
     class Meta:
         """Set ShodanAssets model metadata."""
@@ -4574,7 +4582,7 @@ class ShodanAssets(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "shodan_assets"
-        unique_together = (("organization", "ip", "port", "protocol", "timestamp"),)
+        unique_together = (("organization", "ip", "port", "protocol"),)
 
 
 # class ShodanInsecureProtocolsUnverifiedVulns(models.Model):
@@ -4633,7 +4641,7 @@ class ShodanVulns(models.Model):
     organization_name = models.TextField(
         blank=True, null=True, help_text="Organization name"
     )
-    ip = models.TextField(blank=True, null=True, help_text="IP address")
+    ip_string = models.TextField(blank=True, null=True, help_text="IP address")
     port = models.TextField(blank=True, null=True, help_text="Port number")
     protocol = models.TextField(blank=True, null=True, help_text="Protocol")
     timestamp = models.DateTimeField(
@@ -4756,21 +4764,13 @@ class ShodanVulns(models.Model):
         null=True,
         help_text="Common Platform Enumeration (CPE) id for the product the vulnerability was found on.",
     )
-    sub_domain = models.ForeignKey(
-        "SubDomains",
-        on_delete=models.CASCADE,
-        db_column="sub_domain_id",
+    ip = models.ForeignKey(
+        Ip,
+        on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        help_text="FK: Foreign Key to the linked subdomain",
-    )
-    service = models.ForeignKey(
-        "Service",
-        on_delete=models.CASCADE,
-        db_column="service_id",
-        blank=True,
-        null=True,
-        help_text="FK: Foreign Key to the linked service",
+        help_text="FK: Reference to resolved IP object",
+        db_column="ip_uid",
     )
 
     class Meta:
@@ -4779,7 +4779,7 @@ class ShodanVulns(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "shodan_vulns"
-        unique_together = (("organization", "ip", "port", "protocol", "timestamp"),)
+        unique_together = (("organization", "ip", "port", "protocol"),)
 
 
 class SubDomains(models.Model):

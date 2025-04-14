@@ -60,13 +60,13 @@ def start_desired_tasks(
     scan_type, desired_count, scan_id, organizations, is_pe=False, shodan_api_keys=[]
 ):
     """Start the desired number of tasks on AWS ECS or local Docker based on configuration."""
-    # Step 1: Get all Scan instances with this name
+    # Step 1: Get the scan instance
     scans_with_name = Scan.objects.filter(name=scan_type)
 
     # Step 2: Determine the max concurrentTasks among them
     max_concurrent = max((scan.concurrentTasks for scan in scans_with_name), default=1)
 
-    # Step 3: Get all currently running concurrencyIndexes
+    # Step 3: Get all currently running concurrencyIndexes across all scans of this type
     existing_indexes = list(
         ScanTask.objects.filter(
             scan__name=scan_type,
@@ -74,16 +74,40 @@ def start_desired_tasks(
         ).values_list("concurrencyIndex", flat=True)
     )
 
-    # Calculate available indexes to use for new tasks
     available_indexes = sorted(
         set(range(1, max_concurrent + 1)) - set(existing_indexes)
     )
-    remaining_count = len(available_indexes)
+
+    # Step 4: Check how many tasks are already running for this specific scan
+    this_scan_running = ScanTask.objects.filter(
+        scan_id=scan_id,
+        status__in=["created", "queued", "requested", "started"],
+    ).count()
+
+    # Step 5: Determine how many *this* scan is allowed to start
+    remaining_for_this_scan = desired_count - this_scan_running
+    if scan_type == "shodan" and len(shodan_api_keys) < remaining_for_this_scan:
+        print(
+            "Not enough Shodan API keys. Needed: {}, Provided: {}".format(
+                remaining_for_this_scan, len(shodan_api_keys)
+            )
+        )
+        return
+    if remaining_for_this_scan <= 0:
+        print(
+            "Scan {} already has {} tasks running (desired: {}). Not launching more.".format(
+                scan_id, this_scan_running, desired_count
+            )
+        )
+        return
+
+    # Step 6: Global cap applies too
+    remaining_count = min(len(available_indexes), remaining_for_this_scan)
 
     if remaining_count == 0:
         print(
-            "Max concurrency already reached for scan '{}': {}".format(
-                scan_type, max_concurrent
+            "No available concurrency slots for scan '{}'. Max: {}, Running: {}".format(
+                scan_type, max_concurrent, len(existing_indexes)
             )
         )
         return
@@ -94,7 +118,12 @@ def start_desired_tasks(
 
     while remaining_count > 0:
         current_batch_count = min(remaining_count, batch_size)
-        shodan_api_key = shodan_api_keys[remaining_count - 1] if shodan_api_keys else ""
+        shodan_api_key = (
+            shodan_api_keys[available_indexes[0] - 1]
+            if available_indexes and len(shodan_api_keys) >= available_indexes[0]
+            else ""
+        )
+
         if is_pe:
             if os.getenv("IS_LOCAL"):
                 # Use local Docker environment (old method)
@@ -151,6 +180,8 @@ def start_desired_tasks(
                 "SERVICE_TYPE": scan_type,
                 "count": current_batch_count,
             }
+            if scan_type == "shodan":
+                command_options["SHODAN_API_KEY"] = shodan_api_key
 
             result = ecs.run_command(command_options)
 
@@ -160,10 +191,11 @@ def start_desired_tasks(
                     "Failed to start ECS task for scan {}".format(scan_type)
                 )
 
-            # After launching ECS tasks, assign concurrency indexes correctly
-            for i, task in enumerate(result["tasks"]):
+            for task in result["tasks"]:
                 task_arn = task["taskArn"]
-                index_to_use = available_indexes[i]  # Use one of the available indexes
+                if not available_indexes:
+                    raise Exception("Not enough available concurrency indexes")
+                index_to_use = available_indexes.pop(0)  # Use and remove
                 create_scan_task(
                     scan_id,
                     scan_type,
@@ -233,7 +265,10 @@ def handler(event, context):
             return {"statusCode": 400, "body": "Failed: no scanType provided."}
 
         if scan_type == "shodan":
-            api_key_list = event.get("apiKeyList", "")
+            if is_pe:
+                api_key_list = event.get("apiKeyList", "")
+            else:
+                api_key_list = os.getenv("PE_SHODAN_API_KEYS", "")
             shodan_api_keys = (
                 [key.strip() for key in api_key_list.split(",")] if api_key_list else []
             )
@@ -251,7 +286,7 @@ def handler(event, context):
                 scan_id,
                 organizations,
                 is_pe=is_pe,
-                shodan_api_keys=[],
+                shodan_api_keys=shodan_api_keys,
             )
 
         else:
