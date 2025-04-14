@@ -19,7 +19,7 @@ exports[`Header component matches snapshot 1`] = `
           >
             <button
               aria-label="Open filter drawer"
-              class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-jits09-MuiButtonBase-root-MuiIconButton-root"
+              class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1g63bvq-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               type="button"
             >
@@ -55,10 +55,10 @@ exports[`Header component matches snapshot 1`] = `
               />
             </a>
             <div
-              class="MuiBox-root css-sjbm0i"
+              class="MuiBox-root css-8ia782"
             >
               <div
-                class="css-797xo0"
+                class="css-hdlqtj"
               >
                 <a
                   aria-current="page"
@@ -69,7 +69,7 @@ exports[`Header component matches snapshot 1`] = `
                 </a>
               </div>
               <div
-                class="css-797xo0"
+                class="css-hdlqtj"
               >
                 <a
                   class="NavItem-link"
@@ -81,7 +81,7 @@ exports[`Header component matches snapshot 1`] = `
             </div>
           </div>
           <div
-            class="MuiBox-root css-m5yhqc"
+            class="MuiBox-root css-1d1fymx"
           >
             <p
               class="MuiTypography-root MuiTypography-body1 css-uyc727-MuiTypography-root"
@@ -96,12 +96,12 @@ exports[`Header component matches snapshot 1`] = `
               class="MuiBox-root css-d0uhtl"
             >
               <button
-                class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium css-1rvq038-MuiButtonBase-root-MuiButton-root"
+                class="MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium css-xeos99-MuiButtonBase-root-MuiButton-root"
                 tabindex="0"
                 type="button"
               >
                 <span
-                  class="MuiButton-startIcon MuiButton-iconSizeMedium css-gcc2o7-MuiButton-startIcon"
+                  class="MuiButton-startIcon MuiButton-iconSizeMedium css-1d6wzja-MuiButton-startIcon"
                 >
                   <svg
                     aria-hidden="true"
@@ -117,7 +117,7 @@ exports[`Header component matches snapshot 1`] = `
                 </span>
                 My Account
                 <span
-                  class="MuiButton-endIcon MuiButton-iconSizeMedium css-1gnd1fd-MuiButton-endIcon"
+                  class="MuiButton-endIcon MuiButton-iconSizeMedium css-9tj150-MuiButton-endIcon"
                 >
                   <svg
                     aria-hidden="true"
@@ -136,7 +136,7 @@ exports[`Header component matches snapshot 1`] = `
                 />
               </button>
               <button
-                class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1owj7b5-MuiButtonBase-root-MuiIconButton-root"
+                class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-qfj8gx-MuiButtonBase-root-MuiIconButton-root"
                 tabindex="0"
                 type="button"
               >

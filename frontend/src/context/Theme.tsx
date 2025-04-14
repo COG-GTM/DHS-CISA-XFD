@@ -95,49 +95,46 @@ const theme = createTheme({
   },
   components: {
     MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '4px',
-          color: 'primary.dark',
-          typography: 'button',
-          height: '40px',
-          padding: '10px 16px 10px 16px',
-          '&:hover': {
-            backgroundColor: 'primary.darker'
+      variants: [
+        {
+          props: { variant: 'contained' },
+          style: {
+            backgroundColor: 'primary.dark',
+            color: 'primary.white',
+            '&:hover': {
+              backgroundColor: 'primary.darker'
+            },
+            height: '40px',
+            padding: '10px 16px 10px 16px',
+            borderRadius: '4px',
+            fontSize: '1.167rem',
+            fontWeight: 'medium',
+            textTransform: 'uppercase'
           }
         }
-      }
+      ]
     },
     MuiIconButton: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
+          color: theme.palette.primary.dark,
           '&:hover': {
-            backgroundColor: 'primary.darker'
-          },
-          typography: 'button'
-        }
-      }
-    },
-    MuiIcon: {
-      styleOverrides: {
-        root: {
-          color: 'primary.dark',
-          '&:hover': {
-            color: 'primary.darker'
+            color: theme.palette.primary.darker
           }
-        }
+        })
       }
     },
     MuiLink: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
+          color: theme.palette.primary.dark,
           '&:hover': {
-            color: 'primary.darker'
-          },
-          typography: 'link'
-        }
+            color: theme.palette.primary.darker
+          }
+        })
       }
     }
+
     // To-do: Re-enable this after clarification with Design Team
     // MuiChip: {
     //   styleOverrides: {
@@ -160,7 +157,7 @@ const theme = createTheme({
       main: '#0078AE',
       light: '#ECF7FF',
       dark: '#005288',
-      darker: '#2B45'
+      darker: '#002B45'
     },
     secondary: {
       main: '#EC7633',

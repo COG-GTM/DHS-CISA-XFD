@@ -19,7 +19,7 @@ exports[`Layout component matches snapshot 1`] = `
         >
           <button
             aria-label="Skip to main content"
-            class="MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium css-12tvzgy-MuiButtonBase-root-MuiButton-root"
+            class="MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium css-dvo2gp-MuiButtonBase-root-MuiButton-root"
             tabindex="0"
             type="button"
           >
@@ -268,7 +268,7 @@ exports[`Layout component matches snapshot 1`] = `
           </div>
         </div>
         <main
-          class="css-1ksfdcd"
+          class="css-1bknh4"
         >
           <div>
             HEADER
@@ -291,14 +291,14 @@ exports[`Layout component matches snapshot 1`] = `
                 class="MuiGrid-root MuiGrid-container Footer-footerContainer css-11lq3yg-MuiGrid-root"
               >
                 <div
-                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 Footer-footerLogo css-1kegxwi-MuiGrid-root"
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 Footer-footerLogo css-c3pvro-MuiGrid-root"
                 >
                   <div
                     class="MuiStack-root css-niqf4j-MuiStack-root"
                   >
                     <a
                       aria-label="CyHy Dashboard Icon Navigate Home"
-                      class="MuiTypography-root MuiTypography-body1 MuiLink-root MuiLink-underlineAlways css-rbjsm1-MuiTypography-root-MuiLink-root"
+                      class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-fgx9fv-MuiTypography-root-MuiLink-root"
                       href="/"
                     >
                       <img
@@ -309,21 +309,21 @@ exports[`Layout component matches snapshot 1`] = `
                   </div>
                 </div>
                 <div
-                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-2shs9e-MuiGrid-root"
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-16zmhxu-MuiGrid-root"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-rbjsm1-MuiTypography-root-MuiLink-root"
+                    class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-fgx9fv-MuiTypography-root-MuiLink-root"
                     href="/"
                   >
                     Home
                   </a>
                 </div>
                 <div
-                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-2shs9e-MuiGrid-root"
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-16zmhxu-MuiGrid-root"
                 >
                   <p>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-rbjsm1-MuiTypography-root-MuiLink-root"
+                      class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-fgx9fv-MuiTypography-root-MuiLink-root"
                       href="https://www.cisa.gov"
                       rel="noopener noreferrer"
                       target="_blank"
@@ -333,11 +333,11 @@ exports[`Layout component matches snapshot 1`] = `
                   </p>
                 </div>
                 <div
-                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-2shs9e-MuiGrid-root"
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-16zmhxu-MuiGrid-root"
                 >
                   <p>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-rbjsm1-MuiTypography-root-MuiLink-root"
+                      class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-fgx9fv-MuiTypography-root-MuiLink-root"
                       href="mailto:vulnerability@mail.cisa.dhs.gov"
                     >
                       Contact Us
@@ -345,11 +345,11 @@ exports[`Layout component matches snapshot 1`] = `
                   </p>
                 </div>
                 <div
-                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-2shs9e-MuiGrid-root"
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-2 Footer-footerNavItem css-16zmhxu-MuiGrid-root"
                 >
                   <p>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-rbjsm1-MuiTypography-root-MuiLink-root"
+                      class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways Footer-footerNavLink css-fgx9fv-MuiTypography-root-MuiLink-root"
                       href="/"
                     >
                       Logout
