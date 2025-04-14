@@ -88,23 +88,18 @@ const theme = createTheme({
       xs: 0,
       sm: 600,
       mds: 750,
-      md: 960,
-      lg: 1330,
-      xl: 1920
+      md: 900,
+      lg: 1200,
+      xl: 1536
     }
   },
   components: {
     MuiButton: {
-      defaultProps: {
-        variant: 'contained',
-        size: 'medium'
-      },
       styleOverrides: {
         root: {
           borderRadius: '4px',
           color: 'primary.dark',
-          fontSize: '1.167rem',
-          fontWeight: 'medium',
+          typography: 'button',
           height: '40px',
           padding: '10px 16px 10px 16px',
           '&:hover': {
@@ -118,30 +113,33 @@ const theme = createTheme({
         root: {
           '&:hover': {
             backgroundColor: 'primary.darker'
-          }
+          },
+          typography: 'button'
         }
       }
     },
-    MuiLink: {
-      defaultProps: {
-        variant: 'body1',
-        color: 'primary.dark'
-      },
+    MuiIcon: {
       styleOverrides: {
         root: {
+          color: 'primary.dark',
           '&:hover': {
             color: 'primary.darker'
           }
         }
       }
+    },
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          '&:hover': {
+            color: 'primary.darker'
+          },
+          typography: 'link'
+        }
+      }
     }
     // To-do: Re-enable this after clarification with Design Team
     // MuiChip: {
-    //   defaultProps: {
-    //     variant: 'filled',
-    //     color: 'primary',
-    //     size: 'medium'
-    //   },
     //   styleOverrides: {
     //     root: {
     //       borderRadius: '4px',
@@ -193,7 +191,6 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: 'source sans pro, sans-serif',
-    fontSize: 14,
     body1: {
       fontSize: '1.167rem',
       fontWeight: 'regular',
