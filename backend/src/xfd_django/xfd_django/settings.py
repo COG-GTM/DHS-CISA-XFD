@@ -111,6 +111,9 @@ DATABASES = {
         "PASSWORD": os.getenv("MDL_PASSWORD"),
         "HOST": os.getenv("DB_HOST"),
         "PORT": "5432",
+        "TEST": {
+            "NAME": "mini_data_lake_secondary_test",  # Name of the test database
+        },
     },
 }
 
