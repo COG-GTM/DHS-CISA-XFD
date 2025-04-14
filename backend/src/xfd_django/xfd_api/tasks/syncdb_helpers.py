@@ -753,8 +753,8 @@ def create_vuln_normal_views(database):
             """
             CREATE OR REPLACE VIEW vw_credential_breaches AS
             SELECT
-                vuln_id,
                 scan_source,
+                vuln_id,
                 created_at,
                 updated_at,
                 last_seen,
