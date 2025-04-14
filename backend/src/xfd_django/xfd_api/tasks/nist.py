@@ -93,7 +93,9 @@ def update_cves(hours_back=12):
 
     payload = {}
     headers = {"apiKey": api_key}
-    response = requests.request("GET", nist_url + params, headers=headers, data=payload)
+    response = requests.request(
+        "GET", nist_url + params, timeout=10, headers=headers, data=payload
+    )
 
     result = response.json()
     logging.info(result)
@@ -111,7 +113,7 @@ def update_cves(hours_back=12):
             + last_mod_end_date
         )
         response = requests.request(
-            "GET", nist_url + params, headers=headers, data=payload
+            "GET", nist_url + params, timeout=10, headers=headers, data=payload
         )
 
         result = response.json()
@@ -256,7 +258,7 @@ def check_cve_is_synced():
         payload = {}
         headers = {"apiKey": api_key}
         response = requests.request(
-            "GET", nist_url + params, headers=headers, data=payload
+            "GET", nist_url + params, timeout=10, headers=headers, data=payload
         )
 
         result = response.json()
