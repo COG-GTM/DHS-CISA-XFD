@@ -2271,18 +2271,6 @@ class Ticket(models.Model):
         blank=True,
         help_text="CVSS version used for the CVSS base score",
     )
-    kev = models.BooleanField(
-        db_column="kev",
-        blank=True,
-        null=True,
-        help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
-    )
-    risky_service = models.BooleanField(
-        db_column="risky_service",
-        blank=True,
-        null=True,
-        help_text="Boolean risky_service",
-    )
     # kev = models.ForeignKey(Kev, related_name='tickets', null=True, blank=True, on_delete=models.CASCADE)
     vuln_name = models.CharField(
         max_length=255, null=True, blank=True, help_text="Vulnerability name"
