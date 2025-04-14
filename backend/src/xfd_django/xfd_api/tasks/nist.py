@@ -43,7 +43,9 @@ def initial_fill(start_index=0):
     """Fill the database with CVE data for the first time."""
     payload = {}
     headers = {"apiKey": api_key}
-    response = requests.request("GET", nist_url, headers=headers, data=payload)
+    response = requests.request(
+        "GET", nist_url, timeout=10, headers=headers, data=payload
+    )
 
     result = response.json()
     start_index += result["resultsPerPage"]
@@ -55,7 +57,7 @@ def initial_fill(start_index=0):
         try:
             params = "?startIndex=" + str(start_index)
             response = requests.request(
-                "GET", nist_url + params, headers=headers, data=payload
+                "GET", nist_url + params, timeout=10, headers=headers, data=payload
             )
             result = response.json()
 
@@ -65,8 +67,6 @@ def initial_fill(start_index=0):
             error_count += 1
             if error_count < 5:
                 continue
-            else:
-                LOGGER.error("Failed too many times. Exiting out now.")
 
         start_index += result["resultsPerPage"]
         for vuln in result["vulnerabilities"]:

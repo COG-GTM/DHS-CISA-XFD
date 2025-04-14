@@ -35,8 +35,6 @@ def api_cve_insert(cve_dict):
     Return:
         Status on if the record was inserted successfully
     """
-    """Create API endpoint to create a record in database."""
-
     try:
         # Get WAS record based on tag
         vender_prod_dict = cve_dict.get("vender_product", {})
