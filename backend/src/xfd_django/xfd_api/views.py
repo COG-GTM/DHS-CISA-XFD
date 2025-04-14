@@ -476,7 +476,7 @@ async def get_organizations_by_state(
 
 
 @api_router.get(
-    "/organizations/regionId/{region_id}",
+    "/organizations/region_id/{region_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=List[OrganizationSchema.GetOrganizationSchema],
     tags=["Organizations"],
