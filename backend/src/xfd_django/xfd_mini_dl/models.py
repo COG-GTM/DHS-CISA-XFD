@@ -5929,6 +5929,7 @@ class Blocklist(models.Model):
 
 class RiskyServiceGroup(models.Model):
     """Define RiskyServiceGroup Model."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     service_name = models.CharField(
         max_length=255, null=False, blank=False, unique=True
@@ -5936,9 +5937,10 @@ class RiskyServiceGroup(models.Model):
     group = models.CharField(
         max_length=255, null=False, blank=False, help_text="Group name"
     )
-    
+
     class Meta:
         """Set RiskyServiceGroup model metadata."""
+
         app_label = app_label_name
         managed = manage_db
         db_table = "riskyservicegroup"
@@ -5946,6 +5948,7 @@ class RiskyServiceGroup(models.Model):
 
 class NMIServiceGroup(models.Model):
     """Define NMIService Model."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     service_name = models.CharField(
         max_length=255, null=False, blank=False, unique=True
@@ -5953,9 +5956,10 @@ class NMIServiceGroup(models.Model):
     group = models.CharField(
         max_length=255, null=False, blank=False, help_text="Group name"
     )
-    
+
     class Meta:
         """Set NMIServiceGroup model metadata."""
+
         app_label = app_label_name
         managed = manage_db
         db_table = "nmiservicegroup"
