@@ -98,19 +98,17 @@ const theme = createTheme({
       variants: [
         {
           props: { variant: 'contained' },
-          style: {
-            backgroundColor: 'primary.dark',
-            color: 'primary.white',
+          style: ({ theme }) => ({
+            backgroundColor: theme.palette.primary.dark,
+            color: theme.palette.primary.white,
             '&:hover': {
-              backgroundColor: 'primary.darker'
+              backgroundColor: theme.palette.primary.darker
             },
             height: '40px',
             padding: '10px 16px 10px 16px',
             borderRadius: '4px',
-            fontSize: '1.167rem',
-            fontWeight: 'medium',
-            textTransform: 'uppercase'
-          }
+            ...theme.typography.button
+          })
         }
       ]
     },
