@@ -3518,6 +3518,7 @@ class CredentialExposures(models.Model):
         CredentialBreaches,
         on_delete=models.CASCADE,
         db_column="credential_breach_id",
+        related_name="exposures",
         help_text="FK: Foreign Key to credential_breaches",
     )
     data_source = models.ForeignKey(

@@ -66,7 +66,7 @@ def get_user_by_api_key(api_key: str):
     """Get a user by their API key."""
     hashed_key = sha256(api_key.encode()).hexdigest()
     try:
-        api_key_instance = ApiKey.objects.get(hashedKey=hashed_key)
+        api_key_instance = ApiKey.objects.get(hashed_key=hashed_key)
         api_key_instance.lastUsed = datetime.now(timezone.utc)
         api_key_instance.save(update_fields=["last_used"])
         return api_key_instance.user
