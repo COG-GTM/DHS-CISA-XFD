@@ -4,9 +4,7 @@ from django.core.management.base import BaseCommand
 from xfd_api.tasks.searchSync import handler as sync_es_domains
 from xfd_api.tasks.syncdb_helpers import (
     drop_all_tables,
-    manage_elasticsearch_indices,
     populate_sample_data,
-    sync_es_organizations,
     synchronize,
 )
 

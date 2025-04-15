@@ -661,7 +661,7 @@ def create_vuln_normal_views(database):
                     ELSE 'N/A'
                 END AS severity,
                 t.organization_id,
-                CASE 
+                CASE
                     WHEN te."action" IN ('OPENED', 'REOPENED', 'CHANGED', 'VERIFIED') THEN 'open'
                     WHEN te."action" = 'CLOSED' THEN 'closed'
                     ELSE 'unknown'  -- optional, in case other values sneak in

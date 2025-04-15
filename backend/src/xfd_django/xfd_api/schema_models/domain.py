@@ -138,15 +138,17 @@ class VulnerabilityResponse(BaseModel):
     created_at: Optional[datetime] = None
     cve: Optional[str] = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_id_based_on_scan_source(self):
-        if self.scan_source != 'vuln_scanning_tickets':
+        """Validate UUID based on scan source."""
+        if self.scan_source != "vuln_scanning_tickets":
             try:
                 UUID(self.id)
             except ValueError:
-                raise ValueError(f"`id` must be a valid UUID when scan_source is 'vuln_scanning_tickets', got: {self.id}")
+                raise ValueError(
+                    f"`id` must be a valid UUID when scan_source is 'vuln_scanning_tickets', got: {self.id}"
+                )
         return self
-    
 
     class Config:
         """Config."""

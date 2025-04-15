@@ -47,7 +47,7 @@ class Scheduler:
                 "scanId": str(scan.id),
                 "scanType": scan.name,
                 "desiredCount": 1,
-                "organizations": list(),
+                "organizations": [],
                 "isPe": False,
             }
             try:
