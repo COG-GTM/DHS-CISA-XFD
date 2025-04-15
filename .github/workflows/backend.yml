@@ -55,8 +55,8 @@ jobs:
           wait-for-it --service localhost:9300 --timeout=10
         working-directory: ./
 
-      - name: Sync database
-        run: make syncdb
+      - name: Sync Mini Data Lake
+        run: make syncmdl
 
       - name: Lint with pylint
         run: make pylint
