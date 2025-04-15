@@ -263,7 +263,7 @@ def handler(event, context):
 
         if not scan_type:
             print("scanType must be provided.")
-            return {"statusCode": 400, "body": "Failed: no scanType provided."}
+            return {"status_code": 400, "body": "Failed: no scanType provided."}
 
         if scan_type == "shodan":
             if is_pe:
@@ -277,7 +277,7 @@ def handler(event, context):
             if len(shodan_api_keys) < desired_count:
                 print("Not enough API keys provided for Shodan tasks.")
                 return {
-                    "statusCode": 400,
+                    "status_code": 400,
                     "body": "Failed: insufficient API keys for Shodan.",
                 }
 
@@ -295,7 +295,7 @@ def handler(event, context):
                 scan_type, desired_count, scan_id, organizations, is_pe=is_pe
             )
 
-        return {"statusCode": 200, "body": "Tasks started successfully."}
+        return {"status_code": 200, "body": "Tasks started successfully."}
     except Exception as e:
         print("Error in handler: {}".format(e))
-        return {"statusCode": 500, "body": json.dumps(str(e))}
+        return {"status_code": 500, "body": json.dumps(str(e))}

@@ -20,7 +20,7 @@ class ApiKey(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an API key object.",
     )
     created_at = models.DateTimeField(
@@ -68,7 +68,7 @@ class Cpe(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a CPE Product object.",
     )
     name = models.CharField(max_length=255, help_text="Name of the product.")
@@ -94,7 +94,7 @@ class Cve(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a CVE object.",
     )
     name = models.CharField(
@@ -326,7 +326,7 @@ class Notification(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a notification object.",
     )
     created_at = models.DateTimeField(
@@ -390,7 +390,7 @@ class Organization(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a stakeholder Organization.",
     )
     created_at = models.DateTimeField(
@@ -683,7 +683,7 @@ class OrganizationTag(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for an Organization tag object.",
     )
     created_at = models.DateTimeField(
@@ -743,7 +743,7 @@ class QueryResultCache(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the query result object being cached.",
     )
     identifier = models.CharField(
@@ -774,7 +774,7 @@ class Role(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the role object.",
     )
     created_at = models.DateTimeField(
@@ -843,7 +843,7 @@ class SavedSearch(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the Saved Search object",
     )
     created_at = models.DateTimeField(
@@ -991,7 +991,7 @@ class ScanTask(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a scan task object.",
     )
     created_at = models.DateTimeField(
@@ -1076,7 +1076,7 @@ class Service(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a web service running on a stakeholders attack surface.",
     )
     created_at = models.DateTimeField(
@@ -1168,7 +1168,7 @@ class User(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a user object.",
     )
     cognito_id = models.CharField(
@@ -1309,7 +1309,7 @@ class Webpage(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the webpage object.",
     )
     created_at = models.DateTimeField(
@@ -1384,7 +1384,7 @@ class TicketEvent(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique id for a ticket event object in the database.",
     )
     reference = models.CharField(
@@ -1759,7 +1759,7 @@ class Cidr(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         editable=False,
         help_text="Unique idenifier for the Cidr object.",
     )
@@ -1817,7 +1817,7 @@ class Cidr(models.Model):
 class CidrOrgs(models.Model):
     """Define CidrOrgs model."""
 
-    cidr_orgs_id = models.UUIDField(primary_key=True, default=uuid.uuid1)
+    cidr_orgs_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     cidr = models.ForeignKey(
         Cidr,
         on_delete=models.CASCADE,
@@ -1861,7 +1861,7 @@ class Location(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a location object.",
     )
     name = models.CharField(
@@ -1917,7 +1917,7 @@ class Sector(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a sector object in the database.",
     )
     name = models.CharField(
@@ -2081,7 +2081,7 @@ class Ip(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for an IP object in the database.",
     )
     ip_hash = models.TextField(
@@ -2203,7 +2203,7 @@ class Ip(models.Model):
 class IpsSubs(models.Model):
     """Define IpsSubs model."""
 
-    ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid1)
+    ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     ip = models.ForeignKey(
         Ip, on_delete=models.CASCADE, db_column="ip_id", related_name="ipssubs"
     )
@@ -2510,7 +2510,7 @@ class WasTrackerCustomerdata(models.Model):
     customer_id = models.UUIDField(
         db_column="customer_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a Was customer.",
     )
     tag = models.TextField(
@@ -2606,7 +2606,7 @@ class WasFindings(models.Model):
 
     finding_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a WAS finding object.",
     )
     finding_type = models.TextField(
@@ -3064,7 +3064,7 @@ class PeUsers(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a PE user object.",
     )
     email = models.CharField(
@@ -3136,7 +3136,7 @@ class SixgillAlerts(models.Model):
 
     alerts_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the cyber sixgill alert object.",
     )
     alert_name = models.TextField(
@@ -3220,7 +3220,7 @@ class Alias(models.Model):
 
     alias_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for an alias.",
     )
     organization = models.ForeignKey(
@@ -3246,7 +3246,7 @@ class AssetHeaders(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the asset header object.",
     )  # Field renamed because it started with '_'.
     organization = models.ForeignKey(
@@ -3400,7 +3400,7 @@ class CredentialBreaches(models.Model):
 
     credential_breaches_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for credential_breaches.",
     )
     breach_name = models.TextField(unique=True, help_text="Name of breach.")
@@ -3473,7 +3473,7 @@ class CredentialExposures(models.Model):
 
     credential_exposures_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for credential_exposures",
     )
     email = models.TextField(help_text="Email found in the breach")
@@ -3569,7 +3569,7 @@ class CyhyContacts(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for cyhy contacts",
     )  # Field renamed because it started with '_'.
     org_id = models.TextField(help_text="Organization abbreviated name")
@@ -3611,7 +3611,7 @@ class CyhyDbAssets(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for cyhy db assets",
     )  # Field renamed because it started with '_'.
     org_id = models.TextField(
@@ -3685,7 +3685,7 @@ class DataSource(models.Model):
 
     data_source_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for data_sources",
     )
     name = models.TextField(help_text="Name of data source")
@@ -3773,7 +3773,7 @@ class DnsRecords(models.Model):
 
     dns_record_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a DNS record.",
     )
     domain_name = models.TextField(blank=True, null=True, help_text="")
@@ -3869,7 +3869,7 @@ class DomainAlerts(models.Model):
 
     domain_alert_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for domain_alerts",
     )
     sub_domain = models.ForeignKey(
@@ -3913,7 +3913,7 @@ class DomainPermutations(models.Model):
 
     suspected_domain_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a DNSTwist domain permutation.",
     )
     organization = models.ForeignKey(
@@ -4061,7 +4061,7 @@ class DotgovDomains(models.Model):
 
     dotgov_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for dotgov_domains",
     )
     domain_name = models.TextField(unique=True, help_text="Name of the dotgov domain")
@@ -4095,7 +4095,7 @@ class Executives(models.Model):
 
     executives_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for executives",
     )
     organization = models.ForeignKey(
@@ -4119,7 +4119,7 @@ class Mentions(models.Model):
 
     mentions_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for cyber sixgill mentions",
     )
     category = models.TextField(blank=True, null=True, help_text="Category of mention")
@@ -4236,7 +4236,7 @@ class OrgType(models.Model):
 
     org_type_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for organization type object.",
     )
     org_type = models.TextField(blank=True, null=True, help_text="Organization type.")
@@ -4309,7 +4309,7 @@ class PshttResults(models.Model):
     """Define PshttResults model."""
 
     pshtt_results_uid = models.UUIDField(
-        primary_key=True, default=uuid.uuid1, help_text=""
+        primary_key=True, default=uuid.uuid4, help_text=""
     )
     organization = models.ForeignKey(
         "Organization",
@@ -4416,7 +4416,7 @@ class PshttResults(models.Model):
 class PeReportSummaryStats(models.Model):
     """Define ReportSummaryStats model."""
 
-    report_uid = models.UUIDField(primary_key=True, default=uuid.uuid1, help_text="")
+    report_uid = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text="")
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -4473,7 +4473,7 @@ class PeReportSummaryStats(models.Model):
 
 #     root_domain_uid = models.UUIDField(
 #         primary_key=True,
-#         default=uuid.uuid1,
+#         default=uuid.uuid4,
 #         help_text="PK: Unique identifier for root domains",
 #     )
 #     organization = models.ForeignKey(
@@ -4512,7 +4512,7 @@ class PeTeamMembers(models.Model):
 
     team_member_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a PE Team Member object.",
     )
     team_member_fname = models.TextField(
@@ -4548,7 +4548,7 @@ class ShodanAssets(models.Model):
 
     shodan_asset_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for shodan assets",
     )
     organization = models.ForeignKey(
@@ -4627,7 +4627,7 @@ class ShodanAssets(models.Model):
 # class ShodanInsecureProtocolsUnverifiedVulns(models.Model):
 #     """Define ShodanInsecureProtocolsUnverifiedVulns model."""
 
-#     insecure_product_uid = models.UUIDField(primary_key=True, default=uuid.uuid1())
+#     insecure_product_uid = models.UUIDField(primary_key=True, default=uuid.uuid4())
 #     organization_uid = models.ForeignKey(
 #         Organization, on_delete=models.CASCADE, db_column="organization_uid"
 #     )
@@ -4668,7 +4668,7 @@ class ShodanVulns(models.Model):
 
     shodan_vuln_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a shodan vulnerability object.",
     )
     organization = models.ForeignKey(
@@ -4824,7 +4824,7 @@ class SubDomains(models.Model):
 
     sub_domain_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for subdomains",
     )
     sub_domain = models.TextField(
@@ -4994,7 +4994,7 @@ class TopCves(models.Model):
 
     top_cves_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: unique identifier for top cves",
     )
     cve_id = models.TextField(
@@ -5038,7 +5038,7 @@ class TopicTotals(models.Model):
 
     count_uuid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for topic_totals",
     )
     organization_uid = models.UUIDField(help_text="FK: Foreign Key to organizations")
@@ -5064,7 +5064,7 @@ class UniqueSoftware(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a unique software object.",
     )  # Field renamed because it started with '_'.
     software_name = models.TextField(
@@ -5084,7 +5084,7 @@ class WebAssets(models.Model):
 
     asset_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifer for a web asset object.",
     )
     asset_type = models.TextField(help_text="Type of web asset.")
@@ -5136,7 +5136,7 @@ class WeeklyStatusesMdl(models.Model):
 
     weekly_status_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier to the weekly status object",
     )
     user_status = models.TextField(blank=True, help_text="Name of the user.???")
@@ -5187,7 +5187,7 @@ class CyhyKevs(models.Model):
 
     cyhy_kevs_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier of the cyhy kev object.",
     )
     kev = models.CharField(
@@ -5213,7 +5213,7 @@ class XpanseBusinessUnits(models.Model):
 
     xpanse_business_unit_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a xpanse business unit object.",
     )
     entity_name = models.TextField(
@@ -5263,7 +5263,7 @@ class XpanseAssetsMdl(models.Model):
 
     xpanse_asset_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an Xpanse Asset object.",
     )
     asm_id = models.TextField(
@@ -5382,7 +5382,7 @@ class XpanseCvesMdl(models.Model):
     xpanse_cve_uid = models.UUIDField(
         unique=True,
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an Xpanse CVE objct.",
     )
     cve_id = models.TextField(
@@ -5422,7 +5422,7 @@ class XpanseServicesMdl(models.Model):
 
     xpanse_service_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a Xpanse Service object.",
     )
     service_id = models.TextField(
@@ -5589,7 +5589,7 @@ class XpanseAlerts(models.Model):
 
     xpanse_alert_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an Xpanse alert object.",
     )
     time_pulled_from_xpanse = models.DateTimeField(
@@ -5832,7 +5832,7 @@ class CpeVender(models.Model):
 
     cpe_vender_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique ID of the vender object",
     )
     vender_name = models.TextField(
@@ -5852,7 +5852,7 @@ class CpeProduct(models.Model):
 
     cpe_product_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for the Product (CPE)",
     )
     cpe_product_name = models.TextField(

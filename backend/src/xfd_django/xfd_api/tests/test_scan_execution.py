@@ -254,7 +254,7 @@ def test_shodan_fails_if_api_keys_insufficient():
             None,
         )
         mock_run.assert_not_called()
-        assert result["statusCode"] == 400
+        assert result["status_code"] == 400
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])

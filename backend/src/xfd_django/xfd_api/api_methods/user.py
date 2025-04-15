@@ -32,6 +32,8 @@ def is_valid_uuid(val: str) -> bool:
     """Check if the given string is a valid UUID."""
     try:
         uuid_obj = uuid.UUID(val)
+        # TODO: Uncomment to re-enable v4 uuid checks
+        # uuid_obj = uuid.UUID(val, version=4)
     except ValueError:
         return False
     return str(uuid_obj) == val
@@ -152,7 +154,7 @@ def accept_terms(version_data, current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# DELETE: /users/{userId}
+# DELETE: /users/{user_id}
 def delete_user(target_user_id, current_user):
     """Delete a user by ID."""
     # Validate that the user ID is a valid UUID
@@ -357,6 +359,9 @@ def get_users_v2(state, region_id, invite_pending, current_user):
         if region_id is not None:
             filters["region_id"] = region_id
         if invite_pending is not None:
+            # Convert string to boolean if needed
+            if isinstance(invite_pending, str):
+                invite_pending = invite_pending.lower() == "true"
             filters["invite_pending"] = invite_pending
 
         users = User.objects.filter(**filters).prefetch_related("roles__organization")
@@ -512,7 +517,7 @@ def approve_user_registration(user_id, current_user):
             status_code=500, detail="Failed to send email: {}".format(str(e))
         )
 
-    return {"statusCode": 200, "body": "User registration approved."}
+    return {"status_code": 200, "body": "User registration approved."}
 
 
 # PUT: /users/{user_id}/register/deny
@@ -541,7 +546,7 @@ def deny_user_registration(user_id: str, current_user: User):
             template="crossfeed_denial_notification.html",
         )
 
-        return {"statusCode": 200, "body": "User registration denied."}
+        return {"status_code": 200, "body": "User registration denied."}
 
     except HTTPException as http_exc:
         raise http_exc

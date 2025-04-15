@@ -24,11 +24,11 @@ def handler(command_options):
     organization_name = command_options.get("organizationName")
     organization_id = command_options.get("organizationId")
     if not organization_name:
-        return {"statusCode": 400, "body": "Organization name not provided."}
+        return {"status_code": 400, "body": "Organization name not provided."}
 
     orgs_to_sync = Organization.objects.filter(id=organization_id)
     if not orgs_to_sync.exists():
-        return {"statusCode": 500, "body": "Organization not found."}
+        return {"status_code": 500, "body": "Organization not found."}
     organization = orgs_to_sync.first()
     org_uid = organization.id
     org_name = organization.name
@@ -46,14 +46,14 @@ def handler(command_options):
         LOGGER.error("%s - %s", e, org_name)
         failed.append("{} fetching IPs".format(org_name))
         return {
-            "statusCode": 500,
+            "status_code": 500,
             "body": "Error - {}".format(e),
         }
     # If no IPs, skip this org
     if len(ips) == 0:
         LOGGER.warning("No IPs for %s.", org_name)
         return {
-            "statusCode": 500,
+            "status_code": 500,
             "body": "No Ips for {}".format(org_name),
         }
 
@@ -65,7 +65,7 @@ def handler(command_options):
     if not api:
         LOGGER.warning("Not a valid API key: %s.", api_key)
         return {
-            "statusCode": 500,
+            "status_code": 500,
             "body": "No Ips for {}".format(org_name),
         }
 
@@ -75,11 +75,11 @@ def handler(command_options):
     # Log all failures for this thread
     if len(failed) > 0:
         return {
-            "statusCode": 500,
+            "status_code": 500,
             "body": failed,
         }
 
-    return {"statusCode": 200, "body": "Success running Shodan."}
+    return {"status_code": 200, "body": "Success running Shodan."}
 
 
 def shodan_api_init(api_key):

@@ -20,7 +20,7 @@ def handler(event, context):
     """Update the status of a ScanTask based on EventBridge event data."""
     detail = event.get("detail")
     if not detail:
-        return {"statusCode": 400, "body": "Event detail is required."}
+        return {"status_code": 400, "body": "Event detail is required."}
 
     task_arn = detail.get("taskArn")
     last_status = detail.get("lastStatus")
@@ -29,7 +29,7 @@ def handler(event, context):
     containers = detail.get("containers", [])
 
     if not task_arn or not last_status:
-        return {"statusCode": 400, "body": "taskArn and lastStatus are required."}
+        return {"status_code": 400, "body": "taskArn and lastStatus are required."}
 
     try:
         # Retry logic for finding the ScanTask
@@ -53,7 +53,7 @@ def handler(event, context):
             scan_task.finishedAt = now()
         else:
             # No update needed for other statuses
-            return {"statusCode": 204, "body": "No status change required."}
+            return {"status_code": 204, "body": "No status change required."}
 
         print(
             "Updating status of ScanTask {} from {} to {}.".format(
@@ -63,12 +63,12 @@ def handler(event, context):
         scan_task.save()
 
         return {
-            "statusCode": 200,
+            "status_code": 200,
             "body": "ScanTask {} updated successfully.".format(scan_task.id),
         }
 
     except Exception as e:
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}
 
 
 def retry_find_scan_task(task_arn, retries=3):

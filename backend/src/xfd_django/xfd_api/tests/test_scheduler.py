@@ -54,7 +54,7 @@ def test_manual_run_pending_forces_execution(org):
     scheduler.initialize([scan], [org])
 
     with patch("xfd_api.tasks.scheduler.scan_execution_handler") as mock_exec:
-        mock_exec.return_value = {"statusCode": 200}
+        mock_exec.return_value = {"status_code": 200}
         scheduler.run()
         mock_exec.assert_called_once()
 
@@ -85,7 +85,7 @@ def test_global_scan_triggers_single_execution(org):
     scheduler.initialize([scan], [org])
 
     with patch("xfd_api.tasks.scheduler.scan_execution_handler") as mock_exec:
-        mock_exec.return_value = {"statusCode": 200}
+        mock_exec.return_value = {"status_code": 200}
         scheduler.run()
         mock_exec.assert_called_once()
         args, _ = mock_exec.call_args

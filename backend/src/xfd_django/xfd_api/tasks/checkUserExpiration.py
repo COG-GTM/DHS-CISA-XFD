@@ -135,9 +135,9 @@ def handler(event, context):
     try:
         check_user_expiration()
         return {
-            "statusCode": 200,
+            "status_code": 200,
             "body": "User expiration check completed successfully.",
         }
     except Exception as e:
         print("Error during user expiration check: {}".format(e))
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}
