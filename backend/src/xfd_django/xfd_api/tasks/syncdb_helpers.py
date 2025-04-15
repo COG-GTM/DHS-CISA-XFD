@@ -120,7 +120,7 @@ def create_test_user(organization):
     if existing_user:
         return existing_user
 
-    if not email:
+    if not existing_user:
         user = User.objects.create(
             firstName="Test",
             lastName="User",

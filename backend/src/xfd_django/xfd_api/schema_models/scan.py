@@ -366,4 +366,13 @@ SCAN_SCHEMA = {
         description="Enumerate and sync org assets.",
         maxConcurrentTasks=1,
     ),
+    "cybersixgill": ScanSchema(
+    type="fargate",  
+    isPassive=True,  
+    global_scan=True,  
+    cpu="1024",
+    memory="8192",
+    description="Collect alerts, mentions, credentials, and top CVEs from Cybersixgill dark web monitoring.",
+),
+
 }
