@@ -63,7 +63,7 @@ def override_redis_dependency(redis_client):
     app.dependency_overrides.pop(get_redis_client)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_stats_by_org_user():
     """Test retrieving stats as an organization user."""
     organization = Organization.objects.create(
@@ -138,7 +138,7 @@ def test_get_stats_by_org_user():
     ] == "{}|Critical".format(domain.name)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_stats_by_global_view_user():
     """Test retrieving stats as a GlobalView user with organization filtering."""
     organization = Organization.objects.create(

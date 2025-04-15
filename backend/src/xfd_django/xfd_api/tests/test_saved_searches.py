@@ -73,7 +73,7 @@ def create_secondary_standard_user():
     user.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_saved_search_by_user(create_standard_user):
     """
     Ensure that a standard user can successfully create a saved search.
@@ -107,7 +107,7 @@ def test_create_saved_search_by_user(create_standard_user):
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_saved_search_by_global_admin_fails(
     create_global_admin, create_standard_user
 ):
@@ -146,7 +146,7 @@ def test_update_saved_search_by_global_admin_fails(
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_saved_search_by_global_view_fails(
     create_standard_user, create_global_view
 ):
@@ -192,7 +192,7 @@ def test_update_saved_search_by_global_view_fails(
     saved_search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_saved_search_by_standard_user_with_access(create_standard_user):
     """
     Ensure that a standard user with access can successfully update a saved search.
@@ -232,7 +232,7 @@ def test_update_saved_search_by_standard_user_with_access(create_standard_user):
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_saved_search_by_standard_user_without_access_fails(
     create_standard_user, create_secondary_standard_user
 ):
@@ -267,7 +267,7 @@ def test_update_saved_search_by_standard_user_without_access_fails(
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_saved_search_by_global_admin_fails(
     create_global_admin, create_standard_user
 ):
@@ -302,7 +302,7 @@ def test_delete_saved_search_by_global_admin_fails(
         search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_saved_search_by_global_view_fails(
     create_standard_user, create_global_view
 ):
@@ -344,7 +344,7 @@ def test_delete_saved_search_by_global_view_fails(
     saved_search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_saved_search_by_user_with_access(create_standard_user):
     """
     Ensure that a standard user with access can successfully delete a saved search.
@@ -376,7 +376,7 @@ def test_delete_saved_search_by_user_with_access(create_standard_user):
         search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_saved_search_by_user_without_access_fails(
     create_standard_user, create_secondary_standard_user
 ):
@@ -410,7 +410,7 @@ def test_delete_saved_search_by_user_without_access_fails(
         search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_saved_searches_by_global_view_returns_none(create_global_view):
     """
     Ensure that a global view user cannot list saved searches.
@@ -442,7 +442,7 @@ def test_list_saved_searches_by_global_view_returns_none(create_global_view):
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_saved_searches_by_user_only_gets_their_search(
     create_standard_user, create_secondary_standard_user
 ):
@@ -491,7 +491,7 @@ def test_list_saved_searches_by_user_only_gets_their_search(
     search2.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_saved_search_by_global_view_fails(create_global_view):
     """
     Ensure that a global view user cannot retrieve a saved search.
@@ -520,7 +520,7 @@ def test_get_saved_search_by_global_view_fails(create_global_view):
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_saved_search_by_user_passes(create_standard_user):
     """
     Ensure that a standard user can retrieve their saved search by ID.
@@ -552,7 +552,7 @@ def test_get_saved_search_by_user_passes(create_standard_user):
     search.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_saved_search_by_different_user_fails(
     create_standard_user, create_secondary_standard_user
 ):

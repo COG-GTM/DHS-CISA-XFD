@@ -1195,6 +1195,8 @@ class User(models.Model):
     cognito_email_verified = models.BooleanField(
         db_column="cognito_email_verified",
         default=False,
+        blank=True,
+        null=True,
         help_text="Email verified boolean returned from cognito token.",
     )
     cognito_groups = models.JSONField(

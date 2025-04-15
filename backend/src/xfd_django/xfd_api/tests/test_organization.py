@@ -24,7 +24,7 @@ client = TestClient(app)
 
 
 # Test: Creating an organization by global admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_org_by_global_admin():
     """Test organization by global admin should succeed."""
     user = User.objects.create(
@@ -60,7 +60,7 @@ def test_create_org_by_global_admin():
 
 
 # Test: Cannot add organization with the same acronym
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_duplicate_org_fails():
     """Test organization."""
     user = User.objects.create(
@@ -106,7 +106,7 @@ def test_create_duplicate_org_fails():
 
 
 # Test: Creating an organization by global view user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_org_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
@@ -139,7 +139,7 @@ def test_create_org_by_global_view_fails():
 
 
 # Test: Update organization by global admin
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_org_by_global_admin():
     """Test organization."""
     user = User.objects.create(
@@ -191,7 +191,7 @@ def test_update_org_by_global_admin():
 
 
 # Test: Update organization by global view should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_org_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
@@ -238,7 +238,7 @@ def test_update_org_by_global_view_fails():
 
 
 # Test: Deleting an organization by global admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_org_by_global_admin():
     """Test organization."""
     user = User.objects.create(
@@ -268,7 +268,7 @@ def test_delete_org_by_global_admin():
 
 
 # Test: Deleting an organization by org admin should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_org_by_org_admin_fails():
     """Test organization."""
     user = User.objects.create(
@@ -306,7 +306,7 @@ def test_delete_org_by_org_admin_fails():
 
 
 # Test: Deleting an organization by global view should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_org_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
@@ -338,7 +338,7 @@ def test_delete_org_by_global_view_fails():
 
 
 # Test: List organizations by global view should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_orgs_by_global_view_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -371,7 +371,7 @@ def test_list_orgs_by_global_view_succeeds():
 
 
 # Test: List organizations by org member should only return their org
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_orgs_by_org_member_only_gets_their_org():
     """Test organization."""
     user = User.objects.create(
@@ -422,7 +422,7 @@ def test_list_orgs_by_org_member_only_gets_their_org():
 
 
 # Test: Get organization by org admin user should pass
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_org_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -461,7 +461,7 @@ def test_get_org_by_org_admin_succeeds():
 
 
 # Test: Get organization by org admin of different org should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_org_by_org_admin_of_different_org_fails():
     """Test organization."""
     user = User.objects.create(
@@ -508,7 +508,7 @@ def test_get_org_by_org_admin_of_different_org_fails():
 
 
 # Test: Get organization by org regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_org_by_org_regular_user_fails():
     """Test organization."""
     user = User.objects.create(
@@ -546,7 +546,7 @@ def test_get_org_by_org_regular_user_fails():
 
 
 # Test: Get organization by org admin should return associated scantasks
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_org_with_scan_tasks_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -599,7 +599,7 @@ def test_get_org_with_scan_tasks_by_org_admin_succeeds():
 
 
 # Test: Enabling a user-modifiable scan by org admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_enable_user_modifiable_scan_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -647,7 +647,7 @@ def test_enable_user_modifiable_scan_by_org_admin_succeeds():
 
 
 # Test: Disabling a user-modifiable scan by org admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_disable_user_modifiable_scan_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -701,7 +701,7 @@ def test_disable_user_modifiable_scan_by_org_admin_succeeds():
 
 
 # Test: Enabling a user-modifiable scan by org user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_enable_user_modifiable_scan_by_org_user_fails():
     """Test organization."""
     user = User.objects.create(
@@ -746,7 +746,7 @@ def test_enable_user_modifiable_scan_by_org_user_fails():
 
 
 # Test: Enabling a user-modifiable scan by global admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_enable_user_modifiable_scan_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -788,7 +788,7 @@ def test_enable_user_modifiable_scan_by_global_admin_succeeds():
 
 
 # Test: Enabling a non-user-modifiable scan by org admin should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_enable_non_user_modifiable_scan_by_org_admin_fails():
     """Test organization."""
     user = User.objects.create(
@@ -833,7 +833,7 @@ def test_enable_non_user_modifiable_scan_by_org_admin_fails():
 
 
 # Test: Approving a role by global admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_approve_role_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -878,7 +878,7 @@ def test_approve_role_by_global_admin_succeeds():
 
 
 # Test: Approving a role by global view should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_approve_role_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
@@ -921,7 +921,7 @@ def test_approve_role_by_global_view_fails():
 
 
 # Test: Approving a role by org admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_approve_role_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -972,7 +972,7 @@ def test_approve_role_by_org_admin_succeeds():
 
 
 # Test: Approving a role by org user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_approve_role_by_org_user_fails():
     """Test organization."""
     user = User.objects.create(
@@ -1023,7 +1023,7 @@ def test_approve_role_by_org_user_fails():
 
 
 # Test: removeRole by globalAdmin should work
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_remove_role_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -1066,7 +1066,7 @@ def test_remove_role_by_global_admin_succeeds():
 
 
 # Test: removeRole by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_remove_role_by_global_view_fails():
     """Test organization."""
     user = User.objects.create(
@@ -1110,7 +1110,7 @@ def test_remove_role_by_global_view_fails():
 
 
 # Test: removeRole by org admin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_remove_role_by_org_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -1158,7 +1158,7 @@ def test_remove_role_by_org_admin_succeeds():
 
 
 # Test: removeRole by org user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_remove_role_by_org_user_fails():
     """Test organization."""
     user = User.objects.create(
@@ -1208,7 +1208,7 @@ def test_remove_role_by_org_user_fails():
 
 
 # Test: getTags by globalAdmin should work
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_tags_by_global_admin_succeeds():
     """Test organization."""
     user = User.objects.create(
@@ -1234,7 +1234,7 @@ def test_get_tags_by_global_admin_succeeds():
 
 
 # Test: getTags by standard user should return no tags
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_tags_by_standard_user_returns_no_tags():
     """Test organization."""
     user = User.objects.create(
@@ -1259,7 +1259,7 @@ def test_get_tags_by_standard_user_returns_no_tags():
     assert len(response.json()) == 0
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_organizations_by_state_as_regional_admin():
     """Test that a regional admin can retrieve organizations by state."""
     user = User.objects.create(
@@ -1290,7 +1290,7 @@ def test_get_organizations_by_state_as_regional_admin():
     assert response.json()[0]["state"] == "CA"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_organizations_by_state_as_standard_user_fails():
     """Test that a standard user cannot retrieve organizations by state."""
     user = User.objects.create(
@@ -1319,7 +1319,7 @@ def test_get_organizations_by_state_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_organizations_by_state_not_found():
     """Test that retrieving organizations for a non-existent state returns 404."""
     user = User.objects.create(
@@ -1340,7 +1340,7 @@ def test_get_organizations_by_state_not_found():
     assert response.json()["detail"] == "No organizations found for the given state"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_organizations_by_region_as_regional_admin():
     """Test that a regional admin can retrieve organizations by region_id."""
     user = User.objects.create(
@@ -1373,7 +1373,7 @@ def test_get_organizations_by_region_as_regional_admin():
     assert response.json()[0]["region_id"] == "12345"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_organizations_by_region_as_standard_user_fails():
     """Test that a standard user cannot retrieve organizations by region_id."""
     user = User.objects.create(
@@ -1404,7 +1404,7 @@ def test_get_organizations_by_region_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_organizations_by_region_not_found():
     """Test that retrieving organizations for a non-existent region returns 404."""
     user = User.objects.create(
@@ -1425,7 +1425,7 @@ def test_get_organizations_by_region_not_found():
     assert response.json()["detail"] == "No organizations found for the given region"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_upsert_organization_create():
     """Test that a GlobalWriteAdmin can create a new organization."""
     user = User.objects.create(
@@ -1465,7 +1465,7 @@ def test_upsert_organization_create():
     assert data["createdBy"]["email"] == user.email
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_upsert_organization_update():
     """Test that a GlobalWriteAdmin can update an existing organization."""
     user = User.objects.create(
@@ -1515,7 +1515,7 @@ def test_upsert_organization_update():
     assert data["state"] == "CA"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_upsert_organization_unauthorized():
     """Test that a Standard user cannot create or update an organization."""
     user = User.objects.create(
@@ -1548,7 +1548,7 @@ def test_upsert_organization_unauthorized():
     assert response.json()["detail"] == "Unauthorized access. View logs for details."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_upsert_organization_invalid_parent():
     """Test that upserting an organization with a non-existent parent fails."""
     user = User.objects.create(
@@ -1581,7 +1581,7 @@ def test_upsert_organization_invalid_parent():
     assert response.status_code == 500
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_success():
     """Test successfully adding a user to an organization by a regional admin."""
     admin = User.objects.create(
@@ -1635,7 +1635,7 @@ def test_add_user_to_org_v2_success():
     assert data["approvedBy"]["id"] == str(admin.id)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_unauthorized():
     """Test that a standard user cannot add a user to an organization."""
     user = User.objects.create(
@@ -1681,7 +1681,7 @@ def test_add_user_to_org_v2_unauthorized():
     assert response.json()["detail"] == "Unauthorized access."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_invalid_user_id():
     """Test adding a user with an invalid user ID format."""
     admin = User.objects.create(
@@ -1718,7 +1718,7 @@ def test_add_user_to_org_v2_invalid_user_id():
     assert response.json()["detail"] == "Invalid user ID."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_invalid_organization_id():
     """Test adding a user with an invalid organization ID format."""
     admin = User.objects.create(
@@ -1754,7 +1754,7 @@ def test_add_user_to_org_v2_invalid_organization_id():
     assert response.json()["detail"] == "Invalid organization ID."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_user_not_found():
     """Test adding a non-existent user to an organization."""
     admin = User.objects.create(
@@ -1791,7 +1791,7 @@ def test_add_user_to_org_v2_user_not_found():
     assert response.json()["detail"] == "User not found."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_organization_not_found():
     """Test adding a user to a non-existent organization."""
     admin = User.objects.create(
@@ -1827,7 +1827,7 @@ def test_add_user_to_org_v2_organization_not_found():
     assert response.json()["detail"] == "Organization not found."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_add_user_to_org_v2_region_mismatch():
     """Test adding a user to an organization where the region does not match."""
     admin = User.objects.create(
@@ -1876,7 +1876,7 @@ def test_add_user_to_org_v2_region_mismatch():
     assert response.json()["detail"] == "Unauthorized access due to region mismatch."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_as_global_admin():
     """Test that a GlobalViewAdmin can retrieve all organizations."""
     admin = User.objects.create(
@@ -1923,7 +1923,7 @@ def test_list_organizations_v2_as_global_admin():
     assert str(organization2.id) in org_ids
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_as_member():
     """Test that a user with organization membership can retrieve only their organizations."""
     user = User.objects.create(
@@ -1971,7 +1971,7 @@ def test_list_organizations_v2_as_member():
     assert data[0]["id"] == str(organization1.id)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_as_user_without_membership():
     """Test that a user with no organization membership gets an empty list."""
     user = User.objects.create(
@@ -2003,7 +2003,7 @@ def test_list_organizations_v2_as_user_without_membership():
     assert response.json() == []
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_filter_by_state():
     """Test filtering organizations by state."""
     admin = User.objects.create(
@@ -2049,7 +2049,7 @@ def test_list_organizations_v2_filter_by_state():
     assert data[0]["id"] == str(organization1.id)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_filter_by_region():
     """Test filtering organizations by region."""
     admin = User.objects.create(
@@ -2095,14 +2095,14 @@ def test_list_organizations_v2_filter_by_region():
     assert data[0]["id"] == str(organization2.id)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/v2/organizations")
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_invalid_filter():
     """Test that an invalid state filter does not return organizations."""
     admin = User.objects.create(
@@ -2134,7 +2134,7 @@ def test_list_organizations_v2_invalid_filter():
     assert response.json() == []
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.es_client.ESClient.search_organizations")
 def test_search_organizations_as_global_admin(mock_search):
     """Test that a GlobalViewAdmin can search organizations."""
@@ -2167,7 +2167,7 @@ def test_search_organizations_as_global_admin(mock_search):
     assert data["body"]["hits"]["hits"][0]["_source"]["name"] == "Test Org"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.es_client.ESClient.search_organizations")
 def test_search_organizations_filter_by_region(mock_search):
     """Test that the search filters organizations by region."""
@@ -2200,7 +2200,7 @@ def test_search_organizations_filter_by_region(mock_search):
     assert data["body"]["hits"]["hits"][0]["_source"]["region_id"] == "region-3"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.es_client.ESClient.search_organizations")
 def test_search_organizations_no_results(mock_search):
     """Test searching for organizations when no results are found."""
@@ -2230,7 +2230,7 @@ def test_search_organizations_no_results(mock_search):
     assert len(data["body"]["hits"]["hits"]) == 0
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_organizations_no_auth():
     """Test that an unauthenticated request returns 401."""
     payload = {"searchTerm": "Test", "regions": []}
@@ -2238,7 +2238,7 @@ def test_search_organizations_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_organizations_no_access():
     """Test that a user without the necessary permissions gets an empty result."""
     user = User.objects.create(
@@ -2262,7 +2262,7 @@ def test_search_organizations_no_access():
     assert response.json() == []
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_regions_as_global_admin():
     """Test that a GlobalViewAdmin can retrieve all regions."""
     admin = User.objects.create(
@@ -2302,7 +2302,7 @@ def test_get_all_regions_as_global_admin():
     assert {"region_id": "region-2"} in data
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_regions_as_standard_user_fails():
     """Test that a standard user cannot retrieve regions (should return 403)."""
     user = User.objects.create(
@@ -2323,14 +2323,14 @@ def test_get_all_regions_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_regions_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/regions")
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_regions_empty():
     """Test that an empty result is returned if no organizations have region_ids."""
     admin = User.objects.create(
@@ -2349,3 +2349,83 @@ def test_get_all_regions_empty():
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_get_organizations_by_region_success():
+    """Test that a regional admin can retrieve organizations for a given region."""
+    region_id = "region-42"
+
+    user = User.objects.create(
+        first_name="Regional",
+        last_name="Admin",
+        email="{}@example.com".format(uuid.uuid4().hex),
+        user_type=UserType.REGIONAL_ADMIN,
+        region_id=region_id,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    Organization.objects.create(
+        name="Test Org",
+        acronym="TEST",
+        root_domains=["test.com"],
+        ip_blocks=["192.168.0.0/24"],
+        region_id=region_id,
+    )
+
+    response = client.get(
+        "/organizations/region_id/{}".format(region_id),
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert any(org["id"] == str(org.id) for org in data)
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_get_organizations_by_region_unauthorized():
+    """Test that non-regional admins are forbidden from accessing region-based organization queries."""
+    region_id = "region-unauthorized"
+
+    user = User.objects.create(
+        first_name="Standard",
+        last_name="User",
+        email="{}@example.com".format(uuid.uuid4().hex),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    response = client.get(
+        "/organizations/region_id/{}".format(region_id),
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Unauthorized"
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_get_organizations_by_region_empty():
+    """Test that a regional admin gets a 404 when no organizations are found for the region."""
+    region_id = "empty-region"
+
+    user = User.objects.create(
+        firstName="Regional",
+        lastName="Admin",
+        email="{}@example.com".format(uuid.uuid4().hex),
+        user_type=UserType.REGIONAL_ADMIN,
+        region_id=region_id,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    response = client.get(
+        "/organizations/region_id/{}".format(region_id),
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "No organizations found for the given region"

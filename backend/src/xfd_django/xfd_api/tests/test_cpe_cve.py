@@ -14,7 +14,7 @@ from xfd_mini_dl.models import Cpe, Cve, User, UserType
 client = TestClient(app)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_cpe_by_id_success():
     """Test successfully retrieving a CPE by ID."""
     # Create a user to authenticate the request
@@ -48,7 +48,7 @@ def test_get_cpe_by_id_success():
     assert data["name"] == "cpe:/o:test_os:1.0"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_cpe_by_id_not_found():
     """Test retrieving a non-existent CPE should return a 500 error."""
     # Create a user to authenticate the request
@@ -73,7 +73,7 @@ def test_get_cpe_by_id_not_found():
     assert "detail" in response.json()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_cve_by_id_success():
     """Test successfully retrieving a CVE by ID."""
     user = User.objects.create(
@@ -109,7 +109,7 @@ def test_get_cve_by_id_success():
     assert data["name"] == "CVE-2024-1234"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_cve_by_id_not_found():
     """Test retrieving a non-existent CVE should return a 500 error."""
     # Create a user to authenticate the request
@@ -134,7 +134,7 @@ def test_get_cve_by_id_not_found():
     assert "detail" in response.json()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_cve_by_name_success():
     """Test successfully retrieving a CVE by name."""
     user = User.objects.create(
@@ -169,7 +169,7 @@ def test_get_cve_by_name_success():
     assert data["status"] == "Resolved"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_cve_by_name_not_found():
     """Test retrieving a non-existent CVE by name should return a 500 error."""
     # Create a user to authenticate the request

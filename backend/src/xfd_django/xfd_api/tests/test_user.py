@@ -15,7 +15,7 @@ from xfd_mini_dl.models import ApiKey, Organization, Role, User, UserType
 client = TestClient(app)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_by_regular_user_should_not_work():
     """Invite by a regular user should not work."""
     user = User.objects.create(
@@ -56,7 +56,7 @@ def test_invite_by_regular_user_should_not_work():
     assert response.json() == {"detail": "Unauthorized access."}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_by_global_admin_should_work():
     """Invite by a global admin should work."""
     user = User.objects.create(
@@ -84,7 +84,7 @@ def test_invite_by_global_admin_should_work():
     assert data["user_type"] == UserType.STANDARD
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_by_global_admin_with_user_type_setting():
     """Invite by a global admin should work if setting user type."""
     user = User.objects.create(
@@ -117,7 +117,7 @@ def test_invite_by_global_admin_with_user_type_setting():
     assert data["user_type"] == UserType.GLOBAL_ADMIN
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_by_global_view_should_not_work():
     """Invite by a global view should not work."""
     user = User.objects.create(
@@ -143,7 +143,7 @@ def test_invite_by_global_view_should_not_work():
     assert response.json() == {"detail": "Unauthorized access."}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_by_organization_admin_should_work():
     """Invite by an organization admin should work."""
     user = User.objects.create(
@@ -194,7 +194,7 @@ def test_invite_by_organization_admin_should_work():
     assert data["roles"][0]["organization"]["id"] == str(organization.id)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_by_organization_admin_should_not_work_if_setting_user_type():
     """Invite by an organization admin should not work if setting user type."""
     user = User.objects.create(
@@ -239,7 +239,7 @@ def test_invite_by_organization_admin_should_not_work_if_setting_user_type():
     assert response.json() == {"detail": "Unauthorized access."}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_existing_user_by_different_org_admin_should_not_modify_other_user_details():
     """Invite existing user by a different organization admin should work, and should not modify other user details."""
     organization = Organization.objects.create(
@@ -312,7 +312,7 @@ def test_invite_existing_user_by_different_org_admin_should_not_modify_other_use
     assert role_for_org2[0]["role"] == "user"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_existing_user_by_different_org_admin_should_modify_user_name_if_initially_blank():
     """Invite existing user by a different organization admin should modify user name if user name is initially blank."""
     organization = Organization.objects.create(
@@ -383,7 +383,7 @@ def test_invite_existing_user_by_different_org_admin_should_modify_user_name_if_
     assert role_for_org2[0]["role"] == "user"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_existing_user_by_same_org_admin_should_update_user_org_role():
     """Invite existing user by same organization admin should work, and should update the user organization role."""
     organization = Organization.objects.create(
@@ -449,7 +449,7 @@ def test_invite_existing_user_by_same_org_admin_should_update_user_org_role():
     assert data["roles"][0]["role"] == "admin"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_existing_user_by_global_admin_should_update_user_type():
     """Invite existing user by global admin that updates user type should work."""
     User.objects.create(
@@ -491,7 +491,7 @@ def test_invite_existing_user_by_global_admin_should_update_user_type():
     assert data["user_type"] == UserType.GLOBAL_ADMIN
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_invite_existing_user_by_global_view_should_not_work():
     """Invite existing user by global view should not work."""
     User.objects.create(
@@ -521,7 +521,7 @@ def test_invite_existing_user_by_global_view_should_not_work():
     assert response.json() == {"detail": "Unauthorized access."}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.api_methods.user.send_registration_approved_email")
 def test_register_approve_success(mock_email):
     """Test successful user registration approval."""
@@ -561,7 +561,7 @@ def test_register_approve_success(mock_email):
     )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_register_approve_unauthorized_region():
     """Test approval with unauthorized region access."""
     current_user = User.objects.create(
@@ -591,7 +591,7 @@ def test_register_approve_unauthorized_region():
     assert response.json()["detail"] == "Unauthorized region access."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.api_methods.user.send_registration_denied_email")
 def test_register_deny_success(mock_denied_email):
     """Test successful user registration denial."""
@@ -629,7 +629,7 @@ def test_register_deny_success(mock_denied_email):
     )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_register_deny_unauthorized_region():
     """Test registration denial with unauthorized region access."""
     current_user = User.objects.create(
@@ -660,7 +660,7 @@ def test_register_deny_unauthorized_region():
     assert response.json()["detail"] == "Unauthorized region access."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_accept_terms_success():
     """Test that a user can successfully accept the latest terms of service."""
     user = User.objects.create(
@@ -688,7 +688,7 @@ def test_accept_terms_success():
     assert data["date_accepted_terms"] is not None
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_accept_terms_missing_version():
     """Test that missing version in request body returns a 400 error."""
     user = User.objects.create(
@@ -709,7 +709,7 @@ def test_accept_terms_missing_version():
     assert response.status_code == 422
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_accept_terms_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.post(
@@ -720,7 +720,7 @@ def test_accept_terms_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_user_as_admin():
     """Test that a global admin can successfully delete a user."""
     admin_user = User.objects.create(
@@ -756,7 +756,7 @@ def test_delete_user_as_admin():
     assert not User.objects.filter(id=target_user.id).exists()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_user_as_standard_user_fails():
     """Test that a standard user cannot delete another user."""
     user = User.objects.create(
@@ -789,7 +789,7 @@ def test_delete_user_as_standard_user_fails():
     assert User.objects.filter(id=target_user.id).exists()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_nonexistent_user():
     """Test that deleting a nonexistent user returns 404."""
     admin_user = User.objects.create(
@@ -811,7 +811,7 @@ def test_delete_nonexistent_user():
     assert response.status_code == 500
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_user_no_auth():
     """Test that an unauthenticated request returns 401."""
     target_user = User.objects.create(
@@ -828,7 +828,7 @@ def test_delete_user_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_as_global_admin():
     """Test that a global admin can retrieve all users."""
     global_admin = User.objects.create(
@@ -871,7 +871,7 @@ def test_get_users_as_global_admin():
     assert str(user2.id) in returned_user_ids
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_as_standard_user_fails():
     """Test that a standard user cannot retrieve all users."""
     standard_user = User.objects.create(
@@ -892,7 +892,7 @@ def test_get_users_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/users")
@@ -900,7 +900,7 @@ def test_get_users_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_with_roles():
     """Test that users and their roles are correctly returned."""
     global_admin = User.objects.create(
@@ -951,7 +951,7 @@ def test_get_users_with_roles():
     assert found_user["roles"][0]["role"] == "member"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_region_id_as_regional_admin():
     """Test that a regional admin can retrieve users by region ID."""
     regional_admin = User.objects.create(
@@ -998,7 +998,7 @@ def test_get_users_by_region_id_as_regional_admin():
     assert str(user2.id) in returned_user_ids
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_region_id_as_standard_user_fails():
     """Test that a standard user cannot retrieve users by region ID."""
     standard_user = User.objects.create(
@@ -1020,7 +1020,7 @@ def test_get_users_by_region_id_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_region_id_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/users/regionId/R1")
@@ -1028,7 +1028,7 @@ def test_get_users_by_region_id_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_region_id_not_found():
     """Test that retrieving users for a non-existent region returns 404."""
     regional_admin = User.objects.create(
@@ -1050,7 +1050,7 @@ def test_get_users_by_region_id_not_found():
     assert response.json()["detail"] == "No users found for the specified regionId"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_state_as_regional_admin():
     """Test that a regional admin can retrieve users by state."""
     regional_admin = User.objects.create(
@@ -1096,7 +1096,7 @@ def test_get_users_by_state_as_regional_admin():
     assert str(user2.id) in returned_user_ids
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_state_as_standard_user_fails():
     """Test that a standard user cannot retrieve users by state."""
     standard_user = User.objects.create(
@@ -1118,7 +1118,7 @@ def test_get_users_by_state_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_state_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/users/state/CA")
@@ -1126,7 +1126,7 @@ def test_get_users_by_state_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_state_not_found():
     """Test that retrieving users for a non-existent state returns 404."""
     regional_admin = User.objects.create(
@@ -1148,7 +1148,7 @@ def test_get_users_by_state_not_found():
     assert response.json()["detail"] == "No users found for the specified state"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_v2_as_regional_admin():
     """Test that a regional admin can retrieve users with filters."""
     regional_admin = User.objects.create(
@@ -1199,7 +1199,7 @@ def test_get_users_v2_as_regional_admin():
     assert data[0]["region_id"] == "R1"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_v2_as_standard_user_fails():
     """Test that a standard user cannot retrieve users with filters."""
     standard_user = User.objects.create(
@@ -1222,7 +1222,7 @@ def test_get_users_v2_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_v2_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/v2/users?state=CA")
@@ -1230,7 +1230,7 @@ def test_get_users_v2_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_v2_no_filters():
     """Test that a regional admin can retrieve users without filters."""
     regional_admin = User.objects.create(
@@ -1274,7 +1274,7 @@ def test_get_users_v2_no_filters():
     assert len(data) == 3
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_v2_empty_results():
     """Test that a valid request with no matching users returns an empty list."""
     regional_admin = User.objects.create(
@@ -1295,7 +1295,7 @@ def test_get_users_v2_empty_results():
     assert response.json() == []
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_user_v2_as_global_admin():
     """Test that a global admin can update user details."""
     global_admin = User.objects.create(
@@ -1334,7 +1334,7 @@ def test_update_user_v2_as_global_admin():
     assert data["last_name"] == "User"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_user_v2_as_standard_user_fails():
     """Test that a standard user cannot update another user's details."""
     standard_user = User.objects.create(
@@ -1367,7 +1367,7 @@ def test_update_user_v2_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized access."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_user_v2_no_auth():
     """Test that an unauthenticated request returns 401."""
     user = User.objects.create(
@@ -1386,7 +1386,7 @@ def test_update_user_v2_no_auth():
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_user_v2_non_existent_user():
     """Test that updating a non-existent user returns a 404."""
     global_admin = User.objects.create(
@@ -1412,7 +1412,7 @@ def test_update_user_v2_non_existent_user():
     assert response.json()["detail"] == "User not found"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_user_v2_update_userType_by_non_admin_fails():
     """Test that only a global admin can update userType."""
     regional_admin = User.objects.create(
@@ -1445,7 +1445,7 @@ def test_update_user_v2_update_userType_by_non_admin_fails():
     assert response.json()["detail"] == "Only global admins can update userType."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_me_success():
     """Test that an authenticated user can retrieve their own user data."""
     user = User.objects.create(
@@ -1469,7 +1469,7 @@ def test_get_me_success():
     assert data["user_type"] == user.userType
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_me_with_roles():
     """Test that a user with roles retrieves their associated organizations."""
     user = User.objects.create(
@@ -1510,7 +1510,7 @@ def test_get_me_with_roles():
     assert data["roles"][0]["organization"]["name"] == organization.name
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_me_with_api_keys():
     """Test that a user retrieves their associated API keys."""
     user = User.objects.create(
@@ -1542,7 +1542,7 @@ def test_get_me_with_api_keys():
     assert data["api_keys"][0]["last_four"] == "1234"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_me_unauthenticated():
     """Test that an unauthenticated request returns a 401 error."""
     response = client.get("/users/me")

@@ -7,7 +7,7 @@ import time
 # Third-Party Libraries
 import django
 import requests
-from xfd_api.models import Cpe, Cve
+from xfd_mini_dl.models import Cpe, Cve
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")

@@ -15,7 +15,7 @@ client = TestClient(app)
 
 
 # Test: list by globalAdmin should return all scans
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_scans_by_global_admin():
     """Test scan."""
     user = User.objects.create(
@@ -66,7 +66,7 @@ def test_list_scans_by_global_admin():
 
 
 # Test: create by globalAdmin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_scan_by_global_admin():
     """Test scan."""
     user = User.objects.create(
@@ -109,7 +109,7 @@ def test_create_scan_by_global_admin():
 
 
 # Test: create a granular scan by globalAdmin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_granular_scan_by_global_admin():
     """Test scan."""
     user = User.objects.create(
@@ -159,7 +159,7 @@ def test_create_granular_scan_by_global_admin():
 
 
 # Test: create by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
@@ -190,7 +190,7 @@ def test_create_by_global_view_fails():
 
 
 # Test: update by globalAdmin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_by_global_admin_succeeds():
     """Test scan."""
     user = User.objects.create(
@@ -227,7 +227,7 @@ def test_update_by_global_admin_succeeds():
 
 
 # Test: update a non-granular scan to a granular scan by globalAdmin
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_non_granular_to_granular_by_global_admin():
     """Test scan."""
     user = User.objects.create(
@@ -285,7 +285,7 @@ def test_update_non_granular_to_granular_by_global_admin():
 
 
 # Test: update by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
@@ -311,7 +311,7 @@ def test_update_by_global_view_fails():
 
 
 # Test: delete by globalAdmin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_by_global_admin_succeeds():
     """Test scan."""
     user = User.objects.create(
@@ -334,7 +334,7 @@ def test_delete_by_global_admin_succeeds():
 
 
 # Test: delete by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
@@ -358,7 +358,7 @@ def test_delete_by_global_view_fails():
 
 
 # Test: get by globalView should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_by_global_view_succeeds():
     """Test scan."""
     user = User.objects.create(
@@ -383,7 +383,7 @@ def test_get_by_global_view_succeeds():
 
 
 # Test: get by regular user on a scan not from their org should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_by_regular_user_fails():
     """Test scan."""
     user = User.objects.create(
@@ -407,7 +407,7 @@ def test_get_by_regular_user_fails():
 
 
 # Test: scheduler invoke by globalAdmin should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.lambda_client.LambdaClient.run_command")
 def test_scheduler_invoke_by_global_admin(mock_scheduler):
     """Test scan."""
@@ -432,7 +432,7 @@ def test_scheduler_invoke_by_global_admin(mock_scheduler):
 
 
 # Test: scheduler invoke by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.lambda_client.LambdaClient.run_command")
 def test_scheduler_invoke_by_global_view_fails(mock_scheduler):
     """Test scan."""
@@ -456,7 +456,7 @@ def test_scheduler_invoke_by_global_view_fails(mock_scheduler):
 
 
 # Test: run scan should set manualRunPending to true
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_run_scan_should_set_manualRunPending_to_true():
     """Test scan."""
     user = User.objects.create(
@@ -484,7 +484,7 @@ def test_run_scan_should_set_manualRunPending_to_true():
 
 
 # Test: runScan by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_run_scan_by_global_view_fails():
     """Test scan."""
     user = User.objects.create(
@@ -512,7 +512,7 @@ def test_run_scan_by_global_view_fails():
     assert response.json() == {"detail": "Unauthorized access."}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_granular_scans_as_global_admin():
     """Test that a GlobalViewAdmin can retrieve granular scans."""
     admin = User.objects.create(
@@ -560,7 +560,7 @@ def test_list_granular_scans_as_global_admin():
     assert "schema" in data  # Check that SCAN_SCHEMA is included in response
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_granular_scans_as_standard_user_fails():
     """Test that a standard user cannot retrieve granular scans."""
     user = User.objects.create(
@@ -581,14 +581,14 @@ def test_list_granular_scans_as_standard_user_fails():
     assert response.json()["detail"] == "Unauthorized access."
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_granular_scans_no_auth():
     """Test that an unauthenticated request returns 401."""
     response = client.get("/granularScans")
     assert response.status_code == 401
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_granular_scans_empty():
     """Test that an empty result is returned if no granular scans exist."""
     admin = User.objects.create(

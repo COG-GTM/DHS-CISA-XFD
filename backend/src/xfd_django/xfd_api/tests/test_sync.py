@@ -61,7 +61,7 @@ dummy_org_data = {
 
 
 # Test: post valid data with invalid checksum should return 500
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_sync_invalid_checksum_should_return_500():
     """Test sync with invalid checksum."""
     user = User.objects.create(
@@ -85,7 +85,7 @@ def test_sync_invalid_checksum_should_return_500():
 
 
 # Test: post valid data with missing checksum should return 500
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_sync_missing_checksum_should_return_500():
     """Test sync with missing checksum."""
     user = user = User.objects.create(
@@ -102,7 +102,7 @@ def test_sync_missing_checksum_should_return_500():
 
 
 # Test: post empty data should return 500
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_sync_missing_data_should_return_422():
     """Test sync with missing data."""
     user = user = User.objects.create(

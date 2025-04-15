@@ -16,7 +16,7 @@ client = TestClient(app)
 
 
 # Test: Creating an API key as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_api_key_as_global_view_admin():
     """Test API key creation by GlobalViewAdmin."""
     user = User.objects.create(
@@ -49,7 +49,7 @@ def test_create_api_key_as_global_view_admin():
 
 
 # Test: Creating an API key as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_api_key_as_regular_user_fails():
     """Test API key creation should fail for a standard user."""
     user = User.objects.create(
@@ -74,7 +74,7 @@ def test_create_api_key_as_regular_user_fails():
 
 
 # Test: Deleting an API key as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_api_key_as_global_view_admin():
     """Test API key deletion by GlobalViewAdmin."""
     user = User.objects.create(
@@ -111,7 +111,7 @@ def test_delete_api_key_as_global_view_admin():
 
 
 # Test: Deleting an API key as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_api_key_as_regular_user_fails():
     """Test API key deletion should fail for a standard user."""
     user = User.objects.create(
@@ -145,7 +145,7 @@ def test_delete_api_key_as_regular_user_fails():
 
 
 # Test: Getting all API keys as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_api_keys_as_regular_user_fails():
     """Test retrieving all API keys should fail for a standard user."""
     user = User.objects.create(
@@ -167,7 +167,7 @@ def test_get_all_api_keys_as_regular_user_fails():
 
 
 # Test: Getting all API keys as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_api_keys_as_global_view_admin():
     """Test retrieving all API keys by GlobalViewAdmin."""
     user = User.objects.create(
@@ -199,7 +199,7 @@ def test_get_all_api_keys_as_global_view_admin():
 
 
 # Test: Getting an API key by ID as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_api_key_by_id_as_regular_user_fails():
     """Test retrieving a specific API key by ID should fail for a standard user."""
     user = User.objects.create(
@@ -230,7 +230,7 @@ def test_get_api_key_by_id_as_regular_user_fails():
 
 
 # Test: Getting an API key by ID as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_api_key_by_id_as_global_view_admin():
     """Test retrieving a specific API key by ID as GlobalViewAdmin."""
     user = User.objects.create(
@@ -257,4 +257,4 @@ def test_get_api_key_by_id_as_global_view_admin():
     )
 
     assert response.status_code == 200
-    assert response.json()["lastFour"] == "test"
+    assert response.json()["last_four"] == "test"

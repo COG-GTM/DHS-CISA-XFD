@@ -15,7 +15,7 @@ client = TestClient(app)
 
 
 # Test: Creating a notification as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_notification_as_global_view_admin():
     """Test notification creation by GlobalViewAdmin."""
     user = User.objects.create(
@@ -51,7 +51,7 @@ def test_create_notification_as_global_view_admin():
 
 
 # Test: Creating a notification as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_create_notification_as_regular_user_fails():
     """Test notification creation should fail for a standard user."""
     user = User.objects.create(
@@ -82,7 +82,7 @@ def test_create_notification_as_regular_user_fails():
 
 
 # Test: Deleting a notification as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_notification_as_global_view_admin():
     """Test notification deletion by GlobalViewAdmin."""
     user = User.objects.create(
@@ -121,7 +121,7 @@ def test_delete_notification_as_global_view_admin():
 
 
 # Test: Deleting a notification as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_delete_notification_as_regular_user_fails():
     """Test notification deletion should fail for a standard user."""
     user = User.objects.create(
@@ -157,7 +157,7 @@ def test_delete_notification_as_regular_user_fails():
 
 
 # Test: Getting all notifications should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_all_notifications():
     """Test retrieving all notifications."""
     Notification.objects.create(
@@ -190,7 +190,7 @@ def test_get_all_notifications():
 
 
 # Test: Getting a notification by ID as a GlobalViewAdmin user should succeed
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_notification_by_id_as_global_view_admin():
     """Test retrieving a specific notification by ID as GlobalViewAdmin."""
     user = User.objects.create(
@@ -223,7 +223,7 @@ def test_get_notification_by_id_as_global_view_admin():
 
 
 # Test: Getting a notification by ID as a regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_notification_by_id_as_regular_user_fails():
     """Test retrieving a specific notification by ID should fail for a standard user."""
     user = User.objects.create(
@@ -255,7 +255,7 @@ def test_get_notification_by_id_as_regular_user_fails():
     assert response.json() == {"detail": "Unauthorized"}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_notification_as_global_view_admin():
     """Test updating a notification by GlobalViewAdmin."""
     user = User.objects.create(
@@ -301,7 +301,7 @@ def test_update_notification_as_global_view_admin():
     assert notification.message == "Updated message"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_notification_as_regular_user_fails():
     """Test updating a notification should fail for a standard user."""
     user = User.objects.create(

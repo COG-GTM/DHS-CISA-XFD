@@ -14,7 +14,7 @@ from xfd_mini_dl.models import User, UserType
 client = TestClient(app)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_standard_user_not_authorized_to_access_pe_proxy():
     """Test that a standard user is not authorized to access P&E proxy."""
     # Create a standard user
@@ -38,7 +38,7 @@ def test_standard_user_not_authorized_to_access_pe_proxy():
     assert response.json() == {"detail": "Unauthorized"}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_global_admin_authorized_to_access_pe_proxy():
     """Test that a global admin is authorized to access P&E proxy."""
     # Create a global admin user
@@ -61,7 +61,7 @@ def test_global_admin_authorized_to_access_pe_proxy():
     assert response.status_code in [200, 504]
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_global_view_user_authorized_to_access_pe_proxy():
     """Test that a global view user is authorized to access P&E proxy."""
     # Create a global view user

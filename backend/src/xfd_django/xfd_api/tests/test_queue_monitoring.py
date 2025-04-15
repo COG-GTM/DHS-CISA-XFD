@@ -8,8 +8,8 @@ import boto3
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import User, UserType
 from xfd_django.asgi import app
+from xfd_mini_dl.models import User, UserType
 
 client = TestClient(app)
 
@@ -48,7 +48,7 @@ class FakeSQSClientNoResults:
         return {"Attributes": {}}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_success(monkeypatch):
     """Test that searching queues returns correct data when SQS provides one queue."""
     # Create a GlobalView user
@@ -97,7 +97,7 @@ def test_search_queues_success(monkeypatch):
     assert result["messagesDelayed"] == 1
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_no_results(monkeypatch):
     """Test that searching queues returns an empty result when no queues are found."""
     user = User.objects.create(
@@ -137,7 +137,7 @@ def test_search_queues_no_results(monkeypatch):
     assert data["result"] == []
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_unauthorized():
     """Test that the endpoint returns 401 when no valid authentication is provided."""
     search_payload = {

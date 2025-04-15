@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import json
 
 # Third-Party Libraries
-from xfd_api.models import Organization, User  # Adjust the import path as needed
+from xfd_mini_dl.models import Organization, User  # Adjust the import path as needed
 
 
 def format_datetime(dt: datetime) -> str:

@@ -13,8 +13,15 @@ logger = logging.getLogger(__name__)
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import Domain, Organization, Service, User, UserType, Vulnerability
 from xfd_django.asgi import app
+from xfd_mini_dl.models import (
+    Domain,
+    Organization,
+    Service,
+    User,
+    UserType,
+    Vulnerability,
+)
 
 client = TestClient(app)
 
@@ -122,7 +129,7 @@ def vulnerability(domain, service):
     vulnerability.delete()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_vulnerability_by_id(user, vulnerability):
     """Test vulnerability."""
     # Get vulnerability by Id.
@@ -138,7 +145,7 @@ def test_get_vulnerability_by_id(user, vulnerability):
     assert data["severity"] == vulnerability.severity
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_vulnerability_by_id_fails_404(user, vulnerability):
     """Test vulnerability."""
     # Get error 404 if vulnerability does not exist
@@ -150,7 +157,7 @@ def test_get_vulnerability_by_id_fails_404(user, vulnerability):
     assert response.status_code == 404
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_vulnerability(user, vulnerability):
     """Test vulnerability."""
     original_vuln_id = str(vulnerability.id)
@@ -201,7 +208,7 @@ def test_update_vulnerability(user, vulnerability):
     assert str(vulnerability.id) == original_vuln_id
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_vulnerability_fails_404(user, vulnerability):
     """Test vulnerability."""
     new_data = {
@@ -237,7 +244,7 @@ def test_update_vulnerability_fails_404(user, vulnerability):
     assert response.status_code == 404
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_update_vulnerability_fails_422(user, vulnerability):
     """Test vulnerability."""
     new_data = {
@@ -269,7 +276,7 @@ def test_update_vulnerability_fails_422(user, vulnerability):
     assert response.status_code == 422
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_id(user, vulnerability):
     """Test vulnerability."""
     # Search vulnerabilities by ip.
@@ -292,7 +299,7 @@ def test_search_vulnerabilities_id(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_title(user, vulnerability):
     """Test vulnerability."""
     # Test search vulnerabilities by title
@@ -316,7 +323,7 @@ def test_search_vulnerabilities_by_title(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_cpe(user, vulnerability):
     """Test vulnerability."""
     # Test search vulnerabilities by cpe
@@ -341,7 +348,7 @@ def test_search_vulnerabilities_by_cpe(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_severity(user, vulnerability):
     """Test vulnerability."""
     # Test search vulnerabilities by severity
@@ -371,7 +378,7 @@ def test_search_vulnerabilities_by_severity(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_domain_id(user, vulnerability):
     """Test vulnerability."""
     # Test search vulnerabilities by domain id
@@ -398,7 +405,7 @@ def test_search_vulnerabilities_by_domain_id(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_state(user, vulnerability):
     """Test vulnerability."""
     state_to_search = search_fields["state"]
@@ -425,7 +432,7 @@ def test_search_vulnerabilities_by_state(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_substate(user, vulnerability):
     """Test vulnerability."""
     substate_to_search = search_fields["substate"]
@@ -452,7 +459,7 @@ def test_search_vulnerabilities_by_substate(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_organization_id(user, vulnerability):
     """Test vulnerability."""
     organization_id = str(vulnerability.domain.organization.id)
@@ -491,7 +498,7 @@ def test_search_vulnerabilities_by_organization_id(user, vulnerability):
             )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_is_kev(user, vulnerability):
     """Test vulnerability."""
     is_kev_to_search = search_fields["isKev"]
@@ -520,7 +527,7 @@ def test_search_vulnerabilities_by_is_kev(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_multiple_criteria(user, vulnerability):
     """Test vulnerability."""
     state_to_search = search_fields["state"]
@@ -564,7 +571,7 @@ def test_search_vulnerabilities_by_multiple_criteria(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_does_not_exist(user, vulnerability):
     """Test vulnerability."""
     # Test search vulnerabilities by state

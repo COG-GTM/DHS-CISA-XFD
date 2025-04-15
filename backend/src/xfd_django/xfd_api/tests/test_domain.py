@@ -119,7 +119,7 @@ def vulnerability(domain, service):
     yield vulnerability
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_domain_by_id(user, domain):
     """Test domain by id."""
     # Get domain by Id.
@@ -135,7 +135,7 @@ def test_get_domain_by_id(user, domain):
     assert data["ip"] == domain.ip
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_domain_by_id_fails_404(user, domain):
     """Test domain by id to fail."""
     # Get domain by Id.
@@ -147,7 +147,7 @@ def test_get_domain_by_id_fails_404(user, domain):
     assert response.status_code == 404
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_ip(user, vulnerability):
     """Test domain by ip."""
     # Search for the domain by IP
@@ -170,7 +170,7 @@ def test_search_domain_by_ip(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_port(user, vulnerability):
     """Test domain by port."""
     response = client.post(
@@ -197,7 +197,7 @@ def test_search_domain_by_port(user, vulnerability):
             )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_service(user, vulnerability):
     """Test domain by service."""
     response = client.post(
@@ -229,7 +229,7 @@ def test_search_domain_by_service(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_organization(user, vulnerability):
     """Test domain by org."""
     # Test search domains by organization
@@ -253,7 +253,7 @@ def test_search_domain_by_organization(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_organization_name(user, vulnerability):
     """Test domain by org name."""
     # Test search domains by organization
@@ -283,7 +283,7 @@ def test_search_domain_by_organization_name(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_vulnerabilities(user, vulnerability):
     """Test domain by vuln."""
     # Test search domains by vulnerabilities
@@ -309,7 +309,7 @@ def test_search_domain_by_vulnerabilities(user, vulnerability):
         )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domains_multiple_criteria(user, vulnerability):
     """Test domain by multi-criteria."""
     # Test search domains by multiple criteria
@@ -345,7 +345,7 @@ def test_search_domains_multiple_criteria(user, vulnerability):
             )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domains_does_not_exist(user, vulnerability):
     """Test domain by domain not existing."""
     # Test search domains if record does not exist

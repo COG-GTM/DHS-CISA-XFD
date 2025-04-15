@@ -15,7 +15,7 @@ client = TestClient(app)
 
 
 # Test: list by globalView should return scan tasks
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_scan_tasks_by_global_view():
     """Test scan-task."""
     user = User.objects.create(
@@ -52,7 +52,7 @@ def test_list_scan_tasks_by_global_view():
 
 
 # Test: list by globalView with filter should return filtered scan tasks
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_filtered_scan_tasks_by_global_view():
     """Test scan-task."""
     user = User.objects.create(
@@ -96,7 +96,7 @@ def test_list_filtered_scan_tasks_by_global_view():
 
 
 # Test: list by regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_scan_tasks_by_regular_user_fails():
     """Test scan-task."""
     user = User.objects.create(
@@ -129,7 +129,7 @@ def test_list_scan_tasks_by_regular_user_fails():
 
 
 # Test: kill by globalAdmin should kill the scan task
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_kill_scan_task_by_global_admin():
     """Test scan-task."""
     user = User.objects.create(
@@ -164,7 +164,7 @@ def test_kill_scan_task_by_global_admin():
 
 
 # Test: kill by globalAdmin should not work on a finished scan task
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_kill_finished_scan_task_by_global_admin_fails():
     """Test scan-task."""
     user = User.objects.create(
@@ -199,7 +199,7 @@ def test_kill_finished_scan_task_by_global_admin_fails():
 
 
 # Test: kill by globalView should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_kill_scan_task_by_global_view_fails():
     """Test scan-task."""
     user = User.objects.create(
@@ -234,7 +234,7 @@ def test_kill_scan_task_by_global_view_fails():
 
 
 # Test: logs by globalView user should get logs
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.ecs_client.ECSClient.get_logs")
 def test_get_logs_by_global_view(mock_get_logs):
     """Test scan-task."""
@@ -276,7 +276,7 @@ def test_get_logs_by_global_view(mock_get_logs):
 
 
 # Test: logs by regular user should fail
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.tasks.ecs_client.ECSClient.get_logs")
 def test_get_logs_by_regular_user_fails(mock_get_logs):
     """Test scan-task."""

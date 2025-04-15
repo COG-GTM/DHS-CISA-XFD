@@ -17,7 +17,7 @@ django.setup()
 
 # Third-Party Libraries
 from xfd_api.helpers.email import send_email
-from xfd_api.models import User
+from xfd_mini_dl.models import User
 
 # AWS Configuration
 cognito_client = boto3.client("cognito-idp", region_name=os.getenv("AWS_REGION"))
