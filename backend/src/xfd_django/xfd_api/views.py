@@ -2,7 +2,7 @@
 # Standard Python Libraries
 from datetime import datetime, timezone
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
@@ -53,6 +53,7 @@ from .api_methods.vulnerability import (
     export_vulnerabilities,
     get_vulnerability_by_id,
     search_vulnerabilities,
+    get_vulnerability_by_scan_source_and_id
 )
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
@@ -90,6 +91,9 @@ from .schema_models.vulnerability import (
     GetVulnerabilityResponse,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
+    CredBreachVulnerabilityResponse,
+    VsVulnerabilityResponse,
+    ShodanVulnerabiltyResponse
 )
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
@@ -1361,6 +1365,18 @@ async def call_get_vulnerability_by_id(
 ):
     """Get vulnerability by id."""
     return get_vulnerability_by_id(vulnerability_id, current_user)
+
+@api_router.get(
+    "/vulnerabilities/{scan_source}/{vulnerability_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=Union[CredBreachVulnerabilityResponse, VsVulnerabilityResponse, ShodanVulnerabiltyResponse],
+    tags=["Vulnerabilities"],
+)
+async def get_vulnerability_by_source_id_route(
+    scan_source: str, vulnerability_id: str, current_user: User = Depends(get_current_active_user)
+):
+    """Get vulnerability by id."""
+    return get_vulnerability_by_scan_source_and_id(scan_source, vulnerability_id, current_user)
 
 
 # TODO: Deprecated until frontend feature is re-enabled

@@ -685,8 +685,6 @@ def create_vuln_normal_views(database):
             ON te.ticket_id = t.id
             LEFT JOIN vuln_scan vs
             ON vs.id = te.vuln_scan_id
-            LEFT JOIN port_scan ps
-            ON ps.id = te.port_scan_id
             LEFT JOIN LATERAL (
                 SELECT sub_domain_id
                 FROM ips_subs ipsubs
