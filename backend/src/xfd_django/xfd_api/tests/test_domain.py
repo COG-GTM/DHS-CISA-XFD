@@ -205,9 +205,9 @@ def test_search_domain_by_ip(user, domain, refresh_vuln_views):
     assert len(data["result"]) > 0, "No result found for the given IP"
 
     # Validate result contain the correct IP
-    for domain in data["result"]:
-        assert domain["ip"] == search_fields["ip"], "Expected IP {}, but got {}".format(
-            search_fields["ip"], domain["ip"]
+    for result in data["result"]:
+        assert result["ip"] == search_fields["ip"], "Expected IP {}, but got {}".format(
+            search_fields["ip"], result["ip"]
         )
 
 
@@ -359,13 +359,13 @@ def test_search_domains_multiple_criteria(user, domain, refresh_vuln_views):
     assert "result" in data, "Response does not contain 'result' key"
     assert len(data["result"]) > 0, "No result found for the given ip and port"
 
-    for domain in data["result"]:
+    for result in data["result"]:
         assert (
-            domain["ip"] == search_fields["ip"]
+            result["ip"] == search_fields["ip"]
         ), "Domain with ID {} does not have an IP {}".format(
-            domain["id"], search_fields["ip"]
+            result["id"], search_fields["ip"]
         )
-        domain_id = domain.get("id", None)
+        domain_id = result.get("id", None)
 
         assert domain_id is not None, "Domain Id not found in Response"
         services = Service.objects.filter(domain=domain_id)
