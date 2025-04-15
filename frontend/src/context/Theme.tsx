@@ -98,7 +98,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '4px',
-          color: 'primary.dark',
+          color: 'secondary.main',
           typography: 'button',
           height: '40px',
           padding: '10px 16px 10px 16px',
@@ -131,6 +131,7 @@ const theme = createTheme({
     MuiLink: {
       styleOverrides: {
         root: {
+          color: 'primary.dark',
           '&:hover': {
             color: 'primary.darker'
           },

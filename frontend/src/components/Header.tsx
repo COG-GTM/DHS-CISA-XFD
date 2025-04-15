@@ -58,6 +58,12 @@ export const Header: React.FC<HeaderProps> = ({
       exact: true
     },
     {
+      title: 'Vulnerability Scanning',
+      path: '/',
+      users: STANDARD_USER,
+      exact: true
+    },
+    {
       title: 'Inventory',
       path: '/inventory',
       users: STANDARD_USER,
@@ -161,7 +167,10 @@ export const Header: React.FC<HeaderProps> = ({
               <Box
                 width="max-content"
                 sx={{
-                  display: { xs: 'none', sm: 'none', md: 'flex' }
+                  display: { xs: 'none', sm: 'none', md: 'flex' },
+                  whiteSpace: 'nowrap', // Prevent text wrapping
+                  overflow: 'hidden',   // Prevent overflow
+                  textOverflow: 'ellipsis' // Add ellipsis if text overflows
                 }}
               >
                 {desktopNavItems}
@@ -173,6 +182,7 @@ export const Header: React.FC<HeaderProps> = ({
                 textTransform="uppercase"
                 width="auto"
                 minWidth="max-content"
+                marginLeft={6}
               >
                 <Typography>{formattedUserType}</Typography>
               </Box>
