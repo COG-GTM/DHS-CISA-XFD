@@ -63,6 +63,7 @@ def get_domain_by_id(domain_id: str):
             "vulnerabilities": [
                 {
                     "id": vulnerability.id,
+                    "scan_source": vulnerability.scan_source,
                     "title": vulnerability.title,
                     "severity": vulnerability.severity,
                     "description": vulnerability.description,

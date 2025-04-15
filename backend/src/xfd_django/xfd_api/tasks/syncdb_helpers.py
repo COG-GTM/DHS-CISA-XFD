@@ -647,15 +647,27 @@ def create_vuln_normal_views(database):
                 t.vuln_name as title,
                 vs.cpe as product,
                 t.ip_string as domain_string,
-                t.ip_id as domain_id,
+                COALESCE(sub_link.sub_domain_id, t.ip_id) AS domain_id,
                 t.port_protocol as protocol,
                 t.vuln_port::text as port,
                 t.cvss_base_score,
-                COALESCE(t.cvss_severity::text, 'N/A') as severity,
+                --COALESCE(t.cvss_severity::text, 'N/A') as severity,
+                CASE
+                    WHEN t.cvss_severity = 0 THEN 'N/A'
+                    WHEN t.cvss_severity = 1 THEN 'Low'
+                    WHEN t.cvss_severity = 2 THEN 'Medium'
+                    WHEN t.cvss_severity = 3 THEN 'High'
+                    WHEN t.cvss_severity = 4 THEN 'Critical'
+                    ELSE 'N/A'
+                END AS severity,
                 t.organization_id,
-                te."action" as state,
+                CASE 
+                    WHEN te."action" IN ('OPENED', 'REOPENED', 'CHANGED', 'VERIFIED') THEN 'open'
+                    WHEN te."action" = 'CLOSED' THEN 'closed'
+                    ELSE 'unknown'  -- optional, in case other values sneak in
+                END AS state,
                 t.vuln_source as data_source,
-                vs.description,
+                COALESCE(vs.description, te.reason, 'N/A') as description,
                 t.is_kev::bool as is_kev,
                 t.service_name as service_string,
                 t.is_risky::bool as is_risky_service,
@@ -673,6 +685,15 @@ def create_vuln_normal_views(database):
             ON te.ticket_id = t.id
             LEFT JOIN vuln_scan vs
             ON vs.id = te.vuln_scan_id
+            LEFT JOIN port_scan ps
+            ON ps.id = te.port_scan_id
+            LEFT JOIN LATERAL (
+                SELECT sub_domain_id
+                FROM ips_subs ipsubs
+                WHERE ipsubs.ip_id = t.ip_id
+                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
+                LIMIT 1
+            ) AS sub_link ON TRUE
             WHERE te.event_timestamp = (
                 SELECT MAX(event_timestamp)
                 FROM ticket_event
@@ -732,8 +753,8 @@ def create_vuln_normal_views(database):
             """
             CREATE OR REPLACE VIEW vw_credential_breaches AS
             SELECT
-                vuln_id,
                 scan_source,
+                vuln_id,
                 created_at,
                 updated_at,
                 last_seen,
