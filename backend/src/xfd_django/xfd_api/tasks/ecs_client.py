@@ -106,6 +106,11 @@ class ECSClient:
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME"),
                             "QUEUE_URL": os.getenv("QUEUE_URL", ""),
+                            "XPANSE_ORG_SYNC_BUCKET_NAME": os.getenv(
+                                "XPANSE_ORG_SYNC_BUCKET_NAME"
+                            ),
+                            "XPANSE_API_KEY": os.getenv("XPANSE_API_KEY"),
+                            "XPANSE_AUTH_ID": os.getenv("XPANSE_AUTH_ID"),
                         },
                         detach=True,
                     )

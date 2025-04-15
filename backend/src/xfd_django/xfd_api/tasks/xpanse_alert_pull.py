@@ -697,9 +697,8 @@ def get_linked_business_units(org_list):
 
 def main(event):
     """Run Xpanse scans."""
-    orgs_list = event["organizations"]
+    orgs_list = event.get("organizations", [])
     linked_business_units = get_linked_business_units(orgs_list)
-    print("Running XpanseAlertPull on", len(linked_business_units))
     pull_alerts_data(linked_business_units, orgs_list)
     return 1
 
