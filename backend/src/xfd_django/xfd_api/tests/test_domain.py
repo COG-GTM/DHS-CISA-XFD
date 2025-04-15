@@ -8,14 +8,25 @@ from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
+from xfd_api.tasks.syncdb_helpers import (
+    create_domain_view,
+    create_service_view,
+    create_vuln_materialized_views,
+    create_vuln_normal_views,
+)
 from xfd_django.asgi import app
 from xfd_mini_dl.models import (
+    DataSource,
     Domain,
+    Ip,
+    IpsSubs,
     Organization,
     Service,
+    ShodanAssets,
+    ShodanVulns,
+    SubDomains,
     User,
     UserType,
-    Vulnerability,
 )
 
 client = TestClient(app)
@@ -29,6 +40,95 @@ search_fields = {
     "organization_name": "Wizardly Agency",
     "tag": "",
 }
+
+
+@pytest.fixture
+def sample_domain_ip_vuln(organization):
+    """Create subdomain, IP, and their association."""
+    # Create required DataSource
+    data_source_domain = DataSource.objects.create(
+        name="Test Source",
+        description="Used in tests",
+        last_run=datetime.now().date(),
+    )
+
+    data_source_shodan = DataSource.objects.create(
+        name="shodan", description="Test shodan source", last_run=datetime.now().date()
+    )
+
+    # Create the IP
+    ip = Ip.objects.create(
+        ip=search_fields["ip"],
+        organization=organization,
+        ip_hash=secrets.token_hex(8),
+        from_cidr=True,
+    )
+
+    # Create the subdomain
+    subdomain = SubDomains.objects.create(
+        sub_domain="example.crossfeed.local",
+        reverse_name="local.crossfeed.example",
+        organization=organization,
+        data_source=data_source_domain,
+    )
+
+    # Link IP and subdomain
+    IpsSubs.objects.create(ip=ip, sub_domain=subdomain, current=True)
+
+    # Create a Shodan entries
+    ShodanAssets.objects.create(
+        organization=organization,
+        ip=ip,
+        ip_string=ip.ip,
+        port=search_fields["port"],
+        protocol="http",
+        timestamp=datetime.utcnow(),
+        product="Apache httpd",
+        server="Apache",
+        tags=["self-signed", "vpn"],
+        data_source=data_source_shodan,
+    )
+
+    ShodanVulns.objects.create(
+        organization=organization,
+        ip=ip,
+        ip_string=ip.ip,
+        port=search_fields["port"],
+        protocol="http",
+        timestamp=datetime.now().date(),
+        cve="CVE-1234-5678",
+        severity="High",
+        cvss=8.7,
+        summary="Sample vuln",
+        name="Example Vuln",
+        data_source=data_source_shodan,
+        cpe=["cpe:/a:example:software:1.0"],
+    )
+
+    return subdomain
+
+
+# Create the views
+@pytest.fixture(autouse=True, scope="session")
+def ensure_vuln_views_created(django_db_setup, django_db_blocker):
+    """Ensure all necessary views for vulnerability testing are created."""
+    with django_db_blocker.unblock():
+        create_domain_view("mini_data_lake")
+        create_vuln_normal_views("mini_data_lake")
+        create_service_view("mini_data_lake")
+
+
+@pytest.fixture
+def refresh_vuln_views(django_db_blocker):
+    """Refresh the materialized vuln views after data is inserted."""
+    with django_db_blocker.unblock():
+        create_vuln_materialized_views("mini_data_lake")
+
+
+@pytest.fixture
+def domain(sample_domain_ip_vuln):
+    """Get domain from view after creating source data."""
+    return Domain.objects.get(name="example.crossfeed.local")
 
 
 @pytest.fixture
@@ -60,67 +160,8 @@ def organization():
     yield organization
 
 
-@pytest.fixture
-def domain(organization):
-    """Create domain fixture."""
-    domain = Domain.objects.create(
-        reverse_name="local.crossfeed.example",
-        ip=search_fields["ip"],  # Ensure this IP is the one you expect
-        organization=organization,
-        name="example.crossfeed.local",
-    )
-    transaction.commit()
-    # Debugging: Ensure the domain is created correctly
-    assert domain.ip == search_fields["ip"]
-    yield domain
-
-
-@pytest.fixture
-def service(domain):
-    """Create service fixture."""
-    service = Service.objects.create(
-        service_source="shodan",
-        port=search_fields["port"],
-        service="http",
-        products="test test test",
-        censys_ipv4_results={},
-        intrigue_ident_results={},
-        shodan_results={},
-        wappalyzer_results=[],
-        domain=domain,
-    )
-    transaction.commit()
-    assert service.port == search_fields["port"]
-    assert service.domain == domain
-    yield service
-
-
-@pytest.fixture
-def vulnerability(domain, service):
-    """Create vuln fixture."""
-    vulnerability = Vulnerability.objects.create(
-        title="Vulnerability title",
-        description="Test description",
-        references=[],
-        needs_population=False,
-        state="open",
-        substate="unconfirmed",
-        source="test",
-        notes="test",
-        actions=[],
-        structured_data={},
-        isKev=False,
-        domain=domain,
-        service=service,
-    )
-    transaction.commit()
-    assert vulnerability.domain == domain
-    assert vulnerability.service == service
-    yield vulnerability
-
-
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_get_domain_by_id(user, domain):
+def test_get_domain_by_id(user, domain, refresh_vuln_views):
     """Test domain by id."""
     # Get domain by Id.
     response = client.get(
@@ -136,7 +177,7 @@ def test_get_domain_by_id(user, domain):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_get_domain_by_id_fails_404(user, domain):
+def test_get_domain_by_id_fails_404(user, domain, refresh_vuln_views):
     """Test domain by id to fail."""
     # Get domain by Id.
     response = client.get(
@@ -148,7 +189,7 @@ def test_get_domain_by_id_fails_404(user, domain):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domain_by_ip(user, vulnerability):
+def test_search_domain_by_ip(user, domain, refresh_vuln_views):
     """Test domain by ip."""
     # Search for the domain by IP
     response = client.post(
@@ -171,7 +212,7 @@ def test_search_domain_by_ip(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domain_by_port(user, vulnerability):
+def test_search_domain_by_port(user, domain, refresh_vuln_views):
     """Test domain by port."""
     response = client.post(
         "/domain/search",
@@ -193,18 +234,18 @@ def test_search_domain_by_port(user, vulnerability):
             assert (
                 str(service.port) == search_fields["port"]
             ), "Domain with ID {} does not have a service with port {}".format(
-                domain_id, vulnerability.service.port
+                domain_id, domain.services.first().port
             )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domain_by_service(user, vulnerability):
+def test_search_domain_by_service(user, domain, refresh_vuln_views):
     """Test domain by service."""
     response = client.post(
         "/domain/search",
         json={
             "page": 1,
-            "filters": {"service": str(vulnerability.service.products)},
+            "filters": {"service": "Apache httpd"},
             "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -217,27 +258,18 @@ def test_search_domain_by_service(user, vulnerability):
     assert len(data["result"]) > 0, "No result found for the given service"
 
     for domain_data in data["result"]:
-        domain_id = domain_data.get("id", None)
-
-        assert domain_id is not None, "Domain Id not found in Response"
-        services = Service.objects.filter(domain=domain_id)
-        service_match = services.filter(id=vulnerability.service.id)
-        assert (
-            service_match is not None
-        ), "Domain with ID {} is not related a service with ID {}".format(
-            domain_id, vulnerability.service.id
-        )
+        assert domain_data["id"] == str(domain.id)
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domain_by_organization(user, vulnerability):
+def test_search_domain_by_organization(user, domain, refresh_vuln_views):
     """Test domain by org."""
     # Test search domains by organization
     response = client.post(
         "/domain/search",
         json={
             "page": 1,
-            "filters": {"organization": str(vulnerability.domain.organization.id)},
+            "filters": {"organization": str(domain.organization.id)},
             "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -247,15 +279,15 @@ def test_search_domain_by_organization(user, vulnerability):
     assert "result" in data, "Response does not contain 'result' key"
     assert len(data["result"]) > 0, "No result found for the given organization"
 
-    for domain in data["result"]:
-        assert domain["organization"]["name"] == str(
-            vulnerability.domain.organization.name
-        )
+    for result in data["result"]:
+        assert result["organization"]["name"] == str(domain.organization.name)
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domain_by_organization_name(user, vulnerability):
+def test_search_domain_by_organization_name(user, domain, refresh_vuln_views):
     """Test domain by org name."""
+    print("Domain in view:", Domain.objects.values("id", "organization_id", "name"))
+    print("Org in DB:", Organization.objects.all().values("id", "name"))
     # Test search domains by organization
     response = client.post(
         "/domain/search",
@@ -271,27 +303,27 @@ def test_search_domain_by_organization_name(user, vulnerability):
     assert "result" in data, "Response does not contain 'result' key"
     assert len(data["result"]) > 0, "No result found for the given organization name"
 
-    for domain in data["result"]:
+    for result in data["result"]:
         assert (
-            domain["organization"] is not None
+            result["organization"] is not None
         ), "Response domain did not include an Organization ID"
-        organization = Organization.objects.get(id=domain["organization"]["id"])
+        organization = Organization.objects.get(id=result["organization"]["id"])
         assert (
             organization.name == search_fields["organization_name"]
         ), "Domain with ID {} did not contain Organization Id {}".format(
-            domain["id"], search_fields["organization_name"]
+            result["id"], search_fields["organization_name"]
         )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domain_by_vulnerabilities(user, vulnerability):
+def test_search_domain_by_vulnerabilities(user, domain, refresh_vuln_views):
     """Test domain by vuln."""
     # Test search domains by vulnerabilities
     response = client.post(
         "/domain/search",
         json={
             "page": 1,
-            "filters": {"vulnerabilities": str(vulnerability.title)},
+            "filters": {"vulnerabilities": str(domain.vulnerabilities.first().title)},
             "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -301,16 +333,16 @@ def test_search_domain_by_vulnerabilities(user, vulnerability):
     assert "result" in data, "Response does not contain 'result' key"
     assert len(data["result"]) > 0, "No result found for the given vulnerability"
 
-    for domain in data["result"]:
-        assert str(vulnerability.domain.id) == str(
-            domain["id"]
+    for result in data["result"]:
+        assert str(domain.id) == str(
+            result["id"]
         ), "Response domain {} did not relate back to the expected vulnerability {}".format(
-            domain["id"], vulnerability.domain.id
+            result["id"], domain.id
         )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domains_multiple_criteria(user, vulnerability):
+def test_search_domains_multiple_criteria(user, domain, refresh_vuln_views):
     """Test domain by multi-criteria."""
     # Test search domains by multiple criteria
     response = client.post(
@@ -341,12 +373,12 @@ def test_search_domains_multiple_criteria(user, vulnerability):
             assert (
                 str(service.port) == search_fields["port"]
             ), "Domain with ID {} does not have a service with port {}".format(
-                domain_id, vulnerability.service.port
+                domain_id, domain.services.first().port
             )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_domains_does_not_exist(user, vulnerability):
+def test_search_domains_does_not_exist(user, domain, refresh_vuln_views):
     """Test domain by domain not existing."""
     # Test search domains if record does not exist
     response = client.post(

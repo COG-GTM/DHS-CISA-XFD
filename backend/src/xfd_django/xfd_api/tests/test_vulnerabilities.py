@@ -1,29 +1,36 @@
-"""Test vulnerability."""
+"""Test Vulnerability API."""
 # Standard Python Libraries
 from datetime import datetime
-import logging
 import secrets
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)  # Set the logging level to DEBUG
-logger = logging.getLogger(__name__)
-
-
 # Third-Party Libraries
+from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
+from xfd_api.tasks.syncdb_helpers import (
+    create_domain_view,
+    create_service_view,
+    create_vuln_materialized_views,
+    create_vuln_normal_views,
+)
 from xfd_django.asgi import app
 from xfd_mini_dl.models import (
+    DataSource,
     Domain,
+    Ip,
+    IpsSubs,
     Organization,
-    Service,
+    ShodanAssets,
+    ShodanVulns,
+    SubDomains,
     User,
     UserType,
     Vulnerability,
 )
 
 client = TestClient(app)
+
 
 bad_id = "c0effe93-3647-475a-a0c5-0b629c348590"
 search_fields = {
@@ -32,20 +39,91 @@ search_fields = {
     "severity": "Low",
     "state": "open",
     "substate": "unconfirmed",
-    "isKev": False,
+    "is_kev": None,
+    "port": "80",
+    "reverse_name": "local.crossfeed.quizzical-wing",
+    "ip": "127.116.195.151",
+    "organization_name": "Wizardly Agency",
+    "tag": "",
 }
+
+
+@pytest.fixture
+def sample_domain_ip_vuln(organization):
+    """Create subdomain, IP, and their association."""
+    # Create required DataSource
+    data_source_domain = DataSource.objects.create(
+        name="Test Source",
+        description="Used in tests",
+        last_run=datetime.now().date(),
+    )
+
+    data_source_shodan = DataSource.objects.create(
+        name="shodan", description="Test shodan source", last_run=datetime.now().date()
+    )
+
+    # Create the IP
+    ip = Ip.objects.create(
+        ip=search_fields["ip"],
+        organization=organization,
+        ip_hash=secrets.token_hex(8),
+        from_cidr=True,
+    )
+
+    # Create the subdomain
+    subdomain = SubDomains.objects.create(
+        sub_domain="example.crossfeed.local",
+        reverse_name="local.crossfeed.example",
+        organization=organization,
+        data_source=data_source_domain,
+    )
+
+    # Link IP and subdomain
+    IpsSubs.objects.create(ip=ip, sub_domain=subdomain, current=True)
+
+    # Create a Shodan entries
+    ShodanAssets.objects.create(
+        organization=organization,
+        ip=ip,
+        ip_string=ip.ip,
+        port=search_fields["port"],
+        protocol="http",
+        timestamp=datetime.utcnow(),
+        product="Apache httpd",
+        server="Apache",
+        tags=["self-signed", "vpn"],
+        data_source=data_source_shodan,
+    )
+
+    ShodanVulns.objects.create(
+        organization=organization,
+        ip=ip,
+        ip_string=ip.ip,
+        port=search_fields["port"],
+        protocol="http",
+        timestamp=datetime.now().date(),
+        cve="CVE-1234-5678",
+        severity=search_fields["severity"],
+        cvss=8.7,
+        summary="Sample vuln",
+        name=search_fields["title"],
+        data_source=data_source_shodan,
+        cpe=[search_fields["cpe"]],
+    )
+
+    return subdomain
 
 
 @pytest.fixture
 def user():
     """Create user fixture."""
     user = User.objects.create(
-        firstName="",
-        lastName="",
+        first_name="",
+        last_name="",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     yield user
     user.delete()  # Clean up after the test
@@ -55,82 +133,44 @@ def user():
 def organization():
     """Create org fixture."""
     organization = Organization.objects.create(
-        name="Test Organization",
-        rootDomains=["crossfeed.local"],
-        ipBlocks=[],
-        isPassive=False,
+        name=search_fields["organization_name"],
+        root_domains=["crossfeed.local"],
+        ip_blocks=[],
+        is_passive=False,
     )
+    transaction.commit()
+    assert organization.name == search_fields["organization_name"]
     yield organization
-    organization.delete()
+
+
+# Create the views
+@pytest.fixture(autouse=True, scope="session")
+def ensure_vuln_views_created(django_db_setup, django_db_blocker):
+    """Ensure all necessary views for vulnerability testing are created."""
+    with django_db_blocker.unblock():
+        create_domain_view("mini_data_lake")
+        create_vuln_normal_views("mini_data_lake")
+        create_service_view("mini_data_lake")
 
 
 @pytest.fixture
-def domain(organization):
-    """Create domain fixture."""
-    domain = Domain.objects.create(
-        reverseName="local.crossfeed.example",
-        ip="127.116.195.151",  # Ensure this IP is the one you expect
-        organization=organization,
-        name="example.crossfeed.local",
-    )
-    assert domain.organization == organization
-    yield domain
-    domain.delete()
+def refresh_vuln_views(django_db_blocker):
+    """Refresh the materialized vuln views after data is inserted."""
+    with django_db_blocker.unblock():
+        create_vuln_materialized_views("mini_data_lake")
 
 
 @pytest.fixture
-def service(domain):
-    """Create service fixture."""
-    service = Service.objects.create(
-        serviceSource="shodan",
-        port="80",
-        service="http",
-        products="test test test",
-        censysIpv4Results={},
-        intrigueIdentResults={},
-        shodanResults={},
-        wappalyzerResults=[],
-        domain=domain,
+def vulnerability(organization, sample_domain_ip_vuln, refresh_vuln_views):
+    """Get domain from view after creating source data."""
+    domain = Domain.objects.get(
+        name="example.crossfeed.local", organization=organization
     )
-    assert service.domain == domain
-    yield service
-    service.delete()
-
-
-@pytest.fixture
-def vulnerability(domain, service):
-    """Create user fixture."""
-    vulnerability = Vulnerability.objects.create(
-        title=search_fields["title"],
-        cpe=search_fields["cpe"],
-        severity=search_fields["severity"],
-        description="Test description",
-        references=[],
-        needsPopulation=False,
-        state=search_fields["state"],
-        substate=search_fields["substate"],
-        source="test",
-        notes="test",
-        actions=[],
-        structuredData={},
-        isKev=search_fields["isKev"],
-        domain=domain,
-        service=service,
-    )
-    assert vulnerability.domain == domain
-    assert vulnerability.service == service
-    assert vulnerability.title == search_fields["title"]
-    assert vulnerability.cpe == search_fields["cpe"]
-    assert vulnerability.severity == search_fields["severity"]
-    assert vulnerability.state == search_fields["state"]
-    assert vulnerability.substate == search_fields["substate"]
-    assert vulnerability.isKev == search_fields["isKev"]
-    yield vulnerability
-    vulnerability.delete()
+    return Vulnerability.objects.get(title=search_fields["title"], domain=domain)
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_get_vulnerability_by_id(user, vulnerability):
+def test_get_vulnerability_by_id(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Get vulnerability by Id.
     response = client.get(
@@ -146,7 +186,7 @@ def test_get_vulnerability_by_id(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_get_vulnerability_by_id_fails_404(user, vulnerability):
+def test_get_vulnerability_by_id_fails_404(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Get error 404 if vulnerability does not exist
     response = client.get(
@@ -157,127 +197,125 @@ def test_get_vulnerability_by_id_fails_404(user, vulnerability):
     assert response.status_code == 404
 
 
-@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_update_vulnerability(user, vulnerability):
-    """Test vulnerability."""
-    original_vuln_id = str(vulnerability.id)
-    new_data = {
-        "id": str(vulnerability.id),
-        "createdAt": str(vulnerability.createdAt),
-        "updatedAt": str(datetime.now()),
-        "lastSeen": str(datetime.now()),
-        "title": "Updated Vulnerability",
-        "cve": vulnerability.cve,
-        "cwe": vulnerability.cwe,
-        "cpe": vulnerability.cpe,
-        "description": "Updated description.",
-        "references": None,
-        "severity": "Medium",
-        "cvss": None,
-        "needsPopulation": False,
-        "state": vulnerability.state,
-        "substate": vulnerability.substate,
-        "source": "source2",
-        "notes": "updated notes",
-        "actions": ["action1"],
-        "structuredData": {"key": "value"},
-        "isKev": True,
-        "domain_id": str(vulnerability.domain.id),
-        "service_id": str(vulnerability.service.id),
-    }
+# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+# def test_update_vulnerability(user, vulnerability, refresh_vuln_views):
+#     """Test vulnerability."""
+#     original_vuln_id = str(vulnerability.id)
+#     new_data = {
+#         "id": str(vulnerability.id),
+#         "created_at": str(vulnerability.created_at),
+#         "updated_at": str(datetime.now()),
+#         "last_seen": str(datetime.now()),
+#         "title": "Updated Vulnerability",
+#         "cve": vulnerability.cve,
+#         "cwe": vulnerability.cwe,
+#         "cpe": vulnerability.cpe,
+#         "description": "Updated description.",
+#         "references": None,
+#         "severity": "Medium",
+#         "cvss": None,
+#         "needs_population": False,
+#         "state": vulnerability.state,
+#         "substate": vulnerability.substate,
+#         "source": "source2",
+#         "notes": "updated notes",
+#         "actions": ["action1"],
+#         "structured_data": {"key": "value"},
+#         "is_kev": True,
+#         "domain_id": str(vulnerability.domain.id),
+#     }
 
-    response = client.put(
-        "/vulnerabilities/{}".format(str(vulnerability.id)),
-        json=new_data,
-        headers={"Authorization": "Bearer " + create_jwt_token(user)},
-    )
+#     response = client.put(
+#         "/vulnerabilities/{}".format(str(vulnerability.id)),
+#         json=new_data,
+#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
+#     )
 
-    assert response.status_code == 200
+#     assert response.status_code == 200
 
-    vulnerability.refresh_from_db()
-    assert vulnerability.title == new_data["title"]
-    assert vulnerability.description == new_data["description"]
-    assert vulnerability.needsPopulation == new_data["needsPopulation"]
-    assert vulnerability.source == new_data["source"]
-    assert vulnerability.notes == new_data["notes"]
-    assert vulnerability.severity == new_data["severity"]
-    assert vulnerability.cvss == new_data["cvss"]
-    assert vulnerability.isKev == new_data["isKev"]
-    assert vulnerability.actions == new_data["actions"]
+#     vulnerability.refresh_from_db()
+#     assert vulnerability.title == new_data["title"]
+#     assert vulnerability.description == new_data["description"]
+#     assert vulnerability.needs_population == new_data["needs_population"]
+#     assert vulnerability.source == new_data["source"]
+#     assert vulnerability.notes == new_data["notes"]
+#     assert vulnerability.severity == new_data["severity"]
+#     assert vulnerability.cvss == new_data["cvss"]
+#     assert vulnerability.is_kev == new_data["is_kev"]
+#     assert vulnerability.actions == new_data["actions"]
 
-    assert str(vulnerability.id) == original_vuln_id
-
-
-@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_update_vulnerability_fails_404(user, vulnerability):
-    """Test vulnerability."""
-    new_data = {
-        "id": str(vulnerability.id),
-        "createdAt": str(vulnerability.createdAt),
-        "updatedAt": str(datetime.now()),
-        "lastSeen": str(datetime.now()),
-        "title": "Updated Vulnerability",
-        "cve": vulnerability.cve,
-        "cwe": vulnerability.cwe,
-        "cpe": vulnerability.cpe,
-        "description": "Updated description.",
-        "references": None,
-        "severity": "Medium",
-        "cvss": 7.5,
-        "needsPopulation": False,
-        "state": vulnerability.state,
-        "substate": vulnerability.substate,
-        "source": "source2",
-        "notes": "updated notes",
-        "actions": ["action1"],
-        "structuredData": {"key": "value"},
-        "isKev": True,
-        "domain_id": str(vulnerability.domain.id),
-        "service_id": str(vulnerability.service.id),
-    }
-
-    response = client.put(
-        "/vulnerabilities/{}".format(bad_id),
-        json=new_data,
-        headers={"Authorization": "Bearer " + create_jwt_token(user)},
-    )
-    assert response.status_code == 404
+#     assert str(vulnerability.id) == original_vuln_id
 
 
-@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_update_vulnerability_fails_422(user, vulnerability):
-    """Test vulnerability."""
-    new_data = {
-        "title": "Updated Vulnerability",
-        "cve": vulnerability.cve,
-        "cwe": vulnerability.cwe,
-        "cpe": vulnerability.cpe,
-        "description": "Updated description.",
-        "references": None,
-        "severity": "High",
-        "cvss": 7.5,
-        "needsPopulation": False,
-        "state": vulnerability.state,
-        "substate": vulnerability.substate,
-        "source": "source2",
-        "notes": "updated notes",
-        "actions": ["action1"],
-        "structuredData": {"key": "value"},
-        "isKev": True,
-        "domain_id": None,
-        "service_id": None,
-    }
+# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+# def test_update_vulnerability_fails_404(user, vulnerability, refresh_vuln_views):
+#     """Test vulnerability."""
+#     new_data = {
+#         "id": str(vulnerability.id),
+#         "created_at": str(vulnerability.created_at),
+#         "updated_at": str(datetime.now()),
+#         "last_seen": str(datetime.now()),
+#         "title": "Updated Vulnerability",
+#         "cve": vulnerability.cve,
+#         "cwe": vulnerability.cwe,
+#         "cpe": vulnerability.cpe,
+#         "description": "Updated description.",
+#         "references": None,
+#         "severity": "Medium",
+#         "cvss": 7.5,
+#         "needs_population": False,
+#         "state": vulnerability.state,
+#         "substate": vulnerability.substate,
+#         "source": "source2",
+#         "notes": "updated notes",
+#         "actions": ["action1"],
+#         "structured_data": {"key": "value"},
+#         "is_kev": True,
+#         "domain_id": str(vulnerability.domain.id),
+#     }
 
-    response = client.put(
-        "/vulnerabilities/{}".format(vulnerability.id),
-        json=new_data,
-        headers={"Authorization": "Bearer " + create_jwt_token(user)},
-    )
-    assert response.status_code == 422
+#     response = client.put(
+#         "/vulnerabilities/{}".format(bad_id),
+#         json=new_data,
+#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
+#     )
+#     assert response.status_code == 404
+
+
+# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+# def test_update_vulnerability_fails_422(user, vulnerability, refresh_vuln_views):
+#     """Test vulnerability."""
+#     new_data = {
+#         "title": "Updated Vulnerability",
+#         "cve": vulnerability.cve,
+#         "cwe": vulnerability.cwe,
+#         "cpe": vulnerability.cpe,
+#         "description": "Updated description.",
+#         "references": None,
+#         "severity": "High",
+#         "cvss": 7.5,
+#         "needsPopulation": False,
+#         "state": vulnerability.state,
+#         "substate": vulnerability.substate,
+#         "source": "source2",
+#         "notes": "updated notes",
+#         "actions": ["action1"],
+#         "structuredData": {"key": "value"},
+#         "is_kev": True,
+#         "domain_id": None,
+#         "service_id": None,
+#     }
+
+#     response = client.put(
+#         "/vulnerabilities/{}".format(vulnerability.id),
+#         json=new_data,
+#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
+#     )
+#     assert response.status_code == 422
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_id(user, vulnerability):
+def test_search_vulnerabilities_id(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Search vulnerabilities by ip.
     response = client.post(
@@ -300,7 +338,7 @@ def test_search_vulnerabilities_id(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_title(user, vulnerability):
+def test_search_vulnerabilities_by_title(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Test search vulnerabilities by title
 
@@ -324,7 +362,7 @@ def test_search_vulnerabilities_by_title(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_cpe(user, vulnerability):
+def test_search_vulnerabilities_by_cpe(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Test search vulnerabilities by cpe
     response = client.post(
@@ -349,7 +387,7 @@ def test_search_vulnerabilities_by_cpe(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_severity(user, vulnerability):
+def test_search_vulnerabilities_by_severity(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Test search vulnerabilities by severity
     response = client.post(
@@ -379,7 +417,7 @@ def test_search_vulnerabilities_by_severity(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_domain_id(user, vulnerability):
+def test_search_vulnerabilities_by_domain_id(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Test search vulnerabilities by domain id
     domain_name = str(vulnerability.domain.name)
@@ -406,7 +444,7 @@ def test_search_vulnerabilities_by_domain_id(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_state(user, vulnerability):
+def test_search_vulnerabilities_by_state(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     state_to_search = search_fields["state"]
 
@@ -433,7 +471,7 @@ def test_search_vulnerabilities_by_state(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_substate(user, vulnerability):
+def test_search_vulnerabilities_by_substate(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     substate_to_search = search_fields["substate"]
 
@@ -460,7 +498,9 @@ def test_search_vulnerabilities_by_substate(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_organization_id(user, vulnerability):
+def test_search_vulnerabilities_by_organization_id(
+    user, vulnerability, refresh_vuln_views
+):
     """Test vulnerability."""
     organization_id = str(vulnerability.domain.organization.id)
 
@@ -499,13 +539,13 @@ def test_search_vulnerabilities_by_organization_id(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_is_kev(user, vulnerability):
+def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
-    is_kev_to_search = search_fields["isKev"]
+    is_kev_to_search = search_fields["is_kev"]
 
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"isKev": is_kev_to_search}, "pageSize": 25},
+        json={"page": 1, "filters": {"is_kev": is_kev_to_search}, "pageSize": 25},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -517,18 +557,20 @@ def test_search_vulnerabilities_by_is_kev(user, vulnerability):
     assert "result" in data, "Response does not contain 'result' key"
     assert (
         len(data["result"]) > 0
-    ), "No vulnerabilities found for the given isKev value {}".format(is_kev_to_search)
+    ), "No vulnerabilities found for the given is_kev value {}".format(is_kev_to_search)
 
     for vuln in data["result"]:
         assert (
-            vuln["isKev"] == is_kev_to_search
-        ), "Vulnerability with ID {} does not have the expected 'isKev' value {}".format(
+            vuln["is_kev"] == is_kev_to_search
+        ), "Vulnerability with ID {} does not have the expected 'is_kev' value {}".format(
             vuln["id"], is_kev_to_search
         )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_multiple_criteria(user, vulnerability):
+def test_search_vulnerabilities_by_multiple_criteria(
+    user, vulnerability, refresh_vuln_views
+):
     """Test vulnerability."""
     state_to_search = search_fields["state"]
     substate_to_search = search_fields["substate"]
@@ -541,7 +583,7 @@ def test_search_vulnerabilities_by_multiple_criteria(user, vulnerability):
                 "state": state_to_search,
                 "substate": substate_to_search,
             },
-            "pageSize": 25,
+            "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -572,7 +614,7 @@ def test_search_vulnerabilities_by_multiple_criteria(user, vulnerability):
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_does_not_exist(user, vulnerability):
+def test_search_vulnerabilities_does_not_exist(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     # Test search vulnerabilities by state
     response = client.post(

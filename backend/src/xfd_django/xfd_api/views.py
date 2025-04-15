@@ -53,7 +53,6 @@ from .api_methods.vulnerability import (
     export_vulnerabilities,
     get_vulnerability_by_id,
     search_vulnerabilities,
-    update_vulnerability,
 )
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
@@ -88,11 +87,10 @@ from .schema_models.user import User as UserSchema
 from .schema_models.user import UserResponseV2, VersionModel
 from .schema_models.user_log_schema import LogSearch, LogSearchResponse
 from .schema_models.vulnerability import (
+    GetVulnerabilityResponse,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
-from .schema_models.vulnerability import GetVulnerabilityResponse
-from .schema_models.vulnerability import Vulnerability as VulnerabilitySchema
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
     get_organization_sync,
@@ -1365,24 +1363,25 @@ async def call_get_vulnerability_by_id(
     return get_vulnerability_by_id(vulnerability_id, current_user)
 
 
-@api_router.put(
-    "/vulnerabilities/{vulnerability_id}",
-    dependencies=[Depends(get_current_active_user)],
-    response_model=VulnerabilitySchema,
-    tags=["Vulnerabilities"],
-)
-async def call_update_vulnerability(
-    vulnerability_id,
-    data: VulnerabilitySchema,
-    current_user: User = Depends(get_current_active_user),
-):
-    """
-    Update vulnerability by id.
+# TODO: Deprecated until frontend feature is re-enabled
+# @api_router.put(
+#     "/vulnerabilities/{vulnerability_id}",
+#     dependencies=[Depends(get_current_active_user)],
+#     response_model=VulnerabilitySchema,
+#     tags=["Vulnerabilities"],
+# )
+# async def call_update_vulnerability(
+#     vulnerability_id,
+#     data: VulnerabilitySchema,
+#     current_user: User = Depends(get_current_active_user),
+# ):
+#     """
+#     Update vulnerability by id.
 
-    Returns:
-        object: a single vulnerability object that has been modified.
-    """
-    return update_vulnerability(vulnerability_id, data, current_user)
+#     Returns:
+#         object: a single vulnerability object that has been modified.
+#     """
+#     return update_vulnerability(vulnerability_id, data, current_user)
 
 
 # ========================================

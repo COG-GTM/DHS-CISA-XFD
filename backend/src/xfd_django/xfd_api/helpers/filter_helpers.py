@@ -164,9 +164,9 @@ def apply_vuln_filters(
     if vulnerability_filters.organization:
         q &= Q(domain__organization_id=vulnerability_filters.organization)
 
-    # Exact match on isKev (True/False)
+    # Exact match on is_kev (True/False)
     if vulnerability_filters.is_kev is not None:
-        q &= Q(isKev=vulnerability_filters.is_kev)
+        q &= Q(is_kev=vulnerability_filters.is_kev)
 
     # Apply the final Q object filter
     filtered = vulnerabilities.filter(q)

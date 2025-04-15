@@ -4035,7 +4035,10 @@ class Domain(models.Model):
         db_column="discovered_by_id",
     )
     organization = models.ForeignKey(
-        "Organization", on_delete=models.CASCADE, db_column="organization_id"
+        "Organization",
+        on_delete=models.CASCADE,
+        db_column="organization_id",
+        related_name="domains",
     )
     source = models.CharField(max_length=20)
 
@@ -4693,9 +4696,7 @@ class ShodanVulns(models.Model):
         null=True,
         help_text="Severity of vulnerability (medium, high, critical)",
     )
-    cvss = models.DecimalField(
-        max_digits=1000,
-        decimal_places=1000,
+    cvss = models.IntegerField(
         blank=True,
         null=True,
         help_text="Common Vulnerability Scoring System Score",
