@@ -1195,16 +1195,16 @@ async def call_get_users(current_user: User = Depends(get_current_active_user)):
 
 
 @api_router.get(
-    "/users/regionId/{regionId}",
+    "/users/region_id/{region_id}",
     response_model=List[UserResponseV2],
     dependencies=[Depends(get_current_active_user)],
     tags=["Users"],
 )
 async def call_get_users_by_region_id(
-    regionId, current_user: User = Depends(get_current_active_user)
+    region_id, current_user: User = Depends(get_current_active_user)
 ):
     """Call get_users_by_region_id()."""
-    return get_users_by_region_id(regionId, current_user)
+    return get_users_by_region_id(region_id, current_user)
 
 
 @api_router.get(
@@ -1228,12 +1228,12 @@ async def call_get_users_by_state(
 )
 async def call_get_users_v2(
     state: Optional[str] = Query(None),
-    regionId: Optional[str] = Query(None),
-    invitePending: Optional[bool] = Query(None),
+    region_id: Optional[str] = Query(None),
+    invite_pending: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_active_user),
 ):
     """Get users with filter."""
-    return get_users_v2(state, regionId, invitePending, current_user)
+    return get_users_v2(state, region_id, invite_pending, current_user)
 
 
 @api_router.put(

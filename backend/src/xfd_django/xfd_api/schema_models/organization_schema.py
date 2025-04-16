@@ -209,7 +209,7 @@ class DeleteUserResponseModel(BaseModel):
 
     status: str
     message: str
-    userDeleted: Any
+    user_deleted: Any
 
 
 class OrganizationSearchBody(BaseModel):

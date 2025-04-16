@@ -1012,7 +1012,7 @@ def test_get_users_by_region_id_as_standard_user_fails():
     )
 
     response = client.get(
-        "/users/regionId/R1",
+        "/users/region_id/R1",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(standard_user))},
     )
 
@@ -1023,7 +1023,7 @@ def test_get_users_by_region_id_as_standard_user_fails():
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_users_by_region_id_no_auth():
     """Test that an unauthenticated request returns 401."""
-    response = client.get("/users/regionId/R1")
+    response = client.get("/users/region_id/R1")
 
     assert response.status_code == 401
 
@@ -1042,12 +1042,12 @@ def test_get_users_by_region_id_not_found():
     )
 
     response = client.get(
-        "/users/regionId/R999",  # Non-existent region
+        "/users/region_id/R999",  # Non-existent region
         headers={"Authorization": "Bearer {}".format(create_jwt_token(regional_admin))},
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "No users found for the specified regionId"
+    assert response.json()["detail"] == "No users found for the specified region_id"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -1466,7 +1466,7 @@ def test_get_me_success():
     data = response.json()
     assert data["id"] == str(user.id)
     assert data["email"] == user.email
-    assert data["user_type"] == user.userType
+    assert data["user_type"] == user.user_type
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -1524,7 +1524,7 @@ def test_get_me_with_api_keys():
 
     api_key = ApiKey.objects.create(
         user=user,
-        hashedKey="fakehashedkey",
+        hashed_key="fakehashedkey",
         last_four="1234",
         created_at=datetime.now(),
         updated_at=datetime.now(),

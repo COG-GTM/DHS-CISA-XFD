@@ -230,19 +230,19 @@ def get_users(current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# GET: /users/regionId/{regionId}
+# GET: /users/region_id/{region_id}
 def get_users_by_region_id(region_id, current_user):
-    """List users with specific regionId."""
+    """List users with specific region_id."""
     try:
         if not is_regional_admin(current_user):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         if not region_id:
             raise HTTPException(
-                status_code=400, detail="Missing regionId in path parameters"
+                status_code=400, detail="Missing region_id in path parameters"
             )
 
-        users = User.objects.filter(regionId=region_id).prefetch_related(
+        users = User.objects.filter(region_id=region_id).prefetch_related(
             "roles__organization"
         )
         if users:
@@ -279,13 +279,14 @@ def get_users_by_region_id(region_id, current_user):
             ]
         else:
             raise HTTPException(
-                status_code=404, detail="No users found for the specified regionId"
+                status_code=404, detail="No users found for the specified region_id"
             )
 
     except HTTPException as http_exc:
         raise http_exc
 
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
