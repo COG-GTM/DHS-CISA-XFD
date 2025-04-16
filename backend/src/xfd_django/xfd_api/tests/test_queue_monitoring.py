@@ -53,12 +53,12 @@ def test_search_queues_success(monkeypatch):
     """Test that searching queues returns correct data when SQS provides one queue."""
     # Create a GlobalView user
     user = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email=f"{uuid.uuid4().hex}@example.com",
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Override boto3.client to return our FakeSQSClient
@@ -71,7 +71,7 @@ def test_search_queues_success(monkeypatch):
     )
 
     search_payload = {
-        "pageSize": 15,
+        "page_size": 15,
         "page": 1,
         "sort": "name",
         "order": "ASC",
@@ -92,21 +92,21 @@ def test_search_queues_success(monkeypatch):
     result = data["result"][0]
     # The queue name is extracted as the last part of the URL ("testQueue")
     assert result["name"] == "testQueue"
-    assert result["messagesAvailable"] == 5
-    assert result["messagesInFlight"] == 2
-    assert result["messagesDelayed"] == 1
+    assert result["messages_available"] == 5
+    assert result["messages_in_flight"] == 2
+    assert result["messages_delayed"] == 1
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_no_results(monkeypatch):
     """Test that searching queues returns an empty result when no queues are found."""
     user = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email=f"{uuid.uuid4().hex}@example.com",
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     monkeypatch.setattr(
@@ -118,7 +118,7 @@ def test_search_queues_no_results(monkeypatch):
     )
 
     search_payload = {
-        "pageSize": 15,
+        "page_size": 15,
         "page": 1,
         "sort": "name",
         "order": "ASC",
@@ -141,7 +141,7 @@ def test_search_queues_no_results(monkeypatch):
 def test_search_queues_unauthorized():
     """Test that the endpoint returns 401 when no valid authentication is provided."""
     search_payload = {
-        "pageSize": 15,
+        "page_size": 15,
         "page": 1,
         "sort": "name",
         "order": "ASC",

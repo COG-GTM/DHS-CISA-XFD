@@ -87,7 +87,7 @@ def test_create_saved_search_by_user(create_standard_user):
     user = create_standard_user
     name = "test-{}".format(secrets.token_hex(4))
     response = client.post(
-        "/saved-searches/",
+        "/saved-searches",
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
         json={
             "name": name,
@@ -130,7 +130,7 @@ def test_update_saved_search_by_global_admin_fails(
         "filters": [],
         "updated_at": datetime.now(),  # Include updatedAt field
     }
-    search = SavedSearch.objects.create(**body, created_by_id=standard_user)
+    search = SavedSearch.objects.create(**body, created_by=standard_user)
     body["name"] = "test-{}".format(secrets.token_hex(4))
     body["search_term"] = "123"
     body["updated_at"] = datetime.now().isoformat()  # Update the timestamp
@@ -173,7 +173,7 @@ def test_update_saved_search_by_global_view_fails(
         "filters": [],
         "updated_at": datetime.now(),  # Include updatedAt field
     }
-    saved_search = SavedSearch.objects.create(**body, created_by_id=user)
+    saved_search = SavedSearch.objects.create(**body, created_by=user)
 
     # Attempt to update the saved search with the global view user
     body["name"] = "test-{}".format(secrets.token_hex(4))
@@ -213,7 +213,7 @@ def test_update_saved_search_by_standard_user_with_access(create_standard_user):
         "filters": [],
         "updated_at": datetime.now(),  # Include updatedAt field
     }
-    search = SavedSearch.objects.create(**body, created_by_id=user)
+    search = SavedSearch.objects.create(**body, created_by=user)
     body["name"] = "test-{}".format(secrets.token_hex(4))
     body["search_term"] = "123"
     body["updated_at"] = datetime.now().isoformat()  # Update the timestamp
@@ -255,7 +255,7 @@ def test_update_saved_search_by_standard_user_without_access_fails(
         "filters": [],
         "updated_at": str(datetime.now()),  # Include updatedAt field
     }
-    search = SavedSearch.objects.create(**body, created_by_id=user_with_access)
+    search = SavedSearch.objects.create(**body, created_by=user_with_access)
     response = client.put(
         "/saved-searches/{}".format(search.id),
         json=body,
@@ -289,7 +289,7 @@ def test_delete_saved_search_by_global_admin_fails(
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=standard_user,
+        created_by=standard_user,
     )
     response = client.delete(
         "/saved-searches/{}".format(search.id),
@@ -328,7 +328,7 @@ def test_delete_saved_search_by_global_view_fails(
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=user,
+        created_by=user,
     )
 
     # Attempt to delete the saved search with the global view user
@@ -362,7 +362,7 @@ def test_delete_saved_search_by_user_with_access(create_standard_user):
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=user,
+        created_by=user,
     )
     response = client.delete(
         "/saved-searches/{}".format(search.id),
@@ -397,7 +397,7 @@ def test_delete_saved_search_by_user_without_access_fails(
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=user_with_access,
+        created_by=user_with_access,
     )
     response = client.delete(
         "/saved-searches/{}".format(search.id),
@@ -464,7 +464,7 @@ def test_list_saved_searches_by_user_only_gets_their_search(
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=primary_user,
+        created_by=primary_user,
     )
     search2 = SavedSearch.objects.create(
         name="test-{}".format(secrets.token_hex(4)),
@@ -474,7 +474,7 @@ def test_list_saved_searches_by_user_only_gets_their_search(
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=secondary_user,
+        created_by=secondary_user,
     )
     response = client.get(
         "/saved-searches",
@@ -539,7 +539,7 @@ def test_get_saved_search_by_user_passes(create_standard_user):
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=user,
+        created_by=user,
     )
     response = client.get(
         "/saved-searches/{}".format(search.id),
@@ -573,7 +573,7 @@ def test_get_saved_search_by_different_user_fails(
         search_term="",
         search_path="",
         filters=[],
-        created_by_id=user_with_access,
+        created_by=user_with_access,
     )
     response = client.get(
         "/saved-searches/{}".format(search.id),

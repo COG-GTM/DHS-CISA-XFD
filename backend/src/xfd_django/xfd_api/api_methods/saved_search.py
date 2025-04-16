@@ -62,7 +62,7 @@ def create_saved_search(request):
             search_term=request.get("search_term", ""),
             search_path=request.get("search_path", ""),
             filters=filters,
-            created_by_id=request.get("created_by_id"),
+            created_by=request.get("created_by_id"),
         )
 
         response = {
@@ -76,7 +76,7 @@ def create_saved_search(request):
             "count": search.count,
             "filters": search.filters,
             "search_path": search.search_path,
-            "created_by_id": search.created_by_id.id,
+            "created_by_id": search.created_by.id,
         }
 
         search.save()
@@ -86,6 +86,7 @@ def create_saved_search(request):
         raise HTTPException(status_code=404, detail="User not found")
 
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -95,7 +96,7 @@ def list_saved_searches(user):
         all_saved_searches = SavedSearch.objects.all()
         saved_search_list = []
         for search in all_saved_searches:
-            if search.created_by_id != user:
+            if search.created_by != user:
                 continue
             response = {
                 "id": str(search.id),
@@ -108,7 +109,7 @@ def list_saved_searches(user):
                 "count": search.count,
                 "filters": search.filters,
                 "search_path": search.search_path,
-                "created_by_id": search.created_by_id.id,
+                "created_by_id": search.created_by.id,
             }
             saved_search_list.append(response)
         return {
@@ -134,7 +135,7 @@ def get_saved_search(saved_search_id, user):
     try:
         saved_search = SavedSearch.objects.get(id=saved_search_id)
 
-        if saved_search.created_by_id.id != user.id:
+        if saved_search.created_by.id != user.id:
             raise HTTPException(status_code=404, detail="Saved search not found")
 
         response = {
@@ -148,7 +149,7 @@ def get_saved_search(saved_search_id, user):
             "count": saved_search.count,
             "filters": saved_search.filters,
             "search_path": saved_search.search_path,
-            "created_by_id": saved_search.created_by_id.id,
+            "created_by_id": saved_search.created_by.id,
         }
         return response
     except SavedSearch.DoesNotExist as dne:
@@ -192,7 +193,7 @@ def update_saved_search(request, user):
         ]
 
         saved_search = SavedSearch.objects.get(id=request["saved_search_id"])
-        if saved_search.created_by_id.id != user.id:
+        if saved_search.created_by.id != user.id:
             raise HTTPException(status_code=404, detail="Saved search not found")
 
         name = request["name"].strip()
@@ -228,7 +229,7 @@ def delete_saved_search(saved_search_id, user):
         raise HTTPException(status_code=404, detail={"error": "Invalid UUID"})
     try:
         search = SavedSearch.objects.get(id=saved_search_id)
-        if search.created_by_id.id != user.id:
+        if search.created_by.id != user.id:
             raise HTTPException(status_code=404, detail="Saved search not found")
         search.delete()
         return JsonResponse(

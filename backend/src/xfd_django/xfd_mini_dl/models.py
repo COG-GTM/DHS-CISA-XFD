@@ -889,7 +889,7 @@ class SavedSearch(models.Model):
     # vulnerability_template = models.JSONField(db_column="vulnerability_template", help_text="") # No longer used
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="created_by_id",
         blank=True,
         null=True,

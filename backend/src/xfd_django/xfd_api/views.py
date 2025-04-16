@@ -146,7 +146,7 @@ async def matomo_proxy(
         )
 
     # Ensure only global admin can access other paths
-    if current_user.userType != "globalAdmin":
+    if current_user.user_type != "globalAdmin":
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to Matomo
@@ -167,7 +167,7 @@ async def pe_proxy(
 ):
     """Proxy requests to the P&E Django application."""
     # Ensure only Global Admin and Global View users can access
-    if current_user.userType not in ["globalView", "globalAdmin"]:
+    if current_user.user_type not in ["globalView", "globalAdmin"]:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to the P&E Django application
@@ -715,12 +715,12 @@ async def call_create_saved_search(
     request = {
         "name": saved_search.name,
         "count": saved_search.count,
-        "sortDirection": saved_search.sortDirection,
-        "sortField": saved_search.sortField,
-        "searchTerm": saved_search.searchTerm,
-        "searchPath": saved_search.searchPath,
+        "sort_direction": saved_search.sort_direction,
+        "sort_field": saved_search.sort_field,
+        "search_term": saved_search.search_term,
+        "search_path": saved_search.search_path,
         "filters": saved_search.filters,
-        "createdById": current_user,
+        "created_by_id": current_user,
     }
 
     return create_saved_search(request)
@@ -769,10 +769,10 @@ async def call_update_saved_search(
         "saved_search_id": saved_search_id,
         "name": saved_search.name,
         "count": saved_search.count,
-        "searchTerm": saved_search.searchTerm,
-        "sortDirection": saved_search.sortDirection,
-        "sortField": saved_search.sortField,
-        "searchPath": saved_search.searchPath,
+        "search_term": saved_search.search_term,
+        "sort_direction": saved_search.sort_direction,
+        "sort_field": saved_search.sort_field,
+        "search_path": saved_search.search_path,
         "filters": saved_search.filters,
     }
 

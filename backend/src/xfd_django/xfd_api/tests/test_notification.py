@@ -95,7 +95,7 @@ def test_delete_notification_as_global_view_admin():
     )
 
     notification = Notification.objects.create(
-        maintenanceType="Routine",
+        maintenance_type="Routine",
         status="Active",
         updated_by="AdminUser",
         message="Scheduled maintenance",
