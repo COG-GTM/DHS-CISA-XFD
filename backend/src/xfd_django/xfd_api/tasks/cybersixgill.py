@@ -22,7 +22,14 @@ from .helpers.sixgill_helpers.db_query_source import (
     insert_sixgill_mentions,
     insert_sixgill_topCVEs,
 )
-from .helpers.sixgill_helpers.source import alerts, alias_organization, creds, mentions, root_domains, top_cves
+from .helpers.sixgill_helpers.source import (
+    alerts,
+    alias_organization,
+    creds,
+    mentions,
+    root_domains,
+    top_cves,
+)
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
