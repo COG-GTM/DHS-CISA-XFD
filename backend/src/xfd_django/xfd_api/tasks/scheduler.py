@@ -42,6 +42,11 @@ class Scheduler:
         global_scan = getattr(scan_schema, "global_scan", False)
         if global_scan:
             print("This is a global scan.")
+            if not self.should_run_scan(scan):
+                print(
+                    "Skipping global scan execution due to recent activity or constraints."
+                )
+                return
             # Now pass organizations to scanExecution
             event_payload = {
                 "scanId": str(scan.id),
@@ -214,7 +219,7 @@ class Scheduler:
         if (
             last_finished_scan_task
             and last_finished_scan_task.finished_at
-            and scan.isSingleScan
+            and scan.is_single_scan
         ):
             print("Single scan")
             return False

@@ -16,8 +16,8 @@ def org():
     """Org fixture."""
     return Organization.objects.create(
         name="org1",
-        rootDomains=["example.com"],
-        ipBlocks=["192.168.0.0/24"],
+        root_domains=["example.com"],
+        ip_blocks=["192.168.0.0/24"],
     )
 
 
@@ -48,7 +48,7 @@ def test_scheduler_skips_when_no_organizations():
 def test_manual_run_pending_forces_execution(org):
     """Test manual run pending forces execution."""
     scan = Scan.objects.create(
-        name="censys", concurrent_tasks=1, frequency=1, manualRunPending=True
+        name="censys", concurrent_tasks=1, frequency=1, manual_run_pending=True
     )
     scheduler = Scheduler()
     scheduler.initialize([scan], [org])
@@ -66,7 +66,7 @@ def test_scheduler_respects_frequency_window(org):
         name="censys",
         concurrent_tasks=1,
         frequency=1,
-        lastRun=timezone.now() - timedelta(hours=12),
+        last_run=timezone.now() - timedelta(hours=12),
     )
     scheduler = Scheduler()
     scheduler.initialize([scan], [org])
@@ -113,12 +113,12 @@ def test_scan_skips_if_recent_task_running(org):
 def test_scan_skips_if_single_scan_and_already_finished(org):
     """Test scan skips if single scan and already finished."""
     scan = Scan.objects.create(
-        name="censys", concurrent_tasks=1, frequency=1, isSingleScan=True
+        name="censys", concurrent_tasks=1, frequency=1, is_single_scan=True
     )
     ScanTask.objects.create(
         scan=scan,
         status="finished",
-        finishedAt=timezone.now() - timedelta(days=1),
+        finished_at=timezone.now() - timedelta(days=1),
     ).organizations.set([org])
 
     scheduler = Scheduler()
