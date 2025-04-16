@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
     },
     {
       title: 'Vulnerability Scanning',
-      path: '/',
+      path: '/VSDashboard',
       users: STANDARD_USER,
       exact: true
     },
@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sx={{
                   display: { xs: 'none', sm: 'none', md: 'flex' },
                   whiteSpace: 'nowrap', // Prevent text wrapping
-                  overflow: 'hidden',   // Prevent overflow
+                  overflow: 'hidden', // Prevent overflow
                   textOverflow: 'ellipsis' // Add ellipsis if text overflows
                 }}
               >

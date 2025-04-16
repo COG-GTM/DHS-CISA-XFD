@@ -39,6 +39,7 @@ import { RiskWithSearch } from 'pages/Risk/Risk';
 import { StaticsContextProvider } from 'context/StaticsContextProvider';
 import { SavedSearchContextProvider } from 'context/SavedSearchContextProvider';
 import { FilterDrawerContextProvider } from 'context/FilterDrawerContextProvider';
+import { VulnerabilityScanSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
 
 API.configure({
   endpoints: [
@@ -141,6 +142,10 @@ const App: React.FC = () => (
                         <RouteGuard
                           path="/inventory/domains"
                           component={Domains}
+                        />
+                        <RouteGuard
+                          path="/VSDashboard"
+                          component={VulnerabilityScanSearch}
                         />
                         <RouteGuard
                           path="/inventory/vulnerabilities"
