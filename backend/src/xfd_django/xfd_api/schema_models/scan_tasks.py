@@ -17,7 +17,7 @@ class ScanTaskSearch(BaseModel):
 
     page: Optional[int] = 1
     page_size: Optional[int] = 10
-    sort: Optional[str] = "createdAt"
+    sort: Optional[str] = "created_at"
     order: Optional[str] = "DESC"
     filters: Optional[Dict[str, Optional[str]]] = {}
 
