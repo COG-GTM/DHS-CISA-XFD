@@ -52,7 +52,6 @@ def safe_parse_date(value):
 logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s: %(message)s",
-    filename="vuln_scanning_sync.log",
 )
 LOGGER = logging.getLogger(__name__)
 
@@ -330,7 +329,7 @@ def save_ip_to_datalake(ip_obj):
 
 
 # Helper and utility functions
-def fetch_orgs_and_relations(db_name="mini_data_lake_secondary"):
+def fetch_orgs_and_relations(db_name="mini_data_lake"):
     """Fetch organizations along with related sectors, CIDRs (via CidrOrgs), and child organizations.
 
     Returns:
