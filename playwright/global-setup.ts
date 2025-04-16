@@ -50,7 +50,7 @@ async function globalSetup(config: FullConfig) {
   const page = await browser.newPage();
 
   //Log in with credentials.
-  await waitForFrontend(process.env.PW_XFD_URL);
+  //await waitForFrontend(process.env.PW_XFD_URL);
   await page.goto(String(process.env.PW_XFD_URL));
   await page.getByTestId('button').click();
   await page
