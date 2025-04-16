@@ -164,7 +164,6 @@ def create_service(service_dict, cves, org_record, alert_record):
                 "externally_inferred_cves": service_dict["externally_inferred_cves"],
                 "service_key": service_dict["service_key"],
                 "service_key_type": service_dict["service_key_type"],
-                "alert": alert_record,
             },
         )
     except Exception as e:
@@ -300,6 +299,7 @@ def insert_xpanse_alert(alert, org_record, business_unit):
             )
             if xpanse_service is not None:
                 linked_services.append(xpanse_service)
+                xpanse_alert.services.set(linked_services)
         LOGGER.info(
             "Created %d Services for Xpanse Alert %s",
             len(linked_services),
