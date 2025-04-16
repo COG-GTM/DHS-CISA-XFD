@@ -1059,7 +1059,7 @@ class ScanTask(models.Model):
     )
     scan = models.ForeignKey(
         Scan,
-        models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         db_column="scan_id",
         blank=True,
         null=True,
@@ -4554,6 +4554,10 @@ class ShodanAssets(models.Model):
         default=uuid.uuid4,
         help_text="PK: Unique identifier for shodan assets",
     )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the asset was first created",
+    )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -4673,6 +4677,10 @@ class ShodanVulns(models.Model):
         primary_key=True,
         default=uuid.uuid4,
         help_text="PK: Unique identifier for a shodan vulnerability object.",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the asset was first created",
     )
     organization = models.ForeignKey(
         Organization,

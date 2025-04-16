@@ -488,17 +488,17 @@ def insert_shodan_assets(data):
                 "country_code": row_dict.get("country_code"),
                 "location": row_dict.get("location"),
                 "data_source": row_dict.get("data_source_uid"),
+                "timestamp": timezone.make_aware(
+                    parse_datetime(row_dict["timestamp"]), timezone.timezone.utc
+                ),
+                "ip_string": row_dict["ip"],
             }
 
             mdl_obj, created = ShodanAssets.objects.update_or_create(
                 organization=organization,
                 ip=ip_instance,
-                ip_string=row_dict["ip"],
                 port=row_dict["port"],
                 protocol=row_dict["protocol"],
-                timestamp=timezone.make_aware(
-                    parse_datetime(row_dict["timestamp"]), timezone.timezone.utc
-                ),
                 defaults=mdl_asset_fields,
             )
             if created:
@@ -555,15 +555,15 @@ def insert_shodan_vulns(data):
                 "banner": row_dict.get("banner"),
                 "version": row_dict.get("version"),
                 "cpe": row_dict.get("cpe"),
+                "timestamp": timezone.make_aware(parse_datetime(row_dict["timestamp"])),
+                "ip_string": row_dict["ip"],
             }
 
             mdl_obj, created = ShodanVulns.objects.update_or_create(
                 organization=organization,
                 ip=ip_instance,
-                ip_string=row_dict["ip"],
                 port=row_dict["port"],
                 protocol=row_dict["protocol"],
-                timestamp=timezone.make_aware(parse_datetime(row_dict["timestamp"])),
                 defaults=mdl_vuln_data,
             )
             if created:

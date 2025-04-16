@@ -44,13 +44,14 @@ def handler(event, context):
 
         if last_status == "RUNNING":
             scan_task.status = "started"
+            scan_task.started_at = now()
         elif last_status == "STOPPED":
             if containers and containers[0].get("exitCode") == 0:
                 scan_task.status = "finished"
             else:
                 scan_task.status = "failed"
+            scan_task.finished_at = now()
             scan_task.output = "{}: {}".format(stop_code, stopped_reason)
-            scan_task.finishedAt = now()
         else:
             # No update needed for other statuses
             return {"status_code": 204, "body": "No status change required."}

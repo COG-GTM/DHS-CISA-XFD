@@ -700,7 +700,6 @@ def create_vuln_normal_views(database):
         """
         )
 
-        # TODO: Fix created_at with real value
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_shodan_vulns AS
@@ -708,7 +707,7 @@ def create_vuln_normal_views(database):
             SELECT
                 'shodan_vulnerability' as scan_source,
                 sv.shodan_vuln_uid::text as vuln_id,
-                sv."timestamp"::timestamp as created_at,
+                sv."created_at"::timestamp as created_at,
                 sv."timestamp"::timestamp as updated_at,
                 sv."timestamp"::timestamp as last_seen,
                 sv.cve as cve,
@@ -835,6 +834,14 @@ def create_vuln_materialized_views(database):
         """
         )
 
+        # Create unique index required for CONCURRENTLY
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_uid
+            ON mat_vw_combined_vulns (vuln_id)
+        """
+        )
+
         # Optional refresh
         cursor.execute("REFRESH MATERIALIZED VIEW mat_vw_combined_vulns;")
 
@@ -937,7 +944,7 @@ def create_service_view(database):
             CREATE OR REPLACE VIEW vw_service AS
             SELECT
                 s.shodan_asset_uid AS id,
-                s.timestamp AS "created_at",
+                s.created_at AS "created_at",
                 s.timestamp AS "updated_at",
                 'shodan' AS "service_source",
                 s.port,

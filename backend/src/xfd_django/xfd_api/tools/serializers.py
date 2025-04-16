@@ -40,10 +40,10 @@ def serialize_organization(org: Organization) -> dict:
     """
     Serialize an Organization instance to a dictionary with camelCase keys.
 
-    Note: The pendingDomains field is stored as TEXT but represents a JSON array.
+    Note: The pending_domains field is stored as TEXT but represents a JSON array.
     """
     try:
-        pending = json.loads(org.pendingDomains) if org.pendingDomains else []
+        pending = json.loads(org.pending_domains) if org.pending_domains else []
     except (json.JSONDecodeError, TypeError):
         pending = []
     return {

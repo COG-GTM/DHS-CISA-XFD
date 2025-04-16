@@ -22,7 +22,7 @@ interface LogsProps {}
 
 interface LogDetails {
   created_at: string;
-  eventType: string;
+  event_type: string;
   result: string;
   payload: string;
 }
@@ -69,7 +69,7 @@ export const Logs: FC<LogsProps> = () => {
 
   const logCols: GridColDef[] = [
     {
-      field: 'eventType',
+      field: 'event_type',
       headerName: 'Event',
       minWidth: 100,
       flex: 1

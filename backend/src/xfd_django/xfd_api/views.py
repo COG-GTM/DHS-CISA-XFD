@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from redis import asyncio as aioredis
+from xfd_mini_dl.models import User
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
@@ -57,7 +58,6 @@ from .api_methods.vulnerability import (
 )
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
-from .models import User
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
 from .schema_models import scan_tasks as scanTaskSchema
@@ -555,7 +555,7 @@ async def delete_organization(
     action="USER ASSIGNED",
     message_or_cb=lambda current_user, response, organization_id, user_data, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedAssignment": serialize_user(current_user),
+        "user_performed_assignment": serialize_user(current_user),
         "organization": serialize_organization(get_organization_sync(organization_id)),
         "role": user_data.role,
         "user": serialize_user(get_user_sync(user_data.user_id))
@@ -597,12 +597,12 @@ async def approve_role(
     action="USER ROLE REMOVED",
     message_or_cb=lambda current_user, response, organization_id, role_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedRemoval": serialize_user(current_user),
-        "fromOrganization": serialize_organization(
+        "user_performed_removal": serialize_user(current_user),
+        "from_organization": serialize_organization(
             get_organization_sync(organization_id)
         ),
-        "roleId": role_id,
-        "removalResult": response,
+        "role_id": role_id,
+        "removal_result": response,
     },
 )
 async def remove_role(
@@ -1172,8 +1172,8 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     action="USER DENY/REMOVE",
     message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedRemoval": serialize_user(current_user) if current_user else None,
-        "removalResult": response,
+        "user_performed_removal": serialize_user(current_user) if current_user else None,
+        "removal_result": response,
     },
 )
 async def call_delete_user(
@@ -1261,9 +1261,9 @@ async def update_user_v2_view(
     action="USER APPROVE",
     message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedApproval": serialize_user(current_user) if current_user else None,
-        "userToApprove": serialize_user(get_user_sync(user_id)) if user_id else None,
-        "approvalResult": response,
+        "user_performed_approval": serialize_user(current_user) if current_user else None,
+        "user_to_approve": serialize_user(get_user_sync(user_id)) if user_id else None,
+        "approval_result": response,
     },
 )
 async def register_approve(
@@ -1296,9 +1296,9 @@ async def register_deny(
     action="USER INVITE",
     message_or_cb=lambda current_user, response, new_user, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedInvite": serialize_user(current_user) if current_user else None,
-        "invitePayload": new_user.dict() if new_user else None,
-        "createdUserRecord": response,
+        "user_performed_invite": serialize_user(current_user) if current_user else None,
+        "invite_payload": new_user.dict() if new_user else None,
+        "created_user_record": response,
     },
 )
 async def invite_user(
