@@ -1,15 +1,26 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -x
 
 # Get the current datetime (e.g., 2025-04-10T12:34:56)
 DATETIME=$(date +%Y-%m-%dT%H:%M:%S)
+echo "📅 Test timestamp: $DATETIME"
+echo "📦 Bucket: $AUTOMATED_TEST_REPORTS_BUCKET_NAME"
+echo "🌎 Region: $AWS_REGION"
+echo "📤 Uploading to: s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/"
 
 OVERRIDES=$(
   jq -n \
     --arg datetime "$DATETIME" \
     --arg bucket "$AUTOMATED_TEST_REPORTS_BUCKET_NAME" \
     --arg region "$AWS_REGION" \
+    --arg url "$PW_XFD_URL" \
+    --arg username "$PW_XFD_USERNAME" \
+    --arg password "$PW_XFD_PASSWORD" \
+    --arg otpsecret "$PW_XFD_2FA_SECRET" \
+    --arg s3HtmlPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/html/" \
+    --arg s3JsonPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/results.json" \
     '{
     "containerOverrides": [
       {
@@ -17,12 +28,30 @@ OVERRIDES=$(
         "environment": [
           { "name": "DATETIME", "value": $datetime },
           { "name": "AUTOMATED_TEST_REPORTS_BUCKET_NAME", "value": $bucket },
-          { "name": "AWS_REGION", "value": $region }
+          { "name": "AWS_REGION", "value": $region },
+          { "name": "PW_XFD_URL", "value": $url },
+          { "name": "PW_XFD_USERNAME", "value": $username },
+          { "name": "PW_XFD_PASSWORD", "value": $password },
+          { "name": "PW_XFD_2FA_SECRET", "value": $otpsecret }
         ],
         "command": [
           "sh",
           "-c",
-          "echo \"Running Playwright Tests\" && cd /app/xfd/playwright && npx playwright test && echo \"Uploading to S3\" && aws s3 cp ./playwright-report/html s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/html/ --recursive --region $AWS_REGION && aws s3 cp ./playwright-report/results.json s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/results.json --region $AWS_REGION && echo \"Test results uploaded successfully to S3 at $DATETIME\""
+          "echo \"Cloning Playwright tests from GitHub...\" &&
+          git clone https://github.com/cisagov/xfd.git /app/xfd &&
+          cd /app/xfd/playwright &&
+          echo \"Installing Node dependencies...\" &&
+          npm install &&
+          echo \"Installing Playwright...\" &&
+          npx playwright install --with-deps &&
+          echo \"Running Playwright Tests\" &&
+          npx playwright test &&
+          echo \"📤 Uploading test results to S3...\" &&
+          echo \"Uploading HTML report to: ${s3HtmlPath}\" &&
+          aws s3 cp ./playwright-report/html ${s3HtmlPath} --recursive --region $region &&
+          echo \"Uploading JSON report to: ${s3JsonPath}\" &&
+          aws s3 cp ./playwright-report/results.json ${s3JsonPath} --region $region &&
+          echo \"✅ Test results uploaded successfully to S3 at $datetime\""
         ]
       }
     ]
@@ -57,8 +86,8 @@ if [[ -z "$TASK_ARN" || "$TASK_ARN" == "None" ]]; then
 fi
 
 echo "Started ECS Task with ARN: $TASK_ARN"
-
 echo "Waiting for ECS task to complete..."
+
 aws ecs wait tasks-stopped \
   --cluster "$CLUSTER_NAME" \
   --tasks "$TASK_ARN" \
@@ -67,4 +96,4 @@ aws ecs wait tasks-stopped \
   exit 1
 }
 
-echo "ECS task $TASK_ARN completed. Uploading test results to S3..."
+echo "ECS task $TASK_ARN completed successfully."

@@ -56,6 +56,10 @@ jobs:
          AUTOMATED_TEST_RESULTS_BUCKET_NAME=$AUTOMATED_TEST_REPORT_BUCKET_NAME \
          AWS_SUBNET=$AWS_SUBNET \
          AWS_SECURITY_GROUP=$AWS_SECURITY_GROUP \
+         PW_XFD_2FA_ISSUER=$PW_XFD_2FA_ISSUER \
+         PW_XFD_2FA_SECRET=$PW_XFD_2FA_SECRET \
+         PW_XFD_PASSWORD=$PW_XFD_PASSWORD \
+         PW_XFD_USERNAME=$PW_XFD_USERNAME \
          ./run_playwright_tests.sh
 
         continue-on-error: false  # Ensure it stops if the ECS task fails
