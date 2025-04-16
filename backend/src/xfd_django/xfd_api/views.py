@@ -640,11 +640,11 @@ async def update_granular_scan(
 )
 async def list_organizations_v2(
     state: Optional[List[str]] = Query(None),
-    regionId: Optional[List[str]] = Query(None),
+    region_id: Optional[List[str]] = Query(None),
     current_user: User = Depends(get_current_active_user),
 ):
     """Retrieve a list of all organizations (version 2)."""
-    return organization.list_organizations_v2(state, regionId, current_user)
+    return organization.list_organizations_v2(state, region_id, current_user)
 
 
 @api_router.post(

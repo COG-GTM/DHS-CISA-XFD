@@ -219,7 +219,7 @@ def test_censys_can_run_if_capacity_available():
 def test_manual_run_pending_ignores_frequency():
     """Test manual run ignores frequency."""
     scan = Scan.objects.create(
-        name="censys", concurrent_tasks=1, frequency=1, manualRunPending=True
+        name="censys", concurrent_tasks=1, frequency=1, manual_run_pending=True
     )
 
     with patch("xfd_api.tasks.scanExecution.ECSClient.run_command") as mock_run:
@@ -280,7 +280,7 @@ def test_assigns_correct_concurrency_index():
             shodan_api_keys=["key1", "key2", "key3"],
         )
         tasks = ScanTask.objects.filter(
-            scan=scan, fargateTaskArn__startswith="arn:task-x"
+            scan=scan, fargate_task_arn__startswith="arn:task-x"
         )
         assert all(task.concurrency_index in [1, 3] for task in tasks)
 
@@ -365,4 +365,4 @@ def test_multiple_scans_respect_global_concurrency_cap():
         )
         assert len(all_tasks) == 3
         assert {t.concurrency_index for t in all_tasks} == {1, 2, 3}
-        assert all(t.fargateTaskArn.startswith("arn:task-") for t in all_tasks)
+        assert all(t.fargate_task_arn.startswith("arn:task-") for t in all_tasks)

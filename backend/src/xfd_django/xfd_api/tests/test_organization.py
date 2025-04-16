@@ -2084,7 +2084,7 @@ def test_list_organizations_v2_filter_by_region():
     )
 
     response = client.get(
-        "/v2/organizations?regionId=region-2",
+        "/v2/organizations?region_id=region-2",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
     )
 

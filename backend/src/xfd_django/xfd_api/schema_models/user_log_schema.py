@@ -17,13 +17,14 @@ class Filter(BaseModel):
     def validate_operator(cls, v):
         """Validate operator."""
         allowed = [
-            "contains",
-            "exact",
-            "iexact",
-            "startswith",
-            "istartswith",
-            "endswith",
-            "iendswith",
+            "is",
+            "not",
+            "after",
+            "on_or_after",
+            "before",
+            "on_or_before",
+            "empty",
+            "not_empty",
         ]
         if v and v not in allowed:
             raise ValueError(f"Operator must be one of {allowed}")

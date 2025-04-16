@@ -34,7 +34,7 @@ def test_search_logs_success():
     )
 
     search_payload = {
-        "eventType": {"value": "UserLogin"},
+        "event_type": {"value": "UserLogin"},
         "result": {"value": "Success"},
     }
 
@@ -49,14 +49,14 @@ def test_search_logs_success():
     data = response.json()
     assert data["count"] == 1
     assert data["result"][0]["id"] == str(log.id)
-    assert data["result"][0]["eventType"] == "UserLogin"
+    assert data["result"][0]["event_type"] == "UserLogin"
     assert data["result"][0]["result"] == "Success"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_logs_unauthorized():
     """Test searching logs without authorization."""
-    search_payload = {"eventType": {"value": "UserLogin"}}
+    search_payload = {"event_type": {"value": "UserLogin"}}
 
     response = client.post("/logs/search", json=search_payload)
 
@@ -112,7 +112,7 @@ def test_search_logs_by_date():
     )
 
     search_payload = {
-        "timestamp": {"operator": "onOrAfter", "value": "2023-05-10T00:00:00"},
+        "timestamp": {"operator": "on_or_after", "value": "2023-05-10T00:00:00"},
     }
 
     response = client.post(
@@ -140,7 +140,7 @@ def test_search_logs_invalid_date_format():
     )
 
     search_payload = {
-        "timestamp": {"operator": "onOrAfter", "value": "invalid-date"},
+        "timestamp": {"operator": "on_or_after", "value": "invalid-date"},
     }
 
     response = client.post(

@@ -297,7 +297,7 @@ def get_by_state(state, current_user):
 
 # GET: /organizations/region_id/{region_id}
 def get_by_region(region_id, current_user):
-    """List organizations with specific regionId."""
+    """List organizations with specific region_id."""
     # Check if the current user is a regional admin
     if not is_regional_admin(current_user):
         raise HTTPException(status_code=403, detail="Unauthorized")
@@ -342,7 +342,7 @@ def get_all_regions(current_user):
         ):
             raise HTTPException(status_code=403, detail="Unauthorized")
 
-        # Fetch distinct regionId values
+        # Fetch distinct region_id values
         regions = (
             Organization.objects.exclude(region_id__isnull=True)
             .values("region_id")
@@ -393,7 +393,7 @@ def create_organization(organization_data, current_user):
         )
         organization_data_dict["created_by"] = current_user
 
-        # Set regionId based on stateName if available
+        # Set region_id based on stateName if available
         organization_data_dict["region_id"] = REGION_STATE_MAP.get(
             organization_data.state_name, None
         )
@@ -482,7 +482,7 @@ def upsert_organization(organization_data, current_user):
         )
         organization_data_dict["created_by"] = current_user
 
-        # Set regionId based on stateName if available
+        # Set region_id based on stateName if available
         organization_data_dict["region_id"] = REGION_STATE_MAP.get(
             organization_data.state_name, None
         )
