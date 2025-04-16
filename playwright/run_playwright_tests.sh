@@ -38,7 +38,7 @@ OVERRIDES=$(
           "sh",
           "-c",
           "echo \"Cloning Playwright tests from GitHub...\" &&
-          git clone https://github.com/cisagov/xfd.git /app/xfd &&
+          git clone -b CRASM-2286_Bug_fix_regression_yaml https://github.com/cisagov/xfd.git /app/xfd &&
           cd /app/xfd/playwright &&
           echo \"Installing Node dependencies...\" &&
           npm install &&
