@@ -1,31 +1,28 @@
+# Standard Python Libraries
 import datetime
 import logging
 import os
+import time
 import traceback
 
+# Third-Party Libraries
 import django
-import time
-import requests
-import numpy as np
-import pandas as pd
 from django.db.models import Q
 from django.utils import timezone
+import numpy as np
+import pandas as pd
+import requests
+from xfd_mini_dl.models import CredentialBreaches, DataSource, Organization
 
-from xfd_mini_dl.models import (
-    DataSource,
-    Organization,
-    CredentialBreaches,
-)
-
-from .source import alerts, alias_organization, creds, mentions, root_domains, top_cves
-from .api import get_sixgill_organizations
-from .db_query_source import (  
+from .helpers.sixgill_helpers.api import get_sixgill_organizations
+from .helpers.sixgill_helpers.db_query_source import (
     insert_sixgill_alerts,
     insert_sixgill_breaches,
     insert_sixgill_credentials,
     insert_sixgill_mentions,
     insert_sixgill_topCVEs,
 )
+from .helpers.sixgill_helpers.source import alerts, alias_organization, creds, mentions, root_domains, top_cves
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
@@ -58,7 +55,7 @@ SOURCE_OBJ, _ = DataSource.objects.get_or_create(
 
 class Cybersixgill:
     def __init__(self, org_objects, method_list, soc_med_included):
-        # Initialize with list of orgs, scan methods to run, and whether to include social media    
+        # Initialize with list of orgs, scan methods to run, and whether to include social media
         self.org_objects = org_objects
         self.method_list = method_list
         self.soc_med_included = soc_med_included
@@ -81,7 +78,9 @@ class Cybersixgill:
                 LOGGER.warning("%s is not registered in Cybersixgill, skipping", org_id)
                 continue
 
-            LOGGER.info("Running CSG on %s (%d/%d)", org_id, idx + 1, len(self.org_objects))
+            LOGGER.info(
+                "Running CSG on %s (%d/%d)", org_id, idx + 1, len(self.org_objects)
+            )
 
             # Run alert scan
             if "alerts" in self.method_list:
@@ -109,13 +108,26 @@ class Cybersixgill:
                 return 0
 
             # Clean and format alert date field
-            alerts_df["date"] = alerts_df["date"].astype(str).str.replace("“", "").str.replace("”", "")
-            alerts_df["date"] = pd.to_datetime(alerts_df["date"], errors="coerce").dt.date
+            alerts_df["date"] = (
+                alerts_df["date"].astype(str).str.replace("“", "").str.replace("”", "")
+            )
+            alerts_df["date"] = pd.to_datetime(
+                alerts_df["date"], errors="coerce"
+            ).dt.date
 
             # Optionally exclude social media platforms
             if not self.soc_med_included:
-                soc_platforms = ["twitter", "reddit", "parler", "linkedin", "discord", "telegram"]
-                alerts_df = alerts_df[~alerts_df["site"].str.lower().isin(soc_platforms)]
+                soc_platforms = [
+                    "twitter",
+                    "reddit",
+                    "parler",
+                    "linkedin",
+                    "discord",
+                    "telegram",
+                ]
+                alerts_df = alerts_df[
+                    ~alerts_df["site"].str.lower().isin(soc_platforms)
+                ]
 
             alerts_df = alerts_df.rename(columns={"id": "sixgill_id"})
             insert_sixgill_alerts(alerts_df, org, SOURCE_OBJ)
@@ -130,8 +142,11 @@ class Cybersixgill:
             # Get organization-specific aliases for mention search
             aliases = alias_organization(sixgill_id)
             if org.acronym == "doi_os":
-                aliases = ["DOI Office of the Secretary", "Interior Office of the Secretary"]
-            
+                aliases = [
+                    "DOI Office of the Secretary",
+                    "Interior Office of the Secretary",
+                ]
+
             # Fetch mentions using aliases
             mentions_df = mentions(org_id, DATE_SPAN, aliases, self.soc_med_included)
             if mentions_df.empty:
@@ -139,7 +154,12 @@ class Cybersixgill:
                 return 0
 
             mentions_df = mentions_df.rename(columns={"id": "sixgill_mention_id"})
-            mentions_df["date"] = mentions_df["date"].astype(str).str.replace("“", "").str.replace("”", "")
+            mentions_df["date"] = (
+                mentions_df["date"]
+                .astype(str)
+                .str.replace("“", "")
+                .str.replace("”", "")
+            )
             mentions_df["date"] = pd.to_datetime(mentions_df["date"], errors="coerce")
 
             insert_sixgill_mentions(mentions_df, org, SOURCE_OBJ)
@@ -164,31 +184,56 @@ class Cybersixgill:
                 return 0
 
             creds_df["breach_name"].replace("", pd.NA, inplace=True)
-            creds_df["breach_name"].fillna("Cybersixgill_" + creds_df["breach_id"].astype(str), inplace=True)
+            creds_df["breach_name"].fillna(
+                "Cybersixgill_" + creds_df["breach_id"].astype(str), inplace=True
+            )
 
-            breach_df = creds_df[["breach_name", "description", "breach_date", "password"]].copy()
+            breach_df = creds_df[
+                ["breach_name", "description", "breach_date", "password"]
+            ].copy()
             breach_df["password_included"] = breach_df["password"] != ""
-            breach_df = breach_df.groupby([
-                "breach_name", "description", "breach_date", "password_included"
-            ]).size().reset_index(name="exposed_cred_count")
+            breach_df = (
+                breach_df.groupby(
+                    ["breach_name", "description", "breach_date", "password_included"]
+                )
+                .size()
+                .reset_index(name="exposed_cred_count")
+            )
             breach_df["modified_date"] = breach_df["breach_date"]
-            breach_df.drop_duplicates(subset=["breach_name"], keep="first", inplace=True)
+            breach_df.drop_duplicates(
+                subset=["breach_name"], keep="first", inplace=True
+            )
 
             insert_sixgill_breaches(breach_df, SOURCE_OBJ)
 
             # Build lookup table for breaches already inserted
             breach_lookup = {
-            b.breach_name: b
-            for b in CredentialBreaches.objects.filter(breach_name__in=creds_df["breach_name"].unique())
-        }
+                b.breach_name: b
+                for b in CredentialBreaches.objects.filter(
+                    breach_name__in=creds_df["breach_name"].unique()
+                )
+            }
 
-            creds_df = creds_df.rename(columns={"domain": "sub_domain", "breach_date": "modified_date"})
-            creds_df = creds_df[[
-                "modified_date", "sub_domain", "email", "hash_type", "name", "login_id",
-                "password", "phone", "breach_name"
-            ]]
+            creds_df = creds_df.rename(
+                columns={"domain": "sub_domain", "breach_date": "modified_date"}
+            )
+            creds_df = creds_df[
+                [
+                    "modified_date",
+                    "sub_domain",
+                    "email",
+                    "hash_type",
+                    "name",
+                    "login_id",
+                    "password",
+                    "phone",
+                    "breach_name",
+                ]
+            ]
 
-            insert_sixgill_credentials(creds_df, breach_lookup, org, roots[0], SOURCE_OBJ)
+            insert_sixgill_credentials(
+                creds_df, breach_lookup, org, roots[0], SOURCE_OBJ
+            )
         except Exception as e:
             LOGGER.error("Failed credentials for %s: %s", org.acronym, e)
             LOGGER.error(traceback.format_exc())
@@ -223,12 +268,14 @@ def handler(event):
 
         # Get all organizations
         orgs = Organization.objects.all()
-        LOGGER.info("Number of orgs to scan: %d", orgs.count())  
+        LOGGER.info("Number of orgs to scan: %d", orgs.count())
 
         # Define which scan methods to run
         method_list = ["alerts", "mentions", "credentials", "topCVEs"]
 
-        scan = Cybersixgill(org_objects=orgs, method_list=method_list, soc_med_included=False)
+        scan = Cybersixgill(
+            org_objects=orgs, method_list=method_list, soc_med_included=False
+        )
         scan.run()
 
         return {
@@ -239,4 +286,3 @@ def handler(event):
     except Exception as e:
         LOGGER.exception("Cybersixgill scan failed")
         return {"statusCode": 500, "body": str(e)}
-
