@@ -295,7 +295,7 @@ def get_by_state(state, current_user):
     return list(organizations)
 
 
-# GET: /organizations/regionId/{region_id}
+# GET: /organizations/region_id/{region_id}
 def get_by_region(region_id, current_user):
     """List organizations with specific regionId."""
     # Check if the current user is a regional admin
@@ -569,7 +569,7 @@ def update_organization(organization_id: str, organization_data, current_user):
     try:
         # Validate the organization ID and ensure it's a valid UUID
         if not organization_id or not is_valid_uuid(organization_id):
-            raise HTTPException(status_code=404, detail="Organization not found")
+            raise HTTPException(status_code=404, detail="Not a valid organization id.")
 
         # Ensure the current user has permission to update the organization
         if not is_org_admin(current_user, organization_id):
@@ -728,6 +728,7 @@ def delete_organization(org_id: str, current_user):
         raise http_exc
 
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -593,9 +593,9 @@ def test_get_org_with_scan_tasks_by_org_admin_succeeds():
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == organization.name
-    assert len(data["scanTasks"]) == 1
-    assert data["scanTasks"][0]["id"] == str(scan_task.id)
-    assert data["scanTasks"][0]["scan"]["id"] == str(scan.id)
+    assert len(data["scan_tasks"]) == 1
+    assert data["scan_tasks"][0]["id"] == str(scan_task.id)
+    assert data["scan_tasks"][0]["scan"]["id"] == str(scan.id)
 
 
 # Test: Enabling a user-modifiable scan by org admin should succeed
@@ -630,8 +630,8 @@ def test_enable_user_modifiable_scan_by_org_admin_succeeds():
         name="censys",
         arguments={},
         frequency=999999,
-        isGranular=True,
-        isUserModifiable=True,
+        is_granular=True,
+        is_user_modifiable=True,
     )
 
     response = client.post(
@@ -642,8 +642,8 @@ def test_enable_user_modifiable_scan_by_org_admin_succeeds():
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data["granularScans"]) == 1
-    assert data["granularScans"][0]["id"] == str(scan.id)
+    assert len(data["granular_scans"]) == 1
+    assert data["granular_scans"][0]["id"] == str(scan.id)
 
 
 # Test: Disabling a user-modifiable scan by org admin should succeed
@@ -678,8 +678,8 @@ def test_disable_user_modifiable_scan_by_org_admin_succeeds():
         name="censys",
         arguments={},
         frequency=999999,
-        isGranular=True,
-        isUserModifiable=True,
+        is_granular=True,
+        is_user_modifiable=True,
     )
 
     scan_task = ScanTask.objects.create(
@@ -697,7 +697,7 @@ def test_disable_user_modifiable_scan_by_org_admin_succeeds():
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data["granularScans"]) == 0
+    assert len(data["granular_scans"]) == 0
 
 
 # Test: Enabling a user-modifiable scan by org user should fail
@@ -732,8 +732,8 @@ def test_enable_user_modifiable_scan_by_org_user_fails():
         name="censys",
         arguments={},
         frequency=999999,
-        isGranular=True,
-        isUserModifiable=True,
+        is_granular=True,
+        is_user_modifiable=True,
     )
 
     response = client.post(
@@ -771,8 +771,8 @@ def test_enable_user_modifiable_scan_by_global_admin_succeeds():
         name="censys",
         arguments={},
         frequency=999999,
-        isGranular=True,
-        isUserModifiable=True,
+        is_granular=True,
+        is_user_modifiable=True,
     )
 
     response = client.post(
@@ -783,8 +783,8 @@ def test_enable_user_modifiable_scan_by_global_admin_succeeds():
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data["granularScans"]) == 1
-    assert data["granularScans"][0]["id"] == str(scan.id)
+    assert len(data["granular_scans"]) == 1
+    assert data["granular_scans"][0]["id"] == str(scan.id)
 
 
 # Test: Enabling a non-user-modifiable scan by org admin should fail
@@ -819,8 +819,8 @@ def test_enable_non_user_modifiable_scan_by_org_admin_fails():
         name="censys",
         arguments={},
         frequency=999999,
-        isGranular=True,
-        isUserModifiable=False,  # Not user-modifiable
+        is_granular=True,
+        is_user_modifiable=False,  # Not user-modifiable
     )
 
     response = client.post(
@@ -1363,7 +1363,7 @@ def test_get_organizations_by_region_as_regional_admin():
     )
 
     response = client.get(
-        "/organizations/regionId/12345",
+        "/organizations/region_id/12345",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
@@ -1396,7 +1396,7 @@ def test_get_organizations_by_region_as_standard_user_fails():
     )
 
     response = client.get(
-        "/organizations/regionId/12345",
+        "/organizations/region_id/12345",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
@@ -1417,7 +1417,7 @@ def test_get_organizations_by_region_not_found():
     )
 
     response = client.get(
-        "/organizations/regionId/99999",  # Non-existent region_id
+        "/organizations/region_id/99999",  # Non-existent region_id
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
@@ -1462,7 +1462,7 @@ def test_upsert_organization_create():
     assert data["acronym"] == acronym
     assert data["name"] == name
     assert data["state"] == "CA"
-    assert data["createdBy"]["email"] == user.email
+    assert data["created_by"]["email"] == user.email
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -1632,7 +1632,7 @@ def test_add_user_to_org_v2_success():
     assert data["user"]["id"] == str(user.id)
     assert data["role"] == "member"
     assert data["approved"] is True
-    assert data["approvedBy"]["id"] == str(admin.id)
+    assert data["approved_by"]["id"] == str(admin.id)
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -2152,7 +2152,7 @@ def test_search_organizations_as_global_admin(mock_search):
         "hits": {"hits": [{"_source": {"name": "Test Org", "region_id": "region-1"}}]}
     }
 
-    payload = {"searchTerm": "Test Org", "regions": []}
+    payload = {"search_term": "Test Org", "regions": []}
 
     response = client.post(
         "/search/organizations",
@@ -2185,7 +2185,7 @@ def test_search_organizations_filter_by_region(mock_search):
         "hits": {"hits": [{"_source": {"name": "Region Org", "region_id": "region-3"}}]}
     }
 
-    payload = {"searchTerm": "", "regions": ["region-3"]}
+    payload = {"search_term": "", "regions": ["region-3"]}
 
     response = client.post(
         "/search/organizations",
@@ -2216,7 +2216,7 @@ def test_search_organizations_no_results(mock_search):
     # Mock Elasticsearch response (no results)
     mock_search.return_value = {"hits": {"hits": []}}
 
-    payload = {"searchTerm": "Nonexistent Org", "regions": []}
+    payload = {"search_term": "Nonexistent Org", "regions": []}
 
     response = client.post(
         "/search/organizations",
@@ -2250,7 +2250,7 @@ def test_search_organizations_no_access():
         updated_at=datetime.now(),
     )
 
-    payload = {"searchTerm": "Restricted Org", "regions": []}
+    payload = {"search_term": "Restricted Org", "regions": []}
 
     response = client.post(
         "/search/organizations",
@@ -2366,7 +2366,7 @@ def test_get_organizations_by_region_success():
         updated_at=datetime.now(),
     )
 
-    Organization.objects.create(
+    org = Organization.objects.create(
         name="Test Org",
         acronym="TEST",
         root_domains=["test.com"],
@@ -2381,7 +2381,8 @@ def test_get_organizations_by_region_success():
 
     assert response.status_code == 200
     data = response.json()
-    assert any(org["id"] == str(org.id) for org in data)
+
+    assert any(result["id"] == str(org.id) for result in data)
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -2413,8 +2414,8 @@ def test_get_organizations_by_region_empty():
     region_id = "empty-region"
 
     user = User.objects.create(
-        firstName="Regional",
-        lastName="Admin",
+        first_name="Regional",
+        last_name="Admin",
         email="{}@example.com".format(uuid.uuid4().hex),
         user_type=UserType.REGIONAL_ADMIN,
         region_id=region_id,

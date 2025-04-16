@@ -649,6 +649,7 @@ class Organization(models.Model):
         "self",
         models.DO_NOTHING,
         db_column="parent_id",
+        related_name="children",
         blank=True,
         null=True,
         help_text="Foreign Key linking to a related organization parent object.",
@@ -703,7 +704,7 @@ class OrganizationTag(models.Model):
     )
     organization = models.ManyToManyField(
         "Organization",
-        related_name="organization_tags",
+        related_name="tags",
         blank=True,
         help_text="Many to many relationship to link a tag to many organizations",
     )
@@ -792,7 +793,8 @@ class Role(models.Model):
         help_text="A role that a user can be assigned to, granting them specific access on the crossfeed platform.",
     )
     approved = models.BooleanField(
-        help_text="A boolean flag to determine if the user has been approved to have the assigned role."
+        default=False,
+        help_text="A boolean flag to determine if the user has been approved to have the assigned role.",
     )
     created_by = models.ForeignKey(
         "User",
@@ -824,6 +826,7 @@ class Role(models.Model):
         Organization,
         models.DO_NOTHING,
         db_column="organization_id",
+        related_name="user_roles",
         blank=True,
         null=True,
         help_text="Foreign key to the organization the user is aligned to and whos data the user can access via their role.",
@@ -966,8 +969,8 @@ class Scan(models.Model):
     )
     organizations = models.ManyToManyField(
         Organization,
-        related_name="scans",
         blank=True,
+        related_name="granular_scans",
         help_text="A many to many relationship linking to all the organizations the scan should be run on.",
     )
     tags = models.ManyToManyField(
@@ -4036,7 +4039,7 @@ class Domain(models.Model):
     )
     organization = models.ForeignKey(
         "Organization",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         db_column="organization_id",
         related_name="domains",
     )

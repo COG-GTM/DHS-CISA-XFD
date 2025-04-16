@@ -101,7 +101,7 @@ class GetOrganizationSchema(BaseModel):
     name: str
     root_domains: Optional[Any] = None
     ip_blocks: Optional[Any] = None
-    is_passive: bool
+    is_passive: Optional[bool]
     pending_domains: Optional[Any] = []
     country: Optional[str] = None
     state: Optional[str] = None

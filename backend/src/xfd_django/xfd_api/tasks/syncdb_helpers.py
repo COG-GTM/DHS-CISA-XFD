@@ -70,7 +70,7 @@ def populate_sample_data():
                 state=random.choice(SAMPLE_STATES),
                 region_id=random.choice(SAMPLE_REGION_IDS),
             )
-            org.organization_tags.add(tag)
+            org.tags.add(tag)
 
             # Create sample domains, services, and vulnerabilities
             # for _ in range(NUM_SAMPLE_DOMAINS):
@@ -595,7 +595,7 @@ def sync_es_organizations():
                         "country",
                         "state",
                         "region_id",
-                        "organization_tags",
+                        "tags",
                     )
                 )
                 print("Syncing {} organizations...".format(len(organizations)))
