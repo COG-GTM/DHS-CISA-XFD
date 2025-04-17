@@ -419,6 +419,7 @@ class Organization(models.Model):
     name = models.CharField(max_length=255, help_text="Full name of the organization")
     root_domains = ArrayField(
         models.CharField(max_length=255),
+        default=[],
         null=True,
         blank=True,
         db_column="root_domains",
@@ -426,6 +427,7 @@ class Organization(models.Model):
     )
     ip_blocks = ArrayField(
         models.CharField(max_length=255),
+        default=[],
         null=True,
         blank=True,
         db_column="ip_blocks",
