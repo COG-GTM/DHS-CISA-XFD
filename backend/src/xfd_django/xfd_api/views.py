@@ -1172,7 +1172,9 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     action="USER DENY/REMOVE",
     message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "user_performed_removal": serialize_user(current_user) if current_user else None,
+        "user_performed_removal": serialize_user(current_user)
+        if current_user
+        else None,
         "removal_result": response,
     },
 )
@@ -1261,7 +1263,9 @@ async def update_user_v2_view(
     action="USER APPROVE",
     message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "user_performed_approval": serialize_user(current_user) if current_user else None,
+        "user_performed_approval": serialize_user(current_user)
+        if current_user
+        else None,
         "user_to_approve": serialize_user(get_user_sync(user_id)) if user_id else None,
         "approval_result": response,
     },
