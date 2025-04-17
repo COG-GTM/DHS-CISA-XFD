@@ -14,6 +14,11 @@ UPDATE organization
 SET region_id = 1
 WHERE region_id IS NULL;
 
+UPDATE organization
+SET ip_blocks = '{}'::text[];
+
+UPDATE organization
+SET root_domains = '{}'::text[];
 
 INSERT INTO data_source (
     data_source_uid,
