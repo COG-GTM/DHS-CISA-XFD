@@ -47,9 +47,9 @@ async def handler(event):
     """
     try:
         main()
-        return {"statusCode": 200, "body": "VS Sync completed successfully"}
+        return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}
 
 
 def query_redshift(query, params=None):

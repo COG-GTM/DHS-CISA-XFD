@@ -40,7 +40,7 @@ function getValueFacet(aggregations, fieldName) {
 
 const FACETS = [
   'name',
-  'fromRootDomain',
+  'from_root_domain',
   'services.port',
   'vulnerabilities.cve',
   'vulnerabilities.severity',

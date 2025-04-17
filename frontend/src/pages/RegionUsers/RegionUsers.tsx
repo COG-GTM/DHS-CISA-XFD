@@ -39,8 +39,8 @@ const transformData = (data: User[]): User[] => {
     ...user,
     roles,
     organizations: roles.map((role) => ' ' + role.organization.name),
-    lastLoggedIn: user.lastLoggedIn
-      ? formatDate(parseISO(user.lastLoggedIn), 'MM/dd/yyyy hh:mm a')
+    last_logged_in: user.last_logged_in
+      ? formatDate(parseISO(user.last_logged_in), 'MM/dd/yyyy hh:mm a')
       : 'None'
   }));
 };
@@ -48,15 +48,15 @@ export const RegionUsers: React.FC = () => {
   const { apiDelete, apiGet, apiPost, apiPut, user } = useAuthContext();
   const apiRefPendingUsers = useGridApiRef();
   const apiRefCurrentUsers = useGridApiRef();
-  const regionalAdminId = user?.regionId;
+  const regionalAdminId = user?.region_id;
   const { formattedUserType } = useUserLevel();
-  const getOrgsURL = `/organizations/regionId/`;
-  const getUsersURL = `/v2/users?invitePending=`;
+  const getOrgsURL = `/organizations/region_id/`;
+  const getUsersURL = `/v2/users?invite_pending=`;
   const pendingCols: GridColDef[] = [
-    { field: 'fullName', headerName: 'Name', minWidth: 100, flex: 1 },
+    { field: 'full_name', headerName: 'Name', minWidth: 100, flex: 1 },
     { field: 'email', headerName: 'Email', minWidth: 100, flex: 2 },
     { field: 'state', headerName: 'State', minWidth: 100, flex: 1 },
-    { field: 'createdAt', headerName: 'Created At', minWidth: 100, flex: 1.5 },
+    { field: 'created_at', headerName: 'Created At', minWidth: 100, flex: 1.5 },
     {
       field: 'status',
       headerName: 'Registration Status',
@@ -70,7 +70,7 @@ export const RegionUsers: React.FC = () => {
               endIcon={<DoneIcon />}
               color="success"
               onClick={() => handleApproveClick(cellValues.row)}
-              disabled={user?.userType === 'globalView'}
+              disabled={user?.user_type === 'globalView'}
             >
               Approve
             </Button>
@@ -79,7 +79,7 @@ export const RegionUsers: React.FC = () => {
               endIcon={<CloseIcon />}
               color="error"
               onClick={() => handleDenyClick(cellValues.row)}
-              disabled={user?.userType === 'globalView'}
+              disabled={user?.user_type === 'globalView'}
             >
               Deny
             </Button>
@@ -89,11 +89,11 @@ export const RegionUsers: React.FC = () => {
     }
   ];
   const memberCols: GridColDef[] = [
-    { field: 'fullName', headerName: 'Name', minWidth: 100, flex: 1 },
+    { field: 'full_name', headerName: 'Name', minWidth: 100, flex: 1 },
     { field: 'email', headerName: 'Email', minWidth: 100, flex: 2 },
     { field: 'state', headerName: 'State', minWidth: 100, flex: 1 },
     {
-      field: 'lastLoggedIn',
+      field: 'last_logged_in',
       headerName: 'Last Logged In',
       minWidth: 100,
       flex: 1.5
@@ -106,19 +106,19 @@ export const RegionUsers: React.FC = () => {
     }
   ];
   const regionIdColumn = {
-    field: 'regionId',
+    field: 'region_id',
     headerName: 'Region',
     minWidth: 100,
     flex: 0.5
   };
-  if (user?.userType !== 'regionalAdmin') {
+  if (user?.user_type !== 'regionalAdmin') {
     pendingCols.unshift(regionIdColumn);
     memberCols.unshift(regionIdColumn);
   }
   const orgCols: GridColDef[] = [
     { field: 'name', headerName: 'Name', minWidth: 100, flex: 2 },
-    { field: 'updatedAt', headerName: 'Updated At', minWidth: 100, flex: 1 },
-    { field: 'stateName', headerName: 'State', minWidth: 100, flex: 1 }
+    { field: 'updated_at', headerName: 'Updated At', minWidth: 100, flex: 1 },
+    { field: 'state_name', headerName: 'State', minWidth: 100, flex: 1 }
   ];
   const [dialogStates, setDialogStates] = useState<DialogStates>({
     isOrgDialogOpen: false,
@@ -141,7 +141,7 @@ export const RegionUsers: React.FC = () => {
 
   const fetchOrganizations = async (row: User) => {
     try {
-      const rows = await apiGet<OrganizationType[]>(getOrgsURL + row.regionId);
+      const rows = await apiGet<OrganizationType[]>(getOrgsURL + row.region_id);
       setOrganizations(rows);
       if (row.roles.length > 0) {
         selectOrg([row.roles[0].organization.id]);
@@ -154,8 +154,8 @@ export const RegionUsers: React.FC = () => {
   const fetchPendingUsers = useCallback(async () => {
     try {
       const rows = await apiGet<User[]>(
-        user?.userType === 'regionalAdmin'
-          ? `${getUsersURL}true&regionId=${regionalAdminId}`
+        user?.user_type === 'regionalAdmin'
+          ? `${getUsersURL}true&region_id=${regionalAdminId}`
           : `${getUsersURL}true`
       );
       setPendingUsers(rows);
@@ -168,8 +168,8 @@ export const RegionUsers: React.FC = () => {
   const fetchCurrentUsers = useCallback(async () => {
     try {
       const rows = await apiGet<User[]>(
-        user?.userType === 'regionalAdmin'
-          ? `${getUsersURL}false&regionId=${regionalAdminId}`
+        user?.user_type === 'regionalAdmin'
+          ? `${getUsersURL}false&region_id=${regionalAdminId}`
           : `${getUsersURL}false`
       );
       setCurrentUsers(transformData(rows));
@@ -187,14 +187,14 @@ export const RegionUsers: React.FC = () => {
   }, []);
 
   const deleteUser = useCallback(
-    (userId: string): Promise<boolean> => {
-      return apiDelete(`/users/${userId}`).then(
+    (user_id: string): Promise<boolean> => {
+      return apiDelete(`/users/${user_id}`).then(
         () => {
           apiRefPendingUsers.current.updateRows([
-            { id: userId, _action: 'delete' }
+            { id: user_id, _action: 'delete' }
           ]);
           setPendingUsers((prevPendingUsers) =>
-            prevPendingUsers.filter((user) => user.id !== userId)
+            prevPendingUsers.filter((user) => user.id !== user_id)
           );
           setInfoDialogContent('This user has been successfully removed.');
           return true;
@@ -209,12 +209,12 @@ export const RegionUsers: React.FC = () => {
   );
 
   const addOrgToUser = useCallback(
-    (userId: string, selectedOrgId: any): Promise<boolean> => {
+    (user_id: string, selectedOrgId: any): Promise<boolean> => {
       return apiPost(`/v2/organizations/${selectedOrgId}/users`, {
-        body: { userId, role: 'user' }
+        body: { user_id, role: 'user' }
       }).then(
         (res) => {
-          return updateUser(userId, res.organization.name);
+          return updateUser(user_id, res.organization.name);
         },
         (e) => {
           setErrorStates({ ...errorStates, getUpdateError: e.message });
@@ -226,21 +226,21 @@ export const RegionUsers: React.FC = () => {
   );
 
   const updateUser = useCallback(
-    (userId: string, orgName: string): Promise<boolean> => {
-      return apiPut(`/v2/users/${userId}`, {
-        body: { invitePending: false }
+    (user_id: string, org_name: string): Promise<boolean> => {
+      return apiPut(`/v2/users/${user_id}`, {
+        body: { invite_pending: false }
       }).then(
         (res) => {
           apiRefPendingUsers.current.updateRows([
-            { id: userId, _action: 'delete' }
+            { id: user_id, _action: 'delete' }
           ]);
           setPendingUsers((prevPendingUsers) =>
-            prevPendingUsers.filter((user) => user.id !== userId)
+            prevPendingUsers.filter((user) => user.id !== user_id)
           );
-          res['organizations'] = orgName;
+          res['organizations'] = org_name;
           apiRefCurrentUsers.current.updateRows([res]);
           setCurrentUsers((prevCurrentUsers) => [...prevCurrentUsers, res]);
-          return sendApprovalEmail(userId);
+          return sendApprovalEmail(user_id);
         },
         (e) => {
           setErrorStates({ ...errorStates, getUpdateError: e.message });
@@ -252,8 +252,8 @@ export const RegionUsers: React.FC = () => {
   );
 
   const sendApprovalEmail = useCallback(
-    (userId: string): Promise<boolean> => {
-      return apiPut(`/users/${userId}/register/approve`).then(
+    (user_id: string): Promise<boolean> => {
+      return apiPut(`/users/${user_id}/register/approve`).then(
         (res) => {
           console.log(res);
           return true;
@@ -323,8 +323,8 @@ export const RegionUsers: React.FC = () => {
   };
 
   const removeOrgFromUser = useCallback(
-    (orgId: String, roleId: String) => {
-      apiPost(`/organizations/${orgId}/roles/${roleId}/remove`, {
+    (org_id: String, roleId: String) => {
+      apiPost(`/organizations/${org_id}/roles/${roleId}/remove`, {
         body: {}
       }).then(
         (res) => {
@@ -369,7 +369,7 @@ export const RegionUsers: React.FC = () => {
           isInfoDialogOpen: true
         }));
         setInfoDialogContent(
-          `The user has been approved and is a member of Region ${selectedUser.regionId}.`
+          `The user has been approved and is a member of Region ${selectedUser.region_id}.`
         );
       } else {
         throw new Error('Failed to approve the user.');
@@ -434,7 +434,7 @@ export const RegionUsers: React.FC = () => {
             pt={3}
           >
             Members of
-            {user?.userType === 'regionalAdmin'
+            {user?.user_type === 'regionalAdmin'
               ? ` Region ${regionalAdminId}`
               : ' all regions'}
           </Typography>
@@ -455,7 +455,7 @@ export const RegionUsers: React.FC = () => {
         onClose={(_, reason) => handleCloseDialog(reason)}
         onConfirm={handleApproveConfirmClick}
         onCancel={handleApproveCancelClick}
-        title={`Add ${selectedUser.fullName} to an organization in Region ${selectedUser.regionId}`}
+        title={`Add ${selectedUser.full_name} to an organization in Region ${selectedUser.region_id}`}
         content={
           <>
             <Typography mb={3}>
@@ -491,7 +491,7 @@ export const RegionUsers: React.FC = () => {
             {selectedOrg.length !== 0 &&
               errorStates.getUpdateError.length === 0 && (
                 <Alert severity="info">
-                  {selectedUser.fullName} will become a member of the selected
+                  {selectedUser.full_name} will become a member of the selected
                   organization.
                 </Alert>
               )}
@@ -515,7 +515,7 @@ export const RegionUsers: React.FC = () => {
           <>
             <Typography mb={3}>
               Denying this request will permanently remove{' '}
-              {selectedUser.fullName} from the records and cannot be undone.
+              {selectedUser.full_name} from the records and cannot be undone.
             </Typography>
             {errorStates.getDeleteError && (
               <Alert severity="error">

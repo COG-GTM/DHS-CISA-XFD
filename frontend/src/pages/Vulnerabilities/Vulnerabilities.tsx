@@ -58,7 +58,7 @@ export interface LooseVulnerabilityRow {
   domain: string | undefined;
   domainId: string | undefined;
   product: string;
-  createdAt: string;
+  created_at: string;
   state: string;
 }
 
@@ -76,11 +76,11 @@ interface LocationState {
   title: string;
 }
 
-export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
-  groupBy = undefined
+export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
+  group_by = undefined
 }: {
   children?: React.ReactNode;
-  groupBy?: string;
+  group_by?: string;
 }) => {
   const { currentOrganization, apiPost, user } = useAuthContext();
   // To-do: Re-enable this as part of Status dropdown once the feature is approved.
@@ -120,14 +120,14 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       page,
       pageSize = PAGE_SIZE,
       doExport = false,
-      groupBy = undefined,
+      group_by = undefined,
       showAll = false
     }: {
       filters: GridFilterItem[];
       page: number;
       pageSize?: number;
       doExport?: boolean;
-      groupBy?: string;
+      group_by?: string;
       showAll?: boolean;
     }): Promise<ApiResponse | undefined> => {
       try {
@@ -164,13 +164,13 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         if (
           currentOrganization &&
           !userOrgIsExcluded &&
-          user?.userType === 'standard'
+          user?.user_type === 'standard'
         ) {
           tableFilters['organization'] = currentOrganization.id;
         }
-        if (tableFilters['isKev']) {
+        if (tableFilters['is_kev']) {
           // Convert string to boolean filter.
-          tableFilters['isKev'] = tableFilters['isKev'] === 'true';
+          tableFilters['is_kev'] = tableFilters['is_kev'] === 'true';
         }
         return await apiPost<ApiResponse>(
           doExport ? '/vulnerabilities/export' : '/vulnerabilities/search',
@@ -179,7 +179,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
               page,
               filters: tableFilters,
               pageSize,
-              groupBy,
+              group_by,
               showAll
             }
           }
@@ -190,7 +190,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         return;
       }
     },
-    [apiPost, currentOrganization, user?.userType]
+    [apiPost, currentOrganization, user?.user_type]
   );
 
   const fetchVulnerabilities = useCallback(
@@ -200,7 +200,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
           filters: query.filters,
           page: query.page,
           pageSize: query.pageSize ?? PAGE_SIZE,
-          groupBy,
+          group_by,
           showAll: query.showAll
         });
         if (!resp) return;
@@ -235,7 +235,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         setIsLoading(false);
       }
     },
-    [vulnerabilitiesSearch, groupBy]
+    [vulnerabilitiesSearch, group_by]
   );
 
   const history = useHistory();
@@ -430,7 +430,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       id: vuln.id,
       title: vuln.title,
       severity: severity,
-      kev: vuln.isKev ? 'Yes' : 'No',
+      kev: vuln.is_kev ? 'Yes' : 'No',
       domain: vuln?.domain?.name,
       domainId: vuln?.domain?.id,
       product: vuln.cpe
@@ -441,10 +441,10 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
           vuln.service.products[0].cpe
         ? vuln.service.products[0].cpe || 'N/A'
         : 'N/A',
-      createdAt: vuln?.createdAt
+      created_at: vuln?.created_at
         ? `${differenceInCalendarDays(
             Date.now(),
-            parseISO(vuln?.createdAt)
+            parseISO(vuln?.created_at)
           )} days`
         : '',
       state: vuln.state + (vuln.substate ? ` (${vuln.substate})` : '')
@@ -570,7 +570,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       flex: 1
     },
     {
-      field: 'createdAt',
+      field: 'created_at',
       headerName: 'Days Open',
       minWidth: 100,
       flex: 0.5
