@@ -39,7 +39,7 @@ export interface OrganizationShallow {
   region_id: string;
   name: string;
   id: string;
-  rootDomains: string[];
+  root_domains: string[];
 }
 
 interface RegionAndOrganizationFiltersProps {

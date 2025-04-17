@@ -53,7 +53,7 @@ export interface Result {
       ip_blocks: any[];
       is_passive: boolean;
       name: string;
-      rootDomains: string[];
+      root_domains: string[];
       updated_at: string;
     };
   };

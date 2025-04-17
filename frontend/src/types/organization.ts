@@ -5,12 +5,12 @@ import { Scan } from './scan';
 export interface Organization {
   id: string;
   name: string;
-  rootDomains: string[];
+  root_domains: string[];
   ip_blocks: string[];
-  userRoles: Role[];
-  scanTasks: ScanTask[];
+  user_roles: Role[];
+  scan_tasks: ScanTask[];
   is_passive: boolean;
-  granularScans: Scan[];
+  granular_scans: Scan[];
   tags: OrganizationTag[];
   parent: Organization | null;
   children: Organization[];
@@ -24,8 +24,8 @@ export interface Organization {
   county_fips?: number;
   acronym: string;
   type: string;
-  userCount?: number;
-  tagNames?: string[];
+  user_count?: number;
+  tag_names?: string[];
 }
 
 export interface PendingDomain {

@@ -76,7 +76,7 @@ export const Organizations: React.FC = () => {
               fieldsToImport={[
                 'name',
                 'acronym',
-                'rootDomains',
+                'root_domains',
                 'ip_blocks',
                 'is_passive',
                 'tags',
@@ -101,8 +101,8 @@ export const Organizations: React.FC = () => {
                           ip_blocks: (
                             (result.ip_blocks as unknown as string) || ''
                           ).split(','),
-                          rootDomains: (
-                            (result.rootDomains as unknown as string) || ''
+                          root_domains: (
+                            (result.root_domains as unknown as string) || ''
                           ).split(','),
                           tags: ((result.tags as unknown as string) || '')
                             .split(',')

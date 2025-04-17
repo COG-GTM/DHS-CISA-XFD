@@ -5,7 +5,7 @@ export const summaryData: SummaryStats = {
   org: {
     name: 'Name of Org',
     acronym: 'TEST',
-    rootDomains: [],
+    root_domains: [],
     ip_blocks: [],
     state_name: 'Name of State',
     region_id: '1',

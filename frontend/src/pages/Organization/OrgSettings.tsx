@@ -30,8 +30,8 @@ interface AutocompleteType extends Partial<OrganizationTag> {
 
 interface OrgSettingsType extends Partial<OrganizationType> {
   id: any;
-  granularScans: any;
-  rootDomains: string[];
+  granular_scans: any;
+  root_domains: string[];
   ip_blocks: string[];
   tags: OrganizationTag[];
   pending_domains: PendingDomain[];
@@ -52,7 +52,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
   const [inputValue, setInputValue] = React.useState('');
   const [dialog, setDialog] = React.useState<{
     open: boolean;
-    type?: 'rootDomains' | 'ip_blocks' | 'tags';
+    type?: 'root_domains' | 'ip_blocks' | 'tags';
     label?: string;
     stage?: number;
     domainVerificationStatusMessage?: string;
@@ -154,7 +154,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
   };
 
   const ListInput = (props: {
-    type: 'rootDomains' | 'ip_blocks' | 'tags';
+    type: 'root_domains' | 'ip_blocks' | 'tags';
     label: string;
   }) => {
     if (!organization) return null;
@@ -183,7 +183,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
               ></Chip>
             </Grid>
           ))}
-        {props.type === 'rootDomains' &&
+        {props.type === 'root_domains' &&
           organization.pending_domains.map((domain, index: number) => (
             <Grid item mb={1} key={index}>
               <Chip
@@ -206,7 +206,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
               ></Chip>
             </Grid>
           ))}
-        {(props.type === 'rootDomains' ||
+        {(props.type === 'root_domains' ||
           user?.user_type === 'globalAdmin') && (
           <Grid item mb={1}>
             <Chip
@@ -280,7 +280,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                 )}
               />
             </>
-          ) : dialog.type === 'rootDomains' && dialog.stage === 1 ? (
+          ) : dialog.type === 'root_domains' && dialog.stage === 1 ? (
             <>
               <DialogContentText>
                 Add the following TXT record to {inputValue}&apos;s DNS
@@ -323,7 +323,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                 onChange={(e) => setInputValue(e.target.value)}
               />
             </>
-          ) : dialog.type === 'rootDomains' && dialog.stage === 0 ? (
+          ) : dialog.type === 'root_domains' && dialog.stage === 0 ? (
             <>
               <DialogContentText>
                 In order to add a root domain, you will need to verify ownership
@@ -352,7 +352,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             color="primary"
             onClick={() => {
               if (
-                dialog.type === 'rootDomains' &&
+                dialog.type === 'root_domains' &&
                 user?.user_type !== 'globalAdmin'
               ) {
                 if (dialog.stage === 0) {
@@ -371,7 +371,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                     ...inputValue.split(',').map((e) => e.trim())
                   );
                   setOrganization({ ...organization });
-                  if (organization.rootDomains.length !== 0) {
+                  if (organization.root_domains.length !== 0) {
                     setIsSaveDisabled(false);
                   }
                 }
@@ -431,7 +431,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
           </Stack>
         </Grid>
         <Grid item xs={12}>
-          <ListInput label="Root Domains" type="rootDomains"></ListInput>
+          <ListInput label="Root Domains" type="root_domains"></ListInput>
         </Grid>
         <Grid item xs={12}>
           <ListInput label="IP Blocks" type="ip_blocks"></ListInput>
@@ -464,7 +464,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             </Grid>
           </Grid>
         </Grid>
-        {organization.rootDomains.length === 0 && (
+        {organization.root_domains.length === 0 && (
           <Grid item xs={12}>
             <Alert severity="error">
               An organization must have at least one Root Domain.
@@ -479,7 +479,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             variant="contained"
             onClick={updateOrganization}
             disabled={
-              organization.rootDomains.length === 0 ||
+              organization.root_domains.length === 0 ||
               isSaveDisabled ||
               user?.user_type === 'globalView'
             }

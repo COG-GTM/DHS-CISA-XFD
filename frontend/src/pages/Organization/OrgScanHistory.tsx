@@ -14,7 +14,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 
 interface OrganizationScan extends Partial<OrganizationType> {
   id: any;
-  granularScans: any;
+  granular_scans: any;
 }
 
 type OrgScanHistoryProps = {
@@ -73,9 +73,9 @@ export const OrgScanHistory: React.FC<OrgScanHistoryProps> = ({
       );
       setOrganization({
         ...organization,
-        granularScans: enabled
-          ? organization.granularScans.concat([scan])
-          : organization.granularScans.filter(
+        granular_scans: enabled
+          ? organization.granular_scans.concat([scan])
+          : organization.granular_scans.filter(
               (granularScan: { id: string }) => granularScan.id !== scan.id
             )
       });
@@ -119,7 +119,7 @@ export const OrgScanHistory: React.FC<OrgScanHistoryProps> = ({
       maxWidth: 100,
       Cell: ({ row }: { row: { index: number } }) => {
         if (!organization) return null;
-        const enabled = organization.granularScans.find(
+        const enabled = organization.granular_scans.find(
           (scan: { id: string }) => scan.id === scans[row.index].id
         );
         return (

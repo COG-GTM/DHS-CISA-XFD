@@ -34,7 +34,7 @@ export interface SummaryStats {
   org: {
     name: string;
     acronym: string;
-    rootDomains: [];
+    root_domains: [];
     ip_blocks: [];
     state_name: string;
     region_id: string;

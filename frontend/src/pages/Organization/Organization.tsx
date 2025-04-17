@@ -43,13 +43,13 @@ export const Organization: React.FC = () => {
       const organization = await apiGet<OrganizationType>(
         `/organizations/${organizationId}`
       );
-      organization.scanTasks.sort(
+      organization.scan_tasks.sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setOrganization(organization);
-      setUserRoles(organization.userRoles);
-      setScanTasks(organization.scanTasks);
+      setUserRoles(organization.user_roles);
+      setScanTasks(organization.scan_tasks);
       const tags = await apiGet<OrganizationTag[]>(`/organizations/tags`);
       setTags(tags);
     } catch (e) {

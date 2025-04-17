@@ -43,7 +43,7 @@ export const useUserTypeFilters: UseUserTypeFilters = (
               name: role?.organization?.name ?? '',
               id: role?.organization?.id ?? '',
               region_id: role?.organization?.region_id ?? '',
-              rootDomains: role?.organization?.rootDomains ?? []
+              root_domains: role?.organization?.root_domains ?? []
             };
           })
       : [];

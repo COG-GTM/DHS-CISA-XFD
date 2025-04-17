@@ -133,7 +133,7 @@ export const ScanTasksView: React.FC = () => {
           );
         // We only want to be able to filter with the dropdown org/tag bar
         if (!showAllOrganizations && currentOrganization) {
-          if ('rootDomains' in currentOrganization)
+          if ('root_domains' in currentOrganization)
             tableFilters['organization'] = currentOrganization.id;
           else tableFilters['tag'] = currentOrganization.id;
         }

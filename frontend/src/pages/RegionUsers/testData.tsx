@@ -109,11 +109,11 @@ type organizations = {
   updated_at: string;
   name: string;
   user_type?: string;
-  rootDomains: Array<String>;
+  root_domains: Array<String>;
   ip_blocks: Array<String>;
   is_passive: boolean;
   pending_domains: Array<String>;
-  userRoles: Array<String>;
+  user_roles: Array<String>;
   members?: number;
   tags: Array<Object>;
 };
@@ -123,11 +123,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:08.411Z',
     updated_at: '2023-11-03T20:19:08.411Z',
     name: 'Affectionate Agency',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 5,
     tags: [
       {
@@ -143,11 +143,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:09.899Z',
     updated_at: '2023-11-03T20:19:09.899Z',
     name: 'Boring City',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 30,
     tags: [
       {
@@ -163,11 +163,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:10.872Z',
     updated_at: '2023-11-03T20:19:10.872Z',
     name: 'Brave Agency',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 6,
     tags: [
       {
@@ -183,11 +183,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:07.327Z',
     updated_at: '2023-11-03T20:19:07.327Z',
     name: 'Competent County',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 15,
     tags: [
       {
@@ -203,11 +203,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:11.724Z',
     updated_at: '2023-11-03T20:19:11.724Z',
     name: 'Condescending City',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 14,
     tags: [
       {
@@ -223,11 +223,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:08.930Z',
     updated_at: '2023-11-03T20:19:08.930Z',
     name: 'Distracted Agency',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     tags: [
       {
         id: 'efg-567',
@@ -242,11 +242,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:07.901Z',
     updated_at: '2023-11-03T20:19:07.901Z',
     name: 'Optimistic County',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 12,
     tags: [
       {
@@ -262,11 +262,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:10.343Z',
     updated_at: '2023-11-03T20:19:10.343Z',
     name: 'Peaceful Department',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 0,
     tags: [
       {
@@ -282,11 +282,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:11.296Z',
     updated_at: '2023-11-03T20:19:11.296Z',
     name: 'Sharp County',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 30,
     tags: [
       {
@@ -302,11 +302,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:06.677Z',
     updated_at: '2023-11-03T20:19:06.677Z',
     name: 'Tender Department',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 10,
     tags: [
       {
@@ -322,11 +322,11 @@ export const testOrganizations: organizations[] = [
     created_at: '2023-11-03T20:19:09.380Z',
     updated_at: '2023-11-03T20:19:09.380Z',
     name: 'Zealous Agency',
-    rootDomains: ['crossfeed.local'],
+    root_domains: ['crossfeed.local'],
     ip_blocks: [],
     is_passive: false,
     pending_domains: [],
-    userRoles: [],
+    user_roles: [],
     members: 3,
     tags: [
       {

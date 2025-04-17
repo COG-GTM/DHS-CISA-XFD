@@ -70,7 +70,7 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         sort_field
       };
       if (!showAllOrganizations && currentOrganization) {
-        if ('rootDomains' in currentOrganization)
+        if ('root_domains' in currentOrganization)
           body.organizationId = currentOrganization.id;
         else body.tagId = currentOrganization.id;
       }

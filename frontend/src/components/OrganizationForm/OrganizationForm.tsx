@@ -30,7 +30,7 @@ interface AutocompleteType extends Partial<OrganizationTag> {
 
 export interface OrganizationFormValues {
   name: string;
-  rootDomains: string;
+  root_domains: string;
   ip_blocks: string;
   is_passive: boolean;
   tags: { name: string }[];
@@ -72,7 +72,7 @@ export const OrganizationForm: React.FC<{
 }) => {
   const defaultValues = () => ({
     name: organization ? organization.name : '',
-    rootDomains: organization ? organization.rootDomains.join(', ') : '',
+    root_domains: organization ? organization.root_domains.join(', ') : '',
     ip_blocks: organization ? organization.ip_blocks.join(', ') : '',
     is_passive: organization ? organization.is_passive : false,
     tags: [],
@@ -85,7 +85,7 @@ export const OrganizationForm: React.FC<{
   const [formErrors, setFormErrors] = useState({
     name: false,
     acronym: false,
-    rootDomains: false,
+    root_domains: false,
     state_name: false
   });
   const { apiGet } = useAuthContext();
@@ -111,7 +111,7 @@ export const OrganizationForm: React.FC<{
     const newFormErrors = {
       name: values.name.trim() === '',
       acronym: values.acronym?.trim() === '',
-      rootDomains: values.rootDomains.trim() === '',
+      root_domains: values.root_domains.trim() === '',
       state_name: values.state_name?.trim() === ''
     };
     setFormErrors(newFormErrors);
@@ -198,15 +198,15 @@ export const OrganizationForm: React.FC<{
           placeholder="Enter Root Domains, comma separated"
           size="small"
           margin="dense"
-          id="rootDomains"
-          name="rootDomains"
+          id="root_domains"
+          name="root_domains"
           type="text"
           fullWidth
-          value={values.rootDomains}
+          value={values.root_domains}
           onChange={onTextChange}
-          error={formErrors.rootDomains}
+          error={formErrors.root_domains}
           helperText={
-            formErrors.rootDomains && 'At least one Root Domain is required'
+            formErrors.root_domains && 'At least one Root Domain is required'
           }
         />
         IP Blocks
@@ -312,10 +312,10 @@ export const OrganizationForm: React.FC<{
               return;
             }
             await onSubmit({
-              rootDomains:
-                values.rootDomains === ''
+              root_domains:
+                values.root_domains === ''
                   ? []
-                  : values.rootDomains
+                  : values.root_domains
                       .split(',')
                       .map((domain) => domain.trim()),
               ip_blocks:
