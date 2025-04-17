@@ -84,9 +84,7 @@ jobs:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
-      - run: pip install "safety>=2.3.5" "marshmallow<4.0.0"
+      - run: pip install safety
       - run: |
-          safety scan \
-            --file worker/requirements.txt \
-            --full-report \
-            --policy-file ./worker/.safety-policy.yml
+          safety check -r worker/requirements.txt \
+          --policy-file ./worker/.safety-policy.yml
