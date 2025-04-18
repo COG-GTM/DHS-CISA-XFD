@@ -57,8 +57,8 @@ class Cve(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(unique=True, blank=True, null=True)
-    publishedAt = models.DateTimeField(db_column="published_at", blank=True, null=True)
-    modifiedAt = models.DateTimeField(db_column="modified_at", blank=True, null=True)
+    published_at = models.DateTimeField(db_column="published_at", blank=True, null=True)
+    modified_at = models.DateTimeField(db_column="modified_at", blank=True, null=True)
     status = models.CharField(blank=True, null=True)
     description = models.CharField(blank=True, null=True)
     cvssV2Source = models.CharField(db_column="cvss_v2_source", blank=True, null=True)
@@ -67,10 +67,10 @@ class Cve(models.Model):
     cvssV2VectorString = models.CharField(
         db_column="cvss_v2_vector_string", blank=True, null=True
     )
-    cvssV2BaseScore = models.CharField(
+    cvss_v2_base_score = models.CharField(
         db_column="cvss_v2_base_score", blank=True, null=True
     )
-    cvssV2BaseSeverity = models.CharField(
+    cvss_v2_base_severity = models.CharField(
         db_column="cvss_v2_base_severity", blank=True, null=True
     )
     cvssV2ExploitabilityScore = models.CharField(

@@ -158,7 +158,7 @@ def save_cve_to_db(cve, cpe_ids):
                 "modifiedAt": cve.get("last_modified_date"),
                 "status": cve.get("vuln_status"),
                 "description": cve.get("description"),
-                "cvssV2BaseScore": cve.get("cvss_v2_base_score"),
+                "cvss_v2_base_score": cve.get("cvss_v2_base_score"),
                 "cvssV3BaseScore": cve.get("cvss_v3_base_score"),
                 "cvssV4BaseScore": cve.get("cvss_v4_base_score"),
                 "weaknesses": cve.get("weaknesses"),
