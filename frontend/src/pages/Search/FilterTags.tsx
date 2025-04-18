@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { classes, Root } from './Styling/filterTagsStyle';
 import { ContextType } from '../../context/SearchProvider';
-import { Button, Chip } from '@mui/material';
+import { Chip, IconButton } from '@mui/material';
+import { FilterAlt } from '@mui/icons-material';
 import { REGIONAL_ADMIN, useUserLevel } from 'hooks/useUserLevel';
 import { STANDARD_USER } from 'context/userStateUtils';
 import { REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS } from 'hooks/useUserTypeFilters';
@@ -241,12 +242,13 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
 
   return (
     <Root aria-live="polite" aria-atomic="true">
-      <Button
-        variant="contained"
+      <IconButton
+        aria-label="filter-drawer-toggle"
+        sx={{ mt: '0.5rem' }}
         onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
       >
-        Filter
-      </Button>
+        <FilterAlt />
+      </IconButton>
       {filtersByColumn.length === 0 && pathname === '/inventory' ? (
         <Chip
           color="primary"
