@@ -120,5 +120,6 @@ def dmz_shodan_sync(shodan_data, current_user):
     except HTTPException:
         raise
     except Exception as e:
+        # TODO: CRASM-2568 - Create a unufied logger in python backend
         print("Unexpected error in dmz_shodan_sync: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))
