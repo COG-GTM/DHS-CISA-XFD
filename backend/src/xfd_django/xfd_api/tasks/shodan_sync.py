@@ -1,5 +1,8 @@
 """Updated Shodan Sync scan hitting new FastAPI endpoint."""
 # Standard Python Libraries
+import datetime
+import hashlib
+import logging
 import os
 from urllib.parse import urljoin
 
@@ -16,6 +19,8 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Constants
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+LOGGER = logging.getLogger(__name__)
 HEADERS = {
     "Authorization": os.getenv("DMZ_API_KEY"),
 }
@@ -27,7 +32,7 @@ if base_url.endswith("/sync"):
     api_url = base_url.rsplit("/", 1)[0] + "/dmz_sync/shodan_sync"
 else:
     api_url = urljoin(base_url + "/", "dmz_sync/shodan_sync")
-API_URL = os.getenv("DMZ_SYNC_ENDPOINT")
+API_URL = api_url
 
 
 def handler(command_options):
@@ -43,7 +48,7 @@ def handler(command_options):
             return {"statusCode": 500, "body": "Organization not found."}
         organization = orgs_to_sync.first()
 
-        print("Running Shodan Sync on organization: {}".format(organization_name))
+        LOGGER.info("Running Shodan Sync on organization: %s", organization_name)
 
         shodan_datasource, _ = DataSource.objects.get_or_create(
             name="Shodan",
@@ -80,10 +85,12 @@ def handler(command_options):
             assets = result.get("data", {}).get("shodan_assets", [])
             vulns = result.get("data", {}).get("shodan_vulns", [])
 
-            print(
-                "Syncing page {} of {}: {} assets, {} vulns".format(
-                    current_page, total_pages, len(assets), len(vulns)
-                )
+            LOGGER.info(
+                "Syncing page %s of %s: %s assets, %s vulns",
+                current_page,
+                total_pages,
+                len(assets),
+                len(vulns),
             )
             save_findings_to_db(assets, vulns, organization, shodan_datasource)
 
@@ -95,19 +102,31 @@ def handler(command_options):
         return {"statusCode": 200, "body": "Shodan sync completed successfully."}
 
     except Exception as e:
+        LOGGER.error(e)
         return {"statusCode": 500, "body": str(e)}
 
 
 def save_findings_to_db(shodan_asset_array, shodan_vuln_array, org, data_source):
     """Save Shodan assets and vulns data to the mini datalake using Django ORM."""
     for asset in shodan_asset_array:
-        ip_instance = Ip.objects.filter(
-            ip=asset.get("ip_string"), organization=org
-        ).first()
+        create_default = {
+            "ip": asset.get("ip_string"),
+            "organization": org,
+            "has_shodan_results": True,
+            "current": True,
+            "last_seen_timestamp": datetime.datetime.now(datetime.timezone.utc),
+        }
+        ip_hash = hashlib.sha256(create_default.get("ip").encode("utf-8")).hexdigest()
+        create_default["ip_hash"] = ip_hash
+        ip_object, created = Ip.objects.get_or_create(
+            ip=create_default.get("ip"),
+            organization=create_default.get("organization"),
+            defaults=create_default,
+        )
         try:
             ShodanAssets.objects.update_or_create(
                 timestamp=asset.get("timestamp"),
-                ip=ip_instance,
+                ip=ip_object,
                 port=asset.get("port"),
                 protocol=asset.get("protocol"),
                 organization=org,
@@ -127,16 +146,27 @@ def save_findings_to_db(shodan_asset_array, shodan_vuln_array, org, data_source)
                 },
             )
         except Exception as e:
-            print("Error saving Shodan Asset: {}".format(e))
+            LOGGER.error("Error saving Shodan Asset: %s", e)
 
     for vuln in shodan_vuln_array:
-        ip_instance = Ip.objects.filter(
-            ip=vuln.get("ip_string"), organization=org
-        ).first()
+        create_default = {
+            "ip": vuln.get("ip_string"),
+            "organization": org,
+            "has_shodan_results": True,
+            "current": True,
+            "last_seen_timestamp": datetime.datetime.now(datetime.timezone.utc),
+        }
+        ip_hash = hashlib.sha256(create_default.get("ip").encode("utf-8")).hexdigest()
+        create_default["ip_hash"] = ip_hash
+        ip_object, created = Ip.objects.get_or_create(
+            ip=create_default.get("ip"),
+            organization=create_default.get("organization"),
+            defaults=create_default,
+        )
         try:
             ShodanVulns.objects.update_or_create(
                 timestamp=vuln.get("timestamp"),
-                ip=ip_instance,
+                ip=ip_object,
                 port=vuln.get("port"),
                 protocol=vuln.get("protocol"),
                 organization=org,
@@ -176,4 +206,4 @@ def save_findings_to_db(shodan_asset_array, shodan_vuln_array, org, data_source)
                 },
             )
         except Exception as e:
-            print("Error saving Shodan Vuln: {}".format(e))
+            LOGGER.error("Error saving Shodan Vuln: %s", e)

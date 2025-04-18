@@ -47,7 +47,9 @@ def dmz_shodan_sync(shodan_data, current_user):
         queryset = model_cls.objects.filter(organization__acronym=org_acronym)
 
         if since_date:
-            queryset = queryset.filter(Q(**{f"{timestamp_field}__gte": since_date}))
+            queryset = queryset.filter(
+                Q(**{"{}__gte".format(timestamp_field): since_date})
+            )
 
         queryset = queryset.order_by(ordering_field)
         paginator = Paginator(queryset, page_size)
@@ -91,7 +93,6 @@ def dmz_shodan_sync(shodan_data, current_user):
         shodan_assets_data = (
             serialize_page_objects(asset_page.object_list) if asset_page else []
         )
-        print(shodan_assets_data)
 
         # ShodanVulns
         vuln_paginator, vuln_page = get_paginated_queryset(
@@ -119,5 +120,5 @@ def dmz_shodan_sync(shodan_data, current_user):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Unexpected error in dmz_shodan_sync: {e}")
+        print("Unexpected error in dmz_shodan_sync: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))
