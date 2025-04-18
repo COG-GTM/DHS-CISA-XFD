@@ -2,6 +2,7 @@
 # Standard Python Libraries
 import datetime
 import hashlib
+import json
 import logging
 import os
 from urllib.parse import urljoin
@@ -21,8 +22,10 @@ django.setup()
 # Constants
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
+SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 HEADERS = {
-    "Authorization": os.getenv("DMZ_API_KEY"),
+    "X-API-KEY": os.getenv("DMZ_API_KEY"),
+    "Content-Type": "application/json",
 }
 # Assume DMZ_SYNC_ENDPOINT is something like 'https://api.staging-cd.crossfeed.cyber.dhs.gov/sync'
 base_url = os.getenv("DMZ_SYNC_ENDPOINT", "").rstrip("/")
@@ -74,6 +77,15 @@ def handler(command_options):
 
             response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=60)
             response.raise_for_status()
+            # Validate checksum by passing the response object
+            is_valid = validate_response_checksum(response)
+
+            if is_valid:
+                LOGGER.info("Checksum is valid!")
+            else:
+                LOGGER.error("Checksum validation failed!")
+                return {"statusCode": 500, "body": "Checksum validation failed!"}
+
             body = response.json()
 
             if body.get("status") != "ok":
@@ -207,3 +219,28 @@ def save_findings_to_db(shodan_asset_array, shodan_vuln_array, org, data_source)
             )
         except Exception as e:
             LOGGER.error("Error saving Shodan Vuln: %s", e)
+
+
+def validate_response_checksum(response):
+    """Validate the checksum from an API response."""
+    try:
+        # Extract response JSON
+        response_data = response.json()
+
+        # Extract checksum from response headers
+        received_checksum = response.headers.get("X-Salted-Checksum")
+        if not received_checksum:
+            LOGGER.warning("No checksum found in headers!")
+            return False
+
+        # Recompute the checksum
+        response_serialized = json.dumps(response_data, default=str, sort_keys=True)
+        calculated_checksum = hashlib.sha256(
+            (SALT + response_serialized).encode()
+        ).hexdigest()
+
+        return received_checksum == calculated_checksum
+
+    except Exception as e:
+        LOGGER.error("Error validating checksum: %s", e)
+        return False
