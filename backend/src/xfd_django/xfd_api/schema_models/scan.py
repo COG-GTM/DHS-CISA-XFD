@@ -142,12 +142,12 @@ SCAN_SCHEMA = {
     ),
     "asm_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
         description="Enumerate and sync org assets.",
-        maxConcurrentTasks=1,
+        max_concurrent_tasks=1,
     ),
     "censys": ScanSchema(
         type="fargate",
@@ -298,6 +298,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Shodan asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
     ),
     "sslyze": ScanSchema(
         type="fargate",
@@ -343,7 +344,7 @@ SCAN_SCHEMA = {
     ),
     "sync_asm_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
