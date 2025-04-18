@@ -266,6 +266,7 @@ export const ScanTasksView: React.FC = () => {
   const scanNameValues = [
     'censys',
     'amass',
+    'asm_sync',
     'credential_sync',
     'findomain',
     'intel_x_identity',
@@ -276,7 +277,6 @@ export const ScanTasksView: React.FC = () => {
     'sslyze',
     'searchSync',
     'shodan_sync',
-    'sync_asm_sync',
     'cve',
     'dotgov',
     'intrigueIdent',
