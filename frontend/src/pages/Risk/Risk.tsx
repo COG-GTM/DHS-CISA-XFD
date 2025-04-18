@@ -62,7 +62,7 @@ const Risk: React.FC<ContextType> = ({
   filters,
   removeFilter,
   addFilter,
-  searchTerm,
+  search_term,
   setSearchTerm
 }) => {
   const { showMaps, user, apiPost } = useAuthContext();
@@ -102,18 +102,18 @@ const Risk: React.FC<ContextType> = ({
   const { pathname } = useLocation();
 
   const filtersToDisplay = useMemo(() => {
-    if (searchTerm !== '') {
+    if (search_term !== '') {
       return [
         ...filters,
         {
           field: 'query',
-          values: [searchTerm],
+          values: [search_term],
           onClear: () => setSearchTerm('', { shouldClearFilters: false })
         }
       ];
     }
     return filters;
-  }, [filters, searchTerm, setSearchTerm]);
+  }, [filters, search_term, setSearchTerm]);
 
   const userLevel = useUserLevel().userLevel;
 
@@ -121,9 +121,9 @@ const Risk: React.FC<ContextType> = ({
   const initialFiltersForUser = useUserTypeFilters(regions, user, userLevel);
 
   const fetchStats = useCallback(
-    async (orgId?: string) => {
+    async (org_id?: string) => {
       if (
-        user?.userType === 'globalAdmin' &&
+        user?.user_type === 'globalAdmin' &&
         riskFilters.regions.length === 0
       ) {
         return;
@@ -134,7 +134,7 @@ const Risk: React.FC<ContextType> = ({
           }
         });
         const max = Math.max(
-          ...result.vulnerabilities.byOrg.map((p) => p.value)
+          ...result.vulnerabilities.by_org.map((p) => p.value)
         );
         colorScale = scaleLinear<string>()
           .domain([0, Math.log(max)])
@@ -162,7 +162,7 @@ const Risk: React.FC<ContextType> = ({
   useEffect(() => {
     filters.forEach((filter) => {
       if (
-        filter.field !== 'organization.regionId' &&
+        filter.field !== 'organization.region_id' &&
         filter.field !== 'organizationId'
       ) {
         removeFilter(filter.field, filter.values[0], filter.type);
@@ -214,7 +214,7 @@ const Risk: React.FC<ContextType> = ({
                 geographies.map((geo) => {
                   const cur = findFn(geo) as
                     | (Point & {
-                        orgId: string;
+                        org_id: string;
                       })
                     | undefined;
                   const centroid = geoCentroid(geo);
@@ -225,7 +225,7 @@ const Risk: React.FC<ContextType> = ({
                         geography={geo}
                         fill={colorScale(cur ? Math.log(cur.value) : 0)}
                         onClick={() => {
-                          if (cur) fetchStats(cur.orgId);
+                          if (cur) fetchStats(cur.org_id);
                         }}
                       />
                       <g>
@@ -269,7 +269,7 @@ const Risk: React.FC<ContextType> = ({
     [key: string]: VulnerabilityCount;
   } = {};
   if (stats) {
-    for (const vuln of stats.vulnerabilities.latestVulnerabilities) {
+    for (const vuln of stats.vulnerabilities.latest_vulnerabilities) {
       if (vuln.title in latestVulnsGrouped)
         latestVulnsGrouped[vuln.title].count++;
       else {
@@ -279,12 +279,13 @@ const Risk: React.FC<ContextType> = ({
   }
 
   const latestVulnsGroupedArr = Object.values(latestVulnsGrouped).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
   if (stats) {
     for (const sev of severities) {
-      sev.disable = !stats.domains.numVulnerabilities.some((i) =>
+      sev.disable = !stats.domains.num_vulnerabilities.some((i) =>
         sev.sevList.includes(i.id.split('|')[1])
       );
     }
@@ -294,13 +295,13 @@ const Risk: React.FC<ContextType> = ({
     return (
       <UpdateStateForm
         open={isUpdateStateFormOpen}
-        userId={user?.id ?? ''}
+        user_id={user?.id ?? ''}
         onClose={() => setIsUpdateStateFormOpen(false)}
       />
     );
   }
 
-  if (user?.invitePending) {
+  if (user?.invite_pending) {
     return (
       <div
         style={{
@@ -368,28 +369,28 @@ const Risk: React.FC<ContextType> = ({
                   <div className={content}>
                     <div className={panel}>
                       <Paper elevation={0} className={cardRoot}>
-                        {stats.domains.numVulnerabilities.length > 0 && (
+                        {stats.domains.num_vulnerabilities.length > 0 && (
                           <TopVulnerableDomains
-                            data={stats.domains.numVulnerabilities}
+                            data={stats.domains.num_vulnerabilities}
                           />
                         )}
                       </Paper>
                       <VulnerabilityCard
                         title={'Most Common Vulnerabilities'}
-                        data={stats.vulnerabilities.mostCommonVulnerabilities}
+                        data={stats.vulnerabilities.most_common_vulnerabilities}
                         showLatest={false}
                         showCommon={true}
                       ></VulnerabilityCard>
                       <div id="mapWrapper">
-                        {(user?.userType === 'globalView' ||
-                          user?.userType === 'globalAdmin') &&
+                        {(user?.user_type === 'globalView' ||
+                          user?.user_type === 'globalAdmin') &&
                           showMaps && (
                             <>
                               <MapCard
                                 title={'State Vulnerabilities'}
                                 geoUrl={geoStateUrl}
                                 findFn={(geo) =>
-                                  stats?.vulnerabilities.byOrg.find(
+                                  stats?.vulnerabilities.by_org.find(
                                     (p) => p.label === geo.properties.name
                                   )
                                 }
@@ -399,7 +400,7 @@ const Risk: React.FC<ContextType> = ({
                                 title={'County Vulnerabilities'}
                                 geoUrl={geoStateUrl}
                                 findFn={(geo) =>
-                                  stats?.vulnerabilities.byOrg.find(
+                                  stats?.vulnerabilities.by_org.find(
                                     (p) =>
                                       p.label ===
                                       geo.properties.name + ' Counties'
@@ -429,14 +430,14 @@ export const RiskWithSearch = withSearch(
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   })
 )(Risk);

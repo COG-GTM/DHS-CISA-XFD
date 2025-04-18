@@ -69,23 +69,23 @@ export const Organizations: React.FC = () => {
             <OrganizationList></OrganizationList>
           ) : null}
         </Box>
-        {user?.userType === 'globalAdmin' && (
+        {user?.user_type === 'globalAdmin' && (
           <>
             <ImportExport<Organization>
               name="organizations"
               fieldsToImport={[
                 'name',
                 'acronym',
-                'rootDomains',
-                'ipBlocks',
-                'isPassive',
+                'root_domains',
+                'ip_blocks',
+                'is_passive',
                 'tags',
                 'country',
                 'state',
-                'stateFips',
-                'stateName',
+                'state_fips',
+                'state_name',
                 'county',
-                'countyFips'
+                'county_fips'
               ]}
               onImport={async (results) => {
                 // TODO: use a batch call here instead.
@@ -98,11 +98,11 @@ export const Organizations: React.FC = () => {
                           ...result,
                           // These fields are initially parsed as strings, so they need
                           // to be converted to arrays.
-                          ipBlocks: (
-                            (result.ipBlocks as unknown as string) || ''
+                          ip_blocks: (
+                            (result.ip_blocks as unknown as string) || ''
                           ).split(','),
-                          rootDomains: (
-                            (result.rootDomains as unknown as string) || ''
+                          root_domains: (
+                            (result.root_domains as unknown as string) || ''
                           ).split(','),
                           tags: ((result.tags as unknown as string) || '')
                             .split(',')

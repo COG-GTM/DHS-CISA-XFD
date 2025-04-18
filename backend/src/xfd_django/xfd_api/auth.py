@@ -19,7 +19,7 @@ import jwt
 import requests
 
 # from .helpers import user_to_dict
-from .models import ApiKey, Organization, OrganizationTag, Role, User
+from xfd_mini_dl.models import ApiKey, Organization, OrganizationTag, Role, User
 
 # JWT_ALGORITHM = "RS256"
 JWT_SECRET = settings.JWT_SECRET
@@ -66,9 +66,9 @@ def get_user_by_api_key(api_key: str):
     """Get a user by their API key."""
     hashed_key = sha256(api_key.encode()).hexdigest()
     try:
-        api_key_instance = ApiKey.objects.get(hashedKey=hashed_key)
+        api_key_instance = ApiKey.objects.get(hashed_key=hashed_key)
         api_key_instance.lastUsed = datetime.now(timezone.utc)
-        api_key_instance.save(update_fields=["lastUsed"])
+        api_key_instance.save(update_fields=["last_used"])
         return api_key_instance.user
     except ApiKey.DoesNotExist:
         print("API Key not found")
@@ -183,17 +183,25 @@ async def process_user(decoded_token):
         # Create a new user if they don't exist from Okta fields in SAML Response
         user = User(
             email=decoded_token["email"],
-            oktaId=decoded_token["sub"],
-            firstName=decoded_token.get("given_name"),
-            lastName=decoded_token.get("family_name"),
-            userType="standard",
-            invitePending=True,
+            okta_id=decoded_token["sub"],
+            first_name=decoded_token.get("given_name"),
+            last_name=decoded_token.get("family_name"),
+            user_type="standard",
+            invite_pending=True,
+            cognito_username=decoded_token.get("cognito:username"),
+            cognito_use_case_description=decoded_token.get("nickname"),
+            cognito_email_verified=decoded_token.get("email_verified"),
+            cognito_groups=decoded_token.get("cognito:groups"),
         )
         user.save()
     else:
         # Update user oktaId (legacy users) and login time
-        user.oktaId = decoded_token["sub"]
-        user.lastLoggedIn = datetime.now()
+        user.okta_id = decoded_token["sub"]
+        user.last_logged_in = datetime.now()
+        user.cognito_username = decoded_token.get("cognito:username")
+        user.cognito_use_case_description = decoded_token.get("nickname")
+        user.cognito_email_verified = decoded_token.get("email_verified")
+        user.cognito_groups = decoded_token.get("cognito:groups")
         user.save()
 
     if user:
@@ -271,17 +279,17 @@ async def get_jwt_from_code(auth_code: str):
 
 def is_global_write_admin(current_user) -> bool:
     """Check if the user has global write admin permissions."""
-    return current_user and current_user.userType == "globalAdmin"
+    return current_user and current_user.user_type == "globalAdmin"
 
 
 def is_global_view_admin(current_user) -> bool:
     """Check if the user has global view permissions."""
-    return current_user and current_user.userType in ["globalView", "globalAdmin"]
+    return current_user and current_user.user_type in ["globalView", "globalAdmin"]
 
 
 def is_regional_admin(current_user) -> bool:
     """Check if the user has regional admin permissions."""
-    return current_user and current_user.userType in ["regionalAdmin", "globalAdmin"]
+    return current_user and current_user.user_type in ["regionalAdmin", "globalAdmin"]
 
 
 def is_org_admin(current_user, organization_id) -> bool:
@@ -307,7 +315,7 @@ def is_regional_admin_for_organization(current_user, organization_id) -> bool:
     if is_regional_admin(current_user):
         # Check if the organization belongs to the user's region
         user_region_id = (
-            current_user.regionId
+            current_user.region_id
         )  # Assuming this is available in the user object
         organization_region_id = get_organization_region(
             organization_id
@@ -331,7 +339,7 @@ def can_access_user(current_user, target_user_id) -> bool:
     # Check if the user is a regional admin and the target user is in the same region
     if is_regional_admin(current_user):
         target_user = User.objects.get(id=target_user_id)
-        return current_user.regionId == target_user.regionId
+        return current_user.region_id == target_user.region_id
 
     return False
 
@@ -347,7 +355,7 @@ def get_org_memberships(current_user) -> list[str]:
 def get_organization_region(organization_id: str) -> str:
     """Fetch the region ID for the given organization."""
     organization = Organization.objects.get(id=organization_id)
-    return organization.regionId
+    return organization.region_id
 
 
 def get_tag_organizations(current_user, tag_id) -> list[str]:
@@ -377,11 +385,11 @@ def matches_user_region(current_user, user_region_id: str) -> bool:
         return True
 
     # Ensure the user has a region associated with them
-    if not current_user.regionId or not user_region_id:
+    if not current_user.region_id or not user_region_id:
         return False
 
     # Compare the region IDs
-    return user_region_id == current_user.regionId
+    return user_region_id == current_user.region_id
 
 
 def get_stats_org_ids(current_user, filters):
@@ -421,7 +429,7 @@ def get_stats_org_ids(current_user, filters):
         # Get organizations by region
         if regions_filter:
             organizations_by_region = Organization.objects.filter(
-                regionId__in=regions_filter
+                region_id__in=regions_filter
             ).values_list("id", flat=True)
             organization_ids.update(organizations_by_region)
 
@@ -431,12 +439,12 @@ def get_stats_org_ids(current_user, filters):
             organization_ids.update(organizations_by_tag)
 
     # Case 3: Regional admin
-    elif current_user.userType in ["regionalAdmin"]:
-        user_region_id = current_user.regionId
+    elif current_user.user_type in ["regionalAdmin"]:
+        user_region_id = current_user.region_id
 
         # Allow only organizations in the user's region
         organizations_in_region = Organization.objects.filter(
-            regionId=user_region_id
+            region_id=user_region_id
         ).values_list("id", flat=True)
         organization_ids.update(organizations_in_region)
 

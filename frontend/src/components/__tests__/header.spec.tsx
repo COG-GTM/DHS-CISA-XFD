@@ -20,7 +20,7 @@ describe('Header component', () => {
   it('shows no links for unauthenticated user', () => {
     const { queryByText } = render(<Header />, {
       authContext: {
-        user: { ...testUser, userType: 'standard', isRegistered: false },
+        user: { ...testUser, user_type: 'standard', isRegistered: false },
         currentOrganization: { ...testOrganization }
       }
     });
@@ -32,7 +32,7 @@ describe('Header component', () => {
   it('shows correct links for ORG_USER', () => {
     const { getByText, queryByText } = render(<Header />, {
       authContext: {
-        user: { ...testUser, userType: 'standard', isRegistered: true },
+        user: { ...testUser, user_type: 'standard', isRegistered: true },
         currentOrganization: { ...testOrganization }
       }
     });
@@ -47,7 +47,7 @@ describe('Header component', () => {
   it('shows correct links for ORG_ADMIN', () => {
     const { getByText } = render(<Header />, {
       authContext: {
-        user: { ...testUser, userType: 'standard', isRegistered: true },
+        user: { ...testUser, user_type: 'standard', isRegistered: true },
         currentOrganization: { ...testOrganization }
       }
     });
@@ -62,7 +62,7 @@ describe('Header component', () => {
   it('shows correct links for GLOBAL_ADMIN', () => {
     const { getByText } = render(<Header />, {
       authContext: {
-        user: { ...testUser, userType: 'globalAdmin', isRegistered: true },
+        user: { ...testUser, user_type: 'globalAdmin', isRegistered: true },
         currentOrganization: { ...testOrganization }
       }
     });

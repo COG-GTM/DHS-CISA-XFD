@@ -33,12 +33,12 @@ def handler(event, context):
         create_readonly_user()
 
         return {
-            "statusCode": 200,
+            "status_code": 200,
             "body": "Database synchronization completed successfully.",
         }
     except Exception as e:
         print("Error during syncdb: {}".format(str(e)))
         return {
-            "statusCode": 500,
+            "status_code": 500,
             "body": "Database synchronization failed: {}".format(str(e)),
         }

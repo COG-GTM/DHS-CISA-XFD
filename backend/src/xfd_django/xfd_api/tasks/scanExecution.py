@@ -16,8 +16,8 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
-from xfd_api.models import Scan, ScanTask
 from xfd_api.tasks.ecs_client import ECSClient
+from xfd_mini_dl.models import Scan, ScanTask
 
 QUEUE_URL = os.getenv("QUEUE_URL")
 
@@ -45,8 +45,8 @@ def create_scan_task(
         scan_id=scan_id,
         type="fargate",
         status="created",
-        fargateTaskArn=fargate_task_arn,
-        concurrencyIndex=concurrency_index,
+        fargate_task_arn=fargate_task_arn,
+        concurrency_index=concurrency_index,
     )
 
     if organizations:
@@ -63,15 +63,15 @@ def start_desired_tasks(
     # Step 1: Get the scan instance
     scans_with_name = Scan.objects.filter(name=scan_type)
 
-    # Step 2: Determine the max concurrentTasks among them
-    max_concurrent = max((scan.concurrentTasks for scan in scans_with_name), default=1)
+    # Step 2: Determine the max concurrent_tasks among them
+    max_concurrent = max((scan.concurrent_tasks for scan in scans_with_name), default=1)
 
-    # Step 3: Get all currently running concurrencyIndexes across all scans of this type
+    # Step 3: Get all currently running concurrency_indexes across all scans of this type
     existing_indexes = list(
         ScanTask.objects.filter(
             scan__name=scan_type,
             status__in=["created", "queued", "requested", "started"],
-        ).values_list("concurrencyIndex", flat=True)
+        ).values_list("concurrency_index", flat=True)
     )
 
     available_indexes = sorted(
@@ -182,6 +182,8 @@ def start_desired_tasks(
             }
             if scan_type == "shodan":
                 command_options["SHODAN_API_KEY"] = shodan_api_key
+            else:
+                command_options["SHODAN_API_KEY"] = os.getenv("SHODAN_API_KEY")
 
             result = ecs.run_command(command_options)
 
@@ -262,7 +264,7 @@ def handler(event, context):
 
         if not scan_type:
             print("scanType must be provided.")
-            return {"statusCode": 400, "body": "Failed: no scanType provided."}
+            return {"status_code": 400, "body": "Failed: no scanType provided."}
 
         if scan_type == "shodan":
             if is_pe:
@@ -276,7 +278,7 @@ def handler(event, context):
             if len(shodan_api_keys) < desired_count:
                 print("Not enough API keys provided for Shodan tasks.")
                 return {
-                    "statusCode": 400,
+                    "status_code": 400,
                     "body": "Failed: insufficient API keys for Shodan.",
                 }
 
@@ -294,7 +296,7 @@ def handler(event, context):
                 scan_type, desired_count, scan_id, organizations, is_pe=is_pe
             )
 
-        return {"statusCode": 200, "body": "Tasks started successfully."}
+        return {"status_code": 200, "body": "Tasks started successfully."}
     except Exception as e:
         print("Error in handler: {}".format(e))
-        return {"statusCode": 500, "body": json.dumps(str(e))}
+        return {"status_code": 500, "body": json.dumps(str(e))}
