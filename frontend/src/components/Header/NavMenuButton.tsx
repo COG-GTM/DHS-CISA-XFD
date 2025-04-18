@@ -1,16 +1,8 @@
 import React from 'react';
 import { NavLink, useLocation, Link as RouterLink } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  ButtonProps,
-  IconButton,
-  Menu,
-  MenuItem
-} from '@mui/material';
+import { Box, Button, ButtonProps, Menu, MenuItem } from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import MenuIcon from '@mui/icons-material/Menu';
 
 interface MenuItemType {
   menuItemTitle: string;
@@ -113,27 +105,11 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title, path }) => {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      {title !== 'Mobile View' && (
-        <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
-          <Button {...buttonProps}>
-            <Box sx={borderBoxStyle}>{title}</Box>
-          </Button>
-        </Box>
-      )}
-
-      {title === 'Mobile View' && menuItems && (
-        <IconButton
-          sx={{ display: { xs: 'flex', lg: 'none' }, color: 'primary.dark' }}
-          aria-label={`Open ${title} menu`}
-          aria-haspopup="true"
-          aria-controls={open ? id : undefined}
-          aria-expanded={open ? 'true' : undefined}
-          onClick={handleClick}
-        >
-          <MenuIcon />
-        </IconButton>
-      )}
-
+      <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
+        <Button {...buttonProps}>
+          <Box sx={borderBoxStyle}>{title}</Box>
+        </Button>
+      </Box>
       {menuItems && menuItems.length > 0 && (
         <Menu
           anchorEl={anchorEl}

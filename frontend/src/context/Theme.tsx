@@ -160,6 +160,26 @@ const theme = createTheme({
           }
         })
       }
+    },
+    MuiListItemText: {
+      styleOverrides: {
+        primary: ({ theme }) => ({
+          fontSize: '1rem',
+          color: theme.palette.primary.dark
+        })
+      }
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          '&:hover': {
+            backgroundColor: theme.palette.primary.light
+          },
+          '&.Mui-selected': {
+            backgroundColor: theme.palette.primary.light
+          }
+        })
+      }
     }
 
     // To-do: Re-enable this after clarification with Design Team

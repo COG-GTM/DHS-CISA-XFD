@@ -6,9 +6,11 @@ import {
   REGIONAL_ADMIN,
   STANDARD_USER
 } from 'hooks/useUserLevel';
-import { AppBar, Box, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import cisaLogo from 'assets/cisaSeal.svg';
 import { NavMenuButton } from './NavMenuButton';
+import { NavMenuDrawer } from './NavMenuDrawer';
 
 interface MenuItemType {
   menuItemTitle: string;
@@ -20,6 +22,10 @@ interface MenuItemType {
 export const Header: React.FC = () => {
   const { logout } = useAuthContext();
   const { userLevel } = useUserLevel();
+  const [openDrawer, setOpenDrawer] = React.useState(false);
+  const toggleDrawer = (newOpen: boolean) => () => {
+    setOpenDrawer(newOpen);
+  };
   const adminHubMenuItems: MenuItemType[] = [
     {
       menuItemTitle: 'Admin Tools',
@@ -105,18 +111,18 @@ export const Header: React.FC = () => {
   const inventoryMenuItems: MenuItemType[] = [
     {
       menuItemTitle: 'Inventory',
-      path: '#',
+      path: '/inventory',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
 
-  const allMenuItems: MenuItemType[] = [
-    ...vulnScanningMenuItems,
-    ...inventoryMenuItems,
-    ...(userLevel === STANDARD_USER ? [] : adminHubMenuItems),
-    ...supportMenuItems,
-    ...learningCenterMenuItems,
-    ...userMenuItems
+  const allMenuItems: { [section: string]: MenuItemType[] }[] = [
+    { 'Vulnerability Scanning': vulnScanningMenuItems },
+    { Inventory: inventoryMenuItems },
+    userLevel > STANDARD_USER ? { 'Admin Hub': adminHubMenuItems } : {},
+    { Support: supportMenuItems },
+    { 'Learning Center': learningCenterMenuItems },
+    { 'My Account': userMenuItems }
   ];
 
   const headerLogo = (
@@ -186,8 +192,25 @@ export const Header: React.FC = () => {
                 />
               )}
               <NavMenuButton menuItems={userMenuItems} title="My Account" />
-              <NavMenuButton menuItems={allMenuItems} title="Mobile View" />
+              <IconButton
+                sx={{
+                  display: { xs: 'flex', lg: 'none' },
+                  color: 'primary.dark'
+                }}
+                aria-label="Open mobile menu"
+                aria-haspopup="true"
+                aria-controls={openDrawer ? 'mobile-menu' : undefined}
+                aria-expanded={openDrawer ? 'true' : undefined}
+                onClick={toggleDrawer(!openDrawer)}
+              >
+                <MenuIcon />
+              </IconButton>
             </Box>
+            <NavMenuDrawer
+              openDrawer={openDrawer}
+              toggleDrawer={toggleDrawer}
+              menuItems={allMenuItems}
+            />
           </>
         )}
       </Toolbar>
