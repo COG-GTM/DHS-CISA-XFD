@@ -591,14 +591,12 @@ class Organization(models.Model):
     )
     enrolled_in_vs_timestamp = models.DateTimeField(
         db_column="enrolled_in_vs_timestamp",
-        null=True,
-        blank=True,
+        auto_now=True,
         help_text="Date the stakeholder enrolled in VS.",
     )
     period_start_vs_timestamp = models.DateTimeField(
         db_column="period_start_vs_timestamp",
-        null=True,
-        blank=True,
+        auto_now=True,
         help_text="Period start for the last report period VS ran.?????",
     )
     report_types = models.JSONField(
@@ -4874,13 +4872,15 @@ class SubDomains(models.Model):
         help_text="T/F: Boolean field flagging if the status is active.???",
     )
     first_seen = models.DateTimeField(
+        auto_now_add=True,
         blank=True,
         null=True,
-        help_text="Date and time of the first time teh subdomain was seen.",
+        help_text="Date and time of the first time the subdomain was seen.",
     )
     last_seen = models.DateTimeField(
         blank=True,
         null=True,
+        auto_now_add=True,
         help_text="Date of the last time the subdomain was seen.",
     )
     created_at = models.DateTimeField(
