@@ -37,8 +37,8 @@ class Cve(BaseModel):
     cvss_v4_base_severity: Optional[str]
     cvss_v4_exploitability_score: Optional[str]
     cvss_v4_impact_score: Optional[str]
-    weaknesses: List[str] = Field(default_factory=list)
-    reference_urls: List[str] = Field(default_factory=list)
+    weaknesses: Optional[List[str]] = Field(None)
+    reference_urls: Optional[List[str]] = Field(None)
 
     class Config:
         """Config."""
