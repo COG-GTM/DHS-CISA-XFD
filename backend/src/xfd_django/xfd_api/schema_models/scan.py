@@ -249,7 +249,7 @@ SCAN_SCHEMA = {
     ),
     "nist": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         description="Update CVE data using the NIST API",
     ),
