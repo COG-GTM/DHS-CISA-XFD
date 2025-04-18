@@ -11,8 +11,8 @@ import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { ContextType } from 'context/SearchProvider';
 
 interface Props {
-  sortField: ContextType['sortField'];
-  sortDirection?: ContextType['sortDirection'];
+  sort_field: ContextType['sort_field'];
+  sort_direction?: ContextType['sort_direction'];
   setSort: ContextType['setSort'];
   isFixed: boolean;
   children?: React.ReactNode;
@@ -20,10 +20,10 @@ interface Props {
 }
 
 export const SortBar: React.FC<Props> = (props) => {
-  const { sortField, sortDirection, setSort, children } = props;
+  const { sort_field, sort_direction, setSort, children } = props;
 
   const toggleDirection = () => {
-    setSort(sortField, sortDirection === 'asc' ? 'desc' : 'asc');
+    setSort(sort_field, sort_direction === 'asc' ? 'desc' : 'asc');
   };
 
   const onSetSortField: SelectProps['onChange'] = (e) => {
@@ -37,10 +37,10 @@ export const SortBar: React.FC<Props> = (props) => {
           className={classes.toggleDirection}
           onClick={toggleDirection}
           aria-label={`Sort ${
-            sortDirection === 'asc' ? 'Descending' : 'Ascending'
+            sort_direction === 'asc' ? 'Descending' : 'Ascending'
           }`}
         >
-          {!sortDirection || sortDirection === 'desc' ? (
+          {!sort_direction || sort_direction === 'desc' ? (
             <ArrowDownward />
           ) : (
             <ArrowUpward />
@@ -50,7 +50,7 @@ export const SortBar: React.FC<Props> = (props) => {
         <FormControl className={classes.openFields}>
           <Select
             labelId="sort-by-label"
-            value={sortField}
+            value={sort_field}
             onChange={onSetSortField}
             classes={{ select: classes.selectInp }}
             sx={{
@@ -63,10 +63,10 @@ export const SortBar: React.FC<Props> = (props) => {
             <MenuItem classes={{ root: classes.option }} value="ip">
               IP
             </MenuItem>
-            <MenuItem classes={{ root: classes.option }} value="updatedAt">
+            <MenuItem classes={{ root: classes.option }} value="updated_at">
               Last Seen
             </MenuItem>
-            <MenuItem classes={{ root: classes.option }} value="createdAt">
+            <MenuItem classes={{ root: classes.option }} value="created_at">
               First Seen
             </MenuItem>
           </Select>

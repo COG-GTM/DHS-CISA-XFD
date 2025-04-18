@@ -30,18 +30,20 @@ interface AutocompleteType extends Partial<OrganizationTag> {
 
 export interface OrganizationFormValues {
   name: string;
-  rootDomains: string;
-  ipBlocks: string;
-  isPassive: boolean;
+  root_domains: string;
+  ip_blocks: string;
+  is_passive: boolean;
   tags: { name: string }[];
-  stateName?: string | null | undefined;
+  state_name?: string | null | undefined;
   acronym?: string | null;
   state?: string | null;
 }
 
-const getStateAbbreviation = (stateName: string | null): string | undefined => {
-  if (stateName) {
-    const index = STATE_OPTIONS.indexOf(stateName);
+const getStateAbbreviation = (
+  state_name: string | null
+): string | undefined => {
+  if (state_name) {
+    const index = STATE_OPTIONS.indexOf(state_name);
     if (index !== -1) {
       return STATE_ABBREVIATED_OPTIONS[index];
     }
@@ -70,11 +72,11 @@ export const OrganizationForm: React.FC<{
 }) => {
   const defaultValues = () => ({
     name: organization ? organization.name : '',
-    rootDomains: organization ? organization.rootDomains.join(', ') : '',
-    ipBlocks: organization ? organization.ipBlocks.join(', ') : '',
-    isPassive: organization ? organization.isPassive : false,
+    root_domains: organization ? organization.root_domains.join(', ') : '',
+    ip_blocks: organization ? organization.ip_blocks.join(', ') : '',
+    is_passive: organization ? organization.is_passive : false,
     tags: [],
-    stateName: organization ? organization.stateName : '',
+    state_name: organization ? organization.state_name : '',
     acronym: organization ? organization.acronym : ''
   });
 
@@ -83,8 +85,8 @@ export const OrganizationForm: React.FC<{
   const [formErrors, setFormErrors] = useState({
     name: false,
     acronym: false,
-    rootDomains: false,
-    stateName: false
+    root_domains: false,
+    state_name: false
   });
   const { apiGet } = useAuthContext();
 
@@ -109,8 +111,8 @@ export const OrganizationForm: React.FC<{
     const newFormErrors = {
       name: values.name.trim() === '',
       acronym: values.acronym?.trim() === '',
-      rootDomains: values.rootDomains.trim() === '',
-      stateName: values.stateName?.trim() === ''
+      root_domains: values.root_domains.trim() === '',
+      state_name: values.state_name?.trim() === ''
     };
     setFormErrors(newFormErrors);
     return !Object.values(newFormErrors).some((error) => error);
@@ -130,11 +132,11 @@ export const OrganizationForm: React.FC<{
     }));
   };
 
-  const handleTagChange = (event: any, newValue: string[]) => {
-    setChosenTags(newValue);
+  const handleTagChange = (event: any, new_value: string[]) => {
+    setChosenTags(new_value);
     setValues((prevValues) => ({
       ...prevValues,
-      tags: newValue.map((tag) => ({ name: tag }))
+      tags: new_value.map((tag) => ({ name: tag }))
     }));
   };
 
@@ -196,15 +198,15 @@ export const OrganizationForm: React.FC<{
           placeholder="Enter Root Domains, comma separated"
           size="small"
           margin="dense"
-          id="rootDomains"
-          name="rootDomains"
+          id="root_domains"
+          name="root_domains"
           type="text"
           fullWidth
-          value={values.rootDomains}
+          value={values.root_domains}
           onChange={onTextChange}
-          error={formErrors.rootDomains}
+          error={formErrors.root_domains}
           helperText={
-            formErrors.rootDomains && 'At least one Root Domain is required'
+            formErrors.root_domains && 'At least one Root Domain is required'
           }
         />
         IP Blocks
@@ -213,11 +215,11 @@ export const OrganizationForm: React.FC<{
           placeholder="Enter IP Blocks, comma separated"
           size="small"
           margin="dense"
-          id="ipBlocks"
-          name="ipBlocks"
+          id="ip_blocks"
+          name="ip_blocks"
           type="text"
           fullWidth
-          value={values.ipBlocks}
+          value={values.ip_blocks}
           onChange={onTextChange}
         />
         Organization State
@@ -225,13 +227,13 @@ export const OrganizationForm: React.FC<{
           sx={{ mt: 1 }}
           displayEmpty
           size="small"
-          id="stateName"
-          value={values.stateName}
-          name="stateName"
+          id="state_name"
+          value={values.state_name}
+          name="state_name"
           onChange={handleStateChange}
           fullWidth
           renderValue={
-            values.stateName !== ''
+            values.state_name !== ''
               ? undefined
               : () => (
                   <Typography color="#bdbdbd">
@@ -239,15 +241,15 @@ export const OrganizationForm: React.FC<{
                   </Typography>
                 )
           }
-          error={formErrors.stateName}
+          error={formErrors.state_name}
         >
-          {STATE_OPTIONS.map((stateName: string, index: number) => (
-            <MenuItem key={index} value={stateName}>
-              {stateName}
+          {STATE_OPTIONS.map((state_name: string, index: number) => (
+            <MenuItem key={index} value={state_name}>
+              {state_name}
             </MenuItem>
           ))}
         </Select>
-        {formErrors.stateName && (
+        {formErrors.state_name && (
           <Typography pl={2} variant="caption" color="error.main">
             Organization State is required
             <br />
@@ -287,8 +289,8 @@ export const OrganizationForm: React.FC<{
           sx={{ mt: 1 }}
           control={
             <Switch
-              checked={values.isPassive}
-              name="isPassive"
+              checked={values.is_passive}
+              name="is_passive"
               onChange={(e) => {
                 onChange(e.target.name, e.target.checked);
               }}
@@ -310,20 +312,20 @@ export const OrganizationForm: React.FC<{
               return;
             }
             await onSubmit({
-              rootDomains:
-                values.rootDomains === ''
+              root_domains:
+                values.root_domains === ''
                   ? []
-                  : values.rootDomains
+                  : values.root_domains
                       .split(',')
                       .map((domain) => domain.trim()),
-              ipBlocks:
-                values.ipBlocks === ''
+              ip_blocks:
+                values.ip_blocks === ''
                   ? []
-                  : values.ipBlocks.split(',').map((ip) => ip.trim()),
+                  : values.ip_blocks.split(',').map((ip) => ip.trim()),
               name: values.name,
-              stateName: values.stateName,
+              state_name: values.state_name,
               state: values.state,
-              isPassive: values.isPassive,
+              is_passive: values.is_passive,
               tags: values.tags,
               acronym: values.acronym,
               parent: parent ? parent.id : undefined

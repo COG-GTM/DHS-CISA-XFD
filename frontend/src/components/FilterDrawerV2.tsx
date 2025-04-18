@@ -28,7 +28,7 @@ export const FilterDrawer: FC<
     addFilter,
     removeFilter,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     filters,
     initialFilters
@@ -50,7 +50,7 @@ export const FilterDrawer: FC<
         removeFilter={removeFilter}
         filters={filters}
         setSearchTerm={setSearchTerm}
-        searchTerm={searchTerm}
+        search_term={search_term}
       />
       {matchPath(
         ['/inventory', '/inventory/domains', '/inventory/vulnerabilities'],
@@ -61,7 +61,7 @@ export const FilterDrawer: FC<
           removeFilter={removeFilter}
           filters={filters}
           facets={facets}
-          searchTerm={searchTerm}
+          search_term={search_term}
           setSearchTerm={setSearchTerm}
           initialFilters={initialFilters}
         />
@@ -98,14 +98,14 @@ export const FilterDrawerV2 = withSearch(
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   })
 )(FilterDrawer);

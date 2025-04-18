@@ -52,9 +52,9 @@ def apply_domain_filters(domains, filters):
     if filters.name:
         q &= Q(name__icontains=filters.name)
 
-    # reverseName partial match
-    if filters.reverseName:
-        q &= Q(reverseName__icontains=filters.reverseName)
+    # reverse_name partial match
+    if filters.reverse_name:
+        q &= Q(reverse_name__icontains=filters.reverse_name)
 
     # name partial match
     if hasattr(filters, "name") and filters.name:
@@ -68,9 +68,9 @@ def apply_domain_filters(domains, filters):
     if filters.organization:
         q &= Q(organization_id=filters.organization)
 
-    # OrganizationName partial match
-    if filters.organizationName:
-        q &= Q(organization__name__icontains=filters.organizationName)
+    # Organization_name partial match
+    if filters.organization_name:
+        q &= Q(organization__name__icontains=filters.organization_name)
 
     # Vulnerabilities partial match by title
     if filters.vulnerabilities:
@@ -164,9 +164,9 @@ def apply_vuln_filters(
     if vulnerability_filters.organization:
         q &= Q(domain__organization_id=vulnerability_filters.organization)
 
-    # Exact match on isKev (True/False)
-    if vulnerability_filters.isKev is not None:
-        q &= Q(isKev=vulnerability_filters.isKev)
+    # Exact match on is_kev (True/False)
+    if vulnerability_filters.is_kev is not None:
+        q &= Q(is_kev=vulnerability_filters.is_kev)
 
     # Apply the final Q object filter
     filtered = vulnerabilities.filter(q)

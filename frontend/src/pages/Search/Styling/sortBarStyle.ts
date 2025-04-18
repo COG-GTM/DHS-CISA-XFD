@@ -5,8 +5,8 @@ import { SavedSearch } from 'types';
 const PREFIX = 'SortBar';
 
 interface Props {
-  sortField: ContextType['sortField'];
-  sortDirection?: ContextType['sortDirection'];
+  sort_field: ContextType['sort_field'];
+  sort_direction?: ContextType['sort_direction'];
   setSort: ContextType['setSort'];
   saveSearch?(): void;
   isFixed: boolean;

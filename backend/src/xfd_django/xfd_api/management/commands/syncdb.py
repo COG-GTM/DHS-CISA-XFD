@@ -4,9 +4,7 @@ from django.core.management.base import BaseCommand
 from xfd_api.tasks.searchSync import handler as sync_es_domains
 from xfd_api.tasks.syncdb_helpers import (
     drop_all_tables,
-    manage_elasticsearch_indices,
     populate_sample_data,
-    sync_es_organizations,
     synchronize,
 )
 
@@ -44,12 +42,6 @@ class Command(BaseCommand):
         else:
             self.stdout.write("Applying migrations...")
             synchronize(target_app_label="xfd_api")
-
-        # Step 2: Elasticsearch Index Management
-        manage_elasticsearch_indices(dangerouslyforce)
-
-        # Step 3: Sync organizations in ES
-        sync_es_organizations()
 
         # Step 4: Populate Sample Data
         if populate:

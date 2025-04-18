@@ -41,12 +41,12 @@ export interface ScansTaskRow {
   name: string;
   input: string;
   output: string;
-  createdAt: string;
-  startedAt: string;
-  requestedAt: string;
-  finishedAt: string;
+  created_at: string;
+  started_at: string;
+  requested_at: string;
+  finished_at: string;
   scan: Scan;
-  fargateTaskArn: string;
+  fargate_task_arn: string;
 }
 
 const dateAccessor = (date?: string) => {
@@ -133,7 +133,7 @@ export const ScanTasksView: React.FC = () => {
           );
         // We only want to be able to filter with the dropdown org/tag bar
         if (!showAllOrganizations && currentOrganization) {
-          if ('rootDomains' in currentOrganization)
+          if ('root_domains' in currentOrganization)
             tableFilters['organization'] = currentOrganization.id;
           else tableFilters['tag'] = currentOrganization.id;
         }
@@ -143,7 +143,7 @@ export const ScanTasksView: React.FC = () => {
             body: {
               page,
               pageSize: query.pageSize ?? PAGE_SIZE,
-              sort: sort[0]?.id ?? 'createdAt',
+              sort: sort[0]?.id ?? 'created_at',
               order: 'DESC',
               filters: tableFilters
             }
@@ -170,23 +170,23 @@ export const ScanTasksView: React.FC = () => {
   const scansTasksRows: ScansTaskRow[] = scanTasks.map((scanTask) => ({
     id: scanTask.id,
     status: scanTask.status,
-    name: `${scanTask.scan?.name ?? 'None'}-${scanTask.concurrencyIndex ?? 1}`,
+    name: `${scanTask.scan?.name ?? 'None'}-${scanTask.concurrency_index ?? 1}`,
     input: scanTask.input,
     output: scanTask.output,
-    createdAt: dateAccessor(scanTask.createdAt),
-    startedAt: dateAccessor(scanTask.startedAt),
-    requestedAt: scanTask.requestedAt,
-    finishedAt: dateAccessor(scanTask.finishedAt),
+    created_at: dateAccessor(scanTask.created_at),
+    started_at: dateAccessor(scanTask.started_at),
+    requested_at: scanTask.requested_at,
+    finished_at: dateAccessor(scanTask.finished_at),
     scan: scanTask.scan,
-    fargateTaskArn: scanTask.fargateTaskArn
+    fargate_task_arn: scanTask.fargate_task_arn
   }));
 
   const scansTasksCols: GridColDef[] = [
     { field: 'id', headerName: 'ID', minWidth: 100, flex: 2 },
     { field: 'status', headerName: 'Status', minWidth: 100, flex: 1 },
     { field: 'name', headerName: 'Name', minWidth: 100, flex: 1 },
-    { field: 'createdAt', headerName: 'Created At', minWidth: 200, flex: 1 },
-    { field: 'finishedAt', headerName: 'Finished At', minWidth: 200, flex: 1 },
+    { field: 'created_at', headerName: 'Created At', minWidth: 200, flex: 1 },
+    { field: 'finished_at', headerName: 'Finished At', minWidth: 200, flex: 1 },
     {
       field: 'details',
       headerName: 'Details',
@@ -435,13 +435,13 @@ export const ScanTasksView: React.FC = () => {
       >
         <DialogTitle id="alert-dialog-title">{'Scan Details'}</DialogTitle>
         <DialogContent>
-          {detailsParams?.row?.fargateTaskArn && (
+          {detailsParams?.row?.fargate_task_arn && (
             <>
               <Typography variant="h6" component="div">
                 Logs:
               </Typography>
 
-              {detailsParams?.row?.fargateTaskArn.match && (
+              {detailsParams?.row?.fargate_task_arn.match && (
                 <MuiButton
                   aria-label="View all on CloudWatch"
                   variant="text"
@@ -451,7 +451,7 @@ export const ScanTasksView: React.FC = () => {
                     process.env.CLOUDWATCH_URL
                   }#logsV2:log-groups/log-group/${process.env
                     .REACT_APP_FARGATE_LOG_GROUP!}/log-events/worker$252Fmain$252F${
-                    (detailsParams?.row?.fargateTaskArn.match('.*/(.*)') || [
+                    (detailsParams?.row?.fargate_task_arn.match('.*/(.*)') || [
                       ''
                     ])[1]
                   }`}

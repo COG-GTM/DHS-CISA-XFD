@@ -5,7 +5,14 @@ import os
 # Third-Party Libraries
 from django.core.management.base import BaseCommand
 from django.db import connections
-from xfd_api.tasks.syncdb_helpers import drop_all_tables, synchronize
+from xfd_api.tasks.searchSync import handler as sync_es_domains
+from xfd_api.tasks.syncdb_helpers import (
+    drop_all_tables,
+    manage_elasticsearch_indices,
+    populate_sample_data,
+    sync_es_organizations,
+    synchronize,
+)
 
 
 class Command(BaseCommand):
@@ -21,10 +28,17 @@ class Command(BaseCommand):
             action="store_true",
             help="Force drop and recreate the database.",
         )
+        parser.add_argument(
+            "-p",
+            "--populate",
+            action="store_true",
+            help="Populate the database with sample data.",
+        )
 
     def handle(self, *args, **options):
         """Handle method."""
         dangerouslyforce = options["dangerouslyforce"]
+        populate = options["populate"]
 
         mdl_username = os.getenv("MDL_USERNAME")
         mdl_password = os.getenv("MDL_PASSWORD")
@@ -86,3 +100,18 @@ class Command(BaseCommand):
         synchronize(target_app_label="xfd_mini_dl")
 
         self.stdout.write("Database synchronization complete.")
+
+        # Step 3: Elasticsearch Index Management
+        manage_elasticsearch_indices(dangerouslyforce)
+
+        # Step 4: Sync organizations in ES
+        sync_es_organizations()
+
+        # Step 5: Populate Sample Data
+        if populate:
+            self.stdout.write("Populating the database with sample data...")
+            populate_sample_data()
+            self.stdout.write("Sample data population complete.")
+
+            # Step 5: Sync domains in ES
+            sync_es_domains({})

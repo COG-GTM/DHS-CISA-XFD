@@ -8,9 +8,9 @@ import secrets
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import User, UserType
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_django.asgi import app
+from xfd_mini_dl.models import User, UserType
 
 client = TestClient(app)
 
@@ -61,16 +61,16 @@ dummy_org_data = {
 
 
 # Test: post valid data with invalid checksum should return 500
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_sync_invalid_checksum_should_return_500():
     """Test sync with invalid checksum."""
     user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     invalid_checksum = create_checksum(dummy_org_data) + "invstr"
     response = client.post(
@@ -85,16 +85,16 @@ def test_sync_invalid_checksum_should_return_500():
 
 
 # Test: post valid data with missing checksum should return 500
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_sync_missing_checksum_should_return_500():
     """Test sync with missing checksum."""
     user = user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     headers = {"Authorization": "Bearer {}".format(create_jwt_token(user))}
     response = client.post("/sync", json=dummy_org_data, headers=headers)
@@ -102,16 +102,16 @@ def test_sync_missing_checksum_should_return_500():
 
 
 # Test: post empty data should return 500
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_sync_missing_data_should_return_422():
     """Test sync with missing data."""
     user = user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.STANDARD,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     headers = {
         "Authorization": "Bearer {}".format(create_jwt_token(user)),

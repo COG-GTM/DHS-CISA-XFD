@@ -40,7 +40,7 @@ const classes = {
   accordion: `${PREFIX}-accordion`,
   accordionHeaderRow: `${PREFIX}-accordionHeaderRow`,
   accordionHeading: `${PREFIX}-accordionHeading`,
-  lastSeen: `${PREFIX}-lastSeen`,
+  last_seen: `${PREFIX}-last_seen`,
   vulnDescription: `${PREFIX}-vulnDescription`,
   listRoot: `${PREFIX}-listRoot`,
   nested: `${PREFIX}-nested`
@@ -109,7 +109,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
     flex: '1 0 33%'
   },
 
-  [`& .${classes.lastSeen}`]: {
+  [`& .${classes.last_seen}`]: {
     flex: '0 0 125px'
   },
 
@@ -217,14 +217,14 @@ export const DomainDetails: React.FC<Props> = (props) => {
       label: 'First Seen',
       value: `${differenceInCalendarDays(
         Date.now(),
-        parseISO(domain.createdAt)
+        parseISO(domain.created_at)
       )} days ago`
     });
     ret.push({
       label: 'Last Seen',
       value: `${differenceInCalendarDays(
         Date.now(),
-        parseISO(domain.updatedAt)
+        parseISO(domain.updated_at)
       )} days ago`
     });
     if (domain.country) {
@@ -233,7 +233,7 @@ export const DomainDetails: React.FC<Props> = (props) => {
         value: domain.country
       });
     }
-    if (domain.cloudHosted) {
+    if (domain.cloud_hosted) {
       ret.push({
         label: 'Cloud Hosted',
         value: 'Yes'
@@ -313,7 +313,7 @@ export const DomainDetails: React.FC<Props> = (props) => {
               <ListItemText
                 primary={(prefix ? '' : '/') + split.pop()}
                 secondary={
-                  page.status + ' • ' + formatBytes(page.responseSize ?? 0, 1)
+                  page.status + ' • ' + formatBytes(page.response_size ?? 0, 1)
                 }
               ></ListItemText>
             </ListItem>
@@ -447,10 +447,10 @@ export const DomainDetails: React.FC<Props> = (props) => {
                       {vuln.state}
                     </Typography>
                     <Typography className={classes.vulnDescription}>
-                      {vuln.createdAt
+                      {vuln.created_at
                         ? `${differenceInCalendarDays(
                             Date.now(),
-                            parseISO(vuln.createdAt)
+                            parseISO(vuln.created_at)
                           )} days ago`
                         : ''}
                     </Typography>
@@ -470,7 +470,7 @@ export const DomainDetails: React.FC<Props> = (props) => {
                   <Typography className={classes.accordionHeading}>
                     Products
                   </Typography>
-                  <Typography className={classes.lastSeen}>
+                  <Typography className={classes.last_seen}>
                     Last Seen
                   </Typography>
                 </AccordionSummary>
@@ -492,11 +492,11 @@ export const DomainDetails: React.FC<Props> = (props) => {
                       <Typography className={classes.accordionHeading}>
                         {products}
                       </Typography>
-                      <Typography className={classes.lastSeen}>
-                        {service.lastSeen
+                      <Typography className={classes.last_seen}>
+                        {service.last_seen
                           ? `${differenceInCalendarDays(
                               Date.now(),
-                              parseISO(service.lastSeen)
+                              parseISO(service.last_seen)
                             )} days ago`
                           : ''}
                       </Typography>
@@ -512,8 +512,8 @@ export const DomainDetails: React.FC<Props> = (props) => {
                             {
                               label: 'Banner',
                               value:
-                                (user?.userType === 'globalView' ||
-                                  user?.userType === 'globalAdmin') &&
+                                (user?.user_type === 'globalView' ||
+                                  user?.user_type === 'globalAdmin') &&
                                 service.banner
                                   ? service.banner
                                   : 'None'
