@@ -1,5 +1,6 @@
 """Django ORM models."""
 # Standard Python Libraries
+import logging
 import socket
 import uuid
 
@@ -13,6 +14,34 @@ from netfields import InetAddressField
 
 manage_db = True
 app_label_name = "xfd_mini_dl"
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+LOGGER = logging.getLogger(__name__)
+
+
+class AutoLengthCheckModel(models.Model):
+    """Extend base model functionality to validate CharField."""
+
+    class Meta:
+        """Meta class."""
+
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        """Log warnings and trim input that is too big for CharField."""
+        for field in self._meta.fields:
+            if isinstance(field, models.CharField):
+                value = getattr(self, field.name)
+                if value and field.max_length and len(value) > field.max_length:
+                    LOGGER.warning(
+                        "[%s] Auto-truncating field '%s': %s → %s chars",
+                        self.__class__.__name__,
+                        field.name,
+                        len(value),
+                        field.max_length,
+                    )
+                    setattr(self, field.name, value[: field.max_length])
+        super().save(*args, **kwargs)
 
 
 class ApiKey(models.Model):
@@ -63,7 +92,7 @@ class ApiKey(models.Model):
         db_table = "api_key"
 
 
-class Cpe(models.Model):
+class Cpe(AutoLengthCheckModel):
     """The Cpe model."""
 
     id = models.UUIDField(
@@ -74,7 +103,7 @@ class Cpe(models.Model):
     name = models.CharField(max_length=255, help_text="Name of the product.")
     version = models.CharField(max_length=255, help_text="Version of the product.")
     vendor = models.CharField(
-        max_length=255, help_text="Vendorr who created the product."
+        max_length=255, help_text="Vendor who created the product."
     )
     last_seen_at = models.DateTimeField(
         db_column="last_seen_at", help_text="Last datetime the CPE was seen."
@@ -89,7 +118,7 @@ class Cpe(models.Model):
         unique_together = (("name", "version", "vendor"),)  # Unique constraint
 
 
-class Cve(models.Model):
+class Cve(AutoLengthCheckModel):
     """The Cve model."""
 
     id = models.UUIDField(
@@ -321,7 +350,7 @@ class Cve(models.Model):
         db_table = "cve"
 
 
-class Notification(models.Model):
+class Notification(AutoLengthCheckModel):
     """The Notification model."""
 
     id = models.UUIDField(
@@ -385,7 +414,7 @@ class Notification(models.Model):
         db_table = "notification"
 
 
-class Organization(models.Model):
+class Organization(AutoLengthCheckModel):
     """The Organization model."""
 
     id = models.UUIDField(
@@ -677,7 +706,7 @@ class Organization(models.Model):
         db_table = "organization"
 
 
-class OrganizationTag(models.Model):
+class OrganizationTag(AutoLengthCheckModel):
     """The OrganizationTag model."""
 
     id = models.UUIDField(
@@ -737,7 +766,7 @@ class OrganizationTag(models.Model):
 #         unique_together = (("organizationTagId", "organizationId"),)
 
 
-class QueryResultCache(models.Model):
+class QueryResultCache(AutoLengthCheckModel):
     """The QueryResultCache model."""
 
     id = models.UUIDField(
@@ -839,7 +868,7 @@ class Role(models.Model):
         unique_together = (("user_id", "organization_id"),)
 
 
-class SavedSearch(models.Model):
+class SavedSearch(AutoLengthCheckModel):
     """The SavedSearch model."""
 
     id = models.UUIDField(
@@ -1164,7 +1193,7 @@ class UserType(models.TextChoices):
     STANDARD = "standard"
 
 
-class User(models.Model):
+class User(AutoLengthCheckModel):
     """The User model."""
 
     id = models.UUIDField(
@@ -1418,8 +1447,7 @@ class TicketEvent(models.Model):
         blank=True,
         help_text="Event action type. (OPENED, VERIFIED, CHANGED, CLOSED, REOPENED, UNVERIFIED)",
     )
-    reason = models.CharField(
-        max_length=255,
+    reason = models.TextField(
         null=True,
         blank=True,
         help_text="Short description of the event",
@@ -1449,7 +1477,7 @@ class TicketEvent(models.Model):
         unique_together = ("event_timestamp", "ticket", "action")
 
 
-class VulnScan(models.Model):
+class VulnScan(AutoLengthCheckModel):
     """The VS Vuln Scan model."""
 
     id = models.CharField(
@@ -1507,8 +1535,7 @@ class VulnScan(models.Model):
         null=True,
         help_text="A textual representation of the set of CVSS metrics.",
     )
-    description = models.CharField(
-        max_length=255,
+    description = models.TextField(
         blank=True,
         null=True,
         help_text="Description of the vulnerability, according to the vulnerability scanner.",
@@ -1589,8 +1616,7 @@ class VulnScan(models.Model):
     script_version = models.CharField(
         max_length=255, blank=True, null=True, help_text="Script version string"
     )
-    see_also = models.CharField(
-        max_length=255,
+    see_also = models.TextField(
         blank=True,
         null=True,
         help_text="Additional reference(s) for this vulnerability provided by the vulnerability scanner",
@@ -1606,8 +1632,7 @@ class VulnScan(models.Model):
         null=True,
         help_text="CVSS v2.0 severity rating from the vulnerability scanner.",
     )
-    solution = models.CharField(
-        max_length=255,
+    solution = models.TextField(
         blank=True,
         null=True,
         help_text="Solution to mitigate the detected vulnerability, according to the vulnerability scanner",
@@ -1618,8 +1643,7 @@ class VulnScan(models.Model):
         null=True,
         help_text="Source of the vulnerability scan (e.g. 'nessus').",
     )
-    synopsis = models.CharField(
-        max_length=255,
+    synopsis = models.TextField(
         blank=True,
         null=True,
         help_text="Brief overview of the vulnerability.",
@@ -1632,9 +1656,7 @@ class VulnScan(models.Model):
     vuln_publication_timestamp = models.DateTimeField(
         blank=True, null=True, help_text="Vulnerability publication date."
     )
-    xref = models.CharField(
-        max_length=255, blank=True, null=True, help_text="External reference."
-    )
+    xref = models.TextField(blank=True, null=True, help_text="External reference.")
     cwe = models.CharField(
         max_length=255,
         blank=True,
@@ -1867,7 +1889,7 @@ class CidrOrgs(models.Model):
         unique_together = (("cidr", "organization"),)
 
 
-class Location(models.Model):
+class Location(AutoLengthCheckModel):
     """The Location model."""
 
     id = models.UUIDField(
@@ -2085,6 +2107,56 @@ class Host(models.Model):
         indexes = [
             models.Index(fields=["ip_string"]),
         ]
+
+
+class HostSummary(models.Model):
+    """Define HostSummary model."""
+
+    summary_date = models.DateField(
+        help_text="Date this summary represents (usually the date it was generated)."
+    )
+    start_date = models.DateTimeField(
+        help_text="Timestamp of the earliest last_change in the collection",
+    )
+    end_date = models.DateTimeField(
+        help_text="Timestamp of the latest last_change in the collection",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        related_name="host_summaries",
+        on_delete=models.CASCADE,
+        help_text="Foreign key relationship to the organization the summary is built for.",
+    )
+    host_done_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of the hosts with a status of DONE."
+    )
+    host_waiting_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of the hosts with a status of WAITING."
+    )
+    host_running_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of the hosts with a status of RUNNING."
+    )
+    host_ready_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of the hosts with a status of READY."
+    )
+    up_host_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of the hosts that were live in the last scan.",
+    )
+    down_host_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of the hosts that were down in the last scan.",
+    )
+
+    class Meta:
+        """The Meta class for HostSummary."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "host_summary"
+        unique_together = (("organization", "summary_date"),)
 
 
 class Ip(models.Model):
@@ -2430,7 +2502,7 @@ class Ticket(models.Model):
         unique_together = ["id"]
 
 
-class PortScan(models.Model):
+class PortScan(AutoLengthCheckModel):
     """The PortScan model."""
 
     id = models.CharField(
@@ -2465,8 +2537,7 @@ class PortScan(models.Model):
         blank=True,
         help_text="Protocol for this port scan ('tcp' or 'udp').",
     )
-    reason = models.CharField(
-        max_length=255,
+    reason = models.TextField(
         null=True,
         blank=True,
         help_text="Why this port is determined to be open, as reported by the port scanner.",
@@ -2488,6 +2559,49 @@ class PortScan(models.Model):
         null=True,
         blank=True,
         help_text="The method that was used to identify the service on the port.",
+    )
+    service_cpe = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="The cpe of the product associated with the service on the port.",
+    )
+    service_hostname = models.TextField(
+        null=True,
+        blank=True,
+        help_text="The hostname running the service on the port.",
+    )
+    service_extra_info = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Additional info provided by the port scanner.",
+    )
+    service_os_type = models.TextField(
+        null=True,
+        blank=True,
+        help_text="OS identified running the service",
+    )
+    service_product = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Product identified by service scanner.",
+    )
+    service_version = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Version of the product identified.",
+    )
+    service_tunnel = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Additional info provided by the port scanner.",
+    )
+    service_device_type = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Product identified by service scanner.",
     )
     source = models.CharField(
         max_length=255,
@@ -2532,6 +2646,99 @@ class PortScan(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "port_scan"
+
+
+class PortScanSummary(models.Model):
+    """Define PortScanSummary model."""
+
+    start_date = models.DateTimeField(
+        help_text="Timestamp of the earliest vuln_detection timestamp",
+    )
+    end_date = models.DateTimeField(
+        help_text="Timestamp of the latest vuln_detection timestamp",
+    )
+    summary_date = models.DateField(
+        help_text="Date this summary represents (usually the date it was generated)."
+    )
+    organization = models.ForeignKey(
+        Organization,
+        related_name="port_scan_summaries",
+        on_delete=models.CASCADE,
+        help_text="Foreign key relationship to the organization the port scan summary is built for.",
+    )
+    open_port_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of open ports."
+    )
+    risky_port_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of risky ports."
+    )
+    nmi_service_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of NMI services."
+    )
+    unique_ip_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of unique ips."
+    )
+    unique_service_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of unique services."
+    )
+
+    class Meta:
+        """The Meta class for PortScanSummary."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "port_scan_summary"
+        unique_together = (
+            ("organization", "summary_date"),
+        )  # datetime_pulled_from_redshift
+
+
+class PortScanServiceSummary(models.Model):
+    """Define PortScanServiceSummary model."""
+
+    start_date = models.DateTimeField(
+        help_text="Timestamp of the earliest vuln_detection timestamp",
+    )
+    end_date = models.DateTimeField(
+        help_text="Timestamp of the latest vuln_detection timestamp",
+    )
+    summary_date = models.DateField(
+        help_text="Date this summary represents (usually the date it was generated)."
+    )
+    organization = models.ForeignKey(
+        Organization,
+        related_name="port_scan_service_summaries",
+        on_delete=models.CASCADE,
+        help_text="Foreign key relationship to the organization the port scan summary is built for.",
+    )
+    service_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of the service the summary row is tracking.",
+    )
+    risky_ports = models.JSONField(
+        blank=True,
+        null=True,
+        default=dict,  # or list
+        help_text="Dictionary or list of risky ports running the service.",
+    )
+    unique_ip_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of unique ips."
+    )
+    unique_service_count = models.IntegerField(
+        null=True, blank=True, help_text="Number of unique services."
+    )
+
+    class Meta:
+        """The Meta class for PortScanServiceSummary."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "port_scan_service_summary"
+        unique_together = (
+            ("organization", "summary_date", "service_name"),
+        )  # datetime_pulled_from_redshift
 
 
 # #######  WAS Models  #########
@@ -3092,7 +3299,7 @@ class WasReport(models.Model):
 
 
 # ######## PE Models #########
-class PeUsers(models.Model):
+class PeUsers(AutoLengthCheckModel):
     """Define Users model."""
 
     id = models.UUIDField(
@@ -4860,7 +5067,7 @@ class ShodanVulns(models.Model):
         unique_together = (("organization", "ip", "port", "protocol"),)
 
 
-class SubDomains(models.Model):
+class SubDomains(AutoLengthCheckModel):
     """Define SubDomains model."""
 
     sub_domain_uid = models.UUIDField(
