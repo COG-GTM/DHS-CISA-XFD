@@ -99,16 +99,17 @@ def main():
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '2 days' limit 200;"
+        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '2 days';"
     )
     LOGGER.info("Fetched %d vulnerability scans from Redshift", len(vuln_scans))
     if vuln_scans:
         process_vulnerability_scans(vuln_scans, org_id_dict)
         LOGGER.info("Finished processing vulnerability scans")
+
     # Process Host Scans
     LOGGER.info("Started processing host scans...")
     host_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.hosts WHERE last_change >= GETDATE() - INTERVAL '2 days' limit 200;"
+        "SELECT * FROM vmtableau.hosts WHERE last_change >= GETDATE() - INTERVAL '2 days';"
     )
     LOGGER.info("Fetched %d host scans from Redshift", len(host_scans))
     if host_scans:
@@ -118,16 +119,17 @@ def main():
     # Process Port Scans
     LOGGER.info("Started processing port scans...")
     port_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.port_scans WHERE time >= GETDATE() - INTERVAL '2 days' limit 200;"
+        "SELECT * FROM vmtableau.port_scans WHERE time >= GETDATE() - INTERVAL '2 days';"
     )
     LOGGER.info("Fetched %d port scans from Redshift", len(port_scans))
     if port_scans:
         process_port_scans(port_scans, org_id_dict)
         LOGGER.info("Finished processing port scans")
+
     # Process Tickets
     LOGGER.info("Started processing tickets...")
     tickets = fetch_from_redshift(
-        "SELECT * FROM vmtableau.tickets WHERE last_change >= GETDATE() - INTERVAL '2 days' limit 200;"
+        "SELECT * FROM vmtableau.tickets WHERE last_change >= GETDATE() - INTERVAL '2 days';"
     )
     LOGGER.info("Fetched %d tickets from Redshift", len(tickets))
     if tickets:
