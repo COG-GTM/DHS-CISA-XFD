@@ -43,7 +43,7 @@ def dmz_shodan_sync(shodan_data, current_user):
         page_size,
         page_num,
         ordering_field,
-    ):
+    ):  # pylint: disable=R0913
         queryset = model_cls.objects.filter(organization__acronym=org_acronym)
 
         if since_date:
