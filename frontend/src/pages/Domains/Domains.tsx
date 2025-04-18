@@ -17,14 +17,14 @@ const PAGE_SIZE = 15;
 
 export interface DomainRow {
   id: string;
-  organizationName: string;
+  organization_name: string;
   name: string;
   ip: string;
   ports: string[];
   service: string[];
   vulnerabilities: (string | null)[];
-  updatedAt: string;
-  createdAt: string;
+  updated_at: string;
+  created_at: string;
 }
 
 export const Domains: React.FC = () => {
@@ -100,27 +100,27 @@ export const Domains: React.FC = () => {
 
   const domRows: DomainRow[] = domains.map((domain) => ({
     id: domain.id,
-    organizationName: domain.organization.name,
+    organization_name: domain.organization.name,
     name: domain.name,
     ip: domain.ip,
     ports: [domain.services.map((service) => service.port).join(', ')],
     service: domain.services.map((service) =>
       service.products.map((p) => p.name).join(', ')
     ),
-    vulnerabilities: domain.vulnerabilities.map((vuln) => vuln.cve),
-    updatedAt: `${differenceInCalendarDays(
+    vulnerabilities: domain.vulnerabilities.map((vuln) => vuln.title),
+    updated_at: `${differenceInCalendarDays(
       Date.now(),
-      parseISO(domain.updatedAt)
+      parseISO(domain.updated_at)
     )} days ago`,
-    createdAt: `${differenceInCalendarDays(
+    created_at: `${differenceInCalendarDays(
       Date.now(),
-      parseISO(domain.createdAt)
+      parseISO(domain.created_at)
     )} days ago`
   }));
 
   const domCols: GridColDef[] = [
     {
-      field: 'organizationName',
+      field: 'organization_name',
       headerName: 'Organization',
       minWidth: 100,
       flex: 1
@@ -135,8 +135,8 @@ export const Domains: React.FC = () => {
       minWidth: 100,
       flex: 2
     },
-    { field: 'updatedAt', headerName: 'Updated At', minWidth: 50, flex: 1 },
-    { field: 'createdAt', headerName: 'Created At', minWidth: 50, flex: 1 },
+    { field: 'updated_at', headerName: 'Updated At', minWidth: 50, flex: 1 },
+    { field: 'created_at', headerName: 'Created At', minWidth: 50, flex: 1 },
 
     {
       field: 'view',

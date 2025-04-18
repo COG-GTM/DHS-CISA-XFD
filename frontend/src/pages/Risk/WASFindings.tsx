@@ -39,7 +39,7 @@ const WASFindings = () => {
                 NEW VULNERABILITIES
               </Typography>
               <Typography variant="h4" color="error">
-                {wasFindingsData.newVulns}
+                {wasFindingsData.new_vulns}
               </Typography>
               <br />
               <Typography variant="h5" sx={headerFontSize}>

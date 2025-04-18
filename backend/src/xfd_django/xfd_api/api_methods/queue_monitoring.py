@@ -24,10 +24,10 @@ def list_queues(search_data: QueueSearch, current_user):
         # Set defaults if search_data is None
         if search_data is None:
             search_data = QueueSearch(
-                pageSize=15, page=1, sort="name", order="ASC", filters={}
+                page_size=15, page=1, sort="name", order="ASC", filters={}
             )
 
-        page_size = search_data.pageSize or 15
+        page_size = search_data.page_size or 15
         page = search_data.page or 1
 
         # Connect to SQS
@@ -59,13 +59,13 @@ def list_queues(search_data: QueueSearch, current_user):
 
                 queue_info = {
                     "name": queue_name,
-                    "messagesAvailable": int(
+                    "messages_available": int(
                         attributes.get("ApproximateNumberOfMessages", 0)
                     ),
-                    "messagesInFlight": int(
+                    "messages_in_flight": int(
                         attributes.get("ApproximateNumberOfMessagesNotVisible", 0)
                     ),
-                    "messagesDelayed": int(
+                    "messages_delayed": int(
                         attributes.get("ApproximateNumberOfMessagesDelayed", 0)
                     ),
                 }

@@ -55,9 +55,9 @@ export interface ScansRow {
   tags: string;
   mode: string;
   frequency: number;
-  lastRun: string;
+  last_run: string;
   description: string;
-  concurrentTasks: number;
+  concurrent_tasks: number;
 }
 
 const ScansView: React.FC = () => {
@@ -80,11 +80,11 @@ const ScansView: React.FC = () => {
     organizations: [],
     frequency: 1,
     frequencyUnit: 'minute',
-    isGranular: false,
-    isUserModifiable: false,
-    isSingleScan: false,
+    is_granular: false,
+    is_user_modifiable: false,
+    is_single_scan: false,
     tags: [],
-    concurrentTasks: 1
+    concurrent_tasks: 1
   });
 
   const fetchScans = useCallback(async () => {
@@ -208,18 +208,18 @@ const ScansView: React.FC = () => {
       name: scan.name,
       tags: scan.tags.map((tag) => tag.name).join(', '),
       mode:
-        scanSchema[scan.name] && scanSchema[scan.name].isPassive
+        scanSchema[scan.name] && scanSchema[scan.name].is_passive
           ? 'Passive'
           : 'Active',
       frequency: scan.frequency,
-      lastRun:
-        !scan.lastRun ||
-        new Date(scan.lastRun).getTime() === new Date(0).getTime()
+      last_run:
+        !scan.last_run ||
+        new Date(scan.last_run).getTime() === new Date(0).getTime()
           ? 'None'
-          : `${formatDistanceToNow(parseISO(scan.lastRun))} ago`,
+          : `${formatDistanceToNow(parseISO(scan.last_run))} ago`,
       description: scanSchema[scan.name]?.description,
-      concurrentTasks: scan.concurrentTasks,
-      isSingleScan: scan.isSingleScan
+      concurrent_tasks: scan.concurrent_tasks,
+      is_single_scan: scan.is_single_scan
     };
   });
 
@@ -256,15 +256,15 @@ const ScansView: React.FC = () => {
       minWidth: 100,
       flex: 1,
       renderCell: (params: GridRenderCellParams) => {
-        if (params.row.isSingleScan) {
+        if (params.row.is_single_scan) {
           return 'Single Scan';
         }
         return formatFrequency(Number(params.value));
       }
     },
-    { field: 'lastRun', headerName: 'Last Run', minWidth: 100, flex: 1 },
+    { field: 'last_run', headerName: 'Last Run', minWidth: 100, flex: 1 },
     {
-      field: 'concurrentTasks',
+      field: 'concurrent_tasks',
       headerName: 'Concurrent Tasks',
       minWidth: 100,
       flex: 1,
