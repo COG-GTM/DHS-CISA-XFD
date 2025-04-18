@@ -47,7 +47,7 @@ const value: StaticsContextType = {
   setRegions: (regions: string[]) => {}
 };
 
-jest.mock('components/Header', () => ({
+jest.mock('components/Header/Header', () => ({
   Header: () => <div>HEADER</div>
 }));
 jest.mock('components/GovBanner', () => ({

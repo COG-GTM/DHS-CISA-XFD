@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { classes, Root } from './Styling/filterTagsStyle';
 import { ContextType } from '../../context/SearchProvider';
-import { Chip } from '@mui/material';
+import { Button, Chip } from '@mui/material';
 import { REGIONAL_ADMIN, useUserLevel } from 'hooks/useUserLevel';
 import { STANDARD_USER } from 'context/userStateUtils';
 import { REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS } from 'hooks/useUserTypeFilters';
 import { useLocation } from 'react-router-dom';
+import { useFilterDrawerContext } from 'context/FilterDrawerContext';
 
 interface Props {
   filters: ContextType['filters'];
@@ -199,6 +200,8 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
   const { pathname } = useLocation();
 
   const { userLevel } = useUserLevel();
+  const { setIsFilterDrawerOpen, isFilterDrawerOpen } =
+    useFilterDrawerContext();
 
   const disabledFilters = useMemo(() => {
     if (userLevel === STANDARD_USER) {
@@ -238,6 +241,12 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
 
   return (
     <Root aria-live="polite" aria-atomic="true">
+      <Button
+        variant="contained"
+        onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
+      >
+        Filter
+      </Button>
       {filtersByColumn.length === 0 && pathname === '/inventory' ? (
         <Chip
           color="primary"

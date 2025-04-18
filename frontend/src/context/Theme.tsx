@@ -2,7 +2,8 @@ import React from 'react';
 import {
   createTheme,
   ThemeProvider,
-  StyledEngineProvider
+  StyledEngineProvider,
+  Theme
 } from '@mui/material/styles';
 
 declare module '@mui/material/styles' {
@@ -98,7 +99,7 @@ const theme = createTheme({
       variants: [
         {
           props: { variant: 'contained' },
-          style: ({ theme }) => ({
+          style: ({ theme }: { theme: Theme }) => ({
             backgroundColor: theme.palette.primary.dark,
             color: theme.palette.primary.white,
             '&:hover': {
@@ -108,6 +109,18 @@ const theme = createTheme({
             padding: '10px 16px 10px 16px',
             borderRadius: '4px',
             ...theme.typography.button
+          })
+        },
+        {
+          props: { variant: 'text' },
+          style: ({ theme }: { theme: Theme }) => ({
+            backgroundColor: 'transparent',
+            color: theme.palette.primary.dark,
+            '&:hover': {
+              color: theme.palette.primary.darker
+            },
+            fontSize: '1rem',
+            textTransform: 'none'
           })
         }
       ]
@@ -128,6 +141,22 @@ const theme = createTheme({
           color: theme.palette.primary.dark,
           '&:hover': {
             color: theme.palette.primary.darker
+          }
+        })
+      }
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          color: theme.palette.primary.dark,
+          fontSize: '1rem',
+          '&:hover': {
+            backgroundColor: theme.palette.primary.light,
+            color: theme.palette.primary.dark
+          },
+          '&.Mui-selected': {
+            backgroundColor: theme.palette.primary.light,
+            color: theme.palette.primary.dark
           }
         })
       }
