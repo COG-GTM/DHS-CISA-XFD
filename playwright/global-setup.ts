@@ -51,6 +51,8 @@ async function globalSetup(config: FullConfig) {
 
   //Log in with credentials.
   //await waitForFrontend(process.env.PW_XFD_URL);
+  console.log(`URL: ${process.env.PW_XFD_URL}`);
+  console.log(`Username: ${process.env.PW_XFD_USERNAME}`);
   await page.goto(String(process.env.PW_XFD_URL));
   await page.getByTestId('button').click();
   await page
