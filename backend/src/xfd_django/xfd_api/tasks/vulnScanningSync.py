@@ -55,7 +55,7 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 
-async def handler(event):
+def handler(event):
     """Handle execution of the vulnerability scanning sync task.
 
     This function serves as the entry point for triggering the synchronization
@@ -72,6 +72,7 @@ async def handler(event):
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
+        LOGGER.info("Error occurred: %s", e)
         return {"status_code": 500, "body": str(e)}
 
 
@@ -82,7 +83,7 @@ def query_redshift(query, params=None):
         user=os.environ.get("REDSHIFT_USER"),
         password=os.environ.get("REDSHIFT_PASSWORD"),
         host=os.environ.get("REDSHIFT_HOST"),
-        poert=5439,
+        port=5439,
     )
 
     try:
@@ -168,7 +169,7 @@ def detect_data_set(query):
 
 def fetch_from_redshift(query):
     """Fetch data from Redshift and log execution time."""
-    IS_LOCAL = True
+    IS_LOCAL = os.getenv("IS_LOCAL")
     if IS_LOCAL:
         data_set = detect_data_set(query)
         return load_test_data(data_set)
@@ -229,10 +230,12 @@ def send_csv_to_sync(csv_data, bounds):
         "x-checksum": checksum,
         "x-cursor": f"{bounds['start']}-{bounds['end']}",
         "Content-Type": "application/json",
-        "Authorization": "auth_string",
+        "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
 
-    response = requests.post("url_base", json=body, headers=headers, timeout=60)
+    response = requests.post(
+        os.getenv("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
+    )
     if response.status_code == 200:
         LOGGER.info("Successfully sent chunk to sync API")
 

@@ -11,7 +11,8 @@ import {
   ListItem,
   ListItemText,
   Collapse,
-  Button
+  Button,
+  IconButton
 } from '@mui/material';
 import {
   ExpandLess,
@@ -379,9 +380,9 @@ export const DomainDetails: React.FC<Props> = (props) => {
             <Link to={`/inventory/domain/${domain.id}`}>{domain.name}</Link>
           </h4>
 
-          <a href={url} target="_blank" rel="noopener noreferrer">
+          <IconButton href={url} target="_blank" rel="noopener noreferrer">
             <LinkOffIcon />
-          </a>
+          </IconButton>
         </div>
         <div className={classes.inner}>
           {overviewInfo.length > 0 && (
