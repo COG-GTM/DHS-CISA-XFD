@@ -8,11 +8,13 @@ data synchronization by interfacing with the data lake and database models.
 # Standard Python Libraries
 import datetime
 import json
+import logging
 import os
 from typing import Dict
 from uuid import uuid1
 
 # Third-Party Libraries
+from dateutil import parser  # type: ignore
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Prefetch
 from django.db.utils import IntegrityError
@@ -27,11 +29,31 @@ from xfd_mini_dl.models import (
     Host,
     Ip,
     Location,
+    NMIServiceGroup,
     Organization,
     PortScan,
+    RiskyServiceGroup,
     Ticket,
+    TicketEvent,
     VulnScan,
 )
+
+
+def safe_parse_date(value):
+    """Safely parse a date string into a datetime object."""
+    try:
+        if value:
+            return parser.parse(value)
+    except (parser.ParserError, TypeError, ValueError):
+        return None  # or you can log it / raise a custom error
+    return None
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(message)s",
+)
+LOGGER = logging.getLogger(__name__)
 
 
 def save_port_scan_to_datalake(port_scan_obj):
@@ -48,42 +70,96 @@ def save_port_scan_to_datalake(port_scan_obj):
     #     f"Starting to save port scan {port_scan_obj.get('ipString')} {port_scan_obj.get('port')} to datalake"
     # )
 
-    # Map fields to match Django model expectations
-    field_mapping = {"organization": "organization_id", "ip": "ip_id"}
-
-    # Determine fields to update, excluding 'id'
-    port_scan_updated_values = {
-        field_mapping.get(key, key): value
-        for key, value in port_scan_obj.items()
-        if key != "id" and value is not None
-    }
-
+    id = port_scan_obj.get("id")
+    del port_scan_obj["id"]
     try:
         with transaction.atomic(using="mini_data_lake"):
-            if port_scan_updated_values:
-                # Upsert: Insert or update if a conflict occurs
-                port_scan_record, created = PortScan.objects.update_or_create(
-                    id=port_scan_obj.get(
-                        "id", str(uuid1())
-                    ),  # Generate UUID if not provided
-                    defaults=port_scan_updated_values,
-                )
-                print("Updated PortScan" if not created else "Created PortScan")
-                return str(port_scan_record.id)
-            else:
-                # Insert but ignore if the record already exists
-                obj, created = PortScan.objects.get_or_create(
-                    id=port_scan_obj.get("id", str(uuid1())), defaults=port_scan_obj
-                )
-                if not created:
-                    print(f"Found existing PortScan: {obj.id}")
-                return str(obj.id) if obj else None
+            # Insert but ignore if the record already exists
+
+            obj, created = PortScan.objects.update_or_create(
+                id=id, defaults=port_scan_obj
+            )
+            if not created:
+                print(f"Found existing PortScan: {obj.id}")
     except Exception as e:
         print("Error saving PortScan to Datalake", e)
         return None
 
 
-def save_ticket_to_datalake(ticket_obj):
+def save_ticket_event_to_datalake(ticket_event_obj, ticket_id, details):
+    """Save ticket events to Datalake."""
+    id = ticket_event_obj.get("reference")
+    if isinstance(id, str):
+        id = id.replace("ObjectId('", "").replace("')", "")
+
+    is_port_scan = False
+    is_vuln_scan = False
+    port_scan_record = None
+    vuln_scan_record = None
+
+    try:
+        port_scan_record = PortScan.objects.get(id=id)
+        is_port_scan = True
+    except PortScan.DoesNotExist:
+        pass
+    try:
+        vuln_scan_record = VulnScan.objects.get(id=id)
+        is_vuln_scan = True
+    except VulnScan.DoesNotExist:
+        pass
+
+    ticket_service = details.get("service")
+
+    try:
+        if ticket_service:
+            ticket_record = Ticket.objects.get(id=ticket_id)
+            nmi_service_group_record = NMIServiceGroup.objects.filter(
+                service_name=ticket_service
+            ).first()
+            risky_service_group = RiskyServiceGroup.objects.filter(
+                service_name=ticket_service
+            ).first()
+            if nmi_service_group_record:
+                # Set NMI Service Group -> Not a relation, just text mapping field
+                ticket_record.nmi_service_group = nmi_service_group_record.group
+                ticket_record.save()
+                if is_port_scan:
+                    port_scan_record.nmi_service_group = nmi_service_group_record.group
+                    port_scan_record.save()
+                if is_vuln_scan:
+                    vuln_scan_record.nmi_service_group = nmi_service_group_record.group
+                    vuln_scan_record.save()
+            if risky_service_group:
+                # Set Risky Service Group -> Not a relation, just text mapping field
+                ticket_record.risky_service_group = risky_service_group.group
+                ticket_record.save()
+                if is_port_scan:
+                    port_scan_record.risky_service_group = risky_service_group.group
+                    port_scan_record.save()
+                if is_vuln_scan:
+                    vuln_scan_record.risky_service_group = risky_service_group.group
+                    vuln_scan_record.save()
+    except Exception as e:
+        LOGGER.info("Error setting NMIServiceGroup or RiskyServiceGroup", e)
+
+    shaped = {
+        "reference": id,
+        "port_scan_id": id if is_port_scan else None,
+        "vuln_scan_id": id if is_vuln_scan else None,
+        "action": ticket_event_obj.get("action"),
+        "reason": ticket_event_obj.get("reason"),
+        "event_timestamp": safe_parse_date(ticket_event_obj.get("time")),
+        "ticket_id": ticket_id,
+    }
+    try:
+        ticket_event_record = TicketEvent.objects.create(**shaped)
+        return ticket_event_record
+    except IntegrityError:
+        LOGGER.info("TicketEvent already exists")
+        return None
+
+
+def save_ticket_to_datalake(ticket_obj, events, details):
     """
     Save a Ticket record to the datalake, performing an upsert if necessary.
 
@@ -94,40 +170,28 @@ def save_ticket_to_datalake(ticket_obj):
         str or None: The ID of the inserted/updated record.
     """
     # print("Starting to save Ticket to datalake")
-
-    # Map fields to match Django model expectations
-    field_mapping = {"organization": "organization_id", "ip": "ip_id", "cve": "cve_id"}
-
-    # Determine fields to update, excluding 'id'
-    ticket_updated_values = {
-        field_mapping.get(key, key): value
-        for key, value in ticket_obj.items()
-        if key != "id" and value is not None
-    }
+    obj = None
+    id = ticket_obj.get("id")
+    del ticket_obj["id"]
 
     try:
         with transaction.atomic(using="mini_data_lake"):
-            if ticket_updated_values:
-                # Upsert: Insert or update if a conflict occurs
-                ticket_record, created = Ticket.objects.update_or_create(
-                    id=ticket_obj.get(
-                        "id", str(uuid1())
-                    ),  # Generate UUID if not provided
-                    defaults=ticket_updated_values,
-                )
-                print("Updated Ticket" if not created else "Created Ticket")
-                return str(ticket_record.id)
-            else:
-                # Insert but ignore if the record already exists
-                obj, created = Ticket.objects.get_or_create(
-                    id=ticket_obj.get("id", str(uuid1())), defaults=ticket_obj
-                )
-                if not created:
-                    print(f"Found existing Ticket: {obj.id}")
-                return str(obj.id) if obj else None
+            # Insert but ignore if the record already exists
+
+            obj, created = Ticket.objects.update_or_create(id=id, defaults=ticket_obj)
+            print("Saved ticket")
     except Exception as e:
         print("Error saving Ticket to Datalake", e)
+
+    try:
+        for event in events:
+            print("Saving TicketEvent to Datalake")
+            save_ticket_event_to_datalake(event, obj.id, details)
+    except Exception as e:
+        print("Error saving TicketEvent to Datalake", e)
+        LOGGER.error("Error saving TicketEvent to Datalake, %s", e)
         return None
+    return None
 
 
 def save_host(host_data: Dict) -> str:
@@ -139,20 +203,11 @@ def save_host(host_data: Dict) -> str:
     Returns:
         str: The ID of the inserted/updated record.
     """
-    excluded_keys = {"id"}
-    key_mapping = {"organization": "organizationId", "ip": "ip_id"}
-
-    host_updated_values = [
-        key_mapping.get(key, key)
-        for key in host_data.keys()
-        if key not in excluded_keys and host_data[key] is not None
-    ]
+    id = host_data.get("id")
+    del host_data["id"]
 
     with transaction.atomic(using="mini_data_lake"):
-        host, created = Host.objects.update_or_create(
-            id=host_data.get("id"),
-            defaults={key: host_data[key] for key in host_updated_values},
-        )
+        host, created = Host.objects.update_or_create(id=id, defaults=host_data)
 
     return str(host.id)
 
@@ -166,26 +221,13 @@ def save_vuln_scan(vuln_scan: Dict) -> str:
     Returns:
         str: The ID of the inserted/updated record.
     """
-    vuln_scan_updated_values = [
-        "organizationId"
-        if key == "organization"
-        else "ipId"
-        if key == "ip"
-        else "cveId"
-        if key == "cve"
-        else key
-        if vuln_scan[key] is not None and key != "id"
-        else ""
-        for key in vuln_scan.keys()
-    ]
+    id = vuln_scan.get("id")
+    del vuln_scan["id"]
+    if isinstance(id, str):
+        id = id.replace("ObjectId('", "").replace("')", "")
 
-    # Filter out empty values
-    vuln_scan_updated_values = [key for key in vuln_scan_updated_values if key]
-
-    # Upsert into the database
     vuln_scan_obj, created = VulnScan.objects.update_or_create(
-        id=vuln_scan.get("id"),
-        defaults={key: vuln_scan[key] for key in vuln_scan_updated_values},
+        id=id, defaults=vuln_scan
     )
 
     return str(vuln_scan_obj.id)
@@ -222,7 +264,7 @@ def save_cve_to_datalake(cve_obj):
                     | {"id": str(1)},
                 )
                 print("Updated CVE" if not created else "Created CVE")
-                return str(cve_record.id)
+                return cve_record
             else:
                 # Insert but ignore if the record already exists
                 obj, created = Cve.objects.get_or_create(
@@ -230,7 +272,7 @@ def save_cve_to_datalake(cve_obj):
                 )
                 if not created:
                     print(f"Found existing CVE: {obj.id}")
-                return str(obj.id) if obj else None
+                return obj
     except Exception as e:
         print("Error saving CVE to Datalake", e)
         return None
@@ -257,7 +299,7 @@ def save_ip_to_datalake(ip_obj):
     ]
     try:
         org_record = Organization.objects.get(id=str(organization["id"]))
-        with transaction.atomic(using="mini_data_lake_lz"):
+        with transaction.atomic(using="mini_data_lake"):
             if ip_updated_values:
                 # Upsert: Insert or update if a conflict occurs
                 ip_record, created = Ip.objects.update_or_create(
@@ -287,7 +329,7 @@ def save_ip_to_datalake(ip_obj):
 
 
 # Helper and utility functions
-def fetch_orgs_and_relations(db_name="mini_data_lake_lz"):
+def fetch_orgs_and_relations(db_name="mini_data_lake"):
     """Fetch organizations along with related sectors, CIDRs (via CidrOrgs), and child organizations.
 
     Returns:
@@ -392,7 +434,7 @@ def organization_to_dict(org):
 
 
 def save_organization_to_mdl(
-    org_dict, network_list, location, db_name="mini_data_lake_lz"
+    org_dict, network_list, location, db_name="mini_data_lake"
 ) -> Organization:
     """Save or update an organization in the specified database.
 
@@ -412,7 +454,7 @@ def save_organization_to_mdl(
     Returns:
         Organization: The created or updated organization instance.
     """
-    print("Saving Organization")
+    # print("Saving Organization")
     location_obj = None
     if location:
         try:
@@ -456,6 +498,7 @@ def save_organization_to_mdl(
             acronym=org_dict["acronym"],
             retired=org_dict["retired"],
             type=org_dict["type"],
+            region_id=org_dict["region_id"],
             stakeholder=org_dict["stakeholder"],
             enrolled_in_vs_timestamp=org_dict["enrolled_in_vs_timestamp"],
             period_start_vs_timestamp=org_dict["period_start_vs_timestamp"],
@@ -483,7 +526,7 @@ def save_organization_to_mdl(
     return org_obj
 
 
-def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake_lz"):
+def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake"):
     """
     Create or update a CIDR record in the specified database, linking it to the provided organization.
 
@@ -549,7 +592,7 @@ def load_test_data(data_set: str) -> list:
         "vuln_scan": "~/Downloads/vuln_scan_sample.json",
         "port_scans": "~/Downloads/port_scans_sample.json",
         "hosts": "~/Downloads/hosts_sample.json",
-        "tickets": "~/Downloads/tickets_sample.json",
+        "tickets": "~/Downloads/tickets_sample_new.json",
     }
 
     file_path = file_paths.get(data_set)
