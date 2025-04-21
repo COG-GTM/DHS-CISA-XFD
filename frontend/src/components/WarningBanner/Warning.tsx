@@ -14,7 +14,7 @@ export const CrossfeedWarning: React.FC = (props) => {
     bottom: '1rem'
   }));
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', py: 5, px: 1 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', px: 1 }}>
       <BackgroundPaper variant="outlined">
         <Grid container spacing={1}>
           <Grid item xs={12} sm={3} display="flex" justifyContent="end">

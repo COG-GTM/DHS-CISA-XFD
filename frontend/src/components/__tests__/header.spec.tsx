@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, testUser, testOrganization } from 'test-utils';
-import { Header } from '../Header';
+import { Header } from '../Header/Header';
 
 jest.mock('@elastic/react-search-ui', () => ({
   withSearch: () => (comp: any) => comp
@@ -36,7 +36,7 @@ describe('Header component', () => {
         currentOrganization: { ...testOrganization }
       }
     });
-    ['Overview', 'Inventory'].forEach((expected) => {
+    ['Vulnerability Scanning', 'Inventory'].forEach((expected) => {
       expect(getByText(expected)).toBeInTheDocument();
     });
     ['Scans'].forEach((notExpected) => {
@@ -51,7 +51,7 @@ describe('Header component', () => {
         currentOrganization: { ...testOrganization }
       }
     });
-    ['Overview', 'Inventory'].forEach((expected) => {
+    ['Vulnerability Scanning', 'Inventory'].forEach((expected) => {
       expect(getByText(expected)).toBeInTheDocument();
     });
     // ['Manage Organizations', 'Manage Users'].forEach((notExpected) => {
@@ -66,7 +66,7 @@ describe('Header component', () => {
         currentOrganization: { ...testOrganization }
       }
     });
-    ['Overview', 'Inventory'].forEach((expected) => {
+    ['Vulnerability Scanning', 'Inventory'].forEach((expected) => {
       expect(getByText(expected)).toBeInTheDocument();
     });
   });
