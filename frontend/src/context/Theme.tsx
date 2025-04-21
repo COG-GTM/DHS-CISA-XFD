@@ -176,7 +176,7 @@ const theme = createTheme({
       main: '#5E9732'
     },
     background: {
-      default: '#EFF1F5'
+      default: '#FFFFFF'
     },
     disabled: {
       main: '#BDBDBD', // Set your desired disabled color here
