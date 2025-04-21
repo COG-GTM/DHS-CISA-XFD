@@ -280,6 +280,47 @@ async def call_get_cves_by_name(cve_name):
     return get_cves_by_name(cve_name)
 
 
+
+# --- NIST CVE endpoint, CRASM-2431 ---
+@api_router.post(
+    "/cves",
+    response_model=List[CveSchema],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["CVEs to sync to LZ db"],
+)
+async def lz_import_cves(cves: List[CveSchema]):
+    """
+    Bulk‐import or update CVE records into LZ database.
+    """
+    for cve in cves:
+        # Extract incoming data
+        payload = cve.dict()
+
+        # JSON‐serialize the list fields into your TextFields
+        weaknesses = payload.pop("weaknesses", None)
+        payload["weaknesses"] = json.dumps(weaknesses) if weaknesses else None
+
+        refs = payload.pop("reference_urls", None)
+        payload["references"] = json.dumps(refs) if refs else None
+
+
+        try:
+            # update_or_create by PK; defaults covers all other model fields
+            await sync_to_async(
+                CveModel.objects.update_or_create,
+                thread_sensitive=True,
+            )(id=payload["id"], defaults=payload)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="DB error: {}".format(e),
+            )
+
+    # echo back exactly what was ingested
+    return cves
+
+
 # ========================================
 #   Domain Endpoints
 # ========================================
