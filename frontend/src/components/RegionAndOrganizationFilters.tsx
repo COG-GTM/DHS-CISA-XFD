@@ -32,14 +32,14 @@ const STANDARD_USER = 1;
 // Swap this value to allow regional admin to filter on regions that aren't their own
 export const toggleRegionalUserType = true;
 
-export const REGION_FILTER_KEY = 'organization.regionId';
+export const REGION_FILTER_KEY = 'organization.region_id';
 export const ORGANIZATION_FILTER_KEY = 'organizationId';
 
 export interface OrganizationShallow {
-  regionId: string;
+  region_id: string;
   name: string;
   id: string;
-  rootDomains: string[];
+  root_domains: string[];
 }
 
 interface RegionAndOrganizationFiltersProps {
@@ -55,7 +55,7 @@ interface RegionAndOrganizationFiltersProps {
   ) => void;
   filters: any[];
   setSearchTerm: (s: string, opts?: any) => void;
-  searchTerm: string;
+  search_term: string;
 }
 
 export const RegionAndOrganizationFilters: React.FC<
@@ -64,37 +64,37 @@ export const RegionAndOrganizationFilters: React.FC<
   addFilter,
   removeFilter,
   filters,
-  searchTerm: domainSearchTerm,
+  search_term: domainSearchTerm,
   setSearchTerm: setDomainSearchTerm
 }) => {
   const { setShowMaps, user, apiPost } = useAuthContext();
 
   const { regions } = useStaticsContext();
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [search_term, setSearchTerm] = useState<string>('');
   const [orgResults, setOrgResults] = useState<OrganizationShallow[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   let userLevel = 0;
   if (user && user.isRegistered) {
-    if (user.userType === 'standard') {
+    if (user.user_type === 'standard') {
       userLevel = STANDARD_USER;
-    } else if (user.userType === 'globalAdmin') {
+    } else if (user.user_type === 'globalAdmin') {
       userLevel = GLOBAL_ADMIN;
     } else if (
-      user.userType === 'regionalAdmin' ||
-      user.userType === 'globalView'
+      user.user_type === 'regionalAdmin' ||
+      user.user_type === 'globalView'
     ) {
       userLevel = REGIONAL_ADMIN;
     }
   }
   const searchOrganizations = useCallback(
-    async (searchTerm: string, regions?: string[]) => {
+    async (search_term: string, regions?: string[]) => {
       try {
         const results = await apiPost<{
           body: { hits: { hits: { _source: OrganizationShallow }[] } };
         }>('/search/organizations', {
           body: {
-            searchTerm,
+            search_term,
             regions
           }
         });
@@ -127,7 +127,7 @@ export const RegionAndOrganizationFilters: React.FC<
         );
 
         // Utility function to replce HTML encodings
-        const decodeHtml = (orgName: string): string => {
+        const decodeHtml = (org_name: string): string => {
           const encodings: { [key: string]: string } = {
             '&amp;': '&',
             '&lt;': '<',
@@ -135,7 +135,7 @@ export const RegionAndOrganizationFilters: React.FC<
             '&quot;': '"',
             '&#039;': "'"
           };
-          return orgName.replace(/&amp;|&lt;|&gt;|&quot;|&#039;/g, (m) => {
+          return org_name.replace(/&amp;|&lt;|&gt;|&quot;|&#039;/g, (m) => {
             return encodings[m];
           });
         };
@@ -162,11 +162,11 @@ export const RegionAndOrganizationFilters: React.FC<
     return null;
   }, [filters]);
 
-  const handleCheckboxChange = (regionId: string) => {
-    if (regionFilterValues?.includes(regionId)) {
-      removeFilter(REGION_FILTER_KEY, regionId, 'any');
+  const handleCheckboxChange = (region_id: string) => {
+    if (regionFilterValues?.includes(region_id)) {
+      removeFilter(REGION_FILTER_KEY, region_id, 'any');
     } else {
-      addFilter(REGION_FILTER_KEY, regionId, 'any');
+      addFilter(REGION_FILTER_KEY, region_id, 'any');
     }
   };
 
@@ -175,8 +175,8 @@ export const RegionAndOrganizationFilters: React.FC<
   };
 
   useEffect(() => {
-    searchOrganizations(searchTerm, regionFilterValues ?? []);
-  }, [searchOrganizations, searchTerm, regionFilterValues]);
+    searchOrganizations(search_term, regionFilterValues ?? []);
+  }, [searchOrganizations, search_term, regionFilterValues]);
 
   const organizationsInFilters = useMemo(() => {
     const orgsFilter = filters.find(
@@ -194,13 +194,13 @@ export const RegionAndOrganizationFilters: React.FC<
       (userLevel === STANDARD_USER ||
         (!REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS &&
           userLevel !== GLOBAL_ADMIN)) &&
-      user?.regionId
+      user?.region_id
     );
-  }, [user?.regionId, userLevel]);
+  }, [user?.region_id, userLevel]);
 
   const regionExistsInFilters = useCallback(
-    (regionId: string) => {
-      return regionFilterValues?.includes(regionId);
+    (region_id: string) => {
+      return regionFilterValues?.includes(region_id);
     },
     [regionFilterValues]
   );
@@ -256,13 +256,13 @@ export const RegionAndOrganizationFilters: React.FC<
         </AccordionSummary>
         <AccordionDetails>
           <List>
-            {showUsersRegionDisabled && user?.regionId ? (
-              <ListItem sx={{ padding: '0px' }} key={user?.regionId}>
+            {showUsersRegionDisabled && user?.region_id ? (
+              <ListItem sx={{ padding: '0px' }} key={user?.region_id}>
                 <FormGroup>
                   <FormControlLabel
                     control={<Checkbox />}
                     disabled={true}
-                    label={`Region ${user?.regionId}`}
+                    label={`Region ${user?.region_id}`}
                     checked={true}
                     sx={{ padding: '0px' }}
                   />
@@ -274,7 +274,7 @@ export const RegionAndOrganizationFilters: React.FC<
                   <RegionItem
                     key={`region-item-${region}`}
                     handleChange={handleCheckboxChange}
-                    regionId={region}
+                    region_id={region}
                     checked={regionExistsInFilters(region) ?? false}
                   />
                 );
@@ -299,7 +299,7 @@ export const RegionAndOrganizationFilters: React.FC<
                   handleTextChange(v);
                 }
               }}
-              inputValue={searchTerm}
+              inputValue={search_term}
               // freeSolo
               disableClearable
               open={isOpen}
@@ -401,13 +401,13 @@ export const RegionAndOrganizationFilters: React.FC<
 };
 
 interface RegionItemProps {
-  regionId: string;
-  handleChange: (regionId: string) => void;
+  region_id: string;
+  handleChange: (region_id: string) => void;
   checked: boolean;
 }
 
 const RegionItem: React.FC<RegionItemProps> = ({
-  regionId: region,
+  region_id: region,
   handleChange,
   checked
 }) => {

@@ -17,6 +17,9 @@ syncdb-dangerously-force:
 syncmdl:
 	docker compose exec backend python manage.py syncmdl
 
+syncmdl-populate:
+	docker compose exec backend python manage.py syncmdl --populate
+
 syncmdl-dangerously-force:
 	docker compose exec backend python manage.py syncmdl --dangerouslyforce
 

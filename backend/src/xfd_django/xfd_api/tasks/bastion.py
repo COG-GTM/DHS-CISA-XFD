@@ -46,7 +46,7 @@ def handler(event, context):
     to_csv = event.get("toCsv", False)
 
     if not mode or not query:
-        return {"statusCode": 400, "body": "Mode and query are required in the event."}
+        return {"status_code": 400, "body": "Mode and query are required in the event."}
 
     try:
         if mode == "db":
@@ -56,9 +56,9 @@ def handler(event, context):
         elif mode == "redshift":
             return handle_redshift_query(query, to_csv)
         else:
-            return {"statusCode": 400, "body": f"Unsupported mode: {mode}"}
+            return {"status_code": 400, "body": f"Unsupported mode: {mode}"}
     except Exception as e:
-        return {"statusCode": 500, "body": f"Error: {str(e)}"}
+        return {"status_code": 500, "body": f"Error: {str(e)}"}
 
 
 def handle_db_query(query, to_csv):
@@ -71,10 +71,10 @@ def handle_db_query(query, to_csv):
             columns = [desc[0] for desc in cursor.description]
         if to_csv:
             csv_url = generate_and_upload_csv(result, columns, "db")
-            return {"statusCode": 200, "body": f"CSV file uploaded to S3: {csv_url}"}
-        return {"statusCode": 200, "body": str(result)}
+            return {"status_code": 200, "body": f"CSV file uploaded to S3: {csv_url}"}
+        return {"status_code": 200, "body": str(result)}
     except Exception as e:
-        return {"statusCode": 500, "body": f"Database error: {str(e)}"}
+        return {"status_code": 500, "body": f"Database error: {str(e)}"}
 
 
 def handle_mdl_query(query, to_csv):
@@ -86,10 +86,10 @@ def handle_mdl_query(query, to_csv):
             columns = [desc[0] for desc in cursor.description]
         if to_csv:
             csv_url = generate_and_upload_csv(result, columns, "mdl")
-            return {"statusCode": 200, "body": f"CSV file uploaded to S3: {csv_url}"}
-        return {"statusCode": 200, "body": str(result)}
+            return {"status_code": 200, "body": f"CSV file uploaded to S3: {csv_url}"}
+        return {"status_code": 200, "body": str(result)}
     except Exception as e:
-        return {"statusCode": 500, "body": f"Mini Data Lake database error: {str(e)}"}
+        return {"status_code": 500, "body": f"Mini Data Lake database error: {str(e)}"}
 
 
 def handle_redshift_query(query, to_csv):
@@ -113,10 +113,10 @@ def handle_redshift_query(query, to_csv):
             conn.close()
         if to_csv:
             csv_url = generate_and_upload_csv(results, columns, "redshift")
-            return {"statusCode": 200, "body": f"CSV file uploaded to S3: {csv_url}"}
-        return {"statusCode": 200, "body": str(results)}
+            return {"status_code": 200, "body": f"CSV file uploaded to S3: {csv_url}"}
+        return {"status_code": 200, "body": str(results)}
     except Exception as e:
-        return {"statusCode": 500, "body": f"Redshift error: {str(e)}"}
+        return {"status_code": 500, "body": f"Redshift error: {str(e)}"}
 
 
 def generate_and_upload_csv(data, columns, mode):

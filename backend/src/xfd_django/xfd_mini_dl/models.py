@@ -20,7 +20,7 @@ class ApiKey(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an API key object.",
     )
     created_at = models.DateTimeField(
@@ -51,6 +51,7 @@ class ApiKey(models.Model):
         db_column="user_id",
         blank=True,
         null=True,
+        related_name="api_keys",
         help_text="FK: foreign key relationship to the user who owns the API key.",
     )
 
@@ -67,7 +68,7 @@ class Cpe(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a CPE Product object.",
     )
     name = models.CharField(max_length=255, help_text="Name of the product.")
@@ -93,7 +94,7 @@ class Cve(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a CVE object.",
     )
     name = models.CharField(
@@ -285,15 +286,14 @@ class Cve(models.Model):
         max_length=255,
         help_text="Numerical value that quantifies the potential impact of the vulnerability.",
     )
-    weaknesses = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Weaknesses (CWE) associated with the vulnerability.",
+    weaknesses = ArrayField(
+        models.TextField(blank=True, null=True), blank=True, null=True
     )
-    references = models.TextField(
-        blank=True,
-        null=True,
-        help_text="URLs to references associated with the vulnerability.",
+    reference_urls = ArrayField(
+        models.TextField(blank=True, null=True), blank=True, null=True
+    )
+    cpe_list = ArrayField(
+        models.TextField(blank=True, null=True), blank=True, null=True
     )
     dve_score = models.DecimalField(
         max_digits=1000,
@@ -325,15 +325,17 @@ class Notification(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a notification object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Datetime the notification object was created.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Datetime the notification object was last updated in the database.",
     )
     start_datetime = models.DateTimeField(
@@ -387,7 +389,7 @@ class Organization(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a stakeholder Organization.",
     )
     created_at = models.DateTimeField(
@@ -415,17 +417,17 @@ class Organization(models.Model):
     )
     name = models.CharField(max_length=255, help_text="Full name of the organization")
     root_domains = ArrayField(
-        models.TextField(blank=True, null=True),
-        blank=True,
-        null=True,
+        models.CharField(max_length=255),
+        default=list,
         db_column="root_domains",
         help_text="List of root domains attributed to the organization",
     )
-    ip_blocks = models.TextField(
+    ip_blocks = ArrayField(
+        models.CharField(max_length=255),
+        default=list,
         db_column="ip_blocks",
         help_text="IP blocks attributed to or provided by a stakeholder.",
-        null=True,
-    )  # This field type is a guess.
+    )
     is_passive = models.BooleanField(
         db_column="is_passive",
         help_text="Boolean to flag if only passive data collection can be used on the stakeholder's assets.",
@@ -644,6 +646,7 @@ class Organization(models.Model):
         "self",
         models.DO_NOTHING,
         db_column="parent_id",
+        related_name="children",
         blank=True,
         null=True,
         help_text="Foreign Key linking to a related organization parent object.",
@@ -678,15 +681,17 @@ class OrganizationTag(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for an Organization tag object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the organization tag was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the organization tag object was updated in the database.",
     )
     name = models.CharField(
@@ -696,7 +701,7 @@ class OrganizationTag(models.Model):
     )
     organization = models.ManyToManyField(
         "Organization",
-        related_name="organization_tags",
+        related_name="tags",
         blank=True,
         help_text="Many to many relationship to link a tag to many organizations",
     )
@@ -736,7 +741,7 @@ class QueryResultCache(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the query result object being cached.",
     )
     identifier = models.CharField(
@@ -767,15 +772,17 @@ class Role(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the role object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the role object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the role object was updated in the database.",
     )
     role = models.CharField(
@@ -783,7 +790,8 @@ class Role(models.Model):
         help_text="A role that a user can be assigned to, granting them specific access on the crossfeed platform.",
     )
     approved = models.BooleanField(
-        help_text="A boolean flag to determine if the user has been approved to have the assigned role."
+        default=False,
+        help_text="A boolean flag to determine if the user has been approved to have the assigned role.",
     )
     created_by = models.ForeignKey(
         "User",
@@ -797,7 +805,7 @@ class Role(models.Model):
         "User",
         models.DO_NOTHING,
         db_column="approved_by_id",
-        related_name="role_approved_by_id_set",
+        related_name="approved_roles",
         blank=True,
         null=True,
         help_text="Foreign key to the user who approved the role assignation.",
@@ -806,7 +814,7 @@ class Role(models.Model):
         "User",
         models.DO_NOTHING,
         db_column="user_id",
-        related_name="role_user_id_set",
+        related_name="roles",
         blank=True,
         null=True,
         help_text="Foreign key to the user being assigned the role.",
@@ -815,6 +823,7 @@ class Role(models.Model):
         Organization,
         models.DO_NOTHING,
         db_column="organization_id",
+        related_name="user_roles",
         blank=True,
         null=True,
         help_text="Foreign key to the organization the user is aligned to and whos data the user can access via their role.",
@@ -834,15 +843,17 @@ class SavedSearch(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the Saved Search object",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the saved search object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the saved search object was updated in the database.",
     )
     name = models.CharField(
@@ -875,7 +886,7 @@ class SavedSearch(models.Model):
     # vulnerability_template = models.JSONField(db_column="vulnerability_template", help_text="") # No longer used
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -895,23 +906,25 @@ class Scan(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a cyhy dashboard scan object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the scan object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the scan object was updated in the database.",
     )
     name = models.CharField(
         max_length=255, help_text="The name of the cyhy dashboard scan."
     )
-    arguments = models.JSONField(
-        help_text="A dictionary of arguments to pass to the scan."
-    )
+    arguments = models.TextField(
+        default="{}", help_text="A dictionary of arguments to pass to the scan."
+    )  # JSON in the database but fails: the JSON object must be str, bytes or bytearray, not dict
     frequency = models.IntegerField(
         help_text="How often the scan should run in seconds."
     )
@@ -923,6 +936,7 @@ class Scan(models.Model):
     )
     is_granular = models.BooleanField(
         db_column="is_granular",
+        default=False,
         help_text="A boolean flag to specify if the scan is granular. Granular scans are only run on specified organizations. Global scans cannot be granular scans.",
     )
     is_user_modifiable = models.BooleanField(
@@ -933,10 +947,12 @@ class Scan(models.Model):
     )
     is_single_scan = models.BooleanField(
         db_column="is_single_scan",
+        default=False,
         help_text="A boolean to flag scans that should only be run once and not on a reoccuring basis.",
     )
     manual_run_pending = models.BooleanField(
         db_column="manual_run_pending",
+        default=False,
         help_text="A boolean to flag if a manually called scan is still waiting to be run.",
     )
     concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
@@ -950,14 +966,15 @@ class Scan(models.Model):
     )
     organizations = models.ManyToManyField(
         Organization,
-        related_name="scans",
         blank=True,
+        related_name="granular_scans",
         help_text="A many to many relationship linking to all the organizations the scan should be run on.",
     )
-    organization_tags = models.ManyToManyField(
+    tags = models.ManyToManyField(
         OrganizationTag,
         related_name="scans",
         blank=True,
+        db_table="scan_tags_organization_tag",
         help_text="A many to many relationship linking to all the organization tags that should be run on.",
     )
 
@@ -974,15 +991,17 @@ class ScanTask(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a scan task object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the scan task object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the scan task object was updated in the database.",
     )
     status = models.TextField(
@@ -1037,7 +1056,7 @@ class ScanTask(models.Model):
     )
     scan = models.ForeignKey(
         Scan,
-        models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         db_column="scan_id",
         blank=True,
         null=True,
@@ -1053,11 +1072,11 @@ class ScanTask(models.Model):
 
 
 class Service(models.Model):
-    """The Service model."""
+    """The Service View."""
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a web service running on a stakeholders attack surface.",
     )
     created_at = models.DateTimeField(
@@ -1109,11 +1128,12 @@ class Service(models.Model):
         help_text="Details about the service identified by the wappalyzer scan.",
     )
     domain = models.ForeignKey(
-        "SubDomains",
+        "Domain",
         models.DO_NOTHING,
         db_column="domain_id",
         blank=True,
         null=True,
+        related_name="services",
         help_text="Foreign key relationship to the domain the service is running on.",
     )
     discovered_by = models.ForeignKey(
@@ -1129,9 +1149,18 @@ class Service(models.Model):
         """The Meta class for Service."""
 
         app_label = app_label_name
-        managed = manage_db
-        db_table = "service"
+        managed = False
+        db_table = "vw_service"
         unique_together = (("port", "domain"),)
+
+
+class UserType(models.TextChoices):
+    """User type definition."""
+
+    GLOBAL_ADMIN = "globalAdmin"
+    GLOBAL_VIEW = "globalView"
+    REGIONAL_ADMIN = "regionalAdmin"
+    STANDARD = "standard"
 
 
 class User(models.Model):
@@ -1139,7 +1168,7 @@ class User(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a user object.",
     )
     cognito_id = models.CharField(
@@ -1149,6 +1178,32 @@ class User(models.Model):
         null=True,
         max_length=255,
         help_text="Identifier for the user in the cognito system. This is necessary to log into the cyhy dashboard application.",
+    )
+    cognito_username = models.CharField(
+        max_length=255,
+        db_column="cognito_username",
+        blank=True,
+        null=True,
+        help_text="Username returned from Cognito decoded token.",
+    )
+    cognito_use_case_description = models.TextField(
+        db_column="cognito_use_case_description",
+        blank=True,
+        null=True,
+        help_text="Use case description for specified user from Cognito.",
+    )
+    cognito_email_verified = models.BooleanField(
+        db_column="cognito_email_verified",
+        default=False,
+        blank=True,
+        null=True,
+        help_text="Email verified boolean returned from cognito token.",
+    )
+    cognito_groups = models.JSONField(
+        db_column="cognitoGroups",
+        null=True,
+        blank=True,
+        help_text="Cognito groups the user is a part of.",
     )
     login_gov_id = models.CharField(
         db_column="login_gov_id",
@@ -1160,10 +1215,12 @@ class User(models.Model):
     )
     created_at = models.DateTimeField(
         db_column="created_at",
+        auto_now_add=True,
         help_text="Date the user object was added to the database.",
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
+        auto_now=True,
         help_text="Last date the user object was updated in the database.",
     )
     first_name = models.CharField(
@@ -1180,10 +1237,12 @@ class User(models.Model):
     )
     invite_pending = models.BooleanField(
         db_column="invite_pending",
+        default=False,
         help_text="A boolean field flagging if the user's invite is pending.",
     )
     login_blocked_by_maintenance = models.BooleanField(
         db_column="login_blocked_by_maintenance",
+        default=False,
         help_text="A boolean flag identifying whether the user is blocked by maintenance to login",
     )
     date_accepted_terms = models.DateTimeField(
@@ -1203,10 +1262,6 @@ class User(models.Model):
         blank=True,
         null=True,
         help_text="Datetime the last time the user logged in.",
-    )
-    user_type = models.TextField(
-        db_column="user_type",
-        help_text="The type of user. This determines what parts of the cyhy dashboard can view and what data he is permitted to see.",
     )
     region_id = models.CharField(
         db_column="region_id",
@@ -1229,6 +1284,17 @@ class User(models.Model):
         max_length=255,
         help_text="The Okta id associated with the user.",
     )
+    user_type = models.CharField(
+        db_column="user_type",
+        max_length=50,
+        choices=UserType.choices,
+        default=UserType.STANDARD,
+    )
+
+    def save(self, *args, **kwargs):
+        """Save user with full_name."""
+        self.full_name = "{} {}".format(self.first_name, self.last_name)
+        super().save(*args, **kwargs)
 
     class Meta:
         """The Meta class for User."""
@@ -1238,127 +1304,12 @@ class User(models.Model):
         db_table = "user"
 
 
-class Vulnerability(models.Model):
-    """The Vulnerability model."""
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid1,
-        help_text="Unique identifier for a vulnerability object found in the cyhy dashboard",
-    )
-    created_at = models.DateTimeField(
-        db_column="created_at",
-        help_text="Date the vulnerability object was added to the database.",
-    )
-    updated_at = models.DateTimeField(
-        db_column="updated_at",
-        help_text="Last date the vulnerability object was updated in the database.",
-    )
-    last_seen = models.DateTimeField(
-        db_column="last_seen",
-        blank=True,
-        null=True,
-        help_text="Last date the vulnerability was seen.",
-    )
-    title = models.TextField(help_text="The name or title of the vulnerability.")
-    cve = models.TextField(
-        blank=True,
-        null=True,
-        help_text="CVE (Common Vulnerabilities and Exposures) id for the vulnerability.",
-    )
-    cwe = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Common Weakness Enumeration (CWE) id for the weakness or vulnerability.",
-    )
-    cpe = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Common Platform Enumeration (CPE) id for the product the vulnerability was found on.",
-    )
-    description = models.TextField(
-        help_text="Human readable description of the vulnerability if available."
-    )
-    references = models.JSONField(
-        help_text="Additional links to references and sources associates with the vulnerability."
-    )
-    cvss = models.DecimalField(
-        max_digits=100,
-        decimal_places=5,
-        blank=True,
-        null=True,
-        help_text="CVSS (Common Vulnerability Scoring System) is the score reperesenting the severity of the vulnerability from 0 (None) to 10 (Critical)",
-    )
-    severity = models.TextField(
-        blank=True,
-        null=True,
-        help_text="The severity level of the vulnerability determined by the cvss score. (None, Low, Medium, High, Critical)",
-    )
-    needs_population = models.BooleanField(
-        db_column="needs_population",
-        help_text="A boolean field to flag vulnerabilities that need to be populated additional findings.",
-    )
-    state = models.TextField(
-        help_text="The state the vulnerability is in, as of the last scan (Open, Closed)"
-    )
-    substate = models.TextField(
-        help_text="Substate of the vulnerability ('unconfirmed', 'exploitable', 'false-positive', 'accepted-risk', 'remediated')"
-    )
-    source = models.TextField(help_text="The scan that identified the vulnerability.")
-    notes = models.TextField(
-        help_text="Notes about the vulnerability, provided by the user of the cyhy dashboard."
-    )
-    actions = models.JSONField(
-        help_text="A list of state changes of the vulnerability, tracking its status from intially created to closed."
-    )
-    structured_data = models.JSONField(
-        db_column="structured_data",
-        help_text="Any additional data that does not fit into the vulnerability table pertinent to the end user.",
-    )
-    is_kev = models.BooleanField(
-        db_column="is_kev",
-        blank=True,
-        null=True,
-        help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
-    )
-    kev_results = models.JSONField(
-        db_column="kev_results",
-        blank=True,
-        null=True,
-        help_text="The CISA provided KEV information assocaited with KEV vulnerabilities.",
-    )
-    domain = models.ForeignKey(
-        "SubDomains",
-        models.DO_NOTHING,
-        db_column="domain_id",
-        blank=True,
-        null=True,
-        help_text="Foreign key relationship to the domain the vulnerability was found on.",
-    )
-    service = models.ForeignKey(
-        Service,
-        models.DO_NOTHING,
-        db_column="service_id",
-        blank=True,
-        null=True,
-        help_text="Foreign key relationship to the service the vulnerability was found on.",
-    )
-
-    class Meta:
-        """The Meta class for Vulnerability."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "vulnerability"
-        unique_together = (("domain", "title"),)
-
-
 class Webpage(models.Model):
     """The Webpage model."""
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the webpage object.",
     )
     created_at = models.DateTimeField(
@@ -1433,7 +1384,7 @@ class TicketEvent(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique id for a ticket event object in the database.",
     )
     reference = models.CharField(
@@ -1819,7 +1770,7 @@ class Cidr(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         editable=False,
         help_text="Unique idenifier for the Cidr object.",
     )
@@ -1877,7 +1828,7 @@ class Cidr(models.Model):
 class CidrOrgs(models.Model):
     """Define CidrOrgs model."""
 
-    cidr_orgs_id = models.UUIDField(primary_key=True, default=uuid.uuid1)
+    cidr_orgs_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     cidr = models.ForeignKey(
         Cidr,
         on_delete=models.CASCADE,
@@ -1921,7 +1872,7 @@ class Location(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a location object.",
     )
     name = models.CharField(
@@ -1977,7 +1928,7 @@ class Sector(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a sector object in the database.",
     )
     name = models.CharField(
@@ -2141,7 +2092,7 @@ class Ip(models.Model):
     id = models.UUIDField(
         primary_key=True,
         editable=False,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for an IP object in the database.",
     )
     ip_hash = models.TextField(
@@ -2224,6 +2175,7 @@ class Ip(models.Model):
     conflict_alerts = models.JSONField(
         blank=True, null=True, default=list, help_text="List of cidr conflict alerts."
     )
+    synced_at = models.DateTimeField(db_column="synced_at", blank=True, null=True)
 
     def save(self, *args, **kwargs):
         """Save ip_version based on the saved ip."""
@@ -2262,7 +2214,7 @@ class Ip(models.Model):
 class IpsSubs(models.Model):
     """Define IpsSubs model."""
 
-    ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid1)
+    ips_subs_uid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     ip = models.ForeignKey(
         Ip, on_delete=models.CASCADE, db_column="ip_id", related_name="ipssubs"
     )
@@ -2590,7 +2542,7 @@ class WasTrackerCustomerdata(models.Model):
     customer_id = models.UUIDField(
         db_column="customer_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a Was customer.",
     )
     tag = models.TextField(
@@ -2686,7 +2638,7 @@ class WasFindings(models.Model):
 
     finding_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a WAS finding object.",
     )
     finding_type = models.TextField(
@@ -2793,14 +2745,14 @@ class WasFindings(models.Model):
         null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
-    service = models.ForeignKey(
-        "Service",
-        on_delete=models.CASCADE,
-        db_column="service_id",
-        blank=True,
-        null=True,
-        help_text="FK: Foreign Key to the linked service",
-    )
+    # service = models.ForeignKey(
+    #     "Service",
+    #     on_delete=models.CASCADE,
+    #     db_column="service_id",
+    #     blank=True,
+    #     null=True,
+    #     help_text="FK: Foreign Key to the linked service",
+    # )
 
     class Meta:
         """Set WasFindings model metadata."""
@@ -3144,7 +3096,7 @@ class PeUsers(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a PE user object.",
     )
     email = models.CharField(
@@ -3216,7 +3168,7 @@ class SixgillAlerts(models.Model):
 
     alerts_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the cyber sixgill alert object.",
     )
     alert_name = models.TextField(
@@ -3300,7 +3252,7 @@ class Alias(models.Model):
 
     alias_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for an alias.",
     )
     organization = models.ForeignKey(
@@ -3326,7 +3278,7 @@ class AssetHeaders(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for the asset header object.",
     )  # Field renamed because it started with '_'.
     organization = models.ForeignKey(
@@ -3480,7 +3432,7 @@ class CredentialBreaches(models.Model):
 
     credential_breaches_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for credential_breaches.",
     )
     breach_name = models.TextField(unique=True, help_text="Name of breach.")
@@ -3553,7 +3505,7 @@ class CredentialExposures(models.Model):
 
     credential_exposures_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for credential_exposures",
     )
     email = models.TextField(help_text="Email found in the breach")
@@ -3598,6 +3550,7 @@ class CredentialExposures(models.Model):
         CredentialBreaches,
         on_delete=models.CASCADE,
         db_column="credential_breach_id",
+        related_name="exposures",
         help_text="FK: Foreign Key to credential_breaches",
     )
     data_source = models.ForeignKey(
@@ -3648,7 +3601,7 @@ class CyhyContacts(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for cyhy contacts",
     )  # Field renamed because it started with '_'.
     org_id = models.TextField(help_text="Organization abbreviated name")
@@ -3690,7 +3643,7 @@ class CyhyDbAssets(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for cyhy db assets",
     )  # Field renamed because it started with '_'.
     org_id = models.TextField(
@@ -3764,7 +3717,7 @@ class DataSource(models.Model):
 
     data_source_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for data_sources",
     )
     name = models.TextField(help_text="Name of data source")
@@ -3852,7 +3805,7 @@ class DnsRecords(models.Model):
 
     dns_record_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a DNS record.",
     )
     domain_name = models.TextField(blank=True, null=True, help_text="")
@@ -3948,7 +3901,7 @@ class DomainAlerts(models.Model):
 
     domain_alert_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for domain_alerts",
     )
     sub_domain = models.ForeignKey(
@@ -3992,7 +3945,7 @@ class DomainPermutations(models.Model):
 
     suspected_domain_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="Unique identifier for a DNSTwist domain permutation.",
     )
     organization = models.ForeignKey(
@@ -4075,12 +4028,72 @@ class DomainPermutations(models.Model):
         unique_together = (("domain_permutation", "organization"),)
 
 
+class Domain(models.Model):
+    """The Domain view of subs/ips."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_column="created_at")
+    updated_at = models.DateTimeField(auto_now=True, db_column="updated_at")
+
+    synced_at = models.DateTimeField(db_column="synced_at", blank=True, null=True)
+    ip = models.CharField(max_length=255, blank=True, null=True)
+    from_root_domain = models.CharField(
+        max_length=255, db_column="from_root_domain", blank=True, null=True
+    )
+    subdomain_source = models.CharField(
+        db_column="subdomain_source", max_length=255, blank=True, null=True
+    )
+    ip_only = models.BooleanField(db_column="ip_only", default=False)
+
+    reverse_name = models.CharField(db_column="reverse_name", max_length=512)
+    name = models.CharField(max_length=512)
+
+    screenshot = models.CharField(max_length=512, blank=True, null=True)
+    country = models.CharField(max_length=255, blank=True, null=True)
+    asn = models.CharField(max_length=255, blank=True, null=True)
+    cloud_hosted = models.BooleanField(db_column="cloud_hosted", default=False)
+    from_cidr = models.BooleanField(db_column="from_cidr", default=False)
+    ssl = models.JSONField(blank=True, null=True)
+    censys_certificates_results = models.JSONField(
+        db_column="censys_certificates_results", default=dict
+    )
+    trustymail_results = models.JSONField(db_column="trustymail_results", default=dict)
+
+    discovered_by = models.ForeignKey(
+        "Scan",
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+        db_column="discovered_by_id",
+    )
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.DO_NOTHING,
+        db_column="organization_id",
+        related_name="domains",
+    )
+    source = models.CharField(max_length=20)
+
+    class Meta:
+        """The meta class for Domain."""
+
+        db_table = "vw_domain"
+        managed = False
+        unique_together = (("name", "organization"),)  # Unique constraint
+
+    def save(self, *args, **kwargs):
+        """Save domain ith reverse_name."""
+        self.name = self.name.lower()
+        self.reverse_name = ".".join(reversed(self.name.split(".")))
+        super().save(*args, **kwargs)
+
+
 class DotgovDomains(models.Model):
     """Define DotgovDomains model."""
 
     dotgov_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for dotgov_domains",
     )
     domain_name = models.TextField(unique=True, help_text="Name of the dotgov domain")
@@ -4114,7 +4127,7 @@ class Executives(models.Model):
 
     executives_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for executives",
     )
     organization = models.ForeignKey(
@@ -4138,7 +4151,7 @@ class Mentions(models.Model):
 
     mentions_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for cyber sixgill mentions",
     )
     category = models.TextField(blank=True, null=True, help_text="Category of mention")
@@ -4255,7 +4268,7 @@ class OrgType(models.Model):
 
     org_type_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for organization type object.",
     )
     org_type = models.TextField(blank=True, null=True, help_text="Organization type.")
@@ -4328,7 +4341,7 @@ class PshttResults(models.Model):
     """Define PshttResults model."""
 
     pshtt_results_uid = models.UUIDField(
-        primary_key=True, default=uuid.uuid1, help_text=""
+        primary_key=True, default=uuid.uuid4, help_text=""
     )
     organization = models.ForeignKey(
         "Organization",
@@ -4435,7 +4448,7 @@ class PshttResults(models.Model):
 class PeReportSummaryStats(models.Model):
     """Define ReportSummaryStats model."""
 
-    report_uid = models.UUIDField(primary_key=True, default=uuid.uuid1, help_text="")
+    report_uid = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text="")
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -4492,7 +4505,7 @@ class PeReportSummaryStats(models.Model):
 
 #     root_domain_uid = models.UUIDField(
 #         primary_key=True,
-#         default=uuid.uuid1,
+#         default=uuid.uuid4,
 #         help_text="PK: Unique identifier for root domains",
 #     )
 #     organization = models.ForeignKey(
@@ -4531,7 +4544,7 @@ class PeTeamMembers(models.Model):
 
     team_member_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a PE Team Member object.",
     )
     team_member_fname = models.TextField(
@@ -4567,8 +4580,12 @@ class ShodanAssets(models.Model):
 
     shodan_asset_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for shodan assets",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the asset was first created",
     )
     organization = models.ForeignKey(
         Organization,
@@ -4646,7 +4663,7 @@ class ShodanAssets(models.Model):
 # class ShodanInsecureProtocolsUnverifiedVulns(models.Model):
 #     """Define ShodanInsecureProtocolsUnverifiedVulns model."""
 
-#     insecure_product_uid = models.UUIDField(primary_key=True, default=uuid.uuid1())
+#     insecure_product_uid = models.UUIDField(primary_key=True, default=uuid.uuid4())
 #     organization_uid = models.ForeignKey(
 #         Organization, on_delete=models.CASCADE, db_column="organization_uid"
 #     )
@@ -4687,8 +4704,12 @@ class ShodanVulns(models.Model):
 
     shodan_vuln_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a shodan vulnerability object.",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the asset was first created",
     )
     organization = models.ForeignKey(
         Organization,
@@ -4715,9 +4736,7 @@ class ShodanVulns(models.Model):
         null=True,
         help_text="Severity of vulnerability (medium, high, critical)",
     )
-    cvss = models.DecimalField(
-        max_digits=1000,
-        decimal_places=1000,
+    cvss = models.IntegerField(
         blank=True,
         null=True,
         help_text="Common Vulnerability Scoring System Score",
@@ -4845,7 +4864,7 @@ class SubDomains(models.Model):
 
     sub_domain_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for subdomains",
     )
     sub_domain = models.TextField(
@@ -5015,7 +5034,7 @@ class TopCves(models.Model):
 
     top_cves_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: unique identifier for top cves",
     )
     cve_id = models.TextField(
@@ -5059,7 +5078,7 @@ class TopicTotals(models.Model):
 
     count_uuid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for topic_totals",
     )
     organization_uid = models.UUIDField(help_text="FK: Foreign Key to organizations")
@@ -5085,7 +5104,7 @@ class UniqueSoftware(models.Model):
     field_id = models.UUIDField(
         db_column="_id",
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a unique software object.",
     )  # Field renamed because it started with '_'.
     software_name = models.TextField(
@@ -5105,7 +5124,7 @@ class WebAssets(models.Model):
 
     asset_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifer for a web asset object.",
     )
     asset_type = models.TextField(help_text="Type of web asset.")
@@ -5157,7 +5176,7 @@ class WeeklyStatusesMdl(models.Model):
 
     weekly_status_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier to the weekly status object",
     )
     user_status = models.TextField(blank=True, help_text="Name of the user.???")
@@ -5208,7 +5227,7 @@ class CyhyKevs(models.Model):
 
     cyhy_kevs_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier of the cyhy kev object.",
     )
     kev = models.CharField(
@@ -5234,7 +5253,7 @@ class XpanseBusinessUnits(models.Model):
 
     xpanse_business_unit_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a xpanse business unit object.",
     )
     entity_name = models.TextField(
@@ -5284,7 +5303,7 @@ class XpanseAssetsMdl(models.Model):
 
     xpanse_asset_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an Xpanse Asset object.",
     )
     asm_id = models.TextField(
@@ -5403,7 +5422,7 @@ class XpanseCvesMdl(models.Model):
     xpanse_cve_uid = models.UUIDField(
         unique=True,
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an Xpanse CVE objct.",
     )
     cve_id = models.TextField(
@@ -5443,7 +5462,7 @@ class XpanseServicesMdl(models.Model):
 
     xpanse_service_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a Xpanse Service object.",
     )
     service_id = models.TextField(
@@ -5610,7 +5629,7 @@ class XpanseAlerts(models.Model):
 
     xpanse_alert_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for an Xpanse alert object.",
     )
     time_pulled_from_xpanse = models.DateTimeField(
@@ -5640,12 +5659,12 @@ class XpanseAlerts(models.Model):
         null=True,
         help_text="FK: Foreign Key to the linked subdomain",
     )
-    service = models.ForeignKey(
-        "Service",
-        on_delete=models.CASCADE,
-        db_column="service_id",
-        help_text="FK: Foreign Key to the linked service",
-    )
+    # service = models.ForeignKey(
+    #     "Service",
+    #     on_delete=models.CASCADE,
+    #     db_column="service_id",
+    #     help_text="FK: Foreign Key to the linked service",
+    # )
     alert_action = models.TextField(
         blank=True,
         null=True,
@@ -5853,7 +5872,7 @@ class CpeVender(models.Model):
 
     cpe_vender_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique ID of the vender object",
     )
     vender_name = models.TextField(
@@ -5873,7 +5892,7 @@ class CpeProduct(models.Model):
 
     cpe_product_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for the Product (CPE)",
     )
     cpe_product_name = models.TextField(
@@ -5965,7 +5984,155 @@ class NMIServiceGroup(models.Model):
         db_table = "nmiservicegroup"
 
 
+class Log(models.Model):
+    """The Log model."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    payload = models.TextField()
+    created_at = models.DateTimeField(db_column="created_at", auto_now_add=True)
+    event_type = models.CharField(
+        db_column="event_type", max_length=255, null=True, blank=True
+    )
+    result = models.CharField(max_length=255)
+
+    class Meta:
+        """The Meta class for Log."""
+
+        managed = True
+        db_table = "log"
+
+
 # # THese are all views, so they shouldn't be generated via the ORM
+
+
+class Vulnerability(models.Model):
+    """Define VwCombinedVulns model."""
+
+    id = models.TextField(
+        primary_key=True,
+        unique=True,
+        help_text="Id of the vulnerability",
+        db_column="vuln_id",
+    )
+    scan_source = models.TextField(
+        blank=True, null=True, help_text="Scan that identified the data."
+    )
+    created_at = models.DateTimeField(
+        help_text="Date and time the vulnerability was first seen",
+    )
+    updated_at = models.DateTimeField(
+        help_text="Date and time the vulnerability was last updated",
+    )
+    last_seen = models.DateTimeField(
+        help_text="Date and time the vulnerability was last seen",
+    )
+    cve = models.CharField(blank=True, null=True, max_length=255)
+    title = models.TextField(blank=True, null=True)
+    product = models.CharField(blank=True, null=True, max_length=255)
+    domain_string = models.TextField(blank=True, null=True)
+    domain = models.ForeignKey(
+        Domain,
+        models.DO_NOTHING,
+        db_column="domain_id",
+        blank=True,
+        null=True,
+        help_text="Foreign key to the domain or IP where the vulnerablily was found.",
+        related_name="vulnerabilities",
+    )
+    protocol = models.CharField(blank=True, null=True, max_length=255)
+    port = models.CharField(blank=True, null=True, max_length=255)
+    cvss = models.DecimalField(
+        max_digits=100,
+        decimal_places=5,
+        blank=True,
+        null=True,
+        db_column="cvss_base_score",
+        help_text="CVSS (Common Vulnerability Scoring System) is the score reperesenting the severity of the vulnerability from 0 (None) to 10 (Critical)",
+    )
+    severity = models.CharField(blank=True, null=True, max_length=255)
+    organization = models.ForeignKey(
+        Organization,
+        models.DO_NOTHING,
+        db_column="organization_id",
+        blank=True,
+        null=True,
+        related_name="vulnerabilities",
+        help_text="Foreign key to the organization that owns the vulnerable asset.",
+    )
+    state = models.CharField(blank=True, null=True, max_length=255)
+    source = models.CharField(
+        blank=True, null=True, max_length=255, db_column="data_source"
+    )
+    description = models.TextField(blank=True, null=True)
+    is_kev = models.BooleanField(
+        db_column="is_kev",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
+    )
+    service_string = models.CharField(blank=True, null=True, max_length=255)
+    # service = models.ForeignKey(
+    #     Service,
+    #     models.DO_NOTHING,
+    #     db_column="service_id",
+    #     blank=True,
+    #     null=True,
+    #     help_text="Foreign key relationship to the service the vulnerability was found on.",
+    #     related_name="vulnerabilities",
+    # )
+    is_risky_service = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text="T/F if the vulnerability is a known risky service.",
+    )
+    os = models.CharField(blank=True, null=True, max_length=255)
+    cwe = models.CharField(blank=True, null=True, max_length=255)
+    cpe = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Common Platform Enumeration (CPE) id for the product the vulnerability was found on.",
+    )
+    references = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="Additional links to references and sources associates with the vulnerability.",
+    )
+    substate = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Substate of the vulnerability ('unconfirmed', 'exploitable', 'false-positive', 'accepted-risk', 'remediated')",
+    )
+    needs_population = models.BooleanField(
+        blank=True,
+        null=True,
+        db_column="needs_population",
+        help_text="A boolean field to flag vulnerabilities that need to be populated additional findings.",
+    )
+    actions = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="A list of state changes of the vulnerability, tracking its status from intially created to closed.",
+    )
+    structured_data = models.JSONField(
+        blank=True,
+        null=True,
+        db_column="structured_data",
+        help_text="Any additional data that does not fit into the vulnerability table pertinent to the end user.",
+    )
+    kev_results = models.JSONField(
+        db_column="kev_results",
+        blank=True,
+        null=True,
+        help_text="The CISA provided KEV information assocaited with KEV vulnerabilities.",
+    )
+
+    class Meta:
+        """Set Vulnerability model metadata."""
+
+        app_label = app_label_name
+        managed = False
+        db_table = "mat_vw_combined_vulns"
+
 
 # # This should be a view not a table
 # class VwPshttDomainsToRun(models.Model):
