@@ -2,16 +2,12 @@
 import datetime
 import logging
 import os
-import time
 import traceback
 
 # Third-Party Libraries
 import django
-from django.db.models import Q
 from django.utils import timezone
-import numpy as np
 import pandas as pd
-import requests
 from xfd_mini_dl.models import CredentialBreaches, DataSource, Organization
 
 from .helpers.sixgill_helpers.api import get_sixgill_organizations
@@ -61,14 +57,18 @@ SOURCE_OBJ, _ = DataSource.objects.get_or_create(
 
 
 class Cybersixgill:
+    """Main class to run Cybersixgill scans for alerts, mentions, credentials, and CVEs."""
+
     def __init__(self, org_objects, method_list, soc_med_included):
-        # Initialize with list of orgs, scan methods to run, and whether to include social media
+        """Initialize with orgs, scan methods, and social media inclusion flag."""
         self.org_objects = org_objects
         self.method_list = method_list
         self.soc_med_included = soc_med_included
         self.sixgill_org_map = get_sixgill_organizations()
 
     def run(self):
+        """Run all selected scan methods for each organization."""
+
         LOGGER.info("Cybersixgill.run() started")
         failed = []
 
@@ -107,6 +107,8 @@ class Cybersixgill:
             LOGGER.error("Failures: %s", failed)
 
     def get_alerts(self, org, org_id, sixgill_id):
+        """Fetch and store alerts for an organization."""
+
         try:
             # Fetch alerts for org
             alerts_df = alerts(org_id, sixgill_id)
@@ -145,6 +147,7 @@ class Cybersixgill:
         return 0
 
     def get_mentions(self, org, org_id, sixgill_id):
+        """Fetch and store mentions for an organization."""
         try:
             # Get organization-specific aliases for mention search
             aliases = alias_organization(sixgill_id)
@@ -177,6 +180,7 @@ class Cybersixgill:
         return 0
 
     def get_credentials(self, org, sixgill_id):
+        """Fetch and store leaked credentials and breach info."""
         try:
             # Get root domains linked to org
             roots = root_domains(sixgill_id)
@@ -248,6 +252,7 @@ class Cybersixgill:
         return 0
 
     def get_topCVEs(self):
+        """Fetch and store top 10 global CVEs."""
         try:
             # Get top 10 CVEs
             top_df = top_cves(10)
@@ -261,6 +266,7 @@ class Cybersixgill:
 
 
 def handler(event):
+    """Entrypoint for running Cybersixgill scan, with DMZ/local check."""
     try:
         # Check if script is allowed to run in current environment
         is_dmz = os.getenv("IS_DMZ", "0") == "1"

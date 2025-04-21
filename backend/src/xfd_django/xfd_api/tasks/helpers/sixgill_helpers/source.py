@@ -1,21 +1,16 @@
 """Scripts for importing Sixgill data into PE Postgres database."""
 
 # Standard Python Libraries
-import json
 import logging
-import time
 
 # Third-Party Libraries
 import pandas as pd
-import requests
 
 from .api import (
-    alerts_content,
     alerts_count,
     alerts_list,
     credential_auth,
     dve_top_cves,
-    get_bulk_cve_resp,
     intel_post,
     intel_post_next,
     org_assets,
@@ -64,38 +59,6 @@ def alerts(org_id, sixgill_org_id):
     #     df_all_alerts.at[i, "content"]
 
     return df_all_alerts
-
-
-def all_assets_list(org_id):
-    """List an organization's aliases."""
-    assets = org_assets(org_id)
-    df_assets = pd.DataFrame(assets)
-    aliases = df_assets["organization_aliases"].loc["explicit":].tolist()[0]
-    alias_dict = dict.fromkeys(aliases, "alias")
-    domain_names = df_assets["domain_names"].loc["explicit":].tolist()[0]
-    domain_dict = dict.fromkeys(domain_names, "domain")
-    ips = df_assets["ip_addresses"].loc["explicit":].tolist()[0]
-    ip_dict = dict.fromkeys(ips, "ip")
-    assets_dict = {**alias_dict, **domain_dict, **ip_dict}
-    return assets_dict
-
-
-def get_alerts_content(organization_id, alert_id, org_assets_dict):
-    """Get alert content snippet."""
-    asset_mentioned = ""
-    snip = ""
-    asset_type = ""
-    content = alerts_content(token, organization_id, alert_id)
-    if content:
-        for asset, type in org_assets_dict.items():
-            if asset in content:
-                index = content.index(asset)
-                snip = content[(index - 100) : (index + len(asset) + 100)]
-                snip = "..." + snip + "..."
-                asset_mentioned = asset
-                asset_type = type
-                LOGGER.info("Asset mentioned: %s", asset_mentioned)
-    return snip, asset_mentioned, asset_type
 
 
 def mentions(org_abbrv, date, aliases, soc_media_included=False):
@@ -217,70 +180,3 @@ def top_cves(size):
     """Top 10 CVEs mentioned in the dark web."""
     resp = dve_top_cves()
     return pd.DataFrame(resp)
-
-
-def extract_bulk_cve_info(cve_list):
-    """
-    Make API call to C6G and retrieve/extract relevant info for a list of CVE names (10 max).
-
-    Args:
-        cve_list: list of cve names (i.e. ['CVE-2022-123', 'CVE-2022-456'...])
-
-    Returns:
-        A dataframe with the name and all relevant info for the CVEs listed
-    """
-    # Call get_bulk_cve_info() function to get response
-    resp = get_bulk_cve_resp(cve_list)
-    # Check if there was a good response
-    if resp is None:
-        # If no response, return empty dataframe
-        return pd.DataFrame()
-    else:
-        # Proceed if there is a response
-        resp_list = resp.get("objects")
-        # Dataframe to hold finalized data
-        resp_df = pd.DataFrame()
-        # For each cve in api response, extract data
-        for i in range(0, len(resp_list)):
-            # CVE name
-            cve_name = resp_list[i].get("name")
-            # CVSS 2.0 info
-            cvss_2_info = resp_list[i].get("x_sixgill_info").get("nvd").get("v2")
-            if cvss_2_info is not None:
-                cvss_2_0 = cvss_2_info.get("current")
-                cvss_2_0_sev = cvss_2_info.get("severity")
-                cvss_2_0_vec = cvss_2_info.get("vector")
-            else:
-                [cvss_2_0, cvss_2_0_sev, cvss_2_0_vec] = [None, None, None]
-            # CVSS 3.0 info
-            cvss_3_info = resp_list[i].get("x_sixgill_info").get("nvd").get("v3")
-            if cvss_3_info is not None:
-                cvss_3_0 = cvss_3_info.get("current")
-                cvss_3_0_sev = cvss_3_info.get("severity")
-                cvss_3_0_vec = cvss_3_info.get("vector")
-            else:
-                [cvss_3_0, cvss_3_0_sev, cvss_3_0_vec] = [None, None, None]
-            # DVE info
-            dve_info = resp_list[i].get("x_sixgill_info").get("score")
-            if dve_info is not None:
-                dve_score = dve_info.get("current")
-            else:
-                dve_score = None
-
-            # Append this row of CVE info to the resp_df
-            curr_info = {
-                "cve_name": cve_name,
-                "cvss_2_0": cvss_2_0,
-                "cvss_2_0_severity": cvss_2_0_sev,
-                "cvss_2_0_vector": cvss_2_0_vec,
-                "cvss_3_0": cvss_3_0,
-                "cvss_3_0_severity": cvss_3_0_sev,
-                "cvss_3_0_vector": cvss_3_0_vec,
-                "dve_score": dve_score,
-            }
-            resp_df = pd.concat(
-                [resp_df, pd.DataFrame(curr_info, index=[0])],
-                ignore_index=True,
-            )
-        # Return dataframe of relevant CVE/CVSS/DVE info
-        return resp_df

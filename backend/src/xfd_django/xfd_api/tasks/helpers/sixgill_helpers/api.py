@@ -7,7 +7,6 @@ import time
 # Third-Party Libraries
 import pandas as pd
 import requests
-from retry import retry
 
 from .config import cybersix_token
 
@@ -83,44 +82,6 @@ def alerts_count(organization_id):
     resp = resp.json()
     # Return result
     return resp
-
-
-def alerts_content(organization_id, alert_id):
-    """Get total alert content."""
-    # Call Cybersixgill's /actionable_alert_content endpoint
-    url = f"https://api.cybersixgill.com/alerts/actionable_alert_content/{alert_id}"
-    auth = cybersix_token()
-    headers = {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Authorization": "Bearer " + auth,
-    }
-    payload = {"organization_id": organization_id, "limit": 10000}
-    content = requests.get(url, headers=headers, params=payload)
-    # Retry clause in case Cybersixgill's API falters
-    retry_count, max_retries, time_delay = 0, 10, 5
-    while content.status_code != 200 and retry_count < max_retries:
-        endpoint_name = url.split("/")[-1]
-        LOGGER.warning(
-            f"Retrying Cybersixgill /actionable_alert_content endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
-        )
-        time.sleep(time_delay)
-        content = requests.get(url, headers=headers, params=payload)
-        retry_count += 1
-    content = content.json()
-    try:
-        content = content["content"]["items"][0]
-        if "_source" in content:
-            content = content["_source"]["content"]
-        elif "description" in content:
-            content = content["description"]
-        else:
-            content = ""
-    except Exception as e:
-        LOGGER.error("Failed getting content snip: %s", e)
-        content = ""
-    # Return result
-    return content
 
 
 def intel_post(auth, query, frm, scroll, result_size):
@@ -346,135 +307,4 @@ def org_assets(org_id):
         retry_count += 1
     resp = resp.json()
     # Return result
-    return resp
-
-
-def setNewCSGOrg(newOrgName, orgAliases, orgDomainNames, orgIP, orgExecs):
-    """Set a new stakeholder name in CSG."""
-    newOrganization = json.dumps(
-        {
-            "name": f"{newOrgName}",
-            "organization_commercial_category": "customer",
-            "countries": ["worldwide"],
-            "industries": ["Government"],
-        }
-    )
-    url = "https://api.cybersixgill.com/multi-tenant/organization"
-    headers = {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Authorization": f"Bearer {cybersix_token()}",
-    }
-    response = requests.post(url, headers=headers, data=newOrganization).json()
-    newOrgID = response["id"]
-    if newOrgID:
-        LOGGER.info("A new org_id was created: %s", newOrgID)
-        setOrganizationUsers(newOrgID)
-        setOrganizationDetails(newOrgID, orgAliases, orgDomainNames, orgIP, orgExecs)
-    return response
-
-
-def setOrganizationUsers(org_id):
-    """Set CSG user permissions at new stakeholder."""
-    role1 = "5d23342df5feaf006a8a8929"
-    role2 = "5d23342df5feaf006a8a8927"
-    id_role1 = "610017c216948d7efa077a52"
-    csg_role_id = "role_id"
-    csg_user_id = "user_id"
-    for user in getUserInfo():
-        userrole = user[csg_role_id]
-        user_id = user[csg_user_id]
-        if (
-            (userrole == role1)
-            and (user_id != id_role1)
-            or userrole == role2
-            and user_id != id_role1
-        ):
-            url = (
-                f"https://api.cybersixgill.com/multi-tenant/organization/"
-                f"{org_id}/user/{user_id}?role_id={userrole}"
-            )
-            headers = {
-                "Content-Type": "application/json",
-                "Cache-Control": "no-cache",
-                "Authorization": f"Bearer {cybersix_token()}",
-            }
-            response = requests.post(url, headers=headers).json()
-            LOGGER.info("The response is %s", response)
-
-
-def setOrganizationDetails(org_id, orgAliases, orgDomain, orgIP, orgExecs):
-    """Set stakeholder details at newly created.
-
-    stakeholder at CSG portal via API.
-    """
-    newOrganizationDetails = json.dumps(
-        {
-            "organization_aliases": {"explicit": orgAliases},
-            "domain_names": {"explicit": orgDomain},
-            "ip_addresses": {"explicit": orgIP},
-            "executives": {"explicit": orgExecs},
-        }
-    )
-    url = f"https://api.cybersixgill.com/multi-tenant/" f"organization/{org_id}/assets"
-    headers = {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Authorization": f"Bearer {cybersix_token()}",
-    }
-    response = requests.put(url, headers=headers, data=newOrganizationDetails).json()
-    LOGGER.info("The response is %s", response)
-
-
-def getUserInfo():
-    """Get all organization details from Cybersixgill via API."""
-    url = "https://api.cybersixgill.com/multi-tenant/organization"
-    headers = {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Authorization": f"Bearer {cybersix_token()}",
-    }
-    response = requests.get(url, headers=headers).json()
-    userInfo = response[1]["assigned_users"]
-    return userInfo
-
-
-@retry(tries=10, delay=1, logger=LOGGER)
-def get_bulk_cve_resp(cve_list):
-    """
-    Make API call to retrieve the corresponding info for a list of CVE names (10 max).
-
-    Args:
-        cve_list: list of cve names (i.e. ['CVE-2022-123', 'CVE-2022-456'...])
-
-    Returns:
-        Raw API response for CVE list
-
-    """
-    # Call Cybersixgill's /enrich endpoint
-    c6g_url = "https://api.cybersixgill.com/dve_enrich/enrich"
-    auth = cybersix_token()
-    headers = {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Authorization": "Bearer " + auth,
-    }
-    body = {
-        "filters": {"ids": cve_list},
-        "results_size": len(cve_list),
-        "from_index": 0,
-    }
-    resp = requests.post(c6g_url, headers=headers, json=body)
-    # Retry clause in case Cybersixgill's API falters
-    retry_count, max_retries, time_delay = 0, 10, 5
-    while resp.status_code != 200 and retry_count < max_retries:
-        endpoint_name = url.split("/")[-1]
-        LOGGER.warning(
-            f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
-        )
-        time.sleep(time_delay)
-        resp = requests.get(url, headers=headers, params=params)
-        retry_count += 1
-    resp = resp.json()
-    # Return results
     return resp

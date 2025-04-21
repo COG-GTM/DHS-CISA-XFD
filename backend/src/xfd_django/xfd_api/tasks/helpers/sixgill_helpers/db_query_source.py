@@ -4,7 +4,6 @@ import logging
 
 # Third-Party Libraries
 from django.utils import timezone
-import pandas as pd
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
@@ -20,9 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def insert_sixgill_alerts(df, org: Organization, source_obj: DataSource):
-    """
-    Insert Sixgill alerts into the database using get_or_create to avoid duplicates.
-    """
+    """Insert Sixgill alerts into the database using get_or_create to avoid duplicates."""
     for record in df.to_dict("records"):
         SixgillAlerts.objects.get_or_create(
             sixgill_id=record.get("sixgill_id"),
@@ -49,9 +46,7 @@ def insert_sixgill_alerts(df, org: Organization, source_obj: DataSource):
 
 
 def insert_sixgill_mentions(df, org: Organization, source_obj: DataSource):
-    """
-    Insert mention records from Cybersixgill into the database.
-    """
+    """Insert mention records from Cybersixgill into the database."""
     for record in df.to_dict("records"):
         Mentions.objects.get_or_create(
             sixgill_mention_id=record.get("sixgill_mention_id"),
@@ -82,9 +77,7 @@ def insert_sixgill_mentions(df, org: Organization, source_obj: DataSource):
 
 
 def insert_sixgill_breaches(df, source_obj: DataSource):
-    """
-    Insert credential breach summaries into the database.
-    """
+    """Insert credential breach summaries into the database."""
     for record in df.to_dict("records"):
         CredentialBreaches.objects.get_or_create(
             breach_name=record.get("breach_name"),
@@ -100,9 +93,7 @@ def insert_sixgill_breaches(df, source_obj: DataSource):
 
 
 def insert_sixgill_credentials(df, breach_lookup, org, root, source_obj):
-    """
-    Insert individual exposed credentials and subdomains into the database.
-    """
+    """Insert individual exposed credentials and subdomains into the database."""
     root_obj, _ = SubDomains.objects.get_or_create(
         organization=org,
         sub_domain=root,
@@ -156,9 +147,7 @@ def insert_sixgill_credentials(df, breach_lookup, org, root, source_obj):
 
 
 def insert_sixgill_topCVEs(df, source_obj: DataSource):
-    """
-    Insert top CVE data into the database, avoiding duplicates by CVE ID and date.
-    """
+    """Insert top CVE data into the database, avoiding duplicates by CVE ID and date."""
     for record in df.to_dict("records"):
         TopCves.objects.get_or_create(
             cve_id=record.get("cve_id"),
