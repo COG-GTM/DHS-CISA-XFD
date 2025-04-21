@@ -47,19 +47,19 @@ export const useUserTypeFilters: UseUserTypeFilters = (
             return {
               name: role?.organization?.name ?? '',
               id: role?.organization?.id ?? '',
-              regionId: role?.organization?.regionId ?? '',
-              rootDomains: role?.organization?.rootDomains ?? []
+              region_id: role?.organization?.region_id ?? '',
+              root_domains: role?.organization?.root_domains ?? []
             };
           })
       : [];
 
-  const userRegions = user?.regionId ? [user?.regionId] : [];
+  const userRegions = user?.region_id ? [user?.region_id] : [];
 
   switch (userLevel) {
     case STANDARD_USER:
       return [
         {
-          field: 'organization.regionId',
+          field: 'organization.region_id',
           values: userRegions,
           type: 'any'
         },
@@ -72,7 +72,7 @@ export const useUserTypeFilters: UseUserTypeFilters = (
     case REGIONAL_ADMIN:
       return [
         {
-          field: 'organization.regionId',
+          field: 'organization.region_id',
           values: REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS
             ? regions
             : userRegions,
@@ -87,7 +87,7 @@ export const useUserTypeFilters: UseUserTypeFilters = (
     case GLOBAL_ADMIN:
       return [
         {
-          field: 'organization.regionId',
+          field: 'organization.region_id',
           values: regions,
           type: 'any'
         },
@@ -100,7 +100,7 @@ export const useUserTypeFilters: UseUserTypeFilters = (
     case GLOBAL_VIEW:
       return [
         {
-          field: 'organization.regionId',
+          field: 'organization.region_id',
           values: regions,
           type: 'any'
         },

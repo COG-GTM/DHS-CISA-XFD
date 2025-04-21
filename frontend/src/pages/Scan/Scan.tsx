@@ -13,7 +13,7 @@ import { OrganizationOption } from 'pages/Scans/ScansView';
 import { ScanForm, ScanFormValues } from 'components/ScanForm';
 
 export const setFrequency = async (body: ScanFormValues) => {
-  if (body.isSingleScan) body.frequency = 1;
+  if (body.is_single_scan) body.frequency = 1;
   if (body.frequencyUnit === 'minute') body.frequency *= 60;
   else if (body.frequencyUnit === 'hour') body.frequency *= 60 * 60;
   else body.frequency *= 60 * 60 * 24;
@@ -34,11 +34,11 @@ const ScanComponent: React.FC = () => {
     organizations: [],
     frequency: 1,
     frequencyUnit: 'minute',
-    isGranular: false,
-    isUserModifiable: false,
-    isSingleScan: false,
+    is_granular: false,
+    is_user_modifiable: false,
+    is_single_scan: false,
     tags: [],
-    concurrentTasks: 1
+    concurrent_tasks: 1
   });
 
   const fetchScan = useCallback(async () => {
@@ -108,14 +108,14 @@ const ScanComponent: React.FC = () => {
       name: scan.name,
       frequency: scan.frequency,
       frequencyUnit: oldFrequencyUnit,
-      isGranular: scan.isGranular,
-      isSingleScan: scan.isSingleScan,
-      concurrentTasks: scan.concurrentTasks
+      is_granular: scan.is_granular,
+      is_single_scan: scan.is_single_scan,
+      concurrent_tasks: scan.concurrent_tasks
     }));
 
     //retrieves the organizations that are currently
     //associated with this scan
-    if (scan.isGranular) {
+    if (scan.is_granular) {
       const defaultOrganizations: OrganizationOption[] = [];
       for (const org in scan.organizations) {
         const thisOrganization: OrganizationType = scan.organizations[org];

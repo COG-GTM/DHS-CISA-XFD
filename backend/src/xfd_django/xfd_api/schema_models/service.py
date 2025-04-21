@@ -12,20 +12,20 @@ class Service(BaseModel):
     """Service schema."""
 
     id: UUID
-    createdAt: datetime
-    updatedAt: datetime
-    serviceSource: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    service_source: Optional[str]
     port: int
     service: Optional[str]
-    lastSeen: Optional[datetime]
+    last_seen: Optional[datetime]
     banner: Optional[str]
     products: Json[Any]
-    censysMetadata: Json[Any]
-    censysIpv4Results: Json[Any]
-    shodanResults: Json[Any]
-    wappalyzerResults: Json[Any]
+    censys_metadata: Json[Any]
+    censys_ipv4_results: Json[Any]
+    shodan_results: Json[Any]
+    wappalyzer_results: Json[Any]
     domain: Optional[Any]
-    discoveredBy: Optional[Any]
+    discovered_by: Optional[Any]
 
     class Config:
         """Config."""

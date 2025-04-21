@@ -71,7 +71,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     const user: User = await apiGet<User>('/users/me');
     setAuthUser({
       ...user,
-      isRegistered: user.firstName !== ''
+      isRegistered: user.first_name !== ''
     });
   }, [setAuthUser, apiGet]);
 
@@ -79,7 +79,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     async (user: User) => {
       setAuthUser({
         ...user,
-        isRegistered: user.firstName !== ''
+        isRegistered: user.first_name !== ''
       });
     },
     [setAuthUser]
@@ -153,7 +153,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         touVersion,
         userMustSign,
         setFeedbackMessage,
-        userType: '',
+        user_type: '',
         ...api
       }}
     >

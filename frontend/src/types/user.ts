@@ -3,13 +3,13 @@ import { ApiKey } from './api-key';
 
 export interface User {
   id: string;
-  createdAt: string;
-  updatedAt: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  invitePending: boolean;
-  userType:
+  created_at: string;
+  updated_at: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  invite_pending: boolean;
+  user_type:
     | 'standard'
     | 'globalView'
     | 'globalAdmin'
@@ -17,33 +17,33 @@ export interface User {
     | 'analytics';
   email: string;
   roles: Role[];
-  dateAcceptedTerms: string | null;
-  acceptedTermsVersion: string | null;
-  lastLoggedIn: string | null;
+  date_accepted_terms: string | null;
+  accepted_terms_version: string | null;
+  last_logged_in: string | null;
   apiKeys: ApiKey[];
-  regionId?: string | null;
+  region_id?: string | null;
   state?: string | null;
   organizations?: Array<string>;
   isRegistered?: boolean | null;
-  loginBlockedByMaintenance?: boolean | false;
+  login_blocked_by_maintenance?: boolean | false;
 }
 
 export const initializeUser: User = {
   id: '',
-  createdAt: '',
-  updatedAt: '',
-  firstName: '',
-  lastName: '',
-  fullName: '',
-  invitePending: true,
-  userType: 'standard',
+  created_at: '',
+  updated_at: '',
+  first_name: '',
+  last_name: '',
+  full_name: '',
+  invite_pending: true,
+  user_type: 'standard',
   email: '',
   roles: [],
-  dateAcceptedTerms: null,
-  acceptedTermsVersion: null,
-  lastLoggedIn: null,
+  date_accepted_terms: null,
+  accepted_terms_version: null,
+  last_logged_in: null,
   apiKeys: [],
-  regionId: null,
+  region_id: null,
   state: null,
   organizations: [],
   isRegistered: null
@@ -51,32 +51,32 @@ export const initializeUser: User = {
 
 export type UserFormValues = {
   id?: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  userType:
+  user_type:
     | 'standard'
     | 'globalView'
     | 'globalAdmin'
     | 'regionalAdmin'
     | 'analytics';
   state: string;
-  regionId: string;
-  orgName: string;
-  orgId: string;
+  region_id: string;
+  org_name: string;
+  org_id: string;
   originalOrgId: string;
   originalRoleId: string;
 };
 
 export const initialUserFormValues: UserFormValues = {
-  firstName: '',
-  lastName: '',
+  first_name: '',
+  last_name: '',
   email: '',
-  userType: 'standard',
+  user_type: 'standard',
   state: '',
-  regionId: '',
-  orgName: '',
-  orgId: '',
+  region_id: '',
+  org_name: '',
+  org_id: '',
   originalOrgId: '',
   originalRoleId: ''
 };

@@ -158,7 +158,7 @@ const App: React.FC = () => (
                         <RouteGuard
                           path="/inventory/vulnerabilities/grouped"
                           component={(props) => (
-                            <Vulnerabilities {...props} groupBy="title" />
+                            <Vulnerabilities {...props} group_by="title" />
                           )}
                           permissions={[
                             'analytics',

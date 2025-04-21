@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, patch
 # Third-Party Libraries
 from fastapi.testclient import TestClient
 import pytest
-from xfd_api.models import User
 from xfd_django.asgi import app
+from xfd_mini_dl.models import User
 
 client = TestClient(app)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_okta_callback_success(mock_get_jwt_from_code):
     """Test successful Okta callback authentication with real process_user."""
@@ -42,19 +42,19 @@ def test_okta_callback_success(mock_get_jwt_from_code):
     assert User.objects.filter(email=email).exists()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_okta_callback_existing_user(mock_get_jwt_from_code):
     """Test Okta callback when the user already exists (should update last login)."""
     email = "{}@example.com".format(secrets.token_hex(4))
     User.objects.create(
         email=email,
-        oktaId="okta-user-id-123",
-        firstName="Existing",
-        lastName="User",
-        userType="standard",
-        invitePending=True,
-        lastLoggedIn="2000-01-01T00:00:00Z",  # Old login timestamp
+        okta_id="okta-user-id-123",
+        first_name="Existing",
+        last_name="User",
+        user_type="standard",
+        invite_pending=True,
+        last_logged_in="2000-01-01T00:00:00Z",  # Old login timestamp
     )
 
     # Mock the response from Okta token exchange
@@ -78,10 +78,10 @@ def test_okta_callback_existing_user(mock_get_jwt_from_code):
 
     # Ensure last login timestamp was updated
     updated_user = User.objects.get(email=email)
-    assert updated_user.lastLoggedIn != "2000-01-01T00:00:00Z"
+    assert updated_user.last_logged_in != "2000-01-01T00:00:00Z"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_okta_callback_missing_code():
     """Test Okta callback with missing auth code (should fail)."""
     payload = {}  # No code provided

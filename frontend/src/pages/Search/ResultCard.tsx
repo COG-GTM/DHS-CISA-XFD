@@ -64,7 +64,7 @@ export const ResultCard: React.FC<Props> = (props) => {
     id,
     name,
     ip,
-    updatedAt,
+    updated_at,
     services,
     vulnerabilities,
     inner_hits,
@@ -78,13 +78,13 @@ export const ResultCard: React.FC<Props> = (props) => {
     }));
   };
 
-  let lastSeen;
+  let last_seen;
 
   const history = useHistory();
   try {
-    lastSeen = formatDistanceToNow(parseISO(updatedAt.raw));
+    last_seen = formatDistanceToNow(parseISO(updated_at.raw));
   } catch (e) {
-    lastSeen = '';
+    last_seen = '';
   }
 
   const onClick = () => {
@@ -170,9 +170,9 @@ export const ResultCard: React.FC<Props> = (props) => {
       <div className={classes.inner} onClick={onClick}>
         <button className={classes.domainRow}>
           <h4>{name.raw}</h4>
-          <div className={classes.lastSeen}>
+          <div className={classes.last_seen}>
             <span className={classes.label}>Last Seen</span>
-            <span className={classes.data}>{lastSeen} ago</span>
+            <span className={classes.data}>{last_seen} ago</span>
           </div>
         </button>
 
@@ -183,7 +183,7 @@ export const ResultCard: React.FC<Props> = (props) => {
               <span className={classes.data}>{ip.raw}</span>
             </div>
             {ports.length > 0 && (
-              <div className={classes.lastSeen}>
+              <div className={classes.last_seen}>
                 <span className={classes.label}>
                   <span className={classes.count}>{ports.length}</span>
                   {` Port${ports.length > 1 ? 's' : ''}`}

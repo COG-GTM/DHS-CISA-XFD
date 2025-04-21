@@ -15,16 +15,16 @@ class QueueSearch(BaseModel):
     sort: Optional[str] = "ASC"
     order: Optional[str] = "id"
     filters: Optional[dict] = None
-    pageSize: Optional[int] = 25
+    page_size: Optional[int] = 25
 
 
 class QueueMetadata(BaseModel):
     """Queue metadata."""
 
     name: str
-    messagesAvailable: int
-    messagesInFlight: int
-    messagesDelayed: int
+    messages_available: int
+    messages_in_flight: int
+    messages_delayed: int
 
 
 class QueueListResponse(BaseModel):

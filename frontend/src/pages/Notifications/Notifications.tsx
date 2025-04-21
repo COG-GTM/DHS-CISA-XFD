@@ -44,24 +44,24 @@ const dateValidator = (
   startDateStr: string,
   endDateStr: string
 ): [boolean, string] => {
-  const startDate = parseISO(startDateStr);
-  const endDate = parseISO(endDateStr);
+  const start_date = parseISO(startDateStr);
+  const end_date = parseISO(endDateStr);
   const currentDate = new Date();
-  if (!isAfter(startDate, currentDate)) {
+  if (!isAfter(start_date, currentDate)) {
     return [true, 'Start date must be in the future.'];
-  } else if (!isAfter(endDate, currentDate)) {
+  } else if (!isAfter(end_date, currentDate)) {
     return [true, 'End date must be in the future.'];
-  } else if (!isAfter(endDate, startDate)) {
+  } else if (!isAfter(end_date, start_date)) {
     return [true, 'Start date must come before the end date.'];
   }
   return [false, ''];
 };
 
 const initialFormErrorValues = {
-  maintenanceType: false,
+  maintenance_type: false,
   message: false,
-  startDatetime: false,
-  endDatetime: false,
+  start_datetime: false,
+  end_datetime: false,
   dateMessage: ''
 };
 
@@ -138,7 +138,7 @@ export const Notifications: React.FC = () => {
 
   const columns: GridColDef[] = [
     {
-      field: 'maintenanceType',
+      field: 'maintenance_type',
       headerName: 'Type',
       flex: 0.5,
       renderCell: (cellValues: any) => {
@@ -151,17 +151,17 @@ export const Notifications: React.FC = () => {
       flex: 1.5,
       minWidth: 180,
       renderCell: (cellValues: GridRenderCellParams) => {
-        const startDate = humanReadableDate(cellValues.row.startDatetime);
-        const endDate = humanReadableDate(cellValues.row.endDatetime);
+        const start_date = humanReadableDate(cellValues.row.start_datetime);
+        const end_date = humanReadableDate(cellValues.row.end_datetime);
         return (
           <>
-            {startDate} to
-            <br /> {endDate}
+            {start_date} to
+            <br /> {end_date}
           </>
         );
       }
     },
-    { field: 'updatedBy', headerName: 'Admin Email', flex: 2 },
+    { field: 'updated_by', headerName: 'Admin Email', flex: 2 },
     { field: 'message', headerName: 'Message', flex: 3, minWidth: 200 },
     {
       field: 'update',
@@ -174,11 +174,11 @@ export const Notifications: React.FC = () => {
             color="primary"
             aria-label="an icon button that displays a pencil and sends you to edit the selected table entry when clicked"
             onClick={() => {
-              cellValues.row.startDatetime = formReadableDate(
-                toEST(cellValues.row.startDatetime)
+              cellValues.row.start_datetime = formReadableDate(
+                toEST(cellValues.row.start_datetime)
               );
-              cellValues.row.endDatetime = formReadableDate(
-                toEST(cellValues.row.endDatetime)
+              cellValues.row.end_datetime = formReadableDate(
+                toEST(cellValues.row.end_datetime)
               );
               if (cellValues.row.status === 'active') {
                 setChecked(true);
@@ -335,23 +335,23 @@ export const Notifications: React.FC = () => {
 
   const submitForm = async (apiType: string) => {
     const invalidDate = dateValidator(
-      formValues.startDatetime,
-      formValues.endDatetime
+      formValues.start_datetime,
+      formValues.end_datetime
     );
     const body: MaintenanceNotification = {
       id: formValues.id,
-      maintenanceType: formValues.maintenanceType,
+      maintenance_type: formValues.maintenance_type,
       status: formValues.status,
-      updatedBy: user?.email || '',
+      updated_by: user?.email || '',
       message: formValues.message,
-      startDatetime: toUTC(formValues.startDatetime),
-      endDatetime: toUTC(formValues.endDatetime)
+      start_datetime: toUTC(formValues.start_datetime),
+      end_datetime: toUTC(formValues.end_datetime)
     };
     const newFormErrors = {
-      maintenanceType: !formValues.maintenanceType,
+      maintenance_type: !formValues.maintenance_type,
       message: !formValues.message,
-      startDatetime: invalidDate[0],
-      endDatetime: invalidDate[0],
+      start_datetime: invalidDate[0],
+      end_datetime: invalidDate[0],
       dateMessage: invalidDate[1]
     };
     setFormErrors(newFormErrors);
@@ -446,13 +446,13 @@ export const Notifications: React.FC = () => {
         <Select
           displayEmpty
           size="small"
-          id="maintenanceType"
-          value={formValues.maintenanceType}
-          name="maintenanceType"
+          id="maintenance_type"
+          value={formValues.maintenance_type}
+          name="maintenance_type"
           onChange={handleChange}
           fullWidth
           renderValue={
-            formValues.maintenanceType !== ''
+            formValues.maintenance_type !== ''
               ? undefined
               : () => (
                   <Typography color="#bdbdbd">
@@ -460,7 +460,7 @@ export const Notifications: React.FC = () => {
                   </Typography>
                 )
           }
-          error={formErrors.maintenanceType}
+          error={formErrors.maintenance_type}
         >
           <MenuItem value="minor">
             Minor maintenance: Login is available to all users.
@@ -469,7 +469,7 @@ export const Notifications: React.FC = () => {
             Major maintenance: Login is restricted to admins.
           </MenuItem>
         </Select>
-        {formErrors.maintenanceType && (
+        {formErrors.maintenance_type && (
           <Typography pl={2} variant="caption" color="error.main">
             Maintenance type is required
           </Typography>
@@ -480,14 +480,14 @@ export const Notifications: React.FC = () => {
           Start Date and Time
         </Typography>
         <TextField
-          id="startDatetime"
-          name="startDatetime"
+          id="start_datetime"
+          name="start_datetime"
           size="small"
           fullWidth
           type="datetime-local"
           onChange={handleChange}
-          value={formValues.startDatetime}
-          error={formErrors.startDatetime}
+          value={formValues.start_datetime}
+          error={formErrors.start_datetime}
         />
       </Grid>
       <Grid item sm={12} md={6}>
@@ -495,14 +495,14 @@ export const Notifications: React.FC = () => {
           End Date and Time
         </Typography>
         <TextField
-          id="endDatetime"
-          name="endDatetime"
+          id="end_datetime"
+          name="end_datetime"
           size="small"
           fullWidth
           type="datetime-local"
           onChange={handleChange}
-          defaultValue={formValues.endDatetime}
-          error={formErrors.endDatetime}
+          defaultValue={formValues.end_datetime}
+          error={formErrors.end_datetime}
         />
       </Grid>
       <Grid item xs={12}>

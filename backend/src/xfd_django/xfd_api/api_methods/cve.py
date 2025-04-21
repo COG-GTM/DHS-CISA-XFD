@@ -2,8 +2,7 @@
 
 # Third-Party Libraries
 from fastapi import HTTPException
-
-from ..models import Cve
+from xfd_mini_dl.models import Cve
 
 
 def get_cves_by_id(cve_id):
