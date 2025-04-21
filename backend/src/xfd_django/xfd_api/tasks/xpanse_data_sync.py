@@ -1,19 +1,24 @@
 """Push Xpanse data from LZ to DMZ."""
 # Standard Python Libraries
-import os
-import logging
-from django.db.models import Prefetch, Model, QuerySet
-from django.forms.models import model_to_dict
 import json
-import requests
+import logging
+import os
 
 # Standalone Django Setup
 import sys
+
+# Third-Party Libraries
+from django.db.models import Model, Prefetch, QuerySet
+from django.forms.models import model_to_dict
+import requests
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, PROJECT_ROOT)
 
+# Third-Party Libraries
 import django
 from django.conf import settings
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 
 settings.DATABASES = {
@@ -52,9 +57,10 @@ settings.DATABASES = {
 django.setup()
 # Standalone Django Setup
 
-from xfd_mini_dl.models import XpanseAlerts, XpanseBusinessUnits, XpanseServicesMdl
+# Third-Party Libraries
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
+from xfd_mini_dl.models import XpanseAlerts, XpanseBusinessUnits, XpanseServicesMdl
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
@@ -82,8 +88,7 @@ def handler(event):
 
 def main():
     business_units = (
-        XpanseBusinessUnits.objects
-        .filter(alerts__isnull=False)
+        XpanseBusinessUnits.objects.filter(alerts__isnull=False)
         .prefetch_related(
             Prefetch(
                 "alerts",
@@ -91,11 +96,10 @@ def main():
                     Prefetch(
                         "services",
                         queryset=XpanseServicesMdl.objects.prefetch_related(
-                            "sub_domains",
-                            "cves"
-                        )
+                            "sub_domains", "cves"
+                        ),
                     )
-                )
+                ),
             )
         )
         .distinct()
@@ -127,9 +131,7 @@ def main():
         business_unit_dict["alerts"] = alerts
         business_units_list.append(business_unit_dict)
 
-    serialized_and_shaped_data = chunk_list_by_bytes(
-        business_units_list, 2097152
-    )
+    serialized_and_shaped_data = chunk_list_by_bytes(business_units_list, 2097152)
     for chunk in serialized_and_shaped_data:
         bounds = chunk["bounds"]
         data = json.dumps(chunk["chunk"], indent=4, default=str)
@@ -141,11 +143,16 @@ def main():
             "Content-Type": "application/json",
             "Authorization": "53dba5cfcdd1d088fa92206db733b425",
         }
-        response = requests.post("http://localhost:3000/xpanse_sync", json=payload, headers=headers)
+        response = requests.post(
+            "http://localhost:3000/xpanse_sync", json=payload, headers=headers
+        )
         if response.status_code == 200:
             print("Succesfully synced data to DMZ")
         else:
-            print(f"Failed to sync data to DMZ: {response.status_code} - {response.text}")
+            print(
+                f"Failed to sync data to DMZ: {response.status_code} - {response.text}"
+            )
+
 
 if __name__ == "__main__":
     main()

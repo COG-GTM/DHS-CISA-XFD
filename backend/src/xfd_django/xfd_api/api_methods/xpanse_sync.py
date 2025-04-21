@@ -1,14 +1,22 @@
-from fastapi import Request, HTTPException
+# Standard Python Libraries
 import json
-from ..utils.csv_utils import create_checksum
 
-from xfd_mini_dl.models import XpanseBusinessUnits, XpanseAlerts, XpanseServicesMdl, XpanseCvesMdl
+# Third-Party Libraries
+from fastapi import HTTPException, Request
+from xfd_mini_dl.models import (
+    XpanseAlerts,
+    XpanseBusinessUnits,
+    XpanseCvesMdl,
+    XpanseServicesMdl,
+)
+
+from ..utils.csv_utils import create_checksum
 
 
 def create_xpanse_bu(bu_dict):
     bu, created = None, False
     alerts = bu_dict.get("alerts", [])
-    try:     
+    try:
         bu, created = XpanseBusinessUnits.objects.update_or_create(
                 xpanse_business_unit_uid=bu_dict["xpanse_business_unit_uid"],
                 defaults={
@@ -57,13 +65,13 @@ def create_xpanse_service(service_dict):
                 "externally_inferred_cves": service_dict["externally_inferred_cves"],
                 "service_key": service_dict["service_key"],
                 "service_key_type": service_dict["service_key_type"],
-            
+
             }
         )
         # TODO  Need to create then link Sub-Domains
         return service, created
     except Exception as e:
-        
+
 
 def create_xpanse_alert(alert_dict):
     # Create services
@@ -87,7 +95,7 @@ def create_xpanse_alert(alert_dict):
         }
         )
     except Exception as e:
-    
+
 
 async def xpanse_sync_post(sync_body, request: Request):
     """Ingest and persist Xpanse data to the data lake."""
@@ -107,7 +115,7 @@ async def xpanse_sync_post(sync_body, request: Request):
         )
     bus_created = []
     bus_updated = []
-    
+
     # Data is Valid, process data
     # Creat BusinessUnits
     business_units = json.loads(sync_body.data)
@@ -119,7 +127,7 @@ async def xpanse_sync_post(sync_body, request: Request):
         else:
             bus_updated.append(bu)
         # Alerts
-        
-        
-    
+
+
+
     return {"status_code": 200, "body": "Xpanse sync completed successfully."}
