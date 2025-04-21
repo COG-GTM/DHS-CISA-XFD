@@ -28,9 +28,7 @@ def alerts(org_id, sixgill_org_id):
     LOGGER.info(f"Total alerts for {org_id}: {count_total}")
 
     # Begin Retrieving all alerts
-    # - Recommended "fetch_size" is 25. The maximum is 400.
     token = cybersix_token()
-    token_refresh_counter = 1
     fetch_size = 50
     all_alerts = []
     df_all_alerts = pd.DataFrame()

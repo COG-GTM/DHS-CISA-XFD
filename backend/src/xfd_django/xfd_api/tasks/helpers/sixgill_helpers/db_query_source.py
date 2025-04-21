@@ -1,3 +1,5 @@
+"""Tasks for saving the sixgill scan data into mini data lake"""
+
 # Standard Python Libraries
 from datetime import datetime
 import logging

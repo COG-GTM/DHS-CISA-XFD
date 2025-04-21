@@ -1,3 +1,5 @@
+"""Tasks for ingesting Cybersixgill alerts, mentions, credentials, and CVEs."""
+
 # Standard Python Libraries
 import datetime
 import logging
@@ -68,7 +70,6 @@ class Cybersixgill:
 
     def run(self):
         """Run all selected scan methods for each organization."""
-
         LOGGER.info("Cybersixgill.run() started")
         failed = []
 
@@ -108,7 +109,6 @@ class Cybersixgill:
 
     def get_alerts(self, org, org_id, sixgill_id):
         """Fetch and store alerts for an organization."""
-
         try:
             # Fetch alerts for org
             alerts_df = alerts(org_id, sixgill_id)
