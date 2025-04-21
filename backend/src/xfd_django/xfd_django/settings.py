@@ -148,14 +148,15 @@ CSRF_COOKIE_SECURE = not IS_LOCAL
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
-MATOMO_CSP_POLICY = {
-    "default-src": ["*", "'unsafe-inline'", "'unsafe-eval'"],
-    "connect-src": ["*"],
-    "img-src": ["*"],
-    "style-src": ["*", "'unsafe-inline'"],
-    "frame-ancestors": ["*"],
-    "frame-src": ["*"],
-}
+# Awaiting implementation of Matomo CSP, uncomment when ready
+# MATOMO_CSP_POLICY = {
+#     "default-src": ["*", "'unsafe-inline'", "'unsafe-eval'"],
+#     "connect-src": ["*"],
+#     "img-src": ["*"],
+#     "style-src": ["*", "'unsafe-inline'"],
+#     "frame-ancestors": ["*"],
+#     "frame-src": ["*"],
+# }
 
 # SameSite policy to prevent CSRF via cross-origin requests
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -174,7 +175,6 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_CACHE_CONTROL = "no-cache, no-store, must-revalidate"
-
 SECURE_CSP_POLICY = {
     "default-src": ["'self'"],
     "connect-src": [
