@@ -43,7 +43,7 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 
-async def handler(event):
+def handler(event):
     """Handle execution of the vulnerability scanning sync task.
 
     This function serves as the entry point for triggering the synchronization
@@ -60,6 +60,7 @@ async def handler(event):
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
+        LOGGER.info("Error occurred: %s", e)
         return {"status_code": 500, "body": str(e)}
 
 
@@ -215,11 +216,11 @@ def send_csv_to_sync(csv_data, bounds):
         "x-checksum": checksum,
         "x-cursor": f"{bounds['start']}-{bounds['end']}",
         "Content-Type": "application/json",
-        "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0N2Q0MDk3LWM5ZTEtNGMxZS1iMmY0LWY2Mjg4OTU3NTlkMCIsImVtYWlsIjoiSkFOU09OLkJVTkNFQGFzc29jaWF0ZXMuY2lzYS5kaHMuZ292IiwiZXhwIjoxNzQxMzc1NTQwfQ.Yo4A0fBP8cF00ODKgxD5U2NaffXv1k3nmaN4jv5kyVs",
+        "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
 
     response = requests.post(
-        "http://localhost:3000/sync", json=body, headers=headers, timeout=60
+        os.getenv("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
     )
     if response.status_code == 200:
         LOGGER.info("Successfully sent chunk to sync API")
