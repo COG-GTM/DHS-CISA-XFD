@@ -1745,6 +1745,17 @@ class VulnScan(models.Model):
         blank=True,
         help_text="Additional data collected by the VS vuln scan that is not commonly seen.",
     )
+    nmi_service_group = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of the service group associated with this ticket (e.g. 'NMI')",
+    )
+    risky_service_group = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         """The Meta class for VulnScan."""
@@ -2381,8 +2392,6 @@ class Ticket(models.Model):
         blank=True,
         help_text="Timestamp when this ticket was opened (vulnerability was first detected)",
     )
-    # snapshots = models.ManyToManyField(Snapshot, related_name='tickets', blank=True)
-    # ticket_events = models.ManyToManyField(TicketEvent, related_name='tickets', blank=True)
     is_kev = models.BooleanField(
         null=True,
         blank=True,
@@ -2398,6 +2407,17 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         help_text="Name of the service associated with this ticket",
+    )
+    nmi_service_group = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of the service group associated with this ticket (e.g. 'NMI')",
+    )
+    risky_service_group = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -2483,6 +2503,7 @@ class PortScan(models.Model):
     time_scanned = models.DateTimeField(
         null=True, blank=True, help_text="Timestamp when the port was scanned"
     )
+    # ticket_events = models.ManyToManyField(TicketEvent, related_name='port_scans')
     # snapshots = models.ManyToManyField(Snapshot, related_name='port_scans', blank=True)
     organization = models.ForeignKey(
         Organization,
@@ -2491,6 +2512,17 @@ class PortScan(models.Model):
         blank=True,
         on_delete=models.CASCADE,
         help_text="Foreign key relationship to the organization that owns the scanned IP.",
+    )
+    nmi_service_group = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of the service group associated with this ticket (e.g. 'NMI')",
+    )
+    risky_service_group = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -5912,6 +5944,44 @@ class Blocklist(models.Model):
             models.Index(fields=["ip"]),  # Reinforces index on 'ip' field
             models.Index(fields=["created_at"]),  # Speeds up sorting by 'updated_at'
         ]
+
+
+class RiskyServiceGroup(models.Model):
+    """Define RiskyServiceGroup Model."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    service_name = models.CharField(
+        max_length=255, null=False, blank=False, unique=True
+    )
+    group = models.CharField(
+        max_length=255, null=False, blank=False, help_text="Group name"
+    )
+
+    class Meta:
+        """Set RiskyServiceGroup model metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "riskyservicegroup"
+
+
+class NMIServiceGroup(models.Model):
+    """Define NMIService Model."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    service_name = models.CharField(
+        max_length=255, null=False, blank=False, unique=True
+    )
+    group = models.CharField(
+        max_length=255, null=False, blank=False, help_text="Group name"
+    )
+
+    class Meta:
+        """Set NMIServiceGroup model metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "nmiservicegroup"
 
 
 class Log(models.Model):
