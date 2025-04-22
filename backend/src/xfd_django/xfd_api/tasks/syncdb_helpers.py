@@ -387,7 +387,7 @@ def build_fake_ticket_events(ticket, port_scans, vuln_scans):
     ]
     events = []
     for i, tmpl in enumerate(templates):
-        event_time = base_time + timedelta(days=(i * 30))
+        event_time = base_time + timedelta(days=i * 30)
         events.append(
             TicketEvent(
                 ticket=ticket,
@@ -484,8 +484,10 @@ def populate_sample_data():
         percent = (idx / total_orgs) * 100
         bar_length = 40
         filled = int(bar_length * idx // total_orgs)
-        bar = "█" * filled + "-" * (bar_length - filled)
-        sys.stdout.write(f"\rProgress: |{bar}| {percent:.1f}% ({idx}/{total_orgs})")
+        bar_template = "█" * filled + "-" * (bar_length - filled)
+        sys.stdout.write(
+            f"\rProgress: |{bar_template}| {percent:.1f}% ({idx}/{total_orgs})"
+        )
         sys.stdout.flush()
 
     print("\n✅ Done populating all data.")
