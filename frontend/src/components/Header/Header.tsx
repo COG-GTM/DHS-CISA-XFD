@@ -64,7 +64,7 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   // TODO: Add path for below menu items
-  const vulnScanningMenuItems: MenuItemType[] = [
+  const scanningResults: MenuItemType[] = [
     {
       menuItemTitle: 'Overview',
       path: '/',
@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
-    { 'Vulnerability Scanning': vulnScanningMenuItems },
+    { 'Scanning Results': scanningResults },
     { Inventory: inventoryMenuItems },
     userLevel > STANDARD_USER ? { 'Admin Hub': adminHubMenuItems } : {},
     { Support: supportMenuItems },
@@ -169,8 +169,8 @@ export const Header: React.FC = () => {
               sx={{ flexGrow: 2, display: 'flex', justifyContent: 'center' }}
             >
               <NavMenuButton
-                menuItems={vulnScanningMenuItems}
-                title="Vulnerability Scanning"
+                menuItems={scanningResults}
+                title="Scanning Results"
               />
               <NavMenuButton title="Inventory" path="/inventory" />
               <NavMenuButton
