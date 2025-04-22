@@ -424,6 +424,7 @@ const Risk: React.FC<ContextType> = ({
   );
 };
 
+//Use this as a reference point for the VS Dash UI
 export const RiskWithSearch = withSearch(
   ({
     addFilter,
