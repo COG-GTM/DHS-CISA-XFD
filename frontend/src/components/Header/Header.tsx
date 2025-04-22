@@ -72,7 +72,7 @@ export const Header: React.FC = () => {
     },
     {
       menuItemTitle: 'Vulnerability Scanning',
-      path: '#',
+      path: '/VSDashboard',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
