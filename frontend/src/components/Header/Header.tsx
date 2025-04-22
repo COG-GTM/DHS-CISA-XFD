@@ -155,7 +155,11 @@ export const Header: React.FC = () => {
     <AppBar
       position="static"
       elevation={0}
-      sx={{ backgroundColor: 'neutrals.white' }}
+      sx={{
+        backgroundColor: 'neutrals.white',
+        borderBottom: '.5px solid',
+        borderColor: 'neutrals.light'
+      }}
     >
       <Toolbar>
         {headerLogo}
