@@ -53,7 +53,7 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
                         redis_client,
                         filtered_org_ids=filtered_org_ids,
                     ),
-                    "numVulnerabilities": await safe_fetch(
+                    "num_vulnerabilities": await safe_fetch(
                         get_num_vulns,
                         filter_data,
                         current_user,
@@ -70,7 +70,7 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
                         redis_client,
                         filtered_org_ids=filtered_org_ids,
                     ),
-                    "latestVulnerabilities": await safe_fetch(
+                    "latest_vulnerabilities": await safe_fetch(
                         stats_latest_vulns,
                         filter_data,
                         current_user,
@@ -78,7 +78,7 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
                         request,
                         filtered_org_ids=filtered_org_ids,
                     ),
-                    "mostCommonVulnerabilities": await safe_fetch(
+                    "most_common_vulnerabilities": await safe_fetch(
                         stats_most_common_vulns,
                         filter_data,
                         current_user,
@@ -86,7 +86,7 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
                         request,
                         filtered_org_ids=filtered_org_ids,
                     ),
-                    "byOrg": await safe_fetch(
+                    "by_org": await safe_fetch(
                         get_by_org_stats,
                         filter_data,
                         current_user,
@@ -290,7 +290,7 @@ async def stats_latest_vulns(
                 vulnerabilities.extend(json.loads(data))
 
         # Limit the results to the maximum specified
-        vulnerabilities = sorted(vulnerabilities, key=lambda x: x["createdAt"])[
+        vulnerabilities = sorted(vulnerabilities, key=lambda x: x["created_at"])[
             :max_results
         ]
 

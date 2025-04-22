@@ -14,14 +14,14 @@ class Role(BaseModel):
     """Role schema."""
 
     id: UUID
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime
+    updated_at: datetime
     role: str
     approved: bool
-    createdById: Optional[Any]
-    approvedById: Optional[Any]
+    created_by_id: Optional[Any]
+    approved_by_id: Optional[Any]
     user: Optional[Any]
-    organizationId: Optional[Any]
+    organization_id: Optional[Any]
 
     class Config:
         """Config."""

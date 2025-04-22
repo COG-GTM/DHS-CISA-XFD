@@ -30,11 +30,11 @@ interface AutocompleteType extends Partial<OrganizationTag> {
 
 interface OrgSettingsType extends Partial<OrganizationType> {
   id: any;
-  granularScans: any;
-  rootDomains: string[];
-  ipBlocks: string[];
+  granular_scans: any;
+  root_domains: string[];
+  ip_blocks: string[];
   tags: OrganizationTag[];
-  pendingDomains: PendingDomain[];
+  pending_domains: PendingDomain[];
 }
 
 type OrgSettingsProps = {
@@ -52,7 +52,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
   const [inputValue, setInputValue] = React.useState('');
   const [dialog, setDialog] = React.useState<{
     open: boolean;
-    type?: 'rootDomains' | 'ipBlocks' | 'tags';
+    type?: 'root_domains' | 'ip_blocks' | 'tags';
     label?: string;
     stage?: number;
     domainVerificationStatusMessage?: string;
@@ -89,13 +89,13 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
   const initiateDomainVerification = async (domain: string) => {
     try {
       if (!organization) return;
-      const pendingDomains: PendingDomain[] = await apiPost(
+      const pending_domains: PendingDomain[] = await apiPost(
         `/organizations/${organization?.id}/initiateDomainVerification`,
         {
           body: { domain }
         }
       );
-      setOrganization({ ...organization, pendingDomains });
+      setOrganization({ ...organization, pending_domains });
     } catch (e: any) {
       setFeedbackMessage({
         message:
@@ -144,17 +144,17 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
     }
   };
 
-  const handleTagChange = (event: any, newValue: any) => {
-    setChosenTags(newValue);
+  const handleTagChange = (event: any, new_value: any) => {
+    setChosenTags(new_value);
     setOrganization((prevValues: any) => ({
       ...prevValues,
-      tags: newValue.map((tag: any) => ({ name: tag }))
+      tags: new_value.map((tag: any) => ({ name: tag }))
     }));
     setIsSaveDisabled(false);
   };
 
   const ListInput = (props: {
-    type: 'rootDomains' | 'ipBlocks' | 'tags';
+    type: 'root_domains' | 'ip_blocks' | 'tags';
     label: string;
   }) => {
     if (!organization) return null;
@@ -179,18 +179,18 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                   }
                   setIsSaveDisabled(false);
                 }}
-                disabled={user?.userType === 'globalView'}
+                disabled={user?.user_type === 'globalView'}
               ></Chip>
             </Grid>
           ))}
-        {props.type === 'rootDomains' &&
-          organization.pendingDomains.map((domain, index: number) => (
+        {props.type === 'root_domains' &&
+          organization.pending_domains.map((domain, index: number) => (
             <Grid item mb={1} key={index}>
               <Chip
                 sx={{ backgroundColor: '#C4C4C4' }}
                 label={domain.name + ' (verification pending)'}
                 onDelete={() => {
-                  organization.pendingDomains.splice(index, 1);
+                  organization.pending_domains.splice(index, 1);
                   setOrganization({ ...organization });
                 }}
                 onClick={() => {
@@ -202,11 +202,12 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                     stage: 1
                   });
                 }}
-                disabled={user?.userType === 'globalView'}
+                disabled={user?.user_type === 'globalView'}
               ></Chip>
             </Grid>
           ))}
-        {(props.type === 'rootDomains' || user?.userType === 'globalAdmin') && (
+        {(props.type === 'root_domains' ||
+          user?.user_type === 'globalAdmin') && (
           <Grid item mb={1}>
             <Chip
               label="ADD"
@@ -220,7 +221,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                   stage: 0
                 });
               }}
-              disabled={user?.userType === 'globalView'}
+              disabled={user?.user_type === 'globalView'}
             />
           </Grid>
         )}
@@ -279,7 +280,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                 )}
               />
             </>
-          ) : dialog.type === 'rootDomains' && dialog.stage === 1 ? (
+          ) : dialog.type === 'root_domains' && dialog.stage === 1 ? (
             <>
               <DialogContentText>
                 Add the following TXT record to {inputValue}&apos;s DNS
@@ -288,7 +289,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
               <TextField
                 sx={{ width: '100%' }}
                 value={
-                  organization.pendingDomains.find(
+                  organization.pending_domains.find(
                     (domain) => domain.name === inputValue
                   )?.token
                 }
@@ -304,7 +305,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                 </>
               )}
             </>
-          ) : user?.userType === 'globalAdmin' ? (
+          ) : user?.user_type === 'globalAdmin' ? (
             <>
               <DialogContentText>
                 Separate multiple entries by commas.
@@ -322,7 +323,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                 onChange={(e) => setInputValue(e.target.value)}
               />
             </>
-          ) : dialog.type === 'rootDomains' && dialog.stage === 0 ? (
+          ) : dialog.type === 'root_domains' && dialog.stage === 0 ? (
             <>
               <DialogContentText>
                 In order to add a root domain, you will need to verify ownership
@@ -351,8 +352,8 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             color="primary"
             onClick={() => {
               if (
-                dialog.type === 'rootDomains' &&
-                user?.userType !== 'globalAdmin'
+                dialog.type === 'root_domains' &&
+                user?.user_type !== 'globalAdmin'
               ) {
                 if (dialog.stage === 0) {
                   // Start verification process
@@ -370,7 +371,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                     ...inputValue.split(',').map((e) => e.trim())
                   );
                   setOrganization({ ...organization });
-                  if (organization.rootDomains.length !== 0) {
+                  if (organization.root_domains.length !== 0) {
                     setIsSaveDisabled(false);
                   }
                 }
@@ -411,31 +412,31 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
         </Grid>
         <Grid item xs={12} mt={2} mb={1}>
           <Stack direction="row" alignItems="center" spacing={1}>
-            {organization.regionId && (
+            {organization.region_id && (
               <>
                 <Public sx={{ color: 'gray' }} />
                 <Typography variant="body1" color="gray">
-                  Region {organization.regionId}
+                  Region {organization.region_id}
                 </Typography>
               </>
             )}
-            {(organization.stateName || organization.state) && (
+            {(organization.state_name || organization.state) && (
               <>
                 <Place sx={{ color: 'gray' }} />
                 <Typography variant="body1" color="gray">
-                  {organization.stateName || organization.state}
+                  {organization.state_name || organization.state}
                 </Typography>
               </>
             )}
           </Stack>
         </Grid>
         <Grid item xs={12}>
-          <ListInput label="Root Domains" type="rootDomains"></ListInput>
+          <ListInput label="Root Domains" type="root_domains"></ListInput>
         </Grid>
         <Grid item xs={12}>
-          <ListInput label="IP Blocks" type="ipBlocks"></ListInput>
+          <ListInput label="IP Blocks" type="ip_blocks"></ListInput>
         </Grid>
-        {user?.userType === 'globalAdmin' && (
+        {user?.user_type === 'globalAdmin' && (
           <Grid item xs={12}>
             <ListInput label="Tags" type="tags"></ListInput>
           </Grid>
@@ -447,23 +448,23 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             </Grid>
             <Grid item ml={-1}>
               <Switch
-                checked={organization.isPassive}
+                checked={organization.is_passive}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                   setOrganization({
                     ...organization,
-                    isPassive: event.target.checked
+                    is_passive: event.target.checked
                   });
-                  if (!organization.isPassive) {
+                  if (!organization.is_passive) {
                     setIsSaveDisabled(false);
                   }
                 }}
                 color="primary"
-                disabled={user?.userType === 'globalView'}
+                disabled={user?.user_type === 'globalView'}
               />
             </Grid>
           </Grid>
         </Grid>
-        {organization.rootDomains.length === 0 && (
+        {organization.root_domains.length === 0 && (
           <Grid item xs={12}>
             <Alert severity="error">
               An organization must have at least one Root Domain.
@@ -478,9 +479,9 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             variant="contained"
             onClick={updateOrganization}
             disabled={
-              organization.rootDomains.length === 0 ||
+              organization.root_domains.length === 0 ||
               isSaveDisabled ||
-              user?.userType === 'globalView'
+              user?.user_type === 'globalView'
             }
           >
             Save

@@ -17,7 +17,7 @@ django.setup()
 
 # Third-Party Libraries
 from xfd_api.helpers.email import send_email
-from xfd_api.models import User
+from xfd_mini_dl.models import User
 
 # AWS Configuration
 cognito_client = boto3.client("cognito-idp", region_name=os.getenv("AWS_REGION"))
@@ -79,7 +79,7 @@ def check_user_expiration():
         try:
             cognito_client.admin_set_user_password(
                 UserPoolId=user_pool_id,
-                Username=user.cognitoId,
+                Username=user.cognito_id,
                 Password=os.getenv("REACT_APP_RANDOM_PASSWORD"),
                 Permanent=False,
             )
@@ -115,7 +115,7 @@ def check_user_expiration():
             # Remove from Cognito
             cognito_client.admin_delete_user(
                 UserPoolId=user_pool_id,
-                Username=user.cognitoId,
+                Username=user.cognito_id,
             )
             print("Removed user {} from Cognito.".format(user.email))
 
@@ -135,9 +135,9 @@ def handler(event, context):
     try:
         check_user_expiration()
         return {
-            "statusCode": 200,
+            "status_code": 200,
             "body": "User expiration check completed successfully.",
         }
     except Exception as e:
         print("Error during user expiration check: {}".format(e))
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}

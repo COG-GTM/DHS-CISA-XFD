@@ -31,16 +31,16 @@ const VSFindings = () => {
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Public />
                 <Typography variant="body1">
-                  Region {summaryData?.org.regionId}
+                  Region {summaryData?.org.region_id}
                 </Typography>
               </Stack>
             </Grid>
             <Grid item xs={6}>
-              {summaryData?.org.stateName && (
+              {summaryData?.org.state_name && (
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Place />
                   <Typography variant="body1">
-                    {summaryData?.org.stateName}
+                    {summaryData?.org.state_name}
                   </Typography>
                 </Stack>
               )}

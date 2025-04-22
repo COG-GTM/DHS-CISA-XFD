@@ -58,16 +58,16 @@ def handler(event):
         if not is_dmz and not is_local:
             LOGGER.warning("Scan can only be run in the DMZ or locally. Exitting now.")
             return {
-                "statusCode": 200,
+                "status_code": 200,
                 "body": "IntelX Credential scan cannot run outside the DMZ.",
             }
         main()
         return {
-            "statusCode": 200,
+            "status_code": 200,
             "body": "IntelX Credential scan completed successfully.",
         }
     except Exception as e:
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}
 
 
 def main():

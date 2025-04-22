@@ -77,7 +77,7 @@ def listen_for_docker_events():
                 # Retry logic to find the ScanTask before updating
                 for attempt in range(3):
                     response = update_scan_task_status(payload, None)
-                    if response.get("statusCode") == 200:
+                    if response.get("status_code") == 200:
                         break  # Success, exit loop
                     time.sleep(1)  # Wait before retrying
 
