@@ -368,13 +368,13 @@ const Risk: React.FC<ContextType> = ({
                 <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
                   <div className={content}>
                     <div className={panel}>
-                      <Paper elevation={0} className={cardRoot}>
-                        {stats.domains.num_vulnerabilities.length > 0 && (
+                      {stats.domains.num_vulnerabilities.length > 0 && (
+                        <Paper elevation={0} className={cardRoot}>
                           <TopVulnerableDomains
                             data={stats.domains.num_vulnerabilities}
                           />
-                        )}
-                      </Paper>
+                        </Paper>
+                      )}
                       <VulnerabilityCard
                         title={'Most Common Vulnerabilities'}
                         data={stats.vulnerabilities.most_common_vulnerabilities}
