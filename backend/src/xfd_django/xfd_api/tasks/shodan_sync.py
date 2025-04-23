@@ -28,11 +28,11 @@ def handler(event):
     try:
         main()
         return {
-            "statusCode": 200,
+            "status_code": 200,
             "body": "DMZ Shodan Vulnerabilities and Asset sync completed successfully.",
         }
     except Exception as e:
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}
 
 
 def main():

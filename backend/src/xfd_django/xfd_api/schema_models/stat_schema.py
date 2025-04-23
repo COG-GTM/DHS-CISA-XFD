@@ -44,30 +44,30 @@ class Domain(BaseModel):
     """Domain schema."""
 
     id: str
-    createdAt: datetime
-    updatedAt: datetime
-    syncedAt: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    synced_at: Optional[datetime]
     ip: Optional[str]
-    fromRootDomain: Optional[str]
-    subdomainSource: Optional[str]
-    ipOnly: Optional[bool]
-    reverseName: Optional[str]
+    from_root_domain: Optional[str]
+    subdomain_source: Optional[str]
+    ip_only: Optional[bool]
+    reverse_name: Optional[str]
     name: Optional[str]
     screenshot: Optional[str]
     country: Optional[str]
     asn: Optional[str]
-    cloudHosted: Optional[bool]
-    fromCidr: Optional[bool]
-    isFceb: Optional[bool]
+    cloud_hosted: Optional[bool]
+    from_cidr: Optional[bool]
+    is_fceb: Optional[bool]
     ssl: Optional[dict]
-    censysCertificatesResults: Optional[dict]
-    trustymailResults: Optional[dict]
+    censys_certificates_results: Optional[dict]
+    trustymail_results: Optional[dict]
 
 
 class LatestVulnerability(BaseModel):
     """Latest vulnerability."""
 
-    createdAt: datetime
+    created_at: datetime
     title: str
     description: Optional[str]
     severity: Optional[str]
@@ -86,7 +86,7 @@ class ByOrgStat(BaseModel):
     """By org stat."""
 
     id: str
-    orgId: str
+    org_id: str
     value: int
     label: str
 
@@ -99,13 +99,13 @@ class StatsResponse(BaseModel):
         "domains": {
             "services": List[ServiceStat],
             "ports": List[PortStat],
-            "numVulnerabilities": List[VulnerabilityStat],
+            "num_vulnerabilities": List[VulnerabilityStat],
             "total": int,
         },
         "vulnerabilities": {
             "severity": List[SeverityCountStat],
-            "latestVulnerabilities": List[LatestVulnerability],
-            "mostCommonVulnerabilities": List[MostCommonVulnerability],
-            "byOrg": List[ByOrgStat],
+            "latest_vulnerabilities": List[LatestVulnerability],
+            "most_common_vulnerabilities": List[MostCommonVulnerability],
+            "by_org": List[ByOrgStat],
         },
     }

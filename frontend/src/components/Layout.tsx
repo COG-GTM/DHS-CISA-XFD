@@ -166,12 +166,8 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
               </Drawer>
             )}
             <Main open={isFilterDrawerOpen} user={!!user}>
-              <Header
-                isFilterDrawerOpen={isFilterDrawerOpen}
-                setIsFilterDrawerOpen={setIsFilterDrawerOpen}
-              />
+              <Header />
               <div className="main-content" id="main-content" tabIndex={-1} />
-
               <Box
                 display="block"
                 position="relative"

@@ -78,13 +78,14 @@ class ECSClient:
                             "MDL_PASSWORD": os.getenv("MDL_PASSWORD"),
                             "MI_ACCOUNT_NAME": os.getenv("MI_ACCOUNT_NAME"),
                             "MI_PASSWORD": os.getenv("MI_PASSWORD"),
+                            "NIST_API_KEY": os.getenv("NIST_API_KEY"),
                             "PE_DB_NAME": os.getenv("PE_DB_NAME"),
                             "PE_DB_USERNAME": os.getenv("PE_DB_USERNAME"),
                             "PE_DB_PASSWORD": os.getenv("PE_DB_PASSWORD"),
                             "CENSYS_API_ID": os.getenv("CENSYS_API_ID"),
                             "CENSYS_API_SECRET": os.getenv("CENSYS_API_SECRET"),
                             "WORKER_USER_AGENT": os.getenv("WORKER_USER_AGENT"),
-                            "SHODAN_API_KEY": os.getenv("SHODAN_API_KEY"),
+                            "SHODAN_API_KEY": command_options["SHODAN_API_KEY"],
                             "SIXGILL_CLIENT_ID": os.getenv("SIXGILL_CLIENT_ID"),
                             "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET"),
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
@@ -106,6 +107,8 @@ class ECSClient:
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME"),
                             "QUEUE_URL": os.getenv("QUEUE_URL", ""),
+                            "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
+                            "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
                         },
                         detach=True,
                     )
@@ -152,7 +155,17 @@ class ECSClient:
                                 if memory
                                 else "",
                             },
-                        ],
+                        ]
+                        + (
+                            [
+                                {
+                                    "name": "SHODAN_API_KEY",
+                                    "value": command_options["SHODAN_API_KEY"],
+                                }
+                            ]
+                            if "SHODAN_API_KEY" in command_options
+                            else []
+                        ),
                     }
                 ],
             },

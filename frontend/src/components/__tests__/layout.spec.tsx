@@ -29,13 +29,13 @@ const testContext: ContextType = {
   resultSearchTerm: 'string',
   results: [],
   resultsPerPage: 1,
-  searchTerm: 'string',
+  search_term: 'string',
   setCurrent: (current: number) => {},
   setFilter: () => {},
   setResultsPerPage: () => {},
   setSort: (field: 'string', direction: 'asc' | 'desc') => {},
-  sortDirection: '',
-  sortField: 'string',
+  sort_direction: '',
+  sort_field: 'string',
   totalPages: 1,
   totalResults: 1,
   wasSearched: false,
@@ -47,7 +47,7 @@ const value: StaticsContextType = {
   setRegions: (regions: string[]) => {}
 };
 
-jest.mock('components/Header', () => ({
+jest.mock('components/Header/Header', () => ({
   Header: () => <div>HEADER</div>
 }));
 jest.mock('components/GovBanner', () => ({
