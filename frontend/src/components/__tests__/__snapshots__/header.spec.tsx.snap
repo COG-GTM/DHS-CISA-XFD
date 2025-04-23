@@ -3,7 +3,7 @@
 exports[`Header component matches snapshot 1`] = `
 <DocumentFragment>
   <header
-    class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic css-3bsa4y-MuiPaper-root-MuiAppBar-root"
+    class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic css-wpi0zi-MuiPaper-root-MuiAppBar-root"
   >
     <div
       class="MuiToolbar-root MuiToolbar-gutters MuiToolbar-regular css-hyum1k-MuiToolbar-root"
@@ -33,7 +33,7 @@ exports[`Header component matches snapshot 1`] = `
           >
             <button
               aria-haspopup="true"
-              aria-label="Vulnerability Scanning menu"
+              aria-label="Scanning Results menu"
               class="MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium css-14xvajb-MuiButtonBase-root-MuiButton-root"
               tabindex="0"
               type="button"
@@ -41,7 +41,7 @@ exports[`Header component matches snapshot 1`] = `
               <div
                 class="MuiBox-root css-14sskv3"
               >
-                Vulnerability Scanning
+                Scanning Results
               </div>
               <span
                 class="MuiButton-endIcon MuiButton-iconSizeMedium css-9tj150-MuiButton-endIcon"
