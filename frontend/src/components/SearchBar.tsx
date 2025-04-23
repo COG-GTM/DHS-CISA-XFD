@@ -94,7 +94,7 @@ type Timer = ReturnType<typeof setTimeout>;
 export const SearchBar = React.forwardRef<HTMLInputElement, Props>(
   (props, ref) => {
     const {
-      initialValue,
+      initialValue = '',
       className,
       placeholder,
       autocompletedResults,

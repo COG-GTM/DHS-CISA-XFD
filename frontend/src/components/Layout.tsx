@@ -12,7 +12,6 @@ import { useUserActivityTimeout } from 'hooks/useUserActivityTimeout';
 import { useAuthContext } from 'context/AuthContext';
 import UserInactiveModal from './UserInactivityModal/UserInactivityModal';
 import { CrossfeedFooter } from './Footer';
-import { SkipToMainContent } from './SkipToMainContent/index';
 import { matchPath } from 'utils/matchPath';
 import { drawerWidth, FilterDrawerV2 } from './FilterDrawerV2';
 import { useTheme } from '@mui/system';
@@ -138,7 +137,6 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         />
         <div style={{ display: 'flex' }}>
           <GovBanner />
-          <SkipToMainContent />
         </div>
         <>
           <div
