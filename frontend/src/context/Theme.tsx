@@ -236,72 +236,72 @@ const theme = createTheme({
   typography: {
     fontFamily: 'source sans pro, sans-serif',
     body1: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'regular',
       textTransform: 'none'
     },
     boldBody: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'bold',
       textTransform: 'none'
     },
     largeBody: {
-      fontSize: '1.333rem',
+      fontSize: '16px',
       fontWeight: 'regular',
       textTransform: 'none'
     },
     button: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'medium',
       textTransform: 'uppercase'
     },
     globalNav: {
-      fontSize: '1rem',
+      fontSize: '16px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     h1: {
-      fontSize: '3rem',
+      fontSize: '36px',
       fontWeight: 'bold',
       textTransform: 'none'
     },
     h2: {
-      fontSize: '2rem',
+      fontSize: '24px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     h3: {
-      fontSize: '1.5rem',
+      fontSize: '18px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     link: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'medium',
       textDecoration: 'underline'
     },
     miniStatCallout: {
-      fontSize: '1.667rem',
+      fontSize: '20px',
       fontWeight: 'medium',
       textTransform: 'uppercase'
     },
     statCallout: {
-      fontSize: '3rem',
+      fontSize: '36px',
       fontWeight: 'bold',
       textTransform: 'uppercase'
     },
     uiElementsI: {
-      fontSize: '0.833rem',
+      fontSize: '10px',
       fontWeight: 'regular',
       textTransform: 'none'
     },
     uiElementsII: {
-      fontSize: '1rem',
+      fontSize: '12px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     uiElementsIII: {
-      fontSize: '1rem',
+      fontSize: '12px',
       fontWeight: 'medium',
       fontStyle: 'italic',
       textTransform: 'none'
