@@ -56,6 +56,7 @@ from .api_methods.vulnerability import (
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
 )
+from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
@@ -934,9 +935,24 @@ async def get_scan_task_logs(
     return scan_tasks.get_scan_task_logs(scan_task_id, current_user)
 
 
-# ========================================
-#   Search Endpoints
-# ========================================
+@api_router.post(
+    "/xpanse-sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=SyncResponse,
+    tags=["Sync"],
+)
+async def xpanse_sync(
+    sync_body: SyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post organizations for datalake sync."""
+    try:
+        return await xpanse_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @api_router.post(
@@ -957,6 +973,11 @@ async def sync(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+
+
+# ========================================
+#   Search Endpoints
+# ========================================
 
 
 @api_router.post(

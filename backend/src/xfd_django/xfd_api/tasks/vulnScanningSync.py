@@ -232,10 +232,8 @@ def send_csv_to_sync(csv_data, bounds):
         "Content-Type": "application/json",
         "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
-
-    response = requests.post(
-        os.getenv("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
-    )
+    ENDPOINT_URL = f"{os.getenv('DMZ_SYNC_ENDPOINT')}/sync"
+    response = requests.post(ENDPOINT_URL, json=body, headers=headers, timeout=60)
     if response.status_code == 200:
         LOGGER.info("Successfully sent chunk to sync API")
 
