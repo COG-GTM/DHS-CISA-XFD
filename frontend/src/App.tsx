@@ -118,7 +118,11 @@ const App: React.FC = () => (
                           path="/create-account"
                           component={AuthCreateAccount}
                         />
-                        <Route exact path="/terms" component={TermsOfUse} />
+                        <RouteGuard
+                          exact
+                          path="/terms"
+                          component={TermsOfUse}
+                        />
                         <RouteGuard
                           exact
                           path="/inventory"

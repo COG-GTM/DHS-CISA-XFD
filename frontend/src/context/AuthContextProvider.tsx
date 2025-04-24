@@ -69,11 +69,21 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 
   const getProfile = useCallback(async () => {
     const user: User = await apiGet<User>('/users/me');
+
+    // 🔒 If user is blocked due to maintenance, show alert and stop login
+    if (user.login_blocked_by_maintenance) {
+      alert(
+        'Product has not officially been launched. Please check back again.'
+      );
+      await logout();
+      return;
+    }
+
     setAuthUser({
       ...user,
       isRegistered: user.first_name !== ''
     });
-  }, [setAuthUser, apiGet]);
+  }, [apiGet, logout]);
 
   const setProfile = useCallback(
     async (user: User) => {
