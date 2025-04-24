@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
 import { Vulnerability as VulnerabilityType } from 'types';
@@ -12,6 +12,7 @@ import {
   // To-do: Re-enable this as part of Status dropdown once the feature is approved.
   // MenuItem,
   // Menu,
+  Link,
   Paper,
   Stack,
   Typography
@@ -467,24 +468,22 @@ export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
       renderCell: (cellValues: GridRenderCellParams) => {
         if (cellValues.row.title.startsWith('CVE')) {
           return (
-            <Button
+            <Link
+              component={RouterLink}
+              to={{
+                pathname: '/inventory/vulnerability/' + cellValues.row.id
+              }}
               aria-label={`View NIST entry for ${cellValues.row.title}`}
               tabIndex={cellValues.tabIndex}
-              color="primary"
-              style={{ textDecorationLine: 'underline' }}
-              endIcon={<OpenInNewIcon />}
-              onClick={() =>
-                window.open(
-                  'https://nvd.nist.gov/vuln/detail/' + cellValues.row.title
-                )
-              }
             >
               {cellValues.row.title}
-            </Button>
+            </Link>
           );
         }
         return (
-          <Typography pl={1}>{truncateString(cellValues.row.title)}</Typography>
+          <Typography variant="uiElementsI" pl={1}>
+            {truncateString(cellValues.row.title)}
+          </Typography>
         );
       }
     },
@@ -547,19 +546,16 @@ export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
       flex: 1.5,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
-          <Button
+          <Link
+            component={RouterLink}
+            to={{
+              pathname: '/inventory/domain/' + cellValues.row.domainId
+            }}
             aria-label={`View details for ${cellValues.row.domain}`}
             tabIndex={cellValues.tabIndex}
-            color="primary"
-            style={{ textDecorationLine: 'underline' }}
-            sx={{ justifyContent: 'flex-start' }}
-            endIcon={<OpenInNewIcon />}
-            onClick={() =>
-              history.push('/inventory/domain/' + cellValues.row.domainId)
-            }
           >
             {cellValues.row.domain}
-          </Button>
+          </Link>
         );
       }
     },

@@ -79,10 +79,10 @@ export const AuthLogin: React.FC<{ showSignUp?: boolean }> = () => {
       display="flex"
       flexDirection="column"
       justifyContent="space-around"
-      height="100vh"
+      height="100%"
     >
       {notification?.status === 'active' && platformNotification}
-      <Typography variant="h3" textAlign="center">
+      <Typography variant="h2" textAlign="center" sx={{ mt: 5 }}>
         Welcome to CyHy Dashboard
       </Typography>
       <Box pt={3} mb={3} display="flex" justifyContent="center">

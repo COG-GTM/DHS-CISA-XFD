@@ -78,6 +78,7 @@ class ECSClient:
                             "MDL_PASSWORD": os.getenv("MDL_PASSWORD"),
                             "MI_ACCOUNT_NAME": os.getenv("MI_ACCOUNT_NAME"),
                             "MI_PASSWORD": os.getenv("MI_PASSWORD"),
+                            "NIST_API_KEY": os.getenv("NIST_API_KEY"),
                             "PE_DB_NAME": os.getenv("PE_DB_NAME"),
                             "PE_DB_USERNAME": os.getenv("PE_DB_USERNAME"),
                             "PE_DB_PASSWORD": os.getenv("PE_DB_PASSWORD"),
@@ -106,6 +107,8 @@ class ECSClient:
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME"),
                             "QUEUE_URL": os.getenv("QUEUE_URL", ""),
+                            "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
+                            "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
                         },
                         detach=True,
                     )
