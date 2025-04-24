@@ -248,7 +248,8 @@ const theme = createTheme({
     largeBody: {
       fontSize: '16px',
       fontWeight: 'regular',
-      textTransform: 'none'
+      textTransform: 'none',
+      letterSpacing: '0%'
     },
     button: {
       fontSize: '14px',
