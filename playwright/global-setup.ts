@@ -55,7 +55,7 @@ async function globalSetup(config: FullConfig) {
   await page.getByTestId('button').click();
   await page
     .getByLabel('Username (Email)')
-    .fill(String(process.env.PW_XFD_USERNAME));
+    .fill(String(process.env.PW_XFD_LOGIN));
   await page.getByRole('button', { name: 'Next' }).click();
   await page
     .getByLabel('Email address')
