@@ -372,7 +372,7 @@ SCAN_SCHEMA = {
         description="Enumerate and sync org assets.",
         max_concurrent_tasks=1,
     ),
-     "cisakev": ScanSchema(
+    "cisakev": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,

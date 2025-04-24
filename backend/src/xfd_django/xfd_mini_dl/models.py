@@ -2500,6 +2500,7 @@ class Ticket(models.Model):
         db_table = "ticket"
         unique_together = ["id"]
 
+
 class CisaKevCatalog(models.Model):
     """Define CISA KEV Catalog model."""
 
@@ -2558,6 +2559,7 @@ class CisaKevCatalog(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "cisa_kev_catalog"
+
 
 class PortScan(AutoLengthCheckModel):
     """The PortScan model."""
