@@ -14,17 +14,18 @@ interface MenuItemType {
 interface Props {
   menuItems?: MenuItemType[];
   title: string;
-  path?: string;
 }
 
-export const NavMenuButton: React.FC<Props> = ({ menuItems, title, path }) => {
+export const NavMenuButton: React.FC<Props> = ({ menuItems, title }) => {
   const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const menuRef = React.useRef<HTMLUListElement>(null);
-  const isLink = !!path;
+  const isLink = !!menuItems?.[0]?.path || '';
   const open = Boolean(anchorEl);
 
-  const isActive = isLink ? location.pathname === path : open;
+  const isActive = isLink
+    ? menuItems?.some((item) => item.path === location.pathname)
+    : open;
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) =>
     setAnchorEl(event.currentTarget);
@@ -61,21 +62,22 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title, path }) => {
     variant: 'text',
     sx: {
       display: { xs: 'none', lg: 'flex' },
+      ml: 2,
       whiteSpace: 'nowrap',
       borderRadius: 0
     },
     'aria-current': isActive ? 'page' : undefined
   };
 
-  if (isLink) {
+  if (title === 'Inventory') {
     buttonProps.component = RouterLink;
-    buttonProps.to = path!;
+    buttonProps.to = menuItems?.[0]?.path || '';
   } else {
     buttonProps.onClick = handleClick;
     buttonProps.endIcon = open ? (
-      <KeyboardArrowUpIcon />
+      <KeyboardArrowUpIcon sx={{ ml: -0.5 }} />
     ) : (
-      <KeyboardArrowDownIcon />
+      <KeyboardArrowDownIcon sx={{ ml: -0.5 }} />
     );
     buttonProps['aria-haspopup'] = 'true';
     buttonProps['aria-expanded'] = open ? 'true' : undefined;
