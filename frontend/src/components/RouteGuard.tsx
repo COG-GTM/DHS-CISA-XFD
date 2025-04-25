@@ -28,18 +28,6 @@ export const RouteGuard: React.FC<AuthRedirectRouteProps> = ({
   const { token, user, userMustSign, logout } = useAuthContext();
   const history = useHistory();
 
-  // Prevent access if user is flagged with login_blocked_by_maintenance.
-  // This is intentionally set to trigger after terms and state checks.
-  // if (user?.login_blocked_by_maintenance) {
-  //   return (
-  //     <div className="waiting-room-alert">
-  //       <p style={{ padding: '1rem', fontSize: '1.25rem', color: '#cc0000' }}>
-  //         Product has not officially been launched. Please check back again.
-  //       </p>
-  //     </div>
-  //   );
-  // }
-
   if (token && !user) {
     // waiting on user profile
     return null;
@@ -52,34 +40,18 @@ export const RouteGuard: React.FC<AuthRedirectRouteProps> = ({
     return null;
   }
 
+  // User must accept terms
   if (user && userMustSign) {
-    // user has authenticated but needs to sign terms
     console.log('User must sign check');
-    // history.push('/terms');
-    // return null;
-    return <Route {...rest} path="/terms" component={component} />;
+    history.push('/terms');
+    return null;
   }
 
-  // Original
+  // TODO: Uncomment if we decide to fully block logins during maintenance windows.
   // if (user && user.login_blocked_by_maintenance) {
   //   logout();
   //   return null;
   // }
-  // Check maintenance and logout if not /terms
-  // if (user && user.login_blocked_by_maintenance) {
-  //   const currentPath = window.location.pathname;
-  //   if (currentPath !== '/terms') {
-  //     logout();
-  //     return null;
-  //   }
-  // }
-  if (user && user.login_blocked_by_maintenance) {
-    const currentPath = window.location.pathname;
-    if (currentPath !== '/terms') {
-      logout();
-      return null;
-    }
-  }
 
   if (typeof unauth === 'string' && !user) {
     history.push(unauth);
