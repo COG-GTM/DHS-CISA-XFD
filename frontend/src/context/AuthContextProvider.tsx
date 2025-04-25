@@ -70,20 +70,26 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   const getProfile = useCallback(async () => {
     const user: User = await apiGet<User>('/users/me');
 
-    // 🔒 If user is blocked due to maintenance, show alert and stop login
-    if (user.login_blocked_by_maintenance) {
-      alert(
-        'Product has not officially been launched. Please check back again.'
-      );
-      await logout();
-      return;
-    }
+    // TODO: Uncomment this if we want to fully disable logins during maintenance windows.
+    // Currently commented to meet "waiting room" needs and allow login for state selection
+    // and user terms acceptance for new users.
+    //
+    // This acts as a backup safeguard to alert users login is unavailable and log them out.
+    // If user is blocked due to maintenance, show alert and logout.
+    //
+    // if (user.login_blocked_by_maintenance) {
+    //   alert(
+    //     'Product has not officially been launched. Please check back again.'
+    //   );
+    //   await logout();
+    //   return;
+    // }
 
     setAuthUser({
       ...user,
       isRegistered: user.first_name !== ''
     });
-  }, [apiGet, logout]);
+  }, [apiGet]);
 
   const setProfile = useCallback(
     async (user: User) => {
