@@ -107,6 +107,7 @@ def create_sub_domain(sub_domain_dict, data_source, org_record):
         return sub_domain
     except Exception as e:
         LOGGER.info("Error creating/updating sub_domain: %s", e)
+        return None
 
 
 def create_xpanse_service(service_dict, data_source, org_record):
