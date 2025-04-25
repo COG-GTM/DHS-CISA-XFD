@@ -30,11 +30,13 @@ from xfd_mini_dl.models import (
     User,
 )
 
-# JWT_ALGORITHM = "RS256"
 JWT_SECRET = settings.JWT_SECRET
 SECRET_KEY = settings.SECRET_KEY
 JWT_ALGORITHM = settings.JWT_ALGORITHM
 JWT_TIMEOUT_HOURS = settings.JWT_TIMEOUT_HOURS
+
+# User Types excluded from maintenance login blockers.
+LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
@@ -149,18 +151,21 @@ def get_current_active_user(
 
 def update_login_block_status(user: User) -> None:
     """Set user's login_blocked_by_maintenance based on active maintenance window."""
+    # Get current time (UTC) TODO: Check notifications TZ and confirm UTC on save.
     now = datetime.now(timezone.utc)
-    active_waiting_room = Notification.objects.filter(
+
+    # Check for active notifications using current time.
+    active_maintenance = Notification.objects.filter(
         start_datetime__lte=now,
         end_datetime__gte=now,
         maintenance_type="major",
         status="active",
         # message="waiting_room"  # uncomment if filtering by message later
     ).exists()
-    print(f"active waiting room: {active_waiting_room}")
 
+    # Only block users who are NOT in LOGIN_BLOCKED_EXCLUSIONS
     user.login_blocked_by_maintenance = (
-        active_waiting_room and user.user_type != "globalAdmin"
+        active_maintenance and user.user_type not in LOGIN_BLOCKED_EXCLUSIONS
     )
     user.save()
 
@@ -223,7 +228,7 @@ async def process_user(decoded_token):
             cognito_groups=decoded_token.get("cognito:groups"),
         )
 
-        # Check for active major maintenance window and login status
+        # Check for active major maintenance window and login status (New User)
         update_login_block_status(user)
 
         user.save()
@@ -236,16 +241,18 @@ async def process_user(decoded_token):
         user.cognito_email_verified = decoded_token.get("email_verified")
         user.cognito_groups = decoded_token.get("cognito:groups")
 
-        # Check for active major maintenance window and login status
+        # Check for active major maintenance window and login status (Existing User)
         update_login_block_status(user)
 
         user.save()
 
     if user:
-        if user.login_blocked_by_maintenance:
-            raise HTTPException(
-                status_code=403, detail="Login is currently blocked due to maintenance."
-            )
+        # TODO: Uncomment if we want to fully block logins during maintenance windows.
+        # Safeguard for preventing logins by returning 403 if login_blocked_by_maintenance.
+        # if user.login_blocked_by_maintenance:
+        #     raise HTTPException(
+        #         status_code=403, detail="Login is currently blocked due to maintenance."
+        #     )
         if not JWT_SECRET:
             raise HTTPException(status_code=500, detail="JWT_SECRET is not defined")
         # Generate JWT token
