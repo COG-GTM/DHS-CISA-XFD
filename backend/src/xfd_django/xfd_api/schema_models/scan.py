@@ -372,4 +372,12 @@ SCAN_SCHEMA = {
         description="Enumerate and sync org assets.",
         max_concurrent_tasks=1,
     ),
+    "cisakev": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="4096",
+        description="Fetches and stores the latest CISA Known Exploited Vulnerabilities catalog into the Mini Data Lake and flags relevant CVEs.",
+    ),
 }
