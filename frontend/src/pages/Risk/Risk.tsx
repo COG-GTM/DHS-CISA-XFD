@@ -352,11 +352,6 @@ const Risk: React.FC<ContextType> = ({
 
   if (isUpdateStateFormOpen) {
     return (
-      // <UpdateStateForm
-      //   open={isUpdateStateFormOpen}
-      //   user_id={user?.id ?? ''}
-      //   onClose={() => setIsUpdateStateFormOpen(false)}
-      // />
       <UpdateStateForm
         open={isUpdateStateFormOpen}
         user_id={user?.id ?? ''}
@@ -383,22 +378,8 @@ const Risk: React.FC<ContextType> = ({
     );
   }
 
-  // if (isLoginBlockedDialogOpen && maintenanceNotification) {
-  //   return (
-  //     <LoginBlockedDialog
-  //       open={isLoginBlockedDialogOpen}
-  //       message={maintenanceNotification.message}
-  //       onClose={() => setIsLoginBlockedDialogOpen(false)}
-  //     />
-  //   );
-  // }
   if (isLoginBlockedDialogOpen && maintenanceNotification) {
     return (
-      // <LoginBlockedDialog
-      //   open={isLoginBlockedDialogOpen}
-      //   message={maintenanceNotification.message}
-      //   onClose={() => setIsLoginBlockedDialogOpen(false)}
-      // />
       <LoginBlockedDialog
         open={isLoginBlockedDialogOpen}
         message={maintenanceNotification.message}
