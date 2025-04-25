@@ -61,11 +61,8 @@ def create_xpanse_bu(bu_dict, data_source):
             },
         )
         LOGGER.info("Business Unit %s created: %s", bu_dict["entity_name"], created)
-        alerts_to_link = []
         for alert in alerts:
-            linked_alert = create_xpanse_alert(alert, bu, data_source, org_record)
-            if linked_alert:
-                alerts_to_link.append(linked_alert)
+            create_xpanse_alert(alert, bu, data_source, org_record)
     except Exception as e:
         LOGGER.info("Error creating/updating business unit: %s", e)
     # TODO Need to create then link alerts
