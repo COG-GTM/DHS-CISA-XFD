@@ -7,7 +7,7 @@ from uuid import UUID
 
 # Third-Party Libraries
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
 
@@ -17,7 +17,7 @@ from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
-from .api_methods.cve import get_cves_by_id, get_cves_by_name
+from .api_methods.cve import get_cves_by_id, get_cves_by_name, get_all_cves
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
@@ -104,6 +104,8 @@ from .tools.user_logger_decorator import (
 
 # Define API router
 api_router = APIRouter()
+
+SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
 
 async def get_redis_client(request: Request):
@@ -283,42 +285,48 @@ async def call_get_cves_by_name(cve_name):
 
 # --- NIST CVE endpoint, CRASM-2431 ---
 @api_router.post(
-    "/cves",
-    response_model=List[CveSchema],
+    "/dmz_sync/cves",
+    response_class=JSONResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(get_current_active_user)],
     tags=["CVEs to sync to LZ db"],
 )
-async def lz_import_cves(cves: List[CveSchema]):
+async def get_call_all_cves():
     """
-    Bulk‐import or update CVE records into LZ database.
+    Return all CVEs plus an X-Salted-Checksum header for integrity.
     """
-    for cve in cves:
-        # Extract incoming data
-        payload = cve.dict()
+    try:
+        # reuse your existing logic to pull all CVEModel instances
+        records = await get_all_cves()
+    except HTTPException:
+        # re-raise any HTTPExceptions from get_all_cves()
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error: {}".format(e),
+        )
 
-        # JSON‐serialize the list fields into your TextFields
-        weaknesses = payload.pop("weaknesses", None)
-        payload["weaknesses"] = json.dumps(weaknesses) if weaknesses else None
+    # turn each Django model into a dict via Pydantic
+    payload = [CveSchema.from_orm(r).dict() for r in records]
 
-        refs = payload.pop("reference_urls", None)
-        payload["references"] = json.dumps(refs) if refs else None
+    response_json_obj = {
+        "status": "ok",
+        "payload": payload,
+    }
 
+    # deterministic JSON for checksum
+    json_str = json.dumps(
+        response_json_obj,
+        default=str,    # handles datetime and UUID
+        sort_keys=True, # stable key order
+    )
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
 
-        try:
-            # update_or_create by PK; defaults covers all other model fields
-            await sync_to_async(
-                CveModel.objects.update_or_create,
-                thread_sensitive=True,
-            )(id=payload["id"], defaults=payload)
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="DB error: {}".format(e),
-            )
-
-    # echo back exactly what was ingested
-    return cves
+    return JSONResponse(
+        content=response_json_obj,
+        headers={"X-Salted-Checksum": checksum},
+    )
 
 
 # ========================================
