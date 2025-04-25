@@ -11,6 +11,12 @@ class SyncResponse(BaseModel):
     """Response model for sync operations."""
 
 
+class XpanseSyncResponse(BaseModel):
+    """Response model for Xpanse sync operations."""
+
+    status: str
+
+
 class SyncBody(BaseModel):
     """Request body model for sync operations."""
 

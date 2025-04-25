@@ -78,7 +78,7 @@ from .schema_models.saved_search import (
 )
 from .schema_models.saved_search import SavedSearch as SavedSearchSchema
 from .schema_models.search import DomainSearchBody, SearchResponse
-from .schema_models.sync import SyncBody, SyncResponse
+from .schema_models.sync import SyncBody, SyncResponse, XpanseSyncResponse
 from .schema_models.user import (
     NewUser,
     NewUserResponseModel,
@@ -938,7 +938,7 @@ async def get_scan_task_logs(
 @api_router.post(
     "/xpanse-sync",
     dependencies=[Depends(get_current_active_user)],
-    response_model=SyncResponse,
+    response_model=XpanseSyncResponse,
     tags=["Sync"],
 )
 async def xpanse_sync(

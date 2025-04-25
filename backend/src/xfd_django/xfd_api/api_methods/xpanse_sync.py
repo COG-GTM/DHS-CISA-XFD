@@ -65,7 +65,6 @@ def create_xpanse_bu(bu_dict, data_source):
             create_xpanse_alert(alert, bu, data_source, org_record)
     except Exception as e:
         LOGGER.info("Error creating/updating business unit: %s", e)
-    # TODO Need to create then link alerts
     return bu, created
 
 
@@ -324,16 +323,13 @@ async def xpanse_sync_post(sync_body, request: Request, current_user):
     bus_updated = []
 
     # Data is Valid, process data
-    # Creat BusinessUnits
     business_units = json.loads(sync_body.data)
     LOGGER.info("Recieved Xpanse data: %d Business Units", len(business_units))
     for business_unit in business_units:
-        # All source fields mapped
         bu, created = create_xpanse_bu(business_unit, xpanse_data_source)
         if created:
             bus_created.append(bu)
         else:
             bus_updated.append(bu)
-        # Alerts
 
-    return {"status_code": 200, "body": "Xpanse sync completed successfully."}
+    return {"status": "success"}
