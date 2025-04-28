@@ -665,9 +665,8 @@ def create_vuln_normal_views(database):
                 END AS severity,
                 t.organization_id,
                 CASE
-                    WHEN te."action" IN ('OPENED', 'REOPENED', 'CHANGED', 'VERIFIED') THEN 'open'
-                    WHEN te."action" = 'CLOSED' THEN 'closed'
-                    ELSE 'unknown'  -- optional, in case other values sneak in
+                    WHEN t.is_open THEN 'open'
+                    ELSE 'closed'
                 END AS state,
                 t.vuln_source as data_source,
                 COALESCE(vs.description, te.reason, 'N/A') as description,
@@ -684,23 +683,22 @@ def create_vuln_normal_views(database):
                 null as structured_data,
                 null as kev_results
             FROM ticket t
-            LEFT JOIN ticket_event te
-            ON te.ticket_id = t.id
-            LEFT JOIN vuln_scan vs
-            ON vs.id = te.vuln_scan_id
+            LEFT JOIN LATERAL (
+                SELECT te.*
+                FROM ticket_event te
+                WHERE te.ticket_id = t.id
+                ORDER BY te.event_timestamp DESC, te.id DESC
+                LIMIT 1
+            ) te ON TRUE
+            LEFT JOIN vuln_scan vs ON vs.id = te.vuln_scan_id
             LEFT JOIN LATERAL (
                 SELECT sub_domain_id
                 FROM ips_subs ipsubs
                 WHERE ipsubs.ip_id = t.ip_id
-                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
+                ORDER BY sub_domain_id
                 LIMIT 1
-            ) AS sub_link ON TRUE
-            WHERE te.event_timestamp = (
-                SELECT MAX(event_timestamp)
-                FROM ticket_event
-                WHERE ticket_id = t.id
-            )
-        """
+            ) sub_link ON TRUE
+            """
         )
 
         cursor.execute(

@@ -1786,6 +1786,243 @@ class VulnScan(AutoLengthCheckModel):
         managed = manage_db
         db_table = "vuln_scan"
 
+class VulnScanSummary(models.Model):
+    """The VulnScanSummary Model."""
+
+    summary_date = models.DateField(
+        help_text="Date this summary represents (usually the date it was generated)."
+    )
+    start_date = models.DateTimeField(
+        help_text="Timestamp of the earliest last_change in the collection",
+    )
+    end_date = models.DateTimeField(
+        help_text="Timestamp of the latest last_change in the collection",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        related_name="vuln_scan_summaries",
+        on_delete=models.CASCADE,
+        help_text="Foreign key relationship to the organization the summary is built for.",
+    )
+    asset_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses found within an organizations reported CIDR blocks.",
+    )
+#     Build a model to hold VS scan summary data (summary every 24 hours)
+# ALL data in the summary should EXCLUDE tickets with ticket.false_positive = true
+
+# # of ticket.false_positive = true where ticket.open=true and ticket.source=nessus ?????????
+    false_positive_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of tickets marked as false positive.",
+    ) 
+# # assets scanned (ip) <- distinct count of ticket.ip where ticket.source=nessus and ticket.open = true
+    vulnerable_host_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have an open ticket associated with them.",
+    )
+# # assets scanned (ip) <- distinct count of host.ip
+    scanned_asset_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have been scanned",
+    )
+# # uniq services (port count) <- distinct count of ticket.port where ticket.source = nmap and ticket.open=true
+    unique_service_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have been scanned",
+    )
+# # uniq vulns by severity (several columns) <- distinct count of ticket.id where ticket.source=nessus and ticket.open = true by ticket.severity ** NOTE! this is from ticket.details->severity, it is not related to the cvss score, may need to update our ticket model **
+    unique_none_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 0",
+    )
+    unique_low_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 1",
+    )
+    unique_medium_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 2",
+    )
+    unique_high_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 3",
+    )
+    unique_critical_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 4",
+    )
+# # "risk services table" count of ticket.is_risky and ticket.open or distinct count of ip and port and where is_risky    
+    risky_services_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count risky services by port",
+    )
+# # hosts with 'unsupported software' <- distinct count of ticket.ip where ticket.source=nessus and ticket.vuln_name like %unsupported%
+    unsupported_software_count = models.IntegerField(
+            null=True,
+            blank=True,
+            help_text="Count of hosts with unsupported software",
+        )
+# # of uniq OSes found <--- I still need help ID'ing where this data will be found? TODO: get OS added to the ticket derived from the port_scan
+    unique_os_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of unique operating systems identified running on org assets.",
+    )
+# ?????total vuln count by severity (multiple columns) <-  count of ticket.id where ticket.open=true and ticket.source=nessus by ticket.severity ???? looks like the same as above?
+    none_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 0",
+    )
+    low_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 1",
+    )
+    medium_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 2",
+    )
+    high_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 3",
+    )
+    critical_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 4",
+    )
+# "max age of critical" (requires 'firstDiscovered' field) <- max(enddate() - firstDiscovered()) where ticket.open=true and ticket.severity=4 (critical)
+    critical_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open critical ticket.",
+    )
+# "max age of high" (requires 'firstDiscovered' field) <- max(enddate() - firstDiscovered()) where ticket.open=true and ticket.severity=4 (high)
+    high_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open high ticket.",
+    )
+# median age of current vulns by severity (requires 'firstDiscovered') <- age=enddate() - firstDiscovered(); where ticket.open=true by severity; sum(age)/count(by severity)
+    # none_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with no severity.",
+    # )
+    # low_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of low.",
+    # )
+    # medium_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of medium.",
+    # )
+    # high_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of high.",
+    # )
+    # critical_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of critical.",
+    # )
+# KEVs by severity in this scan (multiple columns, plain count)
+    none_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Kevs with no severity.",
+    )
+    low_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of low.",
+    )
+    medium_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of medium.",
+    )
+    high_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of high.",
+    )
+    critical_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of critical.",
+    )
+# "max age of a kev" (requires 'firstDiscovered',iskev) (THE oldest thing with a kev flag)
+    kev_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open KEV ticket.",
+    )
+# count of hosts with 1-5 vulns
+    one_to_five_vulns_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts that have 1 to 5 vulns.",
+    )
+# count of hosts with 6-9 vulns
+    six_to_nine_vulns_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts that have 6 to 9 vulns.",
+    )
+# count of hosts with 10+ vulns
+    ten_plus_vulns_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts that have 10+ vulns.",
+    )
+# "top 5 vulns by cvss score with host counts" <- distinct ticket.cve where ticket.source=nessus and ticket.open = true order by ticket.cvss_base_score limit 5, store as array of ticket foreign keys, with a distinct count of ticket.ip where ticket.source=nessus and ticket.open=true and ticket.cve = (one of the 5 cves from the first search)
+    top_5_vulns_by_cvss = models.JSONField(
+        blank=True, null=True, default=dict, help_text="Dictionary containing top 5 vulns based on severity and the count of hosts that have that CVE."
+    )
+
+    # filters ticket open not false positive source nessus agg: count by ticket has cve top 5 most occurring cves
+    # return cve name, number,      , cvss_score, count
+    top_5_occurring_cves = models.JSONField(
+        blank=True, null=True, default=list, help_text="Dictionary containing top 5 occuring CVEs vulns",
+    )
+    
+    top_5_occurring_kevs= models.JSONField(
+        blank=True, null=True, default=list, help_text="Dictionary containing top 5 KEV CVEs."
+    )
+# tickets included <- list of the tickets (foreign_key) that were included in this summary ticket.open=true & ticket.source=nessus
+    included_tickets = models.JSONField(
+        blank=True, null=True, default=list, help_text="List of ids for the tickets counted in this summary."
+    )
+# "top 5 riskiest hosts in this scan" -- This uses the weighted risk score (RRS). It's only used for a chart, I'm thinking the best return is a dataframe similar to the report? Need to evaluate the total RRS value by host, pick the highest hosts, then have a count of the number of tickets at each severity level for each host
+    top_5_risky_hosts = models.JSONField(
+        blank=True, null=True, default=dict, help_text="Dictionary containing top 5 risky hosts based on severity and the count number of tickets at each severity level."
+    )
+    class Meta:
+        """The Meta class for VulnScan."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "vuln_scan_summary"
+        unique_together = (("summary_date", "organization"),)
 
 class Cidr(models.Model):
     """The Cidr Model."""
@@ -2464,6 +2701,11 @@ class Ticket(models.Model):
         blank=True,
         help_text="Timestamp when this ticket was opened (vulnerability was first detected)",
     )
+    is_open = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Boolean field that flags if this ticket open or closed   ",
+    )
     is_kev = models.BooleanField(
         null=True,
         blank=True,
@@ -2490,6 +2732,12 @@ class Ticket(models.Model):
         max_length=255,
         null=True,
         blank=True,
+    )
+    operating_system = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of operating system identified by port scan for the ip of the ticket.",
     )
 
     class Meta:
@@ -2740,7 +2988,6 @@ class PortScanServiceSummary(models.Model):
         )  # datetime_pulled_from_redshift
 
 
-# #######  WAS Models  #########
 
 
 class WasTrackerCustomerdata(models.Model):

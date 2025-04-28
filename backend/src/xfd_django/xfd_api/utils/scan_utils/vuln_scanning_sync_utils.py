@@ -158,6 +158,15 @@ def save_ticket_event_to_datalake(ticket_event_obj, ticket_id, details):
         LOGGER.info("TicketEvent already exists")
         return None
 
+def get_latest_os_type(ip_str):
+    """Extract OS type for a given ip."""
+    port_scan = (
+        PortScan.objects
+        .filter(ip_string=ip_str, service_os_type__isnull=False)
+        .order_by('-time_scanned')
+        .first()
+    )
+    return port_scan.service_os_type if port_scan else None
 
 def save_ticket_to_datalake(ticket_obj, events, details):
     """

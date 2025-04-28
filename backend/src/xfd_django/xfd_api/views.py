@@ -37,6 +37,8 @@ from .api_methods.stats import (
     get_user_services_count,
     stats_latest_vulns,
     stats_most_common_vulns,
+    get_vs_trending_data,
+    get_vs_condensed_trending_data,
 )
 from .api_methods.sync import sync_post
 from .api_methods.user import (
@@ -994,6 +996,31 @@ async def export_endpoint(
 # ========================================
 #   Stat Endpoints
 # ========================================
+@api_router.post(
+    "/stats/trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.VsTrendResponse,
+    tags=["Stats"],
+)
+async def get_vs_trending_stats(
+    filter_data: stat_schema.TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve VS Summary data filtered by the user."""
+    return get_vs_trending_data(filter_data.filters, current_user)
+
+@api_router.post(
+    "/stats/condensed_trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.VsTrendCondensedResponse,
+    tags=["Stats"],
+)
+async def get_vs_condensed_trending_stats(
+    filter_data: stat_schema.TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve VS Summary data filtered by the user."""
+    return get_vs_condensed_trending_data(filter_data.filters, current_user)
 
 
 @api_router.post(
