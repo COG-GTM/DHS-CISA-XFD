@@ -1,6 +1,13 @@
 import React from 'react';
 import { NavLink, useLocation, Link as RouterLink } from 'react-router-dom';
-import { Box, Button, ButtonProps, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  Button,
+  ButtonProps,
+  Link as MuiLink,
+  Menu,
+  MenuItem
+} from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
@@ -59,13 +66,8 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title }) => {
   const isDropdown = !isLink && menuItems && menuItems.length > 0;
 
   const buttonProps: Partial<ButtonProps> & { to?: string } = {
-    variant: 'text',
-    sx: {
-      display: { xs: 'none', lg: 'flex' },
-      ml: 2,
-      whiteSpace: 'nowrap',
-      borderRadius: 0
-    },
+    variant: 'globalNav',
+    sx: { display: { xs: 'none', lg: 'flex' }, px: 1 },
     'aria-current': isActive ? 'page' : undefined
   };
 
@@ -75,9 +77,9 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title }) => {
   } else {
     buttonProps.onClick = handleClick;
     buttonProps.endIcon = open ? (
-      <KeyboardArrowUpIcon sx={{ ml: -0.5 }} />
+      <KeyboardArrowUpIcon />
     ) : (
-      <KeyboardArrowDownIcon sx={{ ml: -0.5 }} />
+      <KeyboardArrowDownIcon />
     );
     buttonProps['aria-haspopup'] = 'true';
     buttonProps['aria-expanded'] = open ? 'true' : undefined;
@@ -105,8 +107,28 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title }) => {
     borderRadius: 0
   };
 
+  const getMenuItemProps = (item: MenuItemType) => {
+    const isExternal =
+      item.path?.startsWith('http') ||
+      item.path?.startsWith('www') ||
+      item.path?.startsWith('mailto');
+    if (isExternal) {
+      return {
+        component: MuiLink,
+        href: item.path,
+        target: '_blank',
+        rel: 'noopener noreferrer'
+      };
+    }
+
+    return {
+      component: NavLink,
+      to: item.onClick ? '#' : item.path
+    };
+  };
+
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
       <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
         <Button {...buttonProps}>
           <Box sx={borderBoxStyle}>{title}</Box>
@@ -127,8 +149,7 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title }) => {
           {menuItems.map((item, index) => (
             <MenuItem
               key={index}
-              component={NavLink}
-              to={item.onClick ? '#' : item.path}
+              {...getMenuItemProps(item)}
               selected={item.path === location.pathname && !item.onClick}
               onClick={() => item.onClick?.()}
               tabIndex={0}

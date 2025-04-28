@@ -155,10 +155,11 @@ export const Header: React.FC = () => {
         borderColor: 'neutrals.light',
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        height: '84px'
       }}
     >
-      <Toolbar disableGutters sx={{ maxWidth: '1088px', width: '100%', p: 0 }}>
+      <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
         {headerLogo}
         {userLevel > 0 && (
           <>
@@ -166,9 +167,9 @@ export const Header: React.FC = () => {
               const [title, menuItems] = Object.entries(sectionObj)[0] || [];
               if (!title || !menuItems) {
                 return null;
-              } else if (userLevel === 1 && title === 'Learning Center') {
+              } else if (title === 'Learning Center') {
                 return (
-                  <Box key={title + index} sx={{ mr: 4 }}>
+                  <Box key={title + index} sx={{ mr: { xs: 0, xl: 4 } }}>
                     <NavMenuButton title={title} menuItems={menuItems} />
                   </Box>
                 );

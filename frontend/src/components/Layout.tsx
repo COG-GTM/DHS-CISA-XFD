@@ -128,65 +128,48 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   return (
-    <StyledScopedCssBaseline classes={{ root: classes.overrides }}>
-      <div className={classes.root}>
-        <UserInactiveModal
-          isOpen={isTimedOut}
-          onCountdownEnd={handleCountdownEnd}
-          countdown={60} // 60 second timer for user inactivity timeout
-        />
-        <div style={{ display: 'flex' }}>
-          <GovBanner />
-        </div>
-        <>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              height: '100vh'
-            }}
-          >
-            {userLevel > 0 ? (
-              <FilterDrawerV2
-                setIsFilterDrawerOpen={setIsFilterDrawerOpen}
-                isFilterDrawerOpen={isFilterDrawerOpen}
-                isMobile={isMobile}
-                initialFilters={initialFilters}
-              />
-            ) : (
-              <Drawer
-                variant="persistent"
-                id="dummy-drawer-does-not-offer-functionality"
-                sx={{ width: drawerWidth }}
-                PaperProps={{ style: { position: 'unset' } }}
-              >
-                <Box width={drawerWidth} />
-              </Drawer>
-            )}
-            <Main open={isFilterDrawerOpen} user={!!user}>
-              <Header />
-              <div className="main-content" id="main-content" tabIndex={-1} />
-              <Box
-                display="block"
-                position="relative"
-                flex="1"
-                height="calc(100vh - 64px - 72px - 24px)"
-                overflow="scroll"
-                sx={{
-                  '&::-webkit-scrollbar': {
-                    display: 'none'
-                  }
-                }}
-                zIndex={16}
-              >
-                {children}
-              </Box>
-              <CrossfeedFooter />
-            </Main>
-          </div>
-        </>
+    <>
+      <UserInactiveModal
+        isOpen={isTimedOut}
+        onCountdownEnd={handleCountdownEnd}
+        countdown={60} // 60 second timer for user inactivity timeout
+      />
+      <div style={{ display: 'flex' }}>
+        <GovBanner />
       </div>
-    </StyledScopedCssBaseline>
+      <>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            height: '100vh'
+          }}
+        >
+          {userLevel > 0 ? (
+            <FilterDrawerV2
+              setIsFilterDrawerOpen={setIsFilterDrawerOpen}
+              isFilterDrawerOpen={isFilterDrawerOpen}
+              isMobile={isMobile}
+              initialFilters={initialFilters}
+            />
+          ) : (
+            <Drawer
+              variant="persistent"
+              id="dummy-drawer-does-not-offer-functionality"
+              sx={{ width: drawerWidth }}
+              PaperProps={{ style: { position: 'unset' } }}
+            >
+              <Box width={drawerWidth} />
+            </Drawer>
+          )}
+          <Main open={isFilterDrawerOpen} user={!!user}>
+            <Header />
+            <div className="main-content" id="main-content" tabIndex={-1} />
+            {children}
+          </Main>
+        </div>
+      </>
+    </>
   );
 };
 

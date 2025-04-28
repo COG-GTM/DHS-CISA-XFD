@@ -83,6 +83,13 @@ declare module '@mui/material/Typography' {
   }
 }
 
+declare module '@mui/material/Button' {
+  interface ButtonPropsVariantOverrides {
+    globalNav: true;
+    primaryContained: true;
+  }
+}
+
 const theme = createTheme({
   breakpoints: {
     values: {
@@ -98,7 +105,7 @@ const theme = createTheme({
     MuiButton: {
       variants: [
         {
-          props: { variant: 'contained' },
+          props: { variant: 'primaryContained' },
           style: ({ theme }: { theme: Theme }) => ({
             backgroundColor: theme.palette.primary.dark,
             color: theme.palette.primary.white,
@@ -112,15 +119,17 @@ const theme = createTheme({
           })
         },
         {
-          props: { variant: 'text' },
-          style: ({ theme }: { theme: Theme }) => ({
-            backgroundColor: 'transparent',
+          props: { variant: 'globalNav' },
+          style: ({ theme }) => ({
+            ...theme.typography.globalNav,
+            textTransform: 'none',
             color: theme.palette.primary.dark,
+            backgroundColor: 'transparent',
+            borderRadius: 0,
+            whiteSpace: 'nowrap',
             '&:hover': {
               color: theme.palette.primary.darker
-            },
-            fontSize: '1rem',
-            textTransform: 'none'
+            }
           })
         }
       ]
@@ -258,7 +267,7 @@ const theme = createTheme({
     },
     globalNav: {
       fontSize: '16px',
-      fontWeight: 'medium',
+      fontWeight: 'bold',
       textTransform: 'none'
     },
     h1: {
