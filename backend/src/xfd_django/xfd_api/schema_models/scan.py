@@ -247,6 +247,12 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Finds vulnerabilities and malware from the LookingGlass API",
     ),
+    "nist": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        description="Update CVE data using the NIST API",
+    ),
     "portscanner": ScanSchema(
         type="fargate",
         is_passive=False,
@@ -366,5 +372,13 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Enumerate and sync org assets.",
         max_concurrent_tasks=1,
+    ),
+    "cisakev": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="4096",
+        description="Fetches and stores the latest CISA Known Exploited Vulnerabilities catalog into the Mini Data Lake and flags relevant CVEs.",
     ),
 }
