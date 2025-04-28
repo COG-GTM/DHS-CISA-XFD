@@ -1,11 +1,11 @@
 """Stats schema."""
 # Standard Python Libraries
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 # Third-Party Libraries
 from pydantic import BaseModel, Field
-from uuid import UUID
 
 
 # Reusing the previously defined models
@@ -117,13 +117,17 @@ class TrendStatsFilterSchema(BaseModel):
 
     organization_id: str
     start_date: Optional[date] = Field(
-        default_factory=lambda: (datetime.today() - timedelta(days=180)).date()  # Using `datetime.today()`
+        default_factory=lambda: (
+            datetime.today() - timedelta(days=180)
+        ).date()  # Using `datetime.today()`
     )
     end_date: Optional[date] = Field(
         default_factory=lambda: datetime.today().date()  # Using `datetime.today()`
     )
     source: str = "vs"
     enhanced_data: Optional[bool] = False
+
+
 class TrendStatsPayloadSchema(BaseModel):
     """Trend Stats Payload Schema model."""
 
@@ -131,6 +135,8 @@ class TrendStatsPayloadSchema(BaseModel):
 
 
 class CVEItem(BaseModel):
+    """CVE Item model."""
+
     count: int
     cve_string: str
     vuln_name: Optional[str] = None
@@ -139,6 +145,8 @@ class CVEItem(BaseModel):
 
 
 class RiskyHostStats(BaseModel):
+    """Risky Host Stats model."""
+
     low: int
     rrs: float
     high: int
@@ -148,6 +156,8 @@ class RiskyHostStats(BaseModel):
 
 
 class VulnScanSummaryResponse(BaseModel):
+    """Vuln Scan Summary Response model."""
+
     id: int
     summary_date: date
     start_date: datetime
@@ -188,7 +198,10 @@ class VulnScanSummaryResponse(BaseModel):
     included_tickets: Optional[List[UUID]] = None
     top_5_risky_hosts: Optional[Dict[str, RiskyHostStats]] = {}
 
+
 class HostScanSummaryResponse(BaseModel):
+    """Host Scan Summary Response model."""
+
     id: int
     summary_date: Optional[date] = None
     start_date: Optional[datetime] = None
@@ -202,7 +215,10 @@ class HostScanSummaryResponse(BaseModel):
     up_host_count: Optional[int] = 0
     down_host_count: Optional[int] = 0
 
+
 class PortScanSummaryResponse(BaseModel):
+    """Port Scan Summary Response model."""
+
     id: int
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
@@ -215,7 +231,10 @@ class PortScanSummaryResponse(BaseModel):
     unique_ip_count: Optional[int] = 0
     unique_service_count: Optional[int] = 0
 
+
 class PortScanServiceSummaryResponse(BaseModel):
+    """Port Scan Service Summary Response model."""
+
     id: int
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
@@ -226,16 +245,20 @@ class PortScanServiceSummaryResponse(BaseModel):
     risky_ports: Optional[List[int]] = []
     unique_ip_count: Optional[int] = 0
     unique_service_count: Optional[int] = 0
+
+
 class VsTrendResponse(BaseModel):
-    """VS Trend Response model"""   
+    """VS Trend Response model."""
 
     host_summaries: List[HostScanSummaryResponse]
     port_scan_summaries: List[PortScanSummaryResponse]
     port_scan_service_summaries: List[PortScanServiceSummaryResponse]
     vuln_scan_summaries: List[VulnScanSummaryResponse]
 
+
 class VsTrendCondensedResponse(BaseModel):
-    
+    """Response schema for the VS Trend Condensed endpoint."""
+
     host_summary_id: Optional[List[int]] = None
     host_summary_summary_date: Optional[List[date]] = None
     host_summary_start_date: Optional[List[datetime]] = None
@@ -267,7 +290,7 @@ class VsTrendCondensedResponse(BaseModel):
     port_scan_service_summary_risky_ports: Optional[List[List[int]]] = None
     port_scan_service_summary_unique_ip_count: Optional[List[int]] = None
     port_scan_service_summary_unique_service_count: Optional[List[int]] = None
-    
+
     vuln_scan_summary_id: Optional[List[int]] = None
     vuln_scan_summary_summary_date: Optional[List[date]] = None
     vuln_scan_summary_start_date: Optional[List[datetime]] = None
@@ -302,7 +325,11 @@ class VsTrendCondensedResponse(BaseModel):
     vuln_scan_summary_one_to_five_vulns_count: Optional[List[int]] = None
     vuln_scan_summary_six_to_nine_vulns_count: Optional[List[int]] = None
     vuln_scan_summary_ten_plus_vulns_count: Optional[List[int]] = None
-    vuln_scan_summary_top_5_vulns_by_cvss: Optional[List[Optional[List[CVEItem]]]] = None
+    vuln_scan_summary_top_5_vulns_by_cvss: Optional[
+        List[Optional[List[CVEItem]]]
+    ] = None
     vuln_scan_summary_top_5_occurring_cves: Optional[List[List[CVEItem]]] = None
     vuln_scan_summary_top_5_occurring_kevs: Optional[List[List[CVEItem]]] = None
-    vuln_scan_summary_top_5_risky_hosts: Optional[List[Dict[str, RiskyHostStats]]] = None
+    vuln_scan_summary_top_5_risky_hosts: Optional[
+        List[Dict[str, RiskyHostStats]]
+    ] = None

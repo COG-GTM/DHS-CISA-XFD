@@ -35,10 +35,10 @@ from .api_methods.stats import (
     get_stats,
     get_user_ports_count,
     get_user_services_count,
+    get_vs_condensed_trending_data,
+    get_vs_trending_data,
     stats_latest_vulns,
     stats_most_common_vulns,
-    get_vs_trending_data,
-    get_vs_condensed_trending_data,
 )
 from .api_methods.sync import sync_post
 from .api_methods.user import (
@@ -1008,6 +1008,7 @@ async def get_vs_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_trending_data(filter_data.filters, current_user)
+
 
 @api_router.post(
     "/stats/condensed_trends",

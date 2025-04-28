@@ -5,6 +5,8 @@ port scans, hosts, and tickets from Redshift into the Django models.
 """
 
 # Standard Python Libraries
+from collections import Counter
+
 # Uncomment the above to run the script standalone
 import datetime
 from ipaddress import IPv4Network, IPv6Network, ip_network
@@ -12,13 +14,12 @@ import json
 import logging
 import os
 import random
-from collections import Counter
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
-from django.db.models import Count, Max, Min, Q, F, ExpressionWrapper, FloatField, Sum
-from django.db.models.functions import Power
 from django.db import connections
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
+from django.db.models.functions import Power
 from django.utils import timezone
 import psycopg2
 import requests
@@ -28,6 +29,7 @@ from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
 from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
     fetch_orgs_and_relations,
+    get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
     save_host,
@@ -37,7 +39,6 @@ from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
     save_ticket_to_datalake,
     save_vuln_scan,
     save_vuln_scan_to_xfd_db,
-    get_latest_os_type,
 )
 from xfd_mini_dl.models import (
     Cidr,
@@ -51,7 +52,7 @@ from xfd_mini_dl.models import (
     RiskyServiceGroup,
     Sector,
     Ticket,
-    VulnScanSummary
+    VulnScanSummary,
 )
 
 logging.basicConfig(
@@ -159,6 +160,7 @@ def main():
         process_tickets(tickets, org_id_dict)
         LOGGER.info("Finished processing tickets")
         create_vuln_scan_summary()
+
 
 def detect_data_set(query):
     """Detect the data set from the query."""
@@ -588,11 +590,13 @@ def process_tickets(tickets, org_id_dict):
                 "opened_timestamp": parser.parse(time_opened_str)
                 if time_opened_str
                 else None,
-                "is_open":ticket.get("open"),
+                "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
-                "operating_system": get_latest_os_type(ticket.get("ip")) if ticket.get("ip") else None,
+                "operating_system": get_latest_os_type(ticket.get("ip"))
+                if ticket.get("ip")
+                else None,
             }
             events = json.loads(ticket.get("events", "[]"))
             save_ticket_to_datalake(ticket_dict, events, details)
@@ -602,12 +606,12 @@ def process_tickets(tickets, org_id_dict):
                 f"Error processing ticket data: {e} - {owner_id} - {ticket.get('owner')}"
             )
 
+
 def get_asset_owned_count(org):
+    """Return count of IPs in the reported CIDRs for passed org."""
     # Get only CIDRs currently associated with the org via CidrOrgs.current=True
     cidrs = Cidr.objects.filter(
-        cidrorgs__organization=org,
-        cidrorgs__current=True,
-        network__isnull=False
+        cidrorgs__organization=org, cidrorgs__current=True, network__isnull=False
     ).distinct()
 
     total_ips = 0
@@ -620,54 +624,71 @@ def get_asset_owned_count(org):
 
     return total_ips
 
+
 def get_risky_services_count(org):
+    """Return count of risky services for passed org."""
     return (
-        Ticket.objects
-        .filter(
+        Ticket.objects.filter(
             organization=org,
             is_risky=True,
             closed_timestamp__isnull=True,
-            vuln_port__isnull=False
+            vuln_port__isnull=False,
         )
-        .values('ip_string', 'vuln_port')
+        .values("ip_string", "vuln_port")
         .distinct()
         .count()
     )
+
 
 def create_vuln_scan_summary(summary_date=None):
     """Fill vuln_scan_summary table for todays date."""
     if summary_date is None:
         summary_date = timezone.now().date()
-    
+
     # open_tickets = Ticket.objects.filter(closed_timestamp__isnull=True, false_positive__in=[False, None])
 
     for org in Organization.objects.all():
         # Base queryset for this org
         all_org_tickets = Ticket.objects.filter(organization=org)
         open_tickets = all_org_tickets.filter(is_open=True)
-        included = open_tickets.filter(false_positive__in=[False, None], vuln_source='nessus')
+        included = open_tickets.filter(
+            false_positive__in=[False, None], vuln_source="nessus"
+        )
 
         if not included.exists():
             continue  # Skip orgs with no valid tickets
 
-        start_date = included.aggregate(Min('updated_timestamp'))['updated_timestamp__min']
-        end_date = included.aggregate(Max('updated_timestamp'))['updated_timestamp__max']
+        start_date = included.aggregate(Min("updated_timestamp"))[
+            "updated_timestamp__min"
+        ]
+        end_date = included.aggregate(Max("updated_timestamp"))[
+            "updated_timestamp__max"
+        ]
 
         # Severity logic using cvss_severity
-        severity_map = {0: 'none', 1: 'low', 2: 'medium', 3: 'high', 4: 'critical'}
+        severity_map = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
         severity_counts = {
-            f"{severity_map[level]}_severity_count": included.filter(cvss_severity=level).count()
+            f"{severity_map[level]}_severity_count": included.filter(
+                cvss_severity=level
+            ).count()
             for level in severity_map
         }
-        #TODO confirm if the distinct field should be id and not ip_string
+        # TODO confirm if the distinct field should be id and not ip_string
         unique_sev_counts = {
-            f"unique_{severity_map[level]}_severity_count": included.filter(cvss_severity=level).values('id').distinct().count()
+            f"unique_{severity_map[level]}_severity_count": included.filter(
+                cvss_severity=level
+            )
+            .values("id")
+            .distinct()
+            .count()
             for level in severity_map
         }
 
         # KEV by severity
         kev_counts = {
-            f"{severity_map[level]}_kev_count": included.filter(is_kev=True, cvss_severity=level).count()
+            f"{severity_map[level]}_kev_count": included.filter(
+                is_kev=True, cvss_severity=level
+            ).count()
             for level in severity_map
         }
 
@@ -687,45 +708,55 @@ def create_vuln_scan_summary(summary_date=None):
         # high_max = max_age(included.filter(cvss_severity=3), end_date)
         # kev_max = max_age(included.filter(is_kev=True), end_date)
 
-
         # Max ages option 3
         def max_ticket_life(qs):
-            return max([
-                (u - o).days
-                for o, u in qs.values_list('opened_timestamp', 'updated_timestamp')
-                if o and u
-            ], default=0)
-        
+            """Calculate max ticket fife for the passed query."""
+            return max(
+                [
+                    (u - o).days
+                    for o, u in qs.values_list("opened_timestamp", "updated_timestamp")
+                    if o and u
+                ],
+                default=0,
+            )
+
         critical_max = max_ticket_life(included.filter(cvss_severity=4))
         high_max = max_ticket_life(included.filter(cvss_severity=3))
         kev_max = max_ticket_life(included.filter(is_kev=True))
 
         # Host vuln distribution
-        ip_counts = Counter(included.values_list('ip_string', flat=True))
+        ip_counts = Counter(included.values_list("ip_string", flat=True))
         one_to_five = sum(1 for c in ip_counts.values() if 1 <= c <= 5)
         six_to_nine = sum(1 for c in ip_counts.values() if 6 <= c <= 9)
         ten_plus = sum(1 for c in ip_counts.values() if c >= 10)
 
         # Filtered and grouped by CVE string
         top_cves_qs = (
-            included
-            .filter(~Q(cve_string__isnull=True), ~Q(cve_string=''))
-            .values('cve_string')
+            included.filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
+            .values("cve_string")
             .annotate(
-                count=Count('id'),
-                cvss_base_score=Max('cvss_base_score'),  # or Avg if you want to average across tickets
-                severity=Max('cvss_severity'),  # assuming severity is consistent across same CVE
-                vuln_name=Max('vuln_name'),
+                count=Count("id"),
+                cvss_base_score=Max(
+                    "cvss_base_score"
+                ),  # or Avg if you want to average across tickets
+                severity=Max(
+                    "cvss_severity"
+                ),  # assuming severity is consistent across same CVE
+                vuln_name=Max("vuln_name"),
             )
-            .order_by('-count')[:5]
+            .order_by("-count")[:5]
         )
 
         top_5_occurring_cves = [
             {
                 "cve_string": cve["cve_string"],
                 "vuln_name": cve["vuln_name"],
-                "cvss_base_score": float(cve["cvss_base_score"]) if cve["cvss_base_score"] is not None else None,
-                "severity_string": severity_map.get(int(cve["severity"]), "unknown") if cve["severity"] is not None else "unknown",
+                "cvss_base_score": float(cve["cvss_base_score"])
+                if cve["cvss_base_score"] is not None
+                else None,
+                "severity_string": severity_map.get(int(cve["severity"]), "unknown")
+                if cve["severity"] is not None
+                else "unknown",
                 "count": cve["count"],
             }
             for cve in top_cves_qs
@@ -733,25 +764,28 @@ def create_vuln_scan_summary(summary_date=None):
 
         # Same logic but filtered for KEVs
         top_kevs_qs = (
-            included
-            .filter(is_kev=True)
-            .filter(~Q(cve_string__isnull=True), ~Q(cve_string=''))
-            .values('cve_string')
+            included.filter(is_kev=True)
+            .filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
+            .values("cve_string")
             .annotate(
-                count=Count('id'),
-                cvss_base_score=Max('cvss_base_score'),
-                severity=Max('cvss_severity'),
-                vuln_name=Max('vuln_name'),
+                count=Count("id"),
+                cvss_base_score=Max("cvss_base_score"),
+                severity=Max("cvss_severity"),
+                vuln_name=Max("vuln_name"),
             )
-            .order_by('-count')[:5]
+            .order_by("-count")[:5]
         )
 
         top_5_occurring_kevs = [
             {
                 "cve_string": kev["cve_string"],
                 "vuln_name": kev["vuln_name"],
-                "cvss_base_score": float(kev["cvss_base_score"]) if kev["cvss_base_score"] is not None else None,
-                "severity_string": severity_map.get(int(kev["severity"]), "unknown") if kev["severity"] is not None else "unknown",
+                "cvss_base_score": float(kev["cvss_base_score"])
+                if kev["cvss_base_score"] is not None
+                else None,
+                "severity_string": severity_map.get(int(kev["severity"]), "unknown")
+                if kev["severity"] is not None
+                else "unknown",
                 "count": kev["count"],
             }
             for kev in top_kevs_qs
@@ -761,33 +795,38 @@ def create_vuln_scan_summary(summary_date=None):
             organization=org,
             is_open=True,
             cvss_base_score__isnull=False,
-            ip_string__isnull=False
+            ip_string__isnull=False,
         )
 
         # Base RRS score expression: (cvss_base_score^7) / 1,000,000
         weighted_expr = ExpressionWrapper(
-            Power(F('cvss_base_score'), 7) / 1000000,
-            output_field=FloatField()
+            Power(F("cvss_base_score"), 7) / 1000000, output_field=FloatField()
         )
 
-        risky_host_qs = tickets.values('ip_string').annotate(
-            total=Count('id'),
-            low=Count('id', filter=Q(cvss_severity=1)),
-            medium=Count('id', filter=Q(cvss_severity=2)),
-            high=Count('id', filter=Q(cvss_severity=3)),
-            critical=Count('id', filter=Q(cvss_severity=4)),
-            weighted=Sum(weighted_expr),
-        ).order_by('-weighted')[:5]
+        risky_host_qs = (
+            tickets.values("ip_string")
+            .annotate(
+                total=Count("id"),
+                low=Count("id", filter=Q(cvss_severity=1)),
+                medium=Count("id", filter=Q(cvss_severity=2)),
+                high=Count("id", filter=Q(cvss_severity=3)),
+                critical=Count("id", filter=Q(cvss_severity=4)),
+                weighted=Sum(weighted_expr),
+            )
+            .order_by("-weighted")[:5]
+        )
 
         # Convert to dictionary for JSONField
         top_5_hosts = {
-            item['ip_string']: {
-                'total': item['total'],
-                'low': item['low'],
-                'medium': item['medium'],
-                'high': item['high'],
-                'critical': item['critical'],
-                'rrs': round(item['weighted'], 2) if item['weighted'] is not None else 0,
+            item["ip_string"]: {
+                "total": item["total"],
+                "low": item["low"],
+                "medium": item["medium"],
+                "high": item["high"],
+                "critical": item["critical"],
+                "rrs": round(item["weighted"], 2)
+                if item["weighted"] is not None
+                else 0,
             }
             for item in risky_host_qs
         }
@@ -798,21 +837,36 @@ def create_vuln_scan_summary(summary_date=None):
             defaults={
                 "start_date": start_date,
                 "end_date": end_date,
-                "asset_count": get_asset_owned_count(org),
+                "assets_owned_count": get_asset_owned_count(org),
                 "false_positive_count": all_org_tickets.filter(
                     false_positive=True,
                     closed_timestamp__isnull=True,
-                    vuln_source='nessus'
+                    vuln_source="nessus",
                 ).count(),
-                "vulnerable_host_count": included.values('ip_string').distinct().count(),
+                "vulnerable_host_count": included.values("ip_string")
+                .distinct()
+                .count(),
                 "scanned_asset_count": Host.objects.filter(
-                    organization=org,
-                    latest_vulnscan_timestamp__isnull=False
-                ).values('ip_string').distinct().count(),
-                "unique_service_count": open_tickets.filter(vuln_source='nmap').values('vuln_port').distinct().count(),
+                    organization=org, latest_vulnscan_timestamp__isnull=False
+                )
+                .values("ip_string")
+                .distinct()
+                .count(),
+                "unique_service_count": open_tickets.filter(vuln_source="nmap")
+                .values("vuln_port")
+                .distinct()
+                .count(),
                 "risky_services_count": get_risky_services_count(org),
-                "unsupported_software_count": included.filter(vuln_name__icontains='unsupported').values('ip_string').distinct().count(),
-                "unique_os_count": open_tickets.exclude(operating_system__isnull=True).values('operating_system').distinct().count(),
+                "unsupported_software_count": included.filter(
+                    vuln_name__icontains="unsupported"
+                )
+                .values("ip_string")
+                .distinct()
+                .count(),
+                "unique_os_count": open_tickets.exclude(operating_system__isnull=True)
+                .values("operating_system")
+                .distinct()
+                .count(),
                 **severity_counts,
                 **unique_sev_counts,
                 **kev_counts,
@@ -825,14 +879,17 @@ def create_vuln_scan_summary(summary_date=None):
                 "top_5_vulns_by_cvss": None,
                 "top_5_occurring_cves": top_5_occurring_cves,
                 "top_5_occurring_kevs": top_5_occurring_kevs,
-                "included_tickets": list(included.values_list('id', flat=True)),
+                "included_tickets": list(included.values_list("id", flat=True)),
                 "top_5_risky_hosts": top_5_hosts,
-            }
+            },
         )
 
+
 def enforce_latest_flag_port_scan():
-    with connections['mini_data_lake'].cursor() as cursor:
-        cursor.execute("""
+    """Flag outdated port scans as latest = False."""
+    with connections["mini_data_lake"].cursor() as cursor:
+        cursor.execute(
+            """
             WITH latest_scans AS (
                 SELECT DISTINCT ON (organization_id, ip_string, port)
                     id
@@ -842,7 +899,8 @@ def enforce_latest_flag_port_scan():
             )
             UPDATE port_scan
             SET latest = (id IN (SELECT id FROM latest_scans))
-        """)        
+        """
+        )
 
 
 def process_port_scans(port_scans, org_id_dict):
