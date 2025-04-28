@@ -668,28 +668,24 @@ def create_vuln_scan_summary(summary_date=None):
         # Severity logic using cvss_severity
         severity_map = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
         severity_counts = {
-            f"{severity_map[level]}_severity_count": included.filter(
-                cvss_severity=level
-            ).count()
-            for level in severity_map
+            f"{name}_severity_count": included.filter(cvss_severity=level).count()
+            for level, name in severity_map.items()
         }
         # TODO confirm if the distinct field should be id and not ip_string
         unique_sev_counts = {
-            f"unique_{severity_map[level]}_severity_count": included.filter(
-                cvss_severity=level
-            )
+            f"unique_{name}_severity_count": included.filter(cvss_severity=level)
             .values("id")
             .distinct()
             .count()
-            for level in severity_map
+            for level, name in severity_map.items()
         }
 
         # KEV by severity
         kev_counts = {
-            f"{severity_map[level]}_kev_count": included.filter(
+            f"{name}_kev_count": included.filter(
                 is_kev=True, cvss_severity=level
             ).count()
-            for level in severity_map
+            for level, name in severity_map.items()
         }
 
         # Max ages option 1
@@ -710,13 +706,9 @@ def create_vuln_scan_summary(summary_date=None):
 
         # Max ages option 3
         def max_ticket_life(qs):
-            """Calculate max ticket fife for the passed query."""
+            """Calculate max ticket life for the passed query."""
             return max(
-                [
-                    (u - o).days
-                    for o, u in qs.values_list("opened_timestamp", "updated_timestamp")
-                    if o and u
-                ],
+                ( (u - o).days for o, u in qs.values_list("opened_timestamp", "updated_timestamp") if o and u ),
                 default=0,
             )
 
