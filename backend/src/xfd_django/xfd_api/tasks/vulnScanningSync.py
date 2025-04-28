@@ -708,7 +708,11 @@ def create_vuln_scan_summary(summary_date=None):
         def max_ticket_life(qs):
             """Calculate max ticket life for the passed query."""
             return max(
-                ( (u - o).days for o, u in qs.values_list("opened_timestamp", "updated_timestamp") if o and u ),
+                (
+                    (u - o).days
+                    for o, u in qs.values_list("opened_timestamp", "updated_timestamp")
+                    if o and u
+                ),
                 default=0,
             )
 

@@ -360,7 +360,7 @@ def build_fake_ticket(org):
         opened_timestamp=opened_time,
         is_kev=random.choice([True, False]),
         is_risky=random.choice([True, False]),
-        is_open = not closed_time,
+        is_open=not closed_time,
         service_name="ftp",
         nmi_service_group="NMI",
         risky_service_group=random.choice(
