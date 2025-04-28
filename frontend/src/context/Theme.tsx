@@ -83,22 +83,29 @@ declare module '@mui/material/Typography' {
   }
 }
 
+declare module '@mui/material/Button' {
+  interface ButtonPropsVariantOverrides {
+    globalNav: true;
+    primaryContained: true;
+  }
+}
+
 const theme = createTheme({
   breakpoints: {
     values: {
       xs: 0,
-      sm: 600,
+      sm: 480,
       mds: 750,
-      md: 900,
-      lg: 1200,
-      xl: 1536
+      md: 769,
+      lg: 1024,
+      xl: 1440
     }
   },
   components: {
     MuiButton: {
       variants: [
         {
-          props: { variant: 'contained' },
+          props: { variant: 'primaryContained' },
           style: ({ theme }: { theme: Theme }) => ({
             backgroundColor: theme.palette.primary.dark,
             color: theme.palette.primary.white,
@@ -112,15 +119,17 @@ const theme = createTheme({
           })
         },
         {
-          props: { variant: 'text' },
-          style: ({ theme }: { theme: Theme }) => ({
-            backgroundColor: 'transparent',
+          props: { variant: 'globalNav' },
+          style: ({ theme }) => ({
+            ...theme.typography.globalNav,
+            textTransform: 'none',
             color: theme.palette.primary.dark,
+            backgroundColor: 'transparent',
+            borderRadius: 0,
+            whiteSpace: 'nowrap',
             '&:hover': {
               color: theme.palette.primary.darker
-            },
-            fontSize: '1rem',
-            textTransform: 'none'
+            }
           })
         }
       ]
@@ -236,72 +245,73 @@ const theme = createTheme({
   typography: {
     fontFamily: 'source sans pro, sans-serif',
     body1: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'regular',
       textTransform: 'none'
     },
     boldBody: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'bold',
       textTransform: 'none'
     },
     largeBody: {
-      fontSize: '1.333rem',
+      fontSize: '16px',
       fontWeight: 'regular',
-      textTransform: 'none'
+      textTransform: 'none',
+      letterSpacing: '0%'
     },
     button: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'medium',
       textTransform: 'uppercase'
     },
     globalNav: {
-      fontSize: '1rem',
-      fontWeight: 'medium',
+      fontSize: '16px',
+      fontWeight: 'bold',
       textTransform: 'none'
     },
     h1: {
-      fontSize: '3rem',
+      fontSize: '36px',
       fontWeight: 'bold',
       textTransform: 'none'
     },
     h2: {
-      fontSize: '2rem',
+      fontSize: '24px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     h3: {
-      fontSize: '1.5rem',
+      fontSize: '18px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     link: {
-      fontSize: '1.167rem',
+      fontSize: '14px',
       fontWeight: 'medium',
       textDecoration: 'underline'
     },
     miniStatCallout: {
-      fontSize: '1.667rem',
+      fontSize: '20px',
       fontWeight: 'medium',
       textTransform: 'uppercase'
     },
     statCallout: {
-      fontSize: '3rem',
+      fontSize: '36px',
       fontWeight: 'bold',
       textTransform: 'uppercase'
     },
     uiElementsI: {
-      fontSize: '0.833rem',
+      fontSize: '10px',
       fontWeight: 'regular',
       textTransform: 'none'
     },
     uiElementsII: {
-      fontSize: '1rem',
+      fontSize: '12px',
       fontWeight: 'medium',
       textTransform: 'none'
     },
     uiElementsIII: {
-      fontSize: '1rem',
+      fontSize: '12px',
       fontWeight: 'medium',
       fontStyle: 'italic',
       textTransform: 'none'

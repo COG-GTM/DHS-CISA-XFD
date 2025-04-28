@@ -85,7 +85,7 @@ export const Header: React.FC = () => {
     },
     {
       menuItemTitle: 'Send Feedback',
-      path: '#',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
@@ -103,7 +103,7 @@ export const Header: React.FC = () => {
     },
     {
       menuItemTitle: 'CISA Resources',
-      path: '#',
+      path: 'https://www.cisa.gov',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
@@ -119,9 +119,9 @@ export const Header: React.FC = () => {
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
     { 'Scanning Results': scanningResults },
     { Inventory: inventoryMenuItems },
-    userLevel > STANDARD_USER ? { 'Admin Hub': adminHubMenuItems } : {},
-    { Support: supportMenuItems },
     { 'Learning Center': learningCenterMenuItems },
+    { Support: supportMenuItems },
+    userLevel > 1 ? { 'Admin Hub': adminHubMenuItems } : {},
     { 'My Account': userMenuItems }
   ];
 
@@ -132,19 +132,13 @@ export const Header: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'left',
         width: '100%',
-        ml: { md: 'none', lg: 4, xl: 10 },
         transition: 'margin-left 0.3s ease-in-out'
       }}
     >
       <Box component="img" src={cisaLogo} sx={{ height: 60 }} alt="C Logo" />
       <Typography
-        variant="largeBody"
-        sx={{
-          fontSize: '1.375rem',
-          fontWeight: 'bold',
-          ml: 1,
-          color: 'primary.dark'
-        }}
+        variant="h1"
+        sx={{ fontSize: '22px', color: 'primary.darker' }}
       >
         CyHy Dashboard
       </Typography>
@@ -153,63 +147,54 @@ export const Header: React.FC = () => {
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       sx={{
         backgroundColor: 'neutrals.white',
-        borderBottom: '.5px solid',
-        borderColor: 'neutrals.light'
+        borderBottom: '0.5px solid',
+        borderColor: 'neutrals.light',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '84px'
       }}
     >
-      <Toolbar>
+      <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
         {headerLogo}
         {userLevel > 0 && (
           <>
-            <Box
-              sx={{ flexGrow: 2, display: 'flex', justifyContent: 'center' }}
-            >
-              <NavMenuButton
-                menuItems={scanningResults}
-                title="Scanning Results"
-              />
-              <NavMenuButton title="Inventory" path="/inventory" />
-              <NavMenuButton
-                menuItems={learningCenterMenuItems}
-                title="Learning Center"
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: '100%',
-                mr: { md: 'none', lg: 4, xl: 10 },
-                transition: 'margin-right 0.3s ease-in-out'
-              }}
-            >
-              <NavMenuButton menuItems={supportMenuItems} title="Support" />
-              {userLevel > 1 && (
+            {allMenuItems.map((sectionObj, index) => {
+              const [title, menuItems] = Object.entries(sectionObj)[0] || [];
+              if (!title || !menuItems) {
+                return null;
+              } else if (title === 'Learning Center') {
+                return (
+                  <Box key={title + index} sx={{ mr: { xs: 0, xl: 4 } }}>
+                    <NavMenuButton title={title} menuItems={menuItems} />
+                  </Box>
+                );
+              }
+              return (
                 <NavMenuButton
-                  menuItems={adminHubMenuItems}
-                  title="Admin Hub"
+                  key={title + index}
+                  title={title}
+                  menuItems={menuItems}
                 />
-              )}
-              <NavMenuButton menuItems={userMenuItems} title="My Account" />
-              <IconButton
-                sx={{
-                  display: { xs: 'flex', lg: 'none' },
-                  color: 'primary.dark'
-                }}
-                aria-label="Open mobile menu"
-                aria-haspopup="true"
-                aria-controls={openDrawer ? 'mobile-menu' : undefined}
-                aria-expanded={openDrawer ? 'true' : undefined}
-                onClick={toggleDrawer(!openDrawer)}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Box>
+              );
+            })}
+            <IconButton
+              sx={{
+                display: { xs: 'flex', lg: 'none' },
+                color: 'primary.dark'
+              }}
+              aria-label="Open mobile menu"
+              aria-haspopup="true"
+              aria-controls={openDrawer ? 'mobile-menu' : undefined}
+              aria-expanded={openDrawer ? 'true' : undefined}
+              onClick={toggleDrawer(!openDrawer)}
+            >
+              <MenuIcon />
+            </IconButton>
             <NavMenuDrawer
               openDrawer={openDrawer}
               toggleDrawer={toggleDrawer}
