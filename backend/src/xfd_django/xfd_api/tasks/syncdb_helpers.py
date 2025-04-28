@@ -328,8 +328,11 @@ def build_fake_ticket(org):
     port = random.choice([21, 22, 80, 443])
     protocol = random.choice(["tcp", "udp"])
     opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
-    closed_time = opened_time + timedelta(days=random.randint(30, 600))
-
+    # 70% chance of ticket being open (closed_timestamp = None)
+    if random.random() < 0.7:
+        closed_time = None
+    else:
+        closed_time = opened_time + timedelta(days=random.randint(30, 600))
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
@@ -357,6 +360,7 @@ def build_fake_ticket(org):
         opened_timestamp=opened_time,
         is_kev=random.choice([True, False]),
         is_risky=random.choice([True, False]),
+        is_open=True if not closed_time else False,
         service_name="ftp",
         nmi_service_group="NMI",
         risky_service_group=random.choice(
