@@ -1,7 +1,7 @@
 """Get CVEs from FastAPI endpoint and sync to local DB."""
 # Third-Party Libraries
 from django.core.management.base import BaseCommand
-from xfd_api.sync.nist_lz_sync import handler
+from xfd_api.tasks.nist_lz_sync import handler
 
 
 class Command(BaseCommand):

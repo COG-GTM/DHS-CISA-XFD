@@ -56,7 +56,7 @@ def validate_response_checksum(response):
         calc = hashlib.sha256((SALT + serialized).encode()).hexdigest()
         return received == calc
     except Exception as e:
-        LOGGER.error("Error validating checksum: {}".format(e))
+        LOGGER.error("Error validating checksum: %s",e)
         return False
 
 

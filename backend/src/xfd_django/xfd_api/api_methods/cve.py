@@ -1,7 +1,7 @@
 """Cve API."""
 
 # Third-Party Libraries
-from asgrieful import sync_to_async
+from asgiref.sync import sync_to_async
 from fastapi import HTTPException, status
 from xfd_mini_dl.models import Cve as CveModel
 
