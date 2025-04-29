@@ -178,7 +178,7 @@ class Scheduler:
         if scan.manual_run_pending:
             return True
 
-        # Check if the scan has run recently based on its lastRun timestamp.
+        # Check if the scan has run recently based on its last_run timestamp.
         if scan.last_run:
             if timezone.is_naive(scan.last_run):
                 scan.last_run = timezone.make_aware(
