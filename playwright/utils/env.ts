@@ -4,9 +4,6 @@ export function determineUrl(): string {
   const insideDocker = process.env.PW_DOCKER === 'true';
   const insideECS = process.env.PW_ECS;
 
-  console.log(
-    `Inside Docker: ${insideDocker}, Inside ECS: ${insideECS}, Branch: ${branch}`
-  );
   if (insideECS) {
     if (branch === 'integration') {
       return 'https://integration.crossfeed.cyber.dhs.gov';
