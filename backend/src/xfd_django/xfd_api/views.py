@@ -13,8 +13,6 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
 
-from ..auth import is_global_write_admin
-
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
 from .api_methods import notification as notification_methods
@@ -297,13 +295,9 @@ async def call_get_cves_by_name(cve_name):
 async def get_call_all_cves(current_user: User = Depends(get_current_active_user)):
     """Return all CVEs plus an X-Salted-Checksum header for integrity."""
     # enforce write-admin access
-    if not is_global_write_admin(current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
-        )
     try:
         # reuse your existing logic to pull all CVEModel instances
-        records = await get_all_cves()
+        records = await get_all_cves(current_user)
     except HTTPException:
         # re-raise any HTTPExceptions from get_all_cves()
         raise

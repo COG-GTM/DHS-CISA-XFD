@@ -5,6 +5,8 @@ from asgrieful import sync_to_async
 from fastapi import HTTPException, status
 from xfd_mini_dl.models import Cve as CveModel
 
+from ..auth import is_global_write_admin
+
 
 def get_cves_by_id(cve_id):
     """
@@ -34,7 +36,7 @@ def get_cves_by_name(cve_name):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_all_cves():
+async def get_all_cves(current_user):
     """
     Get all Cves.
 
@@ -42,6 +44,10 @@ async def get_all_cves():
         list: a list of Cve objects.
     """
     try:
+        if not is_global_write_admin(current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
+            )
         # Fetch all Cve instances (sync ORM → async view)
         all_cves = await sync_to_async(
             list,
