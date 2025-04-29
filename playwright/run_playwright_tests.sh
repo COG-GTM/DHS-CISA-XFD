@@ -19,6 +19,9 @@ OVERRIDES=$(
     --arg username "$PW_XFD_USERNAME" \
     --arg password "$PW_XFD_PASSWORD" \
     --arg otpsecret "$PW_XFD_2FA_SECRET" \
+    --arg login "$PW_XFD_LOGIN" \
+    --arg pw_ecs "$PW_ECS" \
+    --arg git_branch "$GIT_BRANCH" \
     --arg s3HtmlPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/html/" \
     --arg s3JsonPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/results.json" \
     '{
@@ -32,7 +35,10 @@ OVERRIDES=$(
           { "name": "PW_XFD_URL", "value": $url },
           { "name": "PW_XFD_USERNAME", "value": $username },
           { "name": "PW_XFD_PASSWORD", "value": $password },
-          { "name": "PW_XFD_2FA_SECRET", "value": $otpsecret }
+          { "name": "PW_XFD_2FA_SECRET", "value": $otpsecret },
+          { "name": "PW_XFD_LOGIN", "value": $login },
+          { "name": "PW_ECS", "value": "true" },
+          { "name": "GIT_BRANCH", "value": $git_branch }
         ],
         "command": [
           "sh",

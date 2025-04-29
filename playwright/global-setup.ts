@@ -1,6 +1,7 @@
 import { chromium, FullConfig } from '@playwright/test';
 import * as OTPAuth from 'otpauth';
 import * as dotenv from 'dotenv';
+import { determineUrl } from './utils/env'; // ✅ Now this works
 
 dotenv.config();
 
@@ -18,7 +19,6 @@ let totp = new OTPAuth.TOTP({
 const axios = require('axios');
 
 const waitForFrontend = async (url, timeout = 60000, checkInterval = 5000) => {
-  console.log(`Url: ${url}`);
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     try {
@@ -46,12 +46,19 @@ const waitForFrontend = async (url, timeout = 60000, checkInterval = 5000) => {
 };
 
 async function globalSetup(config: FullConfig) {
+  const baseUrl = determineUrl();
+  console.log(`Base URL: ${baseUrl}`);
+  if (!baseUrl) {
+    throw new Error(
+      '❌ PW_XFD_URL is not defined. Make sure it is set as an environment variable.'
+    );
+  }
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
   //Log in with credentials.
-  await waitForFrontend(process.env.PW_XFD_URL);
-  await page.goto(String(process.env.PW_XFD_URL));
+  await waitForFrontend(baseUrl);
+  await page.goto(baseUrl);
   await page.getByTestId('button').click();
   await page
     .getByLabel('Username (Email)')

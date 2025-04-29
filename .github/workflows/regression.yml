@@ -33,6 +33,9 @@ jobs:
         with:
           node-version: 18
 
+      - name: Set environment variables for staging
+        run: echo "ENVIRONMENT=github" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: npm ci
 
@@ -40,12 +43,15 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          PW_XFD_URL: ${{ vars.PW_XFD_URL }}
           PW_XFD_2FA_ISSUER: ${{ secrets.PW_XFD_2FA_ISSUER }}
           PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
+          PW_ECS: true
+          GIT_BRANCH: integration
           AUTOMATED_TEST_REPORTS_BUCKET_NAME:
-            ${{ secrets.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
+            ${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_SUBNET: ${{ secrets.AWS_SUBNET }}
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
@@ -59,7 +65,6 @@ jobs:
          PW_XFD_2FA_ISSUER=$PW_XFD_2FA_ISSUER \
          PW_XFD_2FA_SECRET=$PW_XFD_2FA_SECRET \
          PW_XFD_PASSWORD=$PW_XFD_PASSWORD \
-         PW_XFD_USERNAME=$PW_XFD_USERNAME \
          ./run_playwright_tests.sh
 
         continue-on-error: false  # Ensure it stops if the ECS task fails
@@ -99,6 +104,9 @@ jobs:
         with:
           node-version: 18
 
+      - name: Set environment variables for staging
+        run: echo "ENVIRONMENT=github" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: npm ci
 
@@ -106,13 +114,18 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          PW_XFD_URL: ${{ vars.PW_XFD_URL }}
           PW_XFD_2FA_ISSUER: ${{ secrets.PW_XFD_2FA_ISSUER }}
           PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
+          PW_ECS: true
+          GIT_BRANCH: integration
           AUTOMATED_TEST_REPORTS_BUCKET_NAME:
-            ${{ secrets.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
+            ${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_SUBNET: ${{ secrets.AWS_SUBNET }}
+          AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
         run: |
          chmod +x run_playwright_tests.sh
          CLUSTER_NAME=crossfeed-playwright-integration-ecs-cluster \
