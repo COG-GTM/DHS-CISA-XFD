@@ -460,9 +460,8 @@ def get_vs_condensed_trending_data(filters, current_user):
         if organization_id not in org_ids:
             raise HTTPException(
                 status_code=404, detail="Access denied to requested organization."
-            )  # User has no accessible organizations
+            )
 
-    # Regional Admins can only view vulnerabilities in their region
     if current_user.user_type == "regionalAdmin" and current_user.region_id:
         if organization.region_id != current_user.region_id:
             raise HTTPException(
@@ -471,53 +470,57 @@ def get_vs_condensed_trending_data(filters, current_user):
 
     start_date = filters.start_date
     end_date = filters.end_date
-
-    host_summaries = HostSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-
-    port_scan_summaries = PortScanSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-
-    port_scan_service_summaries = PortScanServiceSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-
-    vuln_scan_summaries_qs = VulnScanSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-    excluded = []
-    # Defer the field you don’t want to load into memory
-    if not filters.enhanced_data:
-        vuln_scan_summaries_qs = vuln_scan_summaries_qs.defer("included_tickets")
-        excluded = ["included_tickets"]
+    sources = filters.sources
     results = {}
 
-    # Host Summaries: Collect all fields for host_summaries
-    for obj in host_summaries:
-        for field, value in model_to_dict(obj).items():
-            key = f"host_summary_{field}"
-            results.setdefault(key, []).append(value)
+    # Helper function to replace None values with empty lists
+    def replace_none_with_empty_list(results_dict):
+        for key, value in results_dict.items():
+            if value is None:
+                results_dict[key] = []
+        return results_dict
 
-    # Port Scan Summaries: Collect all fields for port_scan_summaries
-    for obj in port_scan_summaries:
-        for field, value in model_to_dict(obj).items():
-            key = f"port_scan_summary_{field}"
-            results.setdefault(key, []).append(value)
+    if "host" in sources:
+        host_summaries = HostSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        for obj in host_summaries:
+            for field, value in model_to_dict(obj).items():
+                key = f"host_summary_{field}"
+                results.setdefault(key, []).append(value)
 
-    # Port Scan Service Summaries: Collect all fields for port_scan_service_summaries
-    for obj in port_scan_service_summaries:
-        for field, value in model_to_dict(obj).items():
-            key = f"port_scan_service_summary_{field}"
-            results.setdefault(key, []).append(value)
+    if "port" in sources:
+        port_scan_summaries = PortScanSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        for obj in port_scan_summaries:
+            for field, value in model_to_dict(obj).items():
+                key = f"port_scan_summary_{field}"
+                results.setdefault(key, []).append(value)
 
-    # Vuln Scan Summaries: Collect all fields for vuln_scan_summaries
-    for summary in vuln_scan_summaries_qs:
-        for field, value in model_to_dict(summary, exclude=excluded).items():
-            key = f"vuln_scan_summary_{field}"
-            results.setdefault(key, []).append(value)
+    if "port_service" in sources:
+        port_scan_service_summaries = PortScanServiceSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        for obj in port_scan_service_summaries:
+            for field, value in model_to_dict(obj).items():
+                key = f"port_scan_service_summary_{field}"
+                results.setdefault(key, []).append(value)
 
+    if "vs" in sources:
+        vuln_scan_summaries_qs = VulnScanSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        excluded = []
+        if not filters.enhanced_data:
+            vuln_scan_summaries_qs = vuln_scan_summaries_qs.defer("included_tickets")
+            excluded = ["included_tickets"]
+        for summary in vuln_scan_summaries_qs:
+            for field, value in model_to_dict(summary, exclude=excluded).items():
+                key = f"vuln_scan_summary_{field}"
+                results.setdefault(key, []).append(value)
+
+    results = replace_none_with_empty_list(results)
     return results
 
 
@@ -552,36 +555,50 @@ def get_vs_trending_data(filters, current_user):
 
     start_date = filters.start_date
     end_date = filters.end_date
+    sources = filters.sources
+    if "host" in sources:
+        host_summaries = HostSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        host_dicts = [model_to_dict(obj) for obj in host_summaries]
+    else:
+        host_dicts = None
 
-    host_summaries = HostSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-
-    port_scan_summaries = PortScanSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-
-    port_scan_service_summaries = PortScanServiceSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-
-    vuln_scan_summaries_qs = VulnScanSummary.objects.filter(
-        organization=organization, summary_date__range=(start_date, end_date)
-    )
-    excluded = []
-    # Defer the field you don’t want to load into memory
-    if not filters.enhanced_data:
-        vuln_scan_summaries_qs = vuln_scan_summaries_qs.defer("included_tickets")
-        excluded = ["included_tickets"]
-    # Convert to dicts while excluding the field
-    vuln_scan_summaries = [
-        model_to_dict(summary, exclude=excluded) for summary in vuln_scan_summaries_qs
-    ]
-    return {
-        "host_summaries": [model_to_dict(obj) for obj in host_summaries],
-        "port_scan_summaries": [model_to_dict(obj) for obj in port_scan_summaries],
-        "port_scan_service_summaries": [
+    if "port" in sources:
+        port_scan_summaries = PortScanSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        ports_dicts = [model_to_dict(obj) for obj in port_scan_summaries]
+    else:
+        ports_dicts = None
+    if "port_service" in sources:
+        port_scan_service_summaries = PortScanServiceSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        port_services_dicts = [
             model_to_dict(obj) for obj in port_scan_service_summaries
-        ],
+        ]
+    else:
+        port_services_dicts = None
+    if "vs" in sources:
+        vuln_scan_summaries_qs = VulnScanSummary.objects.filter(
+            organization=organization, summary_date__range=(start_date, end_date)
+        )
+        excluded = []
+        # Defer the field you don’t want to load into memory
+        if not filters.enhanced_data:
+            vuln_scan_summaries_qs = vuln_scan_summaries_qs.defer("included_tickets")
+            excluded = ["included_tickets"]
+        # Convert to dicts while excluding the field
+        vuln_scan_summaries = [
+            model_to_dict(summary, exclude=excluded)
+            for summary in vuln_scan_summaries_qs
+        ]
+    else:
+        vuln_scan_summaries = None
+    return {
+        "host_summaries": host_dicts,
+        "port_scan_summaries": ports_dicts,
+        "port_scan_service_summaries": port_services_dicts,
         "vuln_scan_summaries": vuln_scan_summaries,
     }

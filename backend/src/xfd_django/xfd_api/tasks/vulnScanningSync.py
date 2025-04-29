@@ -631,7 +631,7 @@ def get_risky_services_count(org):
         Ticket.objects.filter(
             organization=org,
             is_risky=True,
-            closed_timestamp__isnull=True,
+            is_open=True,
             vuln_port__isnull=False,
         )
         .values("ip_string", "vuln_port")
@@ -644,8 +644,6 @@ def create_vuln_scan_summary(summary_date=None):
     """Fill vuln_scan_summary table for todays date."""
     if summary_date is None:
         summary_date = timezone.now().date()
-
-    # open_tickets = Ticket.objects.filter(closed_timestamp__isnull=True, false_positive__in=[False, None])
 
     for org in Organization.objects.all():
         # Base queryset for this org
@@ -674,7 +672,7 @@ def create_vuln_scan_summary(summary_date=None):
         # TODO confirm if the distinct field should be id and not ip_string
         unique_sev_counts = {
             f"unique_{name}_severity_count": included.filter(cvss_severity=level)
-            .values("id")
+            .values("vuln_source_id")
             .distinct()
             .count()
             for level, name in severity_map.items()
@@ -688,23 +686,6 @@ def create_vuln_scan_summary(summary_date=None):
             for level, name in severity_map.items()
         }
 
-        # Max ages option 1
-        # def max_age(qs):
-        #     return max([(timezone.now() - t).days for t in qs.values_list('opened_timestamp', flat=True) if t], default=0)
-
-        # critical_max = max_age(included.filter(cvss_severity=4))
-        # high_max = max_age(included.filter(cvss_severity=3))
-        # kev_max = max_age(included.filter(is_kev=True))
-
-        # Max ages option 2
-        # def max_age(qs, end):
-        #     return max([(end - t).days for t in qs.values_list('opened_timestamp', flat=True) if t], default=0)
-
-        # critical_max = max_age(included.filter(cvss_severity=4), end_date)
-        # high_max = max_age(included.filter(cvss_severity=3), end_date)
-        # kev_max = max_age(included.filter(is_kev=True), end_date)
-
-        # Max ages option 3
         def max_ticket_life(qs):
             """Calculate max ticket life for the passed query."""
             return max(
@@ -836,7 +817,7 @@ def create_vuln_scan_summary(summary_date=None):
                 "assets_owned_count": get_asset_owned_count(org),
                 "false_positive_count": all_org_tickets.filter(
                     false_positive=True,
-                    closed_timestamp__isnull=True,
+                    is_open=True,
                     vuln_source="nessus",
                 ).count(),
                 "vulnerable_host_count": included.values("ip_string")
@@ -872,7 +853,6 @@ def create_vuln_scan_summary(summary_date=None):
                 "one_to_five_vulns_count": one_to_five,
                 "six_to_nine_vulns_count": six_to_nine,
                 "ten_plus_vulns_count": ten_plus,
-                "top_5_vulns_by_cvss": None,
                 "top_5_occurring_cves": top_5_occurring_cves,
                 "top_5_occurring_kevs": top_5_occurring_kevs,
                 "included_tickets": list(included.values_list("id", flat=True)),

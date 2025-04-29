@@ -124,7 +124,7 @@ class TrendStatsFilterSchema(BaseModel):
     end_date: Optional[date] = Field(
         default_factory=lambda: datetime.today().date()  # Using `datetime.today()`
     )
-    source: str = "vs"
+    sources: Optional[List[str]] = ["vs"]
     enhanced_data: Optional[bool] = False
 
 
@@ -158,41 +158,40 @@ class RiskyHostStats(BaseModel):
 class VulnScanSummaryResponse(BaseModel):
     """Vuln Scan Summary Response model."""
 
-    id: int
-    summary_date: date
-    start_date: datetime
-    end_date: datetime
-    organization: UUID
-    asset_count: int
-    false_positive_count: int
-    vulnerable_host_count: int
-    scanned_asset_count: int
-    unique_service_count: int
-    unique_none_severity_count: int
-    unique_low_severity_count: int
-    unique_medium_severity_count: int
-    unique_high_severity_count: int
-    unique_critical_severity_count: int
-    risky_services_count: int
-    unsupported_software_count: int
-    unique_os_count: int
-    none_severity_count: int
-    low_severity_count: int
-    medium_severity_count: int
-    high_severity_count: int
-    critical_severity_count: int
-    critical_max_age: int
-    high_max_age: int
-    none_kev_count: int
-    low_kev_count: int
-    medium_kev_count: int
-    high_kev_count: int
-    critical_kev_count: int
-    kev_max_age: int
-    one_to_five_vulns_count: int
-    six_to_nine_vulns_count: int
-    ten_plus_vulns_count: int
-    top_5_vulns_by_cvss: Optional[List[CVEItem]] = None
+    id: Optional[int] = None
+    summary_date: Optional[date] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    organization: Optional[UUID] = None
+    asset_count: Optional[int] = None
+    false_positive_count: Optional[int] = None
+    vulnerable_host_count: Optional[int] = None
+    scanned_asset_count: Optional[int] = None
+    unique_service_count: Optional[int] = None
+    unique_none_severity_count: Optional[int] = None
+    unique_low_severity_count: Optional[int] = None
+    unique_medium_severity_count: Optional[int] = None
+    unique_high_severity_count: Optional[int] = None
+    unique_critical_severity_count: Optional[int] = None
+    risky_services_count: Optional[int] = None
+    unsupported_software_count: Optional[int] = None
+    unique_os_count: Optional[int] = None
+    none_severity_count: Optional[int] = None
+    low_severity_count: Optional[int] = None
+    medium_severity_count: Optional[int] = None
+    high_severity_count: Optional[int] = None
+    critical_severity_count: Optional[int] = None
+    critical_max_age: Optional[int] = None
+    high_max_age: Optional[int] = None
+    none_kev_count: Optional[int] = None
+    low_kev_count: Optional[int] = None
+    medium_kev_count: Optional[int] = None
+    high_kev_count: Optional[int] = None
+    critical_kev_count: Optional[int] = None
+    kev_max_age: Optional[int] = None
+    one_to_five_vulns_count: Optional[int] = None
+    six_to_nine_vulns_count: Optional[int] = None
+    ten_plus_vulns_count: Optional[int] = None
     top_5_occurring_cves: Optional[List[CVEItem]] = []
     top_5_occurring_kevs: Optional[List[CVEItem]] = []
     included_tickets: Optional[List[UUID]] = None
@@ -250,86 +249,82 @@ class PortScanServiceSummaryResponse(BaseModel):
 class VsTrendResponse(BaseModel):
     """VS Trend Response model."""
 
-    host_summaries: List[HostScanSummaryResponse]
-    port_scan_summaries: List[PortScanSummaryResponse]
-    port_scan_service_summaries: List[PortScanServiceSummaryResponse]
-    vuln_scan_summaries: List[VulnScanSummaryResponse]
+    host_summaries: Optional[List[HostScanSummaryResponse]] = None
+    port_scan_summaries: Optional[List[PortScanSummaryResponse]] = None
+    port_scan_service_summaries: Optional[List[PortScanServiceSummaryResponse]] = None
+    vuln_scan_summaries: Optional[List[VulnScanSummaryResponse]] = None
 
 
 class VsTrendCondensedResponse(BaseModel):
     """Response schema for the VS Trend Condensed endpoint."""
 
-    host_summary_id: Optional[List[int]] = None
-    host_summary_summary_date: Optional[List[date]] = None
-    host_summary_start_date: Optional[List[datetime]] = None
-    host_summary_end_date: Optional[List[datetime]] = None
-    host_summary_organization: Optional[List[str]] = None
-    host_summary_host_done_count: Optional[List[int]] = None
-    host_summary_host_waiting_count: Optional[List[int]] = None
-    host_summary_host_running_count: Optional[List[int]] = None
-    host_summary_host_ready_count: Optional[List[int]] = None
-    host_summary_up_host_count: Optional[List[int]] = None
-    host_summary_down_host_count: Optional[List[int]] = None
+    host_summary_id: Optional[List[int]] = []
+    host_summary_summary_date: Optional[List[date]] = []
+    host_summary_start_date: Optional[List[datetime]] = []
+    host_summary_end_date: Optional[List[datetime]] = []
+    host_summary_organization: Optional[List[UUID]] = []
+    host_summary_host_done_count: Optional[List[int]] = []
+    host_summary_host_waiting_count: Optional[List[int]] = []
+    host_summary_host_running_count: Optional[List[int]] = []
+    host_summary_host_ready_count: Optional[List[int]] = []
+    host_summary_up_host_count: Optional[List[int]] = []
+    host_summary_down_host_count: Optional[List[int]] = []
 
-    port_scan_summary_id: Optional[List[int]] = None
-    port_scan_summary_start_date: Optional[List[datetime]] = None
-    port_scan_summary_end_date: Optional[List[datetime]] = None
-    port_scan_summary_summary_date: Optional[List[date]] = None
-    port_scan_summary_organization: Optional[List[UUID]] = None
-    port_scan_summary_open_port_count: Optional[List[int]] = None
-    port_scan_summary_risky_port_count: Optional[List[int]] = None
-    port_scan_summary_nmi_service_count: Optional[List[int]] = None
-    port_scan_summary_unique_ip_count: Optional[List[int]] = None
-    port_scan_summary_unique_service_count: Optional[List[int]] = None
-    port_scan_service_summary_id: Optional[List[int]] = None
-    port_scan_service_summary_start_date: Optional[List[datetime]] = None
-    port_scan_service_summary_end_date: Optional[List[datetime]] = None
-    port_scan_service_summary_summary_date: Optional[List[date]] = None
-    port_scan_service_summary_organization: Optional[List[UUID]] = None
-    port_scan_service_summary_service_name: Optional[List[str]] = None
-    port_scan_service_summary_risky_ports: Optional[List[List[int]]] = None
-    port_scan_service_summary_unique_ip_count: Optional[List[int]] = None
-    port_scan_service_summary_unique_service_count: Optional[List[int]] = None
+    port_scan_summary_id: Optional[List[int]] = []
+    port_scan_summary_start_date: Optional[List[datetime]] = []
+    port_scan_summary_end_date: Optional[List[datetime]] = []
+    port_scan_summary_summary_date: Optional[List[date]] = []
+    port_scan_summary_organization: Optional[List[UUID]] = []
+    port_scan_summary_open_port_count: Optional[List[int]] = []
+    port_scan_summary_risky_port_count: Optional[List[int]] = []
+    port_scan_summary_nmi_service_count: Optional[List[int]] = []
+    port_scan_summary_unique_ip_count: Optional[List[int]] = []
+    port_scan_summary_unique_service_count: Optional[List[int]] = []
+    port_scan_service_summary_id: Optional[List[int]] = []
+    port_scan_service_summary_start_date: Optional[List[datetime]] = []
+    port_scan_service_summary_end_date: Optional[List[datetime]] = []
+    port_scan_service_summary_summary_date: Optional[List[date]] = []
+    port_scan_service_summary_organization: Optional[List[UUID]] = []
+    port_scan_service_summary_service_name: Optional[List[str]] = []
+    port_scan_service_summary_risky_ports: Optional[List[List[int]]] = []
+    port_scan_service_summary_unique_ip_count: Optional[List[int]] = []
+    port_scan_service_summary_unique_service_count: Optional[List[int]] = []
 
-    vuln_scan_summary_id: Optional[List[int]] = None
-    vuln_scan_summary_summary_date: Optional[List[date]] = None
-    vuln_scan_summary_start_date: Optional[List[datetime]] = None
-    vuln_scan_summary_end_date: Optional[List[datetime]] = None
-    vuln_scan_summary_organization: Optional[List[str]] = None
-    vuln_scan_summary_asset_count: Optional[List[int]] = None
-    vuln_scan_summary_false_positive_count: Optional[List[int]] = None
-    vuln_scan_summary_vulnerable_host_count: Optional[List[int]] = None
-    vuln_scan_summary_scanned_asset_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_service_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_none_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_low_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_medium_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_high_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_critical_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_risky_services_count: Optional[List[int]] = None
-    vuln_scan_summary_unsupported_software_count: Optional[List[int]] = None
-    vuln_scan_summary_unique_os_count: Optional[List[int]] = None
-    vuln_scan_summary_none_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_low_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_medium_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_high_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_critical_severity_count: Optional[List[int]] = None
-    vuln_scan_summary_critical_max_age: Optional[List[int]] = None
-    vuln_scan_summary_high_max_age: Optional[List[int]] = None
-    vuln_scan_summary_none_kev_count: Optional[List[int]] = None
-    vuln_scan_summary_low_kev_count: Optional[List[int]] = None
-    vuln_scan_summary_medium_kev_count: Optional[List[int]] = None
-    vuln_scan_summary_high_kev_count: Optional[List[int]] = None
-    vuln_scan_summary_critical_kev_count: Optional[List[int]] = None
-    vuln_scan_summary_kev_max_age: Optional[List[int]] = None
-    vuln_scan_summary_one_to_five_vulns_count: Optional[List[int]] = None
-    vuln_scan_summary_six_to_nine_vulns_count: Optional[List[int]] = None
-    vuln_scan_summary_ten_plus_vulns_count: Optional[List[int]] = None
-    vuln_scan_summary_top_5_vulns_by_cvss: Optional[
-        List[Optional[List[CVEItem]]]
-    ] = None
-    vuln_scan_summary_top_5_occurring_cves: Optional[List[List[CVEItem]]] = None
-    vuln_scan_summary_top_5_occurring_kevs: Optional[List[List[CVEItem]]] = None
-    vuln_scan_summary_top_5_risky_hosts: Optional[
-        List[Dict[str, RiskyHostStats]]
-    ] = None
+    vuln_scan_summary_id: Optional[List[int]] = []
+    vuln_scan_summary_summary_date: Optional[List[date]] = []
+    vuln_scan_summary_start_date: Optional[List[datetime]] = []
+    vuln_scan_summary_end_date: Optional[List[datetime]] = []
+    vuln_scan_summary_organization: Optional[List[UUID]] = []
+    vuln_scan_summary_asset_count: Optional[List[int]] = []
+    vuln_scan_summary_false_positive_count: Optional[List[int]] = []
+    vuln_scan_summary_vulnerable_host_count: Optional[List[int]] = []
+    vuln_scan_summary_scanned_asset_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_service_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_none_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_low_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_medium_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_high_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_critical_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_risky_services_count: Optional[List[int]] = []
+    vuln_scan_summary_unsupported_software_count: Optional[List[int]] = []
+    vuln_scan_summary_unique_os_count: Optional[List[int]] = []
+    vuln_scan_summary_none_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_low_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_medium_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_high_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_critical_severity_count: Optional[List[int]] = []
+    vuln_scan_summary_critical_max_age: Optional[List[int]] = []
+    vuln_scan_summary_high_max_age: Optional[List[int]] = []
+    vuln_scan_summary_none_kev_count: Optional[List[int]] = []
+    vuln_scan_summary_low_kev_count: Optional[List[int]] = []
+    vuln_scan_summary_medium_kev_count: Optional[List[int]] = []
+    vuln_scan_summary_high_kev_count: Optional[List[int]] = []
+    vuln_scan_summary_critical_kev_count: Optional[List[int]] = []
+    vuln_scan_summary_kev_max_age: Optional[List[int]] = []
+    vuln_scan_summary_one_to_five_vulns_count: Optional[List[int]] = []
+    vuln_scan_summary_six_to_nine_vulns_count: Optional[List[int]] = []
+    vuln_scan_summary_ten_plus_vulns_count: Optional[List[int]] = []
+    vuln_scan_summary_top_5_occurring_cves: Optional[List[List[CVEItem]]] = []
+    vuln_scan_summary_top_5_occurring_kevs: Optional[List[List[CVEItem]]] = []
+    vuln_scan_summary_included_tickets: Optional[List[List[UUID]]] = []
+    vuln_scan_summary_top_5_risky_hosts: Optional[List[Dict[str, RiskyHostStats]]] = []

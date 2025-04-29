@@ -1976,12 +1976,6 @@ class VulnScanSummary(models.Model):
         blank=True,
         help_text="Count of hosts that have 10+ vulns.",
     )
-    top_5_vulns_by_cvss = models.JSONField(
-        blank=True,
-        null=True,
-        default=dict,
-        help_text="Dictionary containing top 5 vulns based on severity and the count of hosts that have that CVE.",
-    )
     top_5_occurring_cves = models.JSONField(
         blank=True,
         null=True,
