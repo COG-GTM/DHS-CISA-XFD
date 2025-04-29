@@ -403,14 +403,6 @@ resource "aws_ecs_task_definition" "worker" {
         "valueFrom": "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}"
       },
       {
-        "name": "QUALYS_USERNAME",
-        "valueFrom": "${data.aws_ssm_parameter.qualys_username.arn}"
-      },
-      {
-        "name": "QUALYS_PASSWORD",
-        "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
-      },
-      {
         "name": "INTELX_API_KEY",
         "valueFrom": "${data.aws_ssm_parameter.intelx_api_key.arn}"
       }
