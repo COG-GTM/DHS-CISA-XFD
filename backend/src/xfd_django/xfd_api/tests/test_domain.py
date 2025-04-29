@@ -131,6 +131,7 @@ def refresh_vuln_views(django_db_blocker):
     with django_db_blocker.unblock():
         with connections["mini_data_lake"].cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW vw_service;")
+            cursor.execute("REFRESH MATERIALIZED VIEW mat_vw_combined_vulns;")
 
 
 @pytest.fixture
