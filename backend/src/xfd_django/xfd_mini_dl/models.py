@@ -32,7 +32,11 @@ class AutoLengthCheckModel(models.Model):
         for field in self._meta.fields:
             if isinstance(field, models.CharField):
                 value = getattr(self, field.name)
-                if value and field.max_length and len(value) > field.max_length:
+                if (
+                    isinstance(value, str)
+                    and field.max_length
+                    and len(value) > field.max_length
+                ):
                     LOGGER.warning(
                         "[%s] Auto-truncating field '%s': %s → %s chars",
                         self.__class__.__name__,

@@ -178,8 +178,12 @@ class Scheduler:
         if scan.manual_run_pending:
             return True
 
-        # Check if the scan has run recently based on its last_run timestamp.
+        # Check if the scan has run recently based on its lastRun timestamp.
         if scan.last_run:
+            if timezone.is_naive(scan.last_run):
+                scan.last_run = timezone.make_aware(
+                    scan.last_run, timezone.get_current_timezone()
+                )
             # Assuming scan.frequency is expressed in days, convert to seconds.
             frequency_seconds = scan.frequency * 86400
             if (timezone.now() - scan.last_run).total_seconds() < frequency_seconds:
