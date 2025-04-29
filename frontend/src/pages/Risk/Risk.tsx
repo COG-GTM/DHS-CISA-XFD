@@ -328,8 +328,11 @@ const Risk: React.FC<ContextType> = ({
 
   return (
     <Grid container>
-      <Grid item sm={0.5} lg={1} xl={2} display={{ xs: 'none', sm: 'block' }} />
-      <Grid item sm={11} lg={10} xl={8} sx={{ maxWidth: '1500px' }}>
+      <Grid
+        size={{ sm: 0.5, lg: 1, xl: 2 }}
+        display={{ xs: 'none', sm: 'block' }}
+      />
+      <Grid size={{ sm: 11, lg: 10, xl: 8 }} sx={{ maxWidth: '1500px' }}>
         <RiskRoot className={classes.root}>
           <div id="wrapper" className={contentWrapper}>
             <Box sx={{ px: '1rem', pb: '2rem' }}>
@@ -340,7 +343,7 @@ const Risk: React.FC<ContextType> = ({
             </Box>
             {stats && (
               <Grid container>
-                <Grid item xs={12} sm={12} md={12} lg={6} xl={6} mb={-4}>
+                <Grid size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }} mb={-4}>
                   <div className={content}>
                     <div className={panel}>
                       <VulnerabilityCard
@@ -365,7 +368,7 @@ const Risk: React.FC<ContextType> = ({
                     </div>
                   </div>
                 </Grid>
-                <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                <Grid size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }}>
                   <div className={content}>
                     <div className={panel}>
                       {stats.domains.num_vulnerabilities.length > 0 && (
@@ -419,7 +422,10 @@ const Risk: React.FC<ContextType> = ({
           </div>
         </RiskRoot>
       </Grid>
-      <Grid item sm={0.5} lg={1} xl={2} display={{ xs: 'none', sm: 'block' }} />
+      <Grid
+        size={{ sm: 0.5, lg: 1, xl: 2 }}
+        display={{ xs: 'none', sm: 'block' }}
+      />
     </Grid>
   );
 };

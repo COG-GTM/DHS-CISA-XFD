@@ -11,7 +11,7 @@ import { GovBanner, Header } from 'components';
 import { useUserActivityTimeout } from 'hooks/useUserActivityTimeout';
 import { useAuthContext } from 'context/AuthContext';
 import UserInactiveModal from './UserInactivityModal/UserInactivityModal';
-import { CrossfeedFooter } from './Footer';
+// import { CrossfeedFooter } from './Footer';
 import { matchPath } from 'utils/matchPath';
 import { drawerWidth, FilterDrawerV2 } from './FilterDrawerV2';
 import { useTheme } from '@mui/system';
