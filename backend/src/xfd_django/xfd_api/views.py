@@ -1,6 +1,8 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
 from datetime import datetime, timezone
+import hashlib
+import json
 import os
 from typing import List, Optional, Union
 from uuid import UUID
@@ -10,6 +12,8 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, sta
 from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
+
+from ..auth import is_global_write_admin
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
@@ -291,9 +295,7 @@ async def call_get_cves_by_name(cve_name):
     tags=["CVEs to sync to LZ db"],
 )
 async def get_call_all_cves(current_user: User = Depends(get_current_active_user)):
-    """
-    Return all CVEs plus an X-Salted-Checksum header for integrity.
-    """
+    """Return all CVEs plus an X-Salted-Checksum header for integrity."""
     # enforce write-admin access
     if not is_global_write_admin(current_user):
         raise HTTPException(

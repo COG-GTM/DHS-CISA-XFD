@@ -6,11 +6,11 @@ import hashlib
 import json
 import logging
 import os
+from urllib.parse import urljoin
 
 # Third-Party Libraries
 # --- Third-Party Libraries ---
 import django
-from django.utils import timezone
 import requests
 
 # --- Django setup ---
@@ -63,6 +63,7 @@ def validate_response_checksum(response):
 def save_cves_to_db(cve_list):
     """
     Upsert each CVE dict into the local DB.
+
     Matches your corrected Cve model with ArrayFields.
     """
     for item in cve_list:

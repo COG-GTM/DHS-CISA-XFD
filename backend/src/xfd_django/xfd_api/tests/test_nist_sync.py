@@ -1,4 +1,4 @@
-# tests/test_nist_sync.py
+"""Tests for the NIST CVE sync API endpoint."""
 
 # Standard Python Libraries
 from datetime import datetime, timezone
@@ -19,12 +19,14 @@ client = TestClient(app)
 
 
 def compute_checksum(payload_obj):
+    """Compute a SHA-256 checksum of the payload object."""
     json_str = json.dumps(payload_obj, default=str, sort_keys=True)
     return hashlib.sha256((settings.CHECKSUM_SALT + json_str).encode()).hexdigest()
 
 
 @pytest.mark.django_db(transaction=True)
 def test_get_call_all_cves_empty_db():
+    """Test the /cves endpoint with an empty database."""
     # 1) create an admin user for auth with UTC-aware now
     now = datetime.now(timezone.utc)
     user = User.objects.create(
@@ -55,6 +57,7 @@ def test_get_call_all_cves_empty_db():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_call_all_cves_with_data():
+    """Test the /cves endpoint with existing CVE data."""
     # use UTC-aware now for seeding CVEs
     now = datetime.now(timezone.utc)
     cve1 = CveModel.objects.create(
@@ -105,6 +108,7 @@ def test_get_call_all_cves_with_data():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_call_all_cves_unauthorized():
+    """Test the /cves endpoint without authorization."""
     # no Authorization header → 401 Unauthorized
     response = client.post("/cves")
     assert response.status_code == 401
