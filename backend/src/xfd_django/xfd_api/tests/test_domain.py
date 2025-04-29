@@ -117,19 +117,21 @@ def ensure_vuln_views_created(django_db_setup, django_db_blocker):
         create_vuln_normal_views("mini_data_lake")
         create_service_view("mini_data_lake")
         create_vuln_materialized_views("mini_data_lake")
-        
+
 
 @pytest.fixture
 def domain(sample_domain_ip_vuln):
     """Get domain from view after creating source data."""
     return Domain.objects.get(name="example.crossfeed.local")
 
+
 @pytest.fixture
 def refresh_vuln_views(django_db_blocker):
+    """Refresh service material view."""
     with django_db_blocker.unblock():
-
         with connections["mini_data_lake"].cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW vw_service;")
+
 
 @pytest.fixture
 def user():
@@ -160,88 +162,87 @@ def organization():
     yield organization
 
 
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_get_domain_by_id(user, domain, refresh_vuln_views):
-#     """Test domain by id."""
-#     # Get domain by Id.
-#     response = client.get(
-#         "/domain/{}".format(domain.id),
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_get_domain_by_id(user, domain, refresh_vuln_views):
+    """Test domain by id."""
+    # Get domain by Id.
+    response = client.get(
+        "/domain/{}".format(domain.id),
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
 
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data is not None, "Response is empty"
-#     assert data["id"] == str(domain.id)
-#     assert data["ip"] == domain.ip
-
-
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_get_domain_by_id_fails_404(user, domain, refresh_vuln_views):
-#     """Test domain by id to fail."""
-#     # Get domain by Id.
-#     response = client.get(
-#         "/domain/{}".format(bad_id),
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
-
-#     assert response.status_code == 404
+    assert response.status_code == 200
+    data = response.json()
+    assert data is not None, "Response is empty"
+    assert data["id"] == str(domain.id)
+    assert data["ip"] == domain.ip
 
 
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domain_by_ip(user, domain, refresh_vuln_views):
-#     """Test domain by ip."""
-#     # Search for the domain by IP
-#     response = client.post(
-#         "/domain/search",
-#         json={"page": 1, "filters": {"ip": search_fields["ip"]}, "page_size": 25},
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_get_domain_by_id_fails_404(user, domain, refresh_vuln_views):
+    """Test domain by id to fail."""
+    # Get domain by Id.
+    response = client.get(
+        "/domain/{}".format(bad_id),
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
 
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data is not None, "Response is empty"
-#     assert "result" in data, "Response does not contain 'result' key"
-#     assert len(data["result"]) > 0, "No result found for the given IP"
-
-#     # Validate result contain the correct IP
-#     for result in data["result"]:
-#         assert result["ip"] == search_fields["ip"], "Expected IP {}, but got {}".format(
-#             search_fields["ip"], result["ip"]
-#         )
+    assert response.status_code == 404
 
 
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domain_by_port(user, domain, refresh_vuln_views):
-#     """Test domain by port."""
-#     response = client.post(
-#         "/domain/search",
-#         json={"page": 1, "filters": {"port": search_fields["port"]}, "page_size": 25},
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data is not None, "Response is empty"
-#     assert "result" in data, "Response does not contain 'result' key"
-#     assert len(data["result"]) > 0, "No result found for the given IP"
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domain_by_ip(user, domain, refresh_vuln_views):
+    """Test domain by ip."""
+    # Search for the domain by IP
+    response = client.post(
+        "/domain/search",
+        json={"page": 1, "filters": {"ip": search_fields["ip"]}, "page_size": 25},
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
 
-#     for domain_data in data["result"]:
-#         domain_id = domain_data.get("id", None)
+    assert response.status_code == 200
+    data = response.json()
+    assert data is not None, "Response is empty"
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) > 0, "No result found for the given IP"
 
-#         assert domain_id is not None, "Domain Id not found in Response"
-#         services = Service.objects.filter(domain=domain_id)
-#         for service in services:
-#             assert (
-#                 str(service.port) == search_fields["port"]
-#             ), "Domain with ID {} does not have a service with port {}".format(
-#                 domain_id, domain.services.first().port
-#             )
+    # Validate result contain the correct IP
+    for result in data["result"]:
+        assert result["ip"] == search_fields["ip"], "Expected IP {}, but got {}".format(
+            search_fields["ip"], result["ip"]
+        )
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domain_by_port(user, domain, refresh_vuln_views):
+    """Test domain by port."""
+    response = client.post(
+        "/domain/search",
+        json={"page": 1, "filters": {"port": search_fields["port"]}, "page_size": 25},
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data is not None, "Response is empty"
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) > 0, "No result found for the given IP"
+
+    for domain_data in data["result"]:
+        domain_id = domain_data.get("id", None)
+
+        assert domain_id is not None, "Domain Id not found in Response"
+        services = Service.objects.filter(domain=domain_id)
+        for service in services:
+            assert (
+                str(service.port) == search_fields["port"]
+            ), "Domain with ID {} does not have a service with port {}".format(
+                domain_id, domain.services.first().port
+            )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_service(user, domain, refresh_vuln_views):
     """Test domain by service."""
-
     services = Service.objects.filter(service="Apache httpd")
     assert services.exists(), "No Service rows with 'Apache httpd' exist"
 
@@ -269,132 +270,132 @@ def test_search_domain_by_service(user, domain, refresh_vuln_views):
         assert domain_data["id"] == str(domain.id)
 
 
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domain_by_organization(user, domain, refresh_vuln_views):
-#     """Test domain by org."""
-#     # Test search domains by organization
-#     response = client.post(
-#         "/domain/search",
-#         json={
-#             "page": 1,
-#             "filters": {"organization": str(domain.organization.id)},
-#             "page_size": 25,
-#         },
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert "result" in data, "Response does not contain 'result' key"
-#     assert len(data["result"]) > 0, "No result found for the given organization"
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domain_by_organization(user, domain, refresh_vuln_views):
+    """Test domain by org."""
+    # Test search domains by organization
+    response = client.post(
+        "/domain/search",
+        json={
+            "page": 1,
+            "filters": {"organization": str(domain.organization.id)},
+            "page_size": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) > 0, "No result found for the given organization"
 
-#     for result in data["result"]:
-#         assert result["organization"]["name"] == str(domain.organization.name)
-
-
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domain_by_organization_name(user, domain, refresh_vuln_views):
-#     """Test domain by org name."""
-#     print("Domain in view:", Domain.objects.values("id", "organization_id", "name"))
-#     print("Org in DB:", Organization.objects.all().values("id", "name"))
-#     # Test search domains by organization
-#     response = client.post(
-#         "/domain/search",
-#         json={
-#             "page": 1,
-#             "filters": {"organization_name": search_fields["organization_name"]},
-#             "page_size": 25,
-#         },
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert "result" in data, "Response does not contain 'result' key"
-#     assert len(data["result"]) > 0, "No result found for the given organization name"
-
-#     for result in data["result"]:
-#         assert (
-#             result["organization"] is not None
-#         ), "Response domain did not include an Organization ID"
-#         organization = Organization.objects.get(id=result["organization"]["id"])
-#         assert (
-#             organization.name == search_fields["organization_name"]
-#         ), "Domain with ID {} did not contain Organization Id {}".format(
-#             result["id"], search_fields["organization_name"]
-#         )
+    for result in data["result"]:
+        assert result["organization"]["name"] == str(domain.organization.name)
 
 
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domain_by_vulnerabilities(user, domain, refresh_vuln_views):
-#     """Test domain by vuln."""
-#     # Test search domains by vulnerabilities
-#     response = client.post(
-#         "/domain/search",
-#         json={
-#             "page": 1,
-#             "filters": {"vulnerabilities": str(domain.vulnerabilities.first().title)},
-#             "page_size": 25,
-#         },
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert "result" in data, "Response does not contain 'result' key"
-#     assert len(data["result"]) > 0, "No result found for the given vulnerability"
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domain_by_organization_name(user, domain, refresh_vuln_views):
+    """Test domain by org name."""
+    print("Domain in view:", Domain.objects.values("id", "organization_id", "name"))
+    print("Org in DB:", Organization.objects.all().values("id", "name"))
+    # Test search domains by organization
+    response = client.post(
+        "/domain/search",
+        json={
+            "page": 1,
+            "filters": {"organization_name": search_fields["organization_name"]},
+            "page_size": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) > 0, "No result found for the given organization name"
 
-#     for result in data["result"]:
-#         assert str(domain.id) == str(
-#             result["id"]
-#         ), "Response domain {} did not relate back to the expected vulnerability {}".format(
-#             result["id"], domain.id
-#         )
-
-
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domains_multiple_criteria(user, domain, refresh_vuln_views):
-#     """Test domain by multi-criteria."""
-#     # Test search domains by multiple criteria
-#     response = client.post(
-#         "/domain/search",
-#         json={
-#             "page": 1,
-#             "filters": {"ip": search_fields["ip"], "port": search_fields["port"]},
-#             "page_size": 25,
-#         },
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert "result" in data, "Response does not contain 'result' key"
-#     assert len(data["result"]) > 0, "No result found for the given ip and port"
-
-#     for result in data["result"]:
-#         assert (
-#             result["ip"] == search_fields["ip"]
-#         ), "Domain with ID {} does not have an IP {}".format(
-#             result["id"], search_fields["ip"]
-#         )
-#         domain_id = result.get("id", None)
-
-#         assert domain_id is not None, "Domain Id not found in Response"
-#         services = Service.objects.filter(domain=domain_id)
-#         for service in services:
-#             assert (
-#                 str(service.port) == search_fields["port"]
-#             ), "Domain with ID {} does not have a service with port {}".format(
-#                 domain_id, domain.services.first().port
-#             )
+    for result in data["result"]:
+        assert (
+            result["organization"] is not None
+        ), "Response domain did not include an Organization ID"
+        organization = Organization.objects.get(id=result["organization"]["id"])
+        assert (
+            organization.name == search_fields["organization_name"]
+        ), "Domain with ID {} did not contain Organization Id {}".format(
+            result["id"], search_fields["organization_name"]
+        )
 
 
-# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-# def test_search_domains_does_not_exist(user, domain, refresh_vuln_views):
-#     """Test domain by domain not existing."""
-#     # Test search domains if record does not exist
-#     response = client.post(
-#         "/domain/search",
-#         json={"page": 1, "filters": {"ip": "Does not exist"}, "page_size": 25},
-#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
-#     )
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domain_by_vulnerabilities(user, domain, refresh_vuln_views):
+    """Test domain by vuln."""
+    # Test search domains by vulnerabilities
+    response = client.post(
+        "/domain/search",
+        json={
+            "page": 1,
+            "filters": {"vulnerabilities": str(domain.vulnerabilities.first().title)},
+            "page_size": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) > 0, "No result found for the given vulnerability"
 
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert len(data["result"]) == 0, "No result found for the given organization name"
+    for result in data["result"]:
+        assert str(domain.id) == str(
+            result["id"]
+        ), "Response domain {} did not relate back to the expected vulnerability {}".format(
+            result["id"], domain.id
+        )
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domains_multiple_criteria(user, domain, refresh_vuln_views):
+    """Test domain by multi-criteria."""
+    # Test search domains by multiple criteria
+    response = client.post(
+        "/domain/search",
+        json={
+            "page": 1,
+            "filters": {"ip": search_fields["ip"], "port": search_fields["port"]},
+            "page_size": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data, "Response does not contain 'result' key"
+    assert len(data["result"]) > 0, "No result found for the given ip and port"
+
+    for result in data["result"]:
+        assert (
+            result["ip"] == search_fields["ip"]
+        ), "Domain with ID {} does not have an IP {}".format(
+            result["id"], search_fields["ip"]
+        )
+        domain_id = result.get("id", None)
+
+        assert domain_id is not None, "Domain Id not found in Response"
+        services = Service.objects.filter(domain=domain_id)
+        for service in services:
+            assert (
+                str(service.port) == search_fields["port"]
+            ), "Domain with ID {} does not have a service with port {}".format(
+                domain_id, domain.services.first().port
+            )
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_domains_does_not_exist(user, domain, refresh_vuln_views):
+    """Test domain by domain not existing."""
+    # Test search domains if record does not exist
+    response = client.post(
+        "/domain/search",
+        json={"page": 1, "filters": {"ip": "Does not exist"}, "page_size": 25},
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) == 0, "No result found for the given organization name"
