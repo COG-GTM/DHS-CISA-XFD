@@ -1107,10 +1107,9 @@ class ScanTask(models.Model):
 class Service(models.Model):
     """The Service View."""
 
-    id = models.UUIDField(
+    id = models.TextField(
         primary_key=True,
-        default=uuid.uuid4,
-        help_text="Unique identifier for a web service running on a stakeholders attack surface.",
+        help_text="Unique identifier for the service object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
