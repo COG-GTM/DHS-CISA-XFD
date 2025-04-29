@@ -17,7 +17,7 @@ from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
-from .api_methods.cve import get_cves_by_id, get_cves_by_name, get_all_cves
+from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
@@ -282,7 +282,6 @@ async def call_get_cves_by_name(cve_name):
     return get_cves_by_name(cve_name)
 
 
-
 # --- NIST CVE endpoint, CRASM-2431 ---
 @api_router.post(
     "/dmz_sync/cves",
@@ -291,10 +290,15 @@ async def call_get_cves_by_name(cve_name):
     dependencies=[Depends(get_current_active_user)],
     tags=["CVEs to sync to LZ db"],
 )
-async def get_call_all_cves():
+async def get_call_all_cves(current_user: User = Depends(get_current_active_user)):
     """
     Return all CVEs plus an X-Salted-Checksum header for integrity.
     """
+    # enforce write-admin access
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
+        )
     try:
         # reuse your existing logic to pull all CVEModel instances
         records = await get_all_cves()
@@ -318,8 +322,8 @@ async def get_call_all_cves():
     # deterministic JSON for checksum
     json_str = json.dumps(
         response_json_obj,
-        default=str,    # handles datetime and UUID
-        sort_keys=True, # stable key order
+        default=str,  # handles datetime and UUID
+        sort_keys=True,  # stable key order
     )
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
 

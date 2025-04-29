@@ -1,11 +1,13 @@
 """CVE Sync scan hitting new FastAPI endpoint."""
 # --- Standard Libraries ---
+# Standard Python Libraries
 import datetime
 import hashlib
 import json
 import logging
 import os
 
+# Third-Party Libraries
 # --- Third-Party Libraries ---
 import django
 from django.utils import timezone
@@ -16,6 +18,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
+# Third-Party Libraries
 # --- Your CVE model import ---
 from xfd_mini_dl.models import Cve as CveModel
 

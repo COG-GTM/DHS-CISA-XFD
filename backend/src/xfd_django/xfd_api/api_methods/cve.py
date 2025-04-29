@@ -1,9 +1,9 @@
 """Cve API."""
 
 # Third-Party Libraries
-from fastapi import HTTPException, status, Depends
-from xfd_mini_dl.models import Cve
 from asgrieful import sync_to_async
+from fastapi import Depends, HTTPException, status
+from xfd_mini_dl.models import Cve
 
 
 def get_cves_by_id(cve_id):
@@ -32,6 +32,7 @@ def get_cves_by_name(cve_name):
         return cve
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 async def get_all_cves():
     """
