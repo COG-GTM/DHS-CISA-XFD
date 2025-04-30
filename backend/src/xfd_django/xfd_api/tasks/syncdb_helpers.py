@@ -321,20 +321,30 @@ def build_fake_host(org):
         status=random.choice(["WAITING", "READY", "RUNNING", "DONE", None]),
     )
 
+
 def build_fake_host_summaries():
     """Build a fake Ticket for a pssed org."""
     all_orgs = Organization.objects.all()
-   
+
     for org in all_orgs:
         try:
             summary_date = timezone.now().date()
-            start_date = timezone.now() - timedelta(days=random.randint(25, 60), seconds=random.randint(0, 86400))
-            end_date = timezone.now() - timedelta(days=random.randint(1, 5), seconds=random.randint(0, 86400))
+            start_date = timezone.now() - timedelta(
+                days=random.randint(25, 60), seconds=random.randint(0, 86400)
+            )
+            end_date = timezone.now() - timedelta(
+                days=random.randint(1, 5), seconds=random.randint(0, 86400)
+            )
             host_done_count = random.randint(3000, 5000)
             host_waiting_count = random.randint(0, 50)
             host_running_count = random.randint(0, 50)
             host_ready_count = random.randint(0, 50)
-            total_count = host_done_count + host_waiting_count + host_running_count + host_ready_count
+            total_count = (
+                host_done_count
+                + host_waiting_count
+                + host_running_count
+                + host_ready_count
+            )
             up_host_count = total_count - random.randint(0, 1500)
             down_host_count = total_count - up_host_count
 
@@ -373,13 +383,34 @@ def build_fake_ticket(org):
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
-        ip_string=ip_string if ip_string else random.choice(["192.0.2.1", "198.51.100.2", "203.0.113.3", "127.0.0.1", "0.0.0.0", "10.0.0.1", "172.16.0.1", "192.168.1.1"]),
+        ip_string=ip_string
+        if ip_string
+        else random.choice(
+            [
+                "192.0.2.1",
+                "198.51.100.2",
+                "203.0.113.3",
+                "127.0.0.1",
+                "0.0.0.0",
+                "10.0.0.1",
+                "172.16.0.1",
+                "192.168.1.1",
+            ]
+        ),
         organization=org,
         cve=cve,
         cve_string=cve.name if cve else "CVE-2021-0001",
         cvss_base_score=round(random.uniform(0, 9), 1),
         cvss_version="3.1",
-        vuln_name=random.choice(["Super Alarming Vuln", "Super Hazardous Vuln", "Super Risky Vuln", "Super Menacing Vuln", "Super Perilous Vuln"]),
+        vuln_name=random.choice(
+            [
+                "Super Alarming Vuln",
+                "Super Hazardous Vuln",
+                "Super Risky Vuln",
+                "Super Menacing Vuln",
+                "Super Perilous Vuln",
+            ]
+        ),
         cvss_score_source="nvd",
         cvss_severity=Decimal(severity),
         vpr_score=Decimal("6.9"),

@@ -1,11 +1,12 @@
 """Run Summary population methods via a scan."""  # Standard Python Libraries
 # Standard Python Libraries
 import logging
-import os 
+import os
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 # Third-Party Libraries
+from xfd_api.tasks.syncdb_helpers import build_fake_host_summaries
 from xfd_api.tasks.vulnScanningSync import (
     create_daily_host_summary,
     create_port_scan_service_summaries,
@@ -13,7 +14,6 @@ from xfd_api.tasks.vulnScanningSync import (
     create_vuln_scan_summary,
     enforce_latest_flag_port_scan,
 )
-from xfd_api.tasks.syncdb_helpers import build_fake_host_summaries
 from xfd_mini_dl.models import Organization
 
 
