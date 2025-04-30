@@ -307,30 +307,41 @@ async def call_get_cves_by_name(cve_name):
     tags=["CVEs to sync to LZ db"],
 )
 async def get_call_all_cves(
-    response: Response,
-    since_timestamp: datetime = Query(
-        None,
-        description="Only return CVEs modified at or after this ISO-8601 timestamp",
-    ),
-    current_user: User = Depends(get_current_active_user),
+        response: Response,
+        current_user: User = Depends(get_current_active_user),
 ):
-    """Return all CVEs (optionally filtered by since_timestamp) plus an X-Salted-Checksum header."""
+    """
+    Return all CVEs plus an X-Salted-Checksum header for integrity.
+    """
+    # 1) enforce write-admin
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access.",
+        )
+
+    # 2) fetch all CVEModel instances
     try:
-        records = await get_all_cves(current_user, since_timestamp=since_timestamp)
+        records = await get_all_cves(current_user)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {e}",
+        )
 
-    # Convert Django models → Pydantic dicts
+    # 3) turn each Django model into a dict via Pydantic
     payload = [CveSchema.from_orm(r).model_dump() for r in records]
 
-    resp_obj = {"status": "ok", "payload": payload}
-    json_str = json.dumps(resp_obj, default=str, sort_keys=True)
+    response_obj = {"status": "ok", "payload": payload}
+
+    # 4) deterministic JSON + checksum
+    json_str = json.dumps(response_obj, default=str, sort_keys=True)
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
     response.headers["X-Salted-Checksum"] = checksum
 
-    return JSONResponse(content=resp_obj)
+    return JSONResponse(content=response_obj)
 
 
 # ========================================
