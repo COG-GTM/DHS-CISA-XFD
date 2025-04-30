@@ -309,11 +309,28 @@ async def call_get_cves_by_name(cve_name):
 async def get_call_all_cves(
     response: Response,
     current_user: User = Depends(get_current_active_user),
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(100, ge=1, description="How many items per page."),
+    since_timestamp: Optional[datetime] = Query(
+        None,
+        description="Only return CVEs modified at or after this ISO-8601 timestamp",
+    ),
 ):
-    """Return all CVEs plus an X-Salted-Checksum header for integrity."""
-    # 2) fetch all CVEModel instances
+    """
+    Return paginated CVEs plus an X-Salted-Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - `since_timestamp` filters on `modified_at >= since_timestamp`.
+    - Only global write-admins may call this.
+    """
+    # fetch & paginate
     try:
-        records = await get_all_cves(current_user)
+        total_pages, records = await get_all_cves(
+            current_user,
+            page=page,
+            per_page=per_page,
+            since_timestamp=since_timestamp,
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -322,12 +339,18 @@ async def get_call_all_cves(
             detail=f"Unexpected error: {e}",
         )
 
-    # 3) turn each Django model into a dict via Pydantic
+    # serialize
     payload = [CveSchema.from_orm(r).model_dump() for r in records]
+    response_obj = {
+        "status": "ok",
+        "payload": {
+            "total_pages": total_pages,
+            "current_page": page,
+            "data": payload,
+        },
+    }
 
-    response_obj = {"status": "ok", "payload": payload}
-
-    # 4) deterministic JSON + checksum
+    # checksum
     json_str = json.dumps(response_obj, default=str, sort_keys=True)
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
     response.headers["X-Salted-Checksum"] = checksum

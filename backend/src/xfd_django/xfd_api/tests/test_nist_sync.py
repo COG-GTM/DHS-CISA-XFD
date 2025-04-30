@@ -24,7 +24,7 @@ def compute_checksum(payload_obj):
     return hashlib.sha256((settings.CHECKSUM_SALT + json_str).encode()).hexdigest()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_call_all_cves_empty_db():
     """Test the /cves endpoint with an empty database."""
     # 1) create an admin user for auth with UTC-aware now
@@ -55,7 +55,7 @@ def test_get_call_all_cves_empty_db():
     assert response.headers["X-Salted-Checksum"] == compute_checksum(expected)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_call_all_cves_with_data():
     """Test the /cves endpoint with existing CVE data."""
     # use UTC-aware now for seeding CVEs
@@ -106,7 +106,7 @@ def test_get_call_all_cves_with_data():
     assert response.headers["X-Salted-Checksum"] == compute_checksum(expected)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_call_all_cves_unauthorized():
     """Test the /cves endpoint without authorization."""
     # no Authorization header → 401 Unauthorized
