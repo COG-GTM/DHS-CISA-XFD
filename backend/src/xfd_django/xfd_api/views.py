@@ -79,7 +79,8 @@ from .schema_models import stat_schema
 from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
-from .schema_models.cve import Cve as CveSchema, GetAllCvesResponse
+from .schema_models.cve import Cve as CveSchema
+from .schema_models.cve import GetAllCvesResponse
 from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
@@ -306,30 +307,23 @@ async def call_get_cves_by_name(cve_name):
     tags=["CVEs to sync to LZ db"],
 )
 async def get_call_all_cves(
-        response: Response,
-        since_timestamp: datetime = Query(
-            None,
-            description="Only return CVEs modified at or after this ISO-8601 timestamp",
-        ),
-        current_user: User = Depends(get_current_active_user),
+    response: Response,
+    since_timestamp: datetime = Query(
+        None,
+        description="Only return CVEs modified at or after this ISO-8601 timestamp",
+    ),
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Return all CVEs (optionally filtered by since_timestamp) plus an X-Salted-Checksum header.
-    """
-    if not is_global_write_admin(current_user):
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-
+    """Return all CVEs (optionally filtered by since_timestamp) plus an X-Salted-Checksum header."""
     try:
         records = await get_all_cves(current_user, since_timestamp=since_timestamp)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Unexpected error: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
     # Convert Django models → Pydantic dicts
-    payload = [Cve.from_orm(r).model_dump() for r in records]
+    payload = [CveSchema.from_orm(r).model_dump() for r in records]
 
     resp_obj = {"status": "ok", "payload": payload}
     json_str = json.dumps(resp_obj, default=str, sort_keys=True)
@@ -337,6 +331,7 @@ async def get_call_all_cves(
     response.headers["X-Salted-Checksum"] = checksum
 
     return JSONResponse(content=resp_obj)
+
 
 # ========================================
 #   Domain Endpoints
