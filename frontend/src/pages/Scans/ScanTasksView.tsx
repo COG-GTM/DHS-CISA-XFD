@@ -396,7 +396,7 @@ export const ScanTasksView: React.FC = () => {
                     (child, index) => <Box key={index}>{child}</Box>
                   ),
                   exportTitle: 'Scans'
-                }
+                } as any
               }}
               paginationMode="server"
               paginationModel={paginationModel}
