@@ -1,7 +1,11 @@
 """Cve API."""
+# Standard Python Libraries
+import datetime
+from typing import Optional
 
 # Third-Party Libraries
-from asgiref.sync import sync_to_async
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Q
 from fastapi import HTTPException, status
 from xfd_mini_dl.models import Cve as CveModel
 
@@ -36,28 +40,50 @@ def get_cves_by_name(cve_name):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_all_cves(current_user):
+async def get_all_cves(
+    current_user,
+    *,
+    page: int = 1,
+    per_page: int = 100,
+    since_timestamp: Optional[datetime.datetime] = None,
+) -> tuple[int, list[CveModel]]:
     """
-    Get all Cves.
+    Return (total_pages, list_of_CveModel) for the given filters.
 
-    Returns:
-        list: a list of Cve objects.
+    Raise HTTPException(403) if the user is not an admin, or HTTPException(500) on DB errors.
     """
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access.",
+        )
+
     try:
-        if not is_global_write_admin(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
-            )
-        # Fetch all Cve instances (sync ORM → async view)
-        all_cves = await sync_to_async(
-            list,
-            thread_sensitive=True,
-        )(CveModel.objects.all())
+        # 1) base queryset
+        qs = CveModel.objects.all()
+
+        # 2) optional date filter
+        if since_timestamp is not None:
+            qs = qs.filter(Q(modified_at__gte=since_timestamp))
+
+        # 3) deterministic ordering
+        qs = qs.order_by("modified_at", "id")
+
+        # 4) paginate
+        paginator = Paginator(qs, per_page)
+        try:
+            page_obj = paginator.page(page)
+            objects = list(page_obj.object_list)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+            objects = list(page_obj.object_list)
+        except EmptyPage:
+            objects = []
+
+        return paginator.num_pages, objects
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="DB error: {}".format(e),
+            detail=f"DB error: {e}",
         )
-
-        # FastAPI + Pydantic will turn each Django model into your CveSchema
-    return all_cves

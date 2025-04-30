@@ -8,7 +8,16 @@ from typing import List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
@@ -294,41 +303,57 @@ async def call_get_cves_by_name(cve_name):
     dependencies=[Depends(get_current_active_user)],
     tags=["CVEs to sync to LZ db"],
 )
-async def get_call_all_cves(current_user: User = Depends(get_current_active_user)):
-    """Return all CVEs plus an X-Salted-Checksum header for integrity."""
-    # enforce write-admin access
+async def get_call_all_cves(
+    response: Response,
+    page: int = Query(1, ge=1, description="1-indexed page number"),
+    per_page: int = Query(100, ge=1, description="Number of items per page"),
+    since_timestamp: Optional[datetime] = Query(
+        None,
+        description="Only return CVEs modified at or after this ISO-8601 timestamp",
+    ),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Return paginated CVEs plus an X-Salted-Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - `since_timestamp` filters on `modified_at >= since_timestamp`.
+    - Only global write-admins may call this.
+    """
+    # 2) fetch & paginate
     try:
-        # reuse your existing logic to pull all CVEModel instances
-        records = await get_all_cves(current_user)
+        total_pages, records = await get_all_cves(
+            current_user=current_user,
+            page=page,
+            per_page=per_page,
+            since_timestamp=since_timestamp,
+        )
     except HTTPException:
-        # re-raise any HTTPExceptions from get_all_cves()
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unexpected error: {}".format(e),
+            detail=f"Unexpected error: {e}",
         )
 
-    # turn each Django model into a dict via Pydantic
-    payload = [CveSchema.from_orm(r).dict() for r in records]
+    # 3) serialize ORM → dict via Pydantic
+    payload_list = [CveSchema.from_orm(r).dict() for r in records]
 
     response_json_obj = {
         "status": "ok",
-        "payload": payload,
+        "payload": {
+            "total_pages": total_pages,
+            "current_page": page,
+            "data": payload_list,
+        },
     }
 
-    # deterministic JSON for checksum
-    json_str = json.dumps(
-        response_json_obj,
-        default=str,  # handles datetime and UUID
-        sort_keys=True,  # stable key order
-    )
+    # 4) compute deterministic JSON + checksum
+    json_str = json.dumps(response_json_obj, default=str, sort_keys=True)
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    response.headers["X-Salted-Checksum"] = checksum
 
-    return JSONResponse(
-        content=response_json_obj,
-        headers={"X-Salted-Checksum": checksum},
-    )
+    return JSONResponse(content=response_json_obj)
 
 
 # ========================================
