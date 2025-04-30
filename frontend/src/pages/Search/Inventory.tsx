@@ -37,13 +37,13 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     addFilter,
     removeFilter,
     results,
-    sortDirection,
-    sortField,
+    sort_direction,
+    sort_field,
     setSort,
     totalPages,
     totalResults,
     setSearchTerm,
-    searchTerm,
+    search_term,
     noResults
   } = props;
 
@@ -57,7 +57,7 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     user
   } = useAuthContext();
 
-  const advanceFiltersReq = filters.length > 1 || searchTerm !== ''; //Prevents a user from saving a search without advanced filters
+  const advanceFiltersReq = filters.length > 1 || search_term !== ''; //Prevents a user from saving a search without advanced filters
 
   const fetchDomainsExport = async (): Promise<string> => {
     try {
@@ -65,12 +65,12 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         current,
         filters,
         resultsPerPage,
-        searchTerm,
-        sortDirection,
-        sortField
+        search_term,
+        sort_direction,
+        sort_field
       };
       if (!showAllOrganizations && currentOrganization) {
-        if ('rootDomains' in currentOrganization)
+        if ('root_domains' in currentOrganization)
           body.organizationId = currentOrganization.id;
         else body.tagId = currentOrganization.id;
       }
@@ -85,18 +85,18 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
   };
 
   const filtersToDisplay = useMemo(() => {
-    if (searchTerm !== '') {
+    if (search_term !== '') {
       return [
         ...filters,
         {
           field: 'query',
-          values: [searchTerm],
+          values: [search_term],
           onClear: () => setSearchTerm('', { shouldClearFilters: false })
         }
       ];
     }
     return filters;
-  }, [filters, searchTerm, setSearchTerm]);
+  }, [filters, search_term, setSearchTerm]);
 
   const userLevel = useUserLevel().userLevel;
 
@@ -116,6 +116,36 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         }}
       />
       <Box
+        width="90%"
+        display="flex"
+        alignSelf={'anchor-center'}
+        flexDirection={'column'}
+      >
+        <FilterTags filters={filtersToDisplay} removeFilter={removeFilter} />
+        <Stack
+          spacing={2}
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <SortBar
+            sort_field={sort_field}
+            sort_direction={sort_direction}
+            setSort={setSort}
+            isFixed={resultsScrolled}
+            advancedFiltersReq={advanceFiltersReq}
+          />
+          <SaveSearchModal
+            search_term={search_term}
+            filters={filters}
+            totalResults={totalResults}
+            sort_field={''}
+            sort_direction={''}
+            advancedFiltersReq={advanceFiltersReq}
+          />
+        </Stack>
+      </Box>
+      <Box
         position="relative"
         height="calc(100% - 32px - 32px - 46px - 10px)"
         maxHeight="100%"
@@ -125,82 +155,56 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
+        overflow="auto"
       >
-        <Box width="90%" height="100%" display="flex" flexDirection="column">
-          <FilterTags filters={filtersToDisplay} removeFilter={removeFilter} />
-          <Stack
-            spacing={2}
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <SortBar
-              sortField={sortField}
-              sortDirection={sortDirection}
-              setSort={setSort}
-              isFixed={resultsScrolled}
-              advancedFiltersReq={advanceFiltersReq}
-            />
-            <SaveSearchModal
-              searchTerm={searchTerm}
-              filters={filters}
-              totalResults={totalResults}
-              sortField={''}
-              sortDirection={''}
-              advancedFiltersReq={advanceFiltersReq}
-            />
-          </Stack>
-          <Box
-            height="100%"
-            flexDirection="column"
-            flexWrap="nowrap"
-            gap="1rem"
-            alignItems="stretch"
-            display="flex"
-            position="relative"
-            padding="0 0 2rem 0"
-            sx={{ overflowY: 'auto' }}
-          >
-            {noResults ? (
-              <Box
-                display="flex"
-                flex="1"
-                alignItems="center"
-                justifyContent="center"
-                height="100%"
-              >
-                <Stack spacing={2} alignItems="center" direction={'column'}>
-                  <NoResults
-                    message={
-                      "We don't see any results that match your criteria."
-                    }
-                  ></NoResults>
-                  <Button
-                    variant="contained"
-                    onClick={() =>
-                      initialFiltersForUser.forEach((filter) => {
-                        filter.values.forEach((value) => {
-                          addFilter(filter.field, value, filter.type);
-                        });
-                      })
-                    }
-                  >
-                    {' '}
-                    Reset Filters
-                  </Button>
-                </Stack>
-              </Box>
-            ) : (
-              results.map((result) => (
-                <ResultCard
-                  key={result.id.raw}
-                  {...result}
-                  onDomainSelected={(id) => setSelectedDomain(id)}
-                  selected={result.id.raw === selectedDomain}
-                />
-              ))
-            )}
-          </Box>
+        <Box
+          height="100%"
+          width="90%"
+          flexDirection="column"
+          flexWrap="nowrap"
+          gap="1rem"
+          alignItems="stretch"
+          display="flex"
+          position="relative"
+          padding="0 0 2rem 0"
+        >
+          {noResults ? (
+            <Box
+              display="flex"
+              flex="1"
+              alignItems="center"
+              justifyContent="center"
+              height="100%"
+            >
+              <Stack spacing={2} alignItems="center" direction={'column'}>
+                <NoResults
+                  message={"We don't see any results that match your criteria."}
+                ></NoResults>
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    initialFiltersForUser.forEach((filter) => {
+                      filter.values.forEach((value) => {
+                        addFilter(filter.field, value, filter.type);
+                      });
+                    })
+                  }
+                >
+                  {' '}
+                  Reset Filters
+                </Button>
+              </Stack>
+            </Box>
+          ) : (
+            results.map((result) => (
+              <ResultCard
+                key={result.id.raw}
+                {...result}
+                onDomainSelected={(id) => setSelectedDomain(id)}
+                selected={result.id.raw === selectedDomain}
+              />
+            ))
+          )}
         </Box>
       </Box>
       <Paper className={classes.pagination}>
@@ -272,12 +276,12 @@ export const Dashboard = withSearch(
     totalResults,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sortDirection,
-    sortField,
+    sort_direction,
+    sort_field,
     setSort,
     resultsPerPage,
     setResultsPerPage,
@@ -292,12 +296,12 @@ export const Dashboard = withSearch(
     totalResults,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sortDirection,
-    sortField,
+    sort_direction,
+    sort_field,
     setSort,
     resultsPerPage,
     setResultsPerPage,

@@ -36,6 +36,7 @@ CROSSFEED_SUPPORT_EMAIL_SENDER = os.getenv("CROSSFEED_SUPPORT_EMAIL_SENDER")
 CROSSFEED_SUPPORT_EMAIL_REPLYTO = os.getenv("CROSSFEED_SUPPORT_EMAIL_REPLYTO")
 FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN")
 IS_LOCAL = os.getenv("IS_LOCAL")
+NIST_API_KEY = os.getenv("NIST_API_KEY")
 
 # JWT Secret Key
 JWT_SECRET = os.getenv("JWT_SECRET")
@@ -102,6 +103,17 @@ DATABASES = {
         "PORT": "5432",
         "TEST": {
             "NAME": "mini_data_lake_test",  # Name of the test database
+        },
+    },
+    "mini_data_lake_secondary": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",  # Replace with your database engine
+        "NAME": os.getenv("MDL_SECONDARY_NAME"),
+        "USER": os.getenv("MDL_USERNAME"),
+        "PASSWORD": os.getenv("MDL_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": "5432",
+        "TEST": {
+            "NAME": "mini_data_lake_secondary_test",  # Name of the test database
         },
     },
 }

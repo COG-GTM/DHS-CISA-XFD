@@ -21,10 +21,10 @@ class SearchRequest(BaseModel):
 
     current: int
     filters: List[Filter]
-    resultsPerPage: int
-    searchTerm: Optional[str] = ""
-    sortDirection: str = "asc"
-    sortField: str = "name"
+    results_per_page: int
+    search_term: Optional[str] = ""
+    sort_direction: str = "asc"
+    sort_field: str = "name"
 
 
 # Response schema (based on your example)
@@ -43,9 +43,9 @@ class DomainSearchBody(BaseModel):
 
     current: Optional[int] = 1
     filters: Optional[List[dict]] = []
-    resultsPerPage: Optional[int] = 15
-    searchTerm: Optional[str] = ""
-    sortDirection: Optional[str] = "asc"
-    sortField: Optional[str] = "name"
+    results_per_page: Optional[int] = 15
+    search_term: Optional[str] = ""
+    sort_direction: Optional[str] = "asc"
+    sort_field: Optional[str] = "name"
     organization_id: Optional[List[str]] = None
     tag_id: Optional[str] = None

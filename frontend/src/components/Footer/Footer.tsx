@@ -1,17 +1,14 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, Grid, Link, Typography } from '@mui/material';
+import { Box, Grid, Link, Stack } from '@mui/material';
 import { useAuthContext } from 'context';
 import logo from '../../assets/cyhydashboard.svg';
 import * as FooterStyles from './styleFooter';
-import { Stack } from '@mui/system';
-import packageJson from '../../../package.json';
 
 export const CrossfeedFooter: React.FC = (props) => {
   const { logout, user } = useAuthContext();
   const FooterRoot = FooterStyles.FooterRoot;
   const footerClasses = FooterStyles.footerClasses;
-  const versionNumber = packageJson.version;
 
   return (
     <FooterRoot>
@@ -21,16 +18,11 @@ export const CrossfeedFooter: React.FC = (props) => {
             <Stack direction="row" spacing={1}>
               <Link
                 to="/"
-                aria-label={`CyHy Dashboard version ${versionNumber}`}
+                aria-label={`CyHy Dashboard Icon Navigate Home`}
                 component={RouterLink}
               >
                 <img src={logo} alt="CyHy Dashboard Icon Navigate Home" />
               </Link>
-              {user && (
-                <Typography variant="caption" color="white" tabIndex={0}>
-                  v. {versionNumber}
-                </Typography>
-              )}
             </Stack>
           </Grid>
           {user && (
@@ -71,7 +63,7 @@ export const CrossfeedFooter: React.FC = (props) => {
             <p>
               <Link
                 className={footerClasses.footerNavLink}
-                href="mailto:vulnerability@cisa.dhs.gov"
+                href="mailto:vulnerability@mail.cisa.dhs.gov"
               >
                 Contact Us
               </Link>

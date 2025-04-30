@@ -111,7 +111,8 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_redshift_user.arn}",
           "${data.aws_ssm_parameter.ssm_redshift_password.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
-          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
+          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}",
+          "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
         ]
     },
     {
@@ -385,20 +386,25 @@ resource "aws_ecs_task_definition" "worker" {
         "value": "${var.crossfeed-xpanse-org-sync}"
       },
       {
+        "name": "QUALYS_USERNAME",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_username.arn}"
+
+      },
+      {
+          "name": "QUALYS_PASSWORD",
+          "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
+      },
+      {
+          "name": "NIST_API_KEY",
+          "valueFrom": "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
+      },
+      {
         "name": "WHOIS_XML_KEY",
         "valueFrom": "${data.aws_ssm_parameter.whoisxml_api_key.arn}"
       },
       {
         "name": "WHOIS_XML_THREAD_COUNT",
         "valueFrom": "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}"
-      },
-      {
-        "name": "QUALYS_USERNAME",
-        "valueFrom": "${data.aws_ssm_parameter.qualys_username.arn}"
-      },
-      {
-        "name": "QUALYS_PASSWORD",
-        "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
       },
       {
         "name": "INTELX_API_KEY",
@@ -501,6 +507,8 @@ data "aws_ssm_parameter" "ssm_redshift_password" { name = var.ssm_redshift_passw
 data "aws_ssm_parameter" "ssm_dmz_api_key" { name = var.ssm_dmz_api_key }
 
 data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpoint }
+
+data "aws_ssm_parameter" "ssm_nist_api_key" { name = var.ssm_nist_api_key }
 
 
 resource "aws_s3_bucket" "export_bucket" {
