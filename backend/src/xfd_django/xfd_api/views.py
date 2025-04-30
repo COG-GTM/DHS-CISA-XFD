@@ -355,7 +355,11 @@ async def get_call_all_cves(
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
     response.headers["X-Salted-Checksum"] = checksum
 
-    return response_obj
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=response_obj,
+        headers={"X-Salted-Checksum": checksum},
+    )
 
 
 # ========================================
