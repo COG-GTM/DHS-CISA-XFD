@@ -79,7 +79,7 @@ from .schema_models import stat_schema
 from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
-from .schema_models.cve import Cve as CveSchema
+from .schema_models.cve import Cve as CveSchema, GetAllCvesResponse
 from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
@@ -300,63 +300,43 @@ async def call_get_cves_by_name(cve_name):
 # --- NIST CVE endpoint, CRASM-2431 ---
 @api_router.post(
     "/dmz_sync/cves",
-    response_class=JSONResponse,
+    response_model=GetAllCvesResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(get_current_active_user)],
     tags=["CVEs to sync to LZ db"],
 )
 async def get_call_all_cves(
-    response: Response,
-    page: int = Query(1, ge=1, description="1-indexed page number"),
-    per_page: int = Query(100, ge=1, description="Number of items per page"),
-    since_timestamp: Optional[datetime] = Query(
-        None,
-        description="Only return CVEs modified at or after this ISO-8601 timestamp",
-    ),
-    current_user: User = Depends(get_current_active_user),
+        response: Response,
+        since_timestamp: datetime = Query(
+            None,
+            description="Only return CVEs modified at or after this ISO-8601 timestamp",
+        ),
+        current_user: User = Depends(get_current_active_user),
 ):
     """
-    Return paginated CVEs plus an X-Salted-Checksum header for integrity.
-
-    - `page` & `per_page` control pagination.
-    - `since_timestamp` filters on `modified_at >= since_timestamp`.
-    - Only global write-admins may call this.
+    Return all CVEs (optionally filtered by since_timestamp) plus an X-Salted-Checksum header.
     """
-    # 2) fetch & paginate
+    if not is_global_write_admin(current_user):
+        raise HTTPException(status_code=403, detail="Unauthorized access.")
+
     try:
-        total_pages, records = await get_all_cves(
-            current_user=current_user,
-            page=page,
-            per_page=per_page,
-            since_timestamp=since_timestamp,
-        )
+        records = await get_all_cves(current_user, since_timestamp=since_timestamp)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {e}",
+            status_code=500, detail=f"Unexpected error: {e}"
         )
 
-    # 3) serialize ORM → dict via Pydantic
-    payload_list = [CveSchema.from_orm(r).dict() for r in records]
+    # Convert Django models → Pydantic dicts
+    payload = [Cve.from_orm(r).model_dump() for r in records]
 
-    response_json_obj = {
-        "status": "ok",
-        "payload": {
-            "total_pages": total_pages,
-            "current_page": page,
-            "data": payload_list,
-        },
-    }
-
-    # 4) compute deterministic JSON + checksum
-    json_str = json.dumps(response_json_obj, default=str, sort_keys=True)
+    resp_obj = {"status": "ok", "payload": payload}
+    json_str = json.dumps(resp_obj, default=str, sort_keys=True)
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
     response.headers["X-Salted-Checksum"] = checksum
 
-    return JSONResponse(content=response_json_obj)
-
+    return JSONResponse(content=resp_obj)
 
 # ========================================
 #   Domain Endpoints

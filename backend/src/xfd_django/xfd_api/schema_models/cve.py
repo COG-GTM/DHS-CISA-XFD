@@ -44,3 +44,7 @@ class Cve(BaseModel):
         """Config."""
 
         from_attributes = True
+
+class GetAllCvesResponse(BaseModel):
+    status: str
+    payload: List[Cve]
