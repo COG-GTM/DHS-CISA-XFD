@@ -253,7 +253,7 @@ SCAN_SCHEMA = {
         global_scan=True,
         description="Update CVE data using the NIST API",
     ),
-    "nist_sync": ScanSchema(
+    "nist_lz_sync": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,
