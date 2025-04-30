@@ -17,7 +17,6 @@ import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
-from django.db import connections
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
 from django.db.models.functions import Power
 from django.utils import timezone
@@ -39,7 +38,6 @@ from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
     get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
-    save_host,
     save_ip_to_datalake,
     save_organization_to_mdl,
     save_port_scan_to_datalake,
@@ -936,24 +934,6 @@ def create_vuln_scan_summary(summary_date=None):
                 "included_tickets": list(included.values_list("id", flat=True)),
                 "top_5_risky_hosts": top_5_hosts,
             },
-        )
-
-
-def enforce_latest_flag_port_scan():
-    """Flag outdated port scans as latest = False."""
-    with connections["mini_data_lake"].cursor() as cursor:
-        cursor.execute(
-            """
-            WITH latest_scans AS (
-                SELECT DISTINCT ON (organization_id, ip_string, port)
-                    id
-                FROM port_scan
-                WHERE time_scanned IS NOT NULL
-                ORDER BY organization_id, ip_string, port, time_scanned DESC
-            )
-            UPDATE port_scan
-            SET latest = (id IN (SELECT id FROM latest_scans))
-        """
         )
 
 
