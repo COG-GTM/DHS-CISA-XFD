@@ -37,12 +37,11 @@ def test_get_call_all_cves_empty_db():
         created_at=now,
         updated_at=now,
     )
-    token = create_jwt_token(user)
 
     # 2) call the endpoint
     response = client.post(
-        "/cves",
-        headers={"Authorization": f"Bearer {token}"},
+        "/dmz_sync/cves",
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
 
     # 3) assertions
@@ -85,12 +84,11 @@ def test_get_call_all_cves_with_data():
         created_at=user_now,
         updated_at=user_now,
     )
-    token = create_jwt_token(user)
 
     # call endpoint
     response = client.post(
-        "/cves",
-        headers={"Authorization": f"Bearer {token}"},
+        "/dmz_sync/cves",
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
     assert response.status_code == 201
 
