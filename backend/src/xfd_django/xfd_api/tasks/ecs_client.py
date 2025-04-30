@@ -107,7 +107,7 @@ class ECSClient:
                             "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME"),
-                            "QUEUE_URL": os.getenv("QUEUE_URL", ""),
+                            "SERVICE_QUEUE_URL": os.getenv("QUEUE_URL", ""),
                             "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
                             "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
                         },
@@ -156,17 +156,11 @@ class ECSClient:
                                 if memory
                                 else "",
                             },
-                        ]
-                        + (
-                            [
-                                {
-                                    "name": "SHODAN_API_KEY",
-                                    "value": command_options["SHODAN_API_KEY"],
-                                }
-                            ]
-                            if "SHODAN_API_KEY" in command_options
-                            else []
-                        ),
+                            {
+                                "name": "SHODAN_API_KEY",
+                                "value": command_options.get("SHODAN_API_KEY") or "",
+                            },
+                        ],
                     }
                 ],
             },
