@@ -108,6 +108,6 @@ def test_get_call_all_cves_with_data():
 def test_get_call_all_cves_unauthorized():
     """Test the /cves endpoint without authorization."""
     # no Authorization header → 401 Unauthorized
-    response = client.post("/cves")
+    response = client.post("/dmz_sync/cves")
     assert response.status_code == 401
     assert "detail" in response.json()
