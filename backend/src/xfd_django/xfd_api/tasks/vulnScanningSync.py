@@ -209,10 +209,10 @@ def main():
         LOGGER.info("Finished processing tickets")
         create_vuln_scan_summary()
 
-    create_vuln_normal_views("mini_data_lake")
-    create_vuln_materialized_views("mini_data_lake")
     create_domain_view("mini_data_lake")
     create_service_view("mini_data_lake")
+    create_vuln_normal_views("mini_data_lake")
+    create_vuln_materialized_views("mini_data_lake")
 
 
 def detect_data_set(query):
