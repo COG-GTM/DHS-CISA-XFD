@@ -390,7 +390,7 @@ SCAN_SCHEMA = {
     ),
     "xpanse_alert_pull": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
@@ -398,7 +398,7 @@ SCAN_SCHEMA = {
     ),
     "xpanse_org_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
