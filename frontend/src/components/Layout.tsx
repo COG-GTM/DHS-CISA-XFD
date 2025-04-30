@@ -6,12 +6,11 @@ import React, {
 } from 'react';
 import { styled } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
-import { Box, Drawer, ScopedCssBaseline, useMediaQuery } from '@mui/material';
+import { Box, Drawer, useMediaQuery } from '@mui/material';
 import { GovBanner, Header } from 'components';
 import { useUserActivityTimeout } from 'hooks/useUserActivityTimeout';
 import { useAuthContext } from 'context/AuthContext';
 import UserInactiveModal from './UserInactivityModal/UserInactivityModal';
-import { CrossfeedFooter } from './Footer';
 import { matchPath } from 'utils/matchPath';
 import { drawerWidth, FilterDrawerV2 } from './FilterDrawerV2';
 import { useTheme } from '@mui/system';
@@ -29,12 +28,9 @@ const Main = styled('main', {
   user?: boolean;
 }>(({ theme, open, user }) => ({
   flexGrow: 1,
-  height: 'calc(100vh - 24px)',
-  maxHeight: 'calc(100vh - 24px)',
+  minHeight: '100vh',
+  height: '100vh',
   overflow: 'scroll',
-  '&::-webkit-scrollbar': {
-    display: 'none'
-  },
   transition: theme.transitions.create('margin', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen
@@ -180,35 +176,3 @@ export const LayoutWithSearch = withSearch(
     filters
   })
 )(Layout);
-
-//Styling
-const PREFIX = 'Layout';
-
-const classes = {
-  root: `${PREFIX}-root`,
-  overrides: `${PREFIX}-overrides`,
-  content: `${PREFIX}-content`
-};
-
-const StyledScopedCssBaseline = styled(ScopedCssBaseline)(({ theme }) => ({
-  [`& .${classes.root}`]: {
-    position: 'relative',
-    height: '100vh',
-    display: 'flex',
-    flexFlow: 'column nowrap'
-    // overflow: 'auto'
-  },
-
-  [`& .${classes.overrides}`]: {
-    WebkitFontSmoothing: 'unset',
-    MozOsxFontSmoothing: 'unset'
-  },
-
-  [`& .${classes.content}`]: {
-    flex: '1',
-    display: 'block',
-    position: 'relative',
-    height: 'calc(100vh - 24px)',
-    overflow: 'scroll'
-  }
-}));

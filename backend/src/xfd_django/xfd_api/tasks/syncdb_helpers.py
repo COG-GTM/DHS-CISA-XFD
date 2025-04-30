@@ -328,8 +328,11 @@ def build_fake_ticket(org):
     port = random.choice([21, 22, 80, 443])
     protocol = random.choice(["tcp", "udp"])
     opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
-    closed_time = opened_time + timedelta(days=random.randint(30, 600))
-
+    # 70% chance of ticket being open (closed_timestamp = None)
+    if random.random() < 0.7:
+        closed_time = None
+    else:
+        closed_time = opened_time + timedelta(days=random.randint(30, 600))
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
@@ -357,6 +360,7 @@ def build_fake_ticket(org):
         opened_timestamp=opened_time,
         is_kev=random.choice([True, False]),
         is_risky=random.choice([True, False]),
+        is_open=not closed_time,
         service_name="ftp",
         nmi_service_group="NMI",
         risky_service_group=random.choice(
@@ -1070,9 +1074,8 @@ def create_vuln_normal_views(database):
                 END AS severity,
                 t.organization_id,
                 CASE
-                    WHEN te."action" IN ('OPENED', 'REOPENED', 'CHANGED', 'VERIFIED') THEN 'open'
-                    WHEN te."action" = 'CLOSED' THEN 'closed'
-                    ELSE 'unknown'  -- optional, in case other values sneak in
+                    WHEN t.is_open THEN 'open'
+                    ELSE 'closed'
                 END AS state,
                 t.vuln_source as data_source,
                 COALESCE(vs.description, te.reason, 'N/A') as description,
@@ -1089,23 +1092,22 @@ def create_vuln_normal_views(database):
                 null as structured_data,
                 null as kev_results
             FROM ticket t
-            LEFT JOIN ticket_event te
-            ON te.ticket_id = t.id
-            LEFT JOIN vuln_scan vs
-            ON vs.id = te.vuln_scan_id
+            LEFT JOIN LATERAL (
+                SELECT te.*
+                FROM ticket_event te
+                WHERE te.ticket_id = t.id
+                ORDER BY te.event_timestamp DESC, te.id DESC
+                LIMIT 1
+            ) te ON TRUE
+            LEFT JOIN vuln_scan vs ON vs.id = te.vuln_scan_id
             LEFT JOIN LATERAL (
                 SELECT sub_domain_id
                 FROM ips_subs ipsubs
                 WHERE ipsubs.ip_id = t.ip_id
-                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
+                ORDER BY sub_domain_id
                 LIMIT 1
-            ) AS sub_link ON TRUE
-            WHERE te.event_timestamp = (
-                SELECT MAX(event_timestamp)
-                FROM ticket_event
-                WHERE ticket_id = t.id
-            )
-        """
+            ) sub_link ON TRUE
+            """
         )
 
         cursor.execute(

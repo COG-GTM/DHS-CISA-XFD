@@ -278,6 +278,7 @@ export const ScanTasksView: React.FC = () => {
     'searchSync',
     'shodan_sync',
     'cve',
+    'cisakev',
     'nist',
     'dotgov',
     'intrigueIdent',
@@ -395,7 +396,7 @@ export const ScanTasksView: React.FC = () => {
                     (child, index) => <Box key={index}>{child}</Box>
                   ),
                   exportTitle: 'Scans'
-                }
+                } as any
               }}
               paginationMode="server"
               paginationModel={paginationModel}

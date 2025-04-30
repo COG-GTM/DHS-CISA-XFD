@@ -31,6 +31,7 @@ import { useLocation } from 'react-router-dom';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
+import { LoginBlockedDialog } from 'components/LoginBlockedDialog';
 
 export interface Point {
   id: string;
@@ -65,7 +66,7 @@ const Risk: React.FC<ContextType> = ({
   search_term,
   setSearchTerm
 }) => {
-  const { showMaps, user, apiPost } = useAuthContext();
+  const { showMaps, user, apiPost, apiGet, logout } = useAuthContext();
 
   const [stats, setStats] = useState<Stats | undefined>(undefined);
   const [isUpdateStateFormOpen, setIsUpdateStateFormOpen] = useState(false);
@@ -147,6 +148,12 @@ const Risk: React.FC<ContextType> = ({
     [riskFilters]
   );
 
+  const { userMustSign } = useAuthContext();
+  const [isLoginBlockedDialogOpen, setIsLoginBlockedDialogOpen] =
+    useState(false);
+  const [maintenanceNotification, setMaintenanceNotification] =
+    useState<any>(null);
+
   useEffect(() => {
     fetchStats();
   }, [fetchStats, riskFilters]);
@@ -158,6 +165,58 @@ const Risk: React.FC<ContextType> = ({
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchAndCheckMaintenance = async () => {
+      // TODO: Some login blocking logic is a duplicate of backend
+      // checks to meet "waiting room" needs to allow controlled logins
+      // for populating new user state and terms agreement before blocking
+      // for pre-release. Standardize this once this is no longer needed.
+      if (
+        user &&
+        !user.invite_pending &&
+        user.state &&
+        user.date_accepted_terms &&
+        !isLoginBlockedDialogOpen
+      ) {
+        // Active Notifications
+        const notifications = await apiGet('/notifications');
+        const active = notifications.find(
+          (n: any) =>
+            n.status === 'active' &&
+            n.maintenance_type === 'major' &&
+            new Date(n.start_datetime) <= new Date() &&
+            new Date(n.end_datetime) >= new Date()
+        );
+        // Set non-blocking userTypes (additional check)
+        const nonBlockingUserTypes = ['globalAdmin', 'regionalAdmin'];
+        if (active && !nonBlockingUserTypes.includes(user.user_type)) {
+          setMaintenanceNotification(active);
+          setIsLoginBlockedDialogOpen(true);
+        }
+      }
+    };
+
+    fetchAndCheckMaintenance();
+  }, [apiGet, isLoginBlockedDialogOpen, user, userMustSign]);
+
+  useEffect(() => {
+    const handleMaintenanceBlocked = (e: any) => {
+      if (e.detail?.message) {
+        setMaintenanceNotification({ message: e.detail.message });
+        setIsLoginBlockedDialogOpen(true);
+      }
+    };
+
+    window.addEventListener('maintenance-blocked', handleMaintenanceBlocked);
+
+    return () => {
+      window.removeEventListener(
+        'maintenance-blocked',
+        handleMaintenanceBlocked
+      );
+    };
+  }, []);
 
   useEffect(() => {
     filters.forEach((filter) => {
@@ -296,7 +355,38 @@ const Risk: React.FC<ContextType> = ({
       <UpdateStateForm
         open={isUpdateStateFormOpen}
         user_id={user?.id ?? ''}
-        onClose={() => setIsUpdateStateFormOpen(false)}
+        onClose={async () => {
+          setIsUpdateStateFormOpen(false);
+
+          // Re-fetch user data or just check if state now exists
+          if (user && user.state) {
+            const notifications = await apiGet('/notifications');
+            const active = notifications.find(
+              (n: any) =>
+                n.status === 'active' &&
+                n.maintenance_type === 'major' &&
+                new Date(n.start_datetime) <= new Date() &&
+                new Date(n.end_datetime) >= new Date()
+            );
+            if (active && user.user_type !== 'globalAdmin') {
+              setMaintenanceNotification(active);
+              setIsLoginBlockedDialogOpen(true);
+            }
+          }
+        }}
+      />
+    );
+  }
+
+  if (isLoginBlockedDialogOpen && maintenanceNotification) {
+    return (
+      <LoginBlockedDialog
+        open={isLoginBlockedDialogOpen}
+        message={maintenanceNotification.message}
+        onClose={() => {
+          setIsLoginBlockedDialogOpen(false);
+          logout();
+        }}
       />
     );
   }
@@ -328,8 +418,11 @@ const Risk: React.FC<ContextType> = ({
 
   return (
     <Grid container>
-      <Grid item sm={0.5} lg={1} xl={2} display={{ xs: 'none', sm: 'block' }} />
-      <Grid item sm={11} lg={10} xl={8} sx={{ maxWidth: '1500px' }}>
+      <Grid
+        size={{ sm: 0.5, lg: 1, xl: 2 }}
+        display={{ xs: 'none', sm: 'block' }}
+      />
+      <Grid size={{ sm: 11, lg: 10, xl: 8 }} sx={{ maxWidth: '1500px' }}>
         <RiskRoot className={classes.root}>
           <div id="wrapper" className={contentWrapper}>
             <Box sx={{ px: '1rem', pb: '2rem' }}>
@@ -340,7 +433,7 @@ const Risk: React.FC<ContextType> = ({
             </Box>
             {stats && (
               <Grid container>
-                <Grid item xs={12} sm={12} md={12} lg={6} xl={6} mb={-4}>
+                <Grid size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }} mb={-4}>
                   <div className={content}>
                     <div className={panel}>
                       <VulnerabilityCard
@@ -365,7 +458,7 @@ const Risk: React.FC<ContextType> = ({
                     </div>
                   </div>
                 </Grid>
-                <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                <Grid size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }}>
                   <div className={content}>
                     <div className={panel}>
                       {stats.domains.num_vulnerabilities.length > 0 && (
@@ -419,7 +512,10 @@ const Risk: React.FC<ContextType> = ({
           </div>
         </RiskRoot>
       </Grid>
-      <Grid item sm={0.5} lg={1} xl={2} display={{ xs: 'none', sm: 'block' }} />
+      <Grid
+        size={{ sm: 0.5, lg: 1, xl: 2 }}
+        display={{ xs: 'none', sm: 'block' }}
+      />
     </Grid>
   );
 };
