@@ -396,6 +396,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Pull all Xpanse data and push to /xpanse-sync in DMZ",
     ),
+    "refresh_vs_summaries": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Rerun VS Summary fills.",
+    ),
     "cisakev": ScanSchema(
         type="fargate",
         is_passive=True,
