@@ -185,8 +185,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
-        cpu="1024",
-        memory="8192",
+        cpu="4096",
+        memory="16384",
         description="Pull in vulnerability data from VSs Vulnerability database",
     ),
     "cveSync": ScanSchema(
@@ -299,10 +299,11 @@ SCAN_SCHEMA = {
     "shodan_sync": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Shodan asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
     ),
     "sslyze": ScanSchema(
         type="fargate",
