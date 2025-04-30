@@ -1266,7 +1266,6 @@ def create_domain_view(database):
     """Create vw_domain view."""
     with connections[database].cursor() as cursor:
         print("Creating domain view...")
-        cursor.execute("DROP VIEW IF EXISTS vw_service;")
         cursor.execute("DROP VIEW IF EXISTS vw_domain;")
 
         # Example materialized view
@@ -1352,12 +1351,15 @@ def create_service_view(database):
     """Create or replace the unified 'service' view (starting with Shodan data)."""
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
+        cursor.execute("DROP MATERIALIZED VIEW IF EXISTS vw_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_shodan_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_portscan_service CASCADE;")
 
         cursor.execute(
             """
-            CREATE OR REPLACE VIEW vw_service AS
+            CREATE OR REPLACE VIEW vw_shodan_service AS
             SELECT
-                s.shodan_asset_uid AS id,
+                s.shodan_asset_uid::text AS id,
                 s.created_at AS "created_at",
                 s.timestamp AS "updated_at",
                 'shodan' AS "service_source",
@@ -1400,4 +1402,73 @@ def create_service_view(database):
             (s.product IS NOT NULL OR s.server IS NOT NULL);
         """
         )
+
+        print("Creating 'service' view from PortScans...")
+
+        cursor.execute(
+            """
+            CREATE OR REPLACE VIEW vw_portscan_service AS
+            SELECT
+                ps.id AS id,
+                ps.time_scanned AS created_at,
+                ps.time_scanned AS updated_at,
+                'portscan' AS service_source,
+                ps.port,
+                ps.service_name AS service,
+                ps.service_product AS banner,
+                jsonb_build_array(
+                    jsonb_build_object(
+                        'name', ps.service_name,
+                        'cpe', ps.service_cpe,
+                        'tags', '[]'::jsonb,
+                        'vendor',
+                            CASE
+                                WHEN ps.service_name ILIKE 'apache%' THEN 'apache'
+                                WHEN ps.service_name ILIKE 'microsoft%' THEN 'microsoft'
+                                WHEN ps.service_name ILIKE 'nginx%' THEN 'nginx'
+                                WHEN ps.service_name ILIKE 'jquery%' THEN 'jquery'
+                                ELSE split_part(lower(ps.service_name), ' ', 1)
+                            END
+                    )
+                ) AS products,
+                NULL::jsonb AS censys_metadata,
+                NULL::jsonb AS censys_ipv4_results,
+                NULL::jsonb AS intrigue_ident_results,
+                NULL::jsonb AS shodan_results,
+                NULL::jsonb AS wappalyzer_results,
+                ps.time_scanned AS last_seen,
+                ps.ip_string AS ip_string,
+                COALESCE(sub_link.sub_domain_id, ps.ip_id) AS domain_id,
+                NULL::uuid AS discovered_by_id
+            FROM port_scan ps
+            LEFT JOIN LATERAL (
+                SELECT sub_domain_id
+                FROM ips_subs ipsubs
+                WHERE ipsubs.ip_id = ps.ip_id
+                ORDER BY sub_domain_id
+                LIMIT 1
+            ) sub_link ON TRUE
+            WHERE ps.latest = TRUE
+            AND ps.port IS NOT NULL
+            AND ps.service_name IS NOT NULL;
+        """
+        )
+
+        print("Creating materialized 'vw_service' from union...")
+        cursor.execute(
+            """
+            CREATE MATERIALIZED VIEW vw_service AS
+            SELECT * FROM vw_shodan_service
+            UNION ALL
+            SELECT * FROM vw_portscan_service;
+            """
+        )
+
+        print("Creating unique index for concurrent refresh...")
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX idx_vw_service_id ON vw_service (id);
+            """
+        )
+
         print("View 'vw_service' created.")

@@ -457,6 +457,8 @@ data "aws_ssm_parameter" "checksum_salt" { name = var.ssm_checksum_salt }
 
 data "aws_ssm_parameter" "intelx_api_key" { name = var.ssm_intelx_api_key }
 
+data "aws_ssm_parameter" "checksum_salt" { name = var.ssm_checksum_salt }
+
 data "aws_ssm_parameter" "xpanse_api_key" { name = var.ssm_xpanse_api_key }
 
 data "aws_ssm_parameter" "whoisxml_api_key" { name = var.ssm_whoisxml_api_key }
