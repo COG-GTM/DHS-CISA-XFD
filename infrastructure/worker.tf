@@ -453,8 +453,6 @@ data "aws_ssm_parameter" "pe_shodan_api_keys" { name = var.ssm_pe_shodan_api_key
 
 data "aws_ssm_parameter" "sixgill_client_id" { name = var.ssm_sixgill_client_id }
 
-data "aws_ssm_parameter" "checksum_salt" { name = var.ssm_checksum_salt }
-
 data "aws_ssm_parameter" "intelx_api_key" { name = var.ssm_intelx_api_key }
 
 data "aws_ssm_parameter" "checksum_salt" { name = var.ssm_checksum_salt }

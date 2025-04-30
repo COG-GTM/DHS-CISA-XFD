@@ -19,7 +19,6 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
 
