@@ -2,12 +2,10 @@
 
 # Standard Python Libraries
 from datetime import datetime, timezone
-import hashlib
-import json
+import re
 import uuid
 
 # Third-Party Libraries
-from django.conf import settings
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
