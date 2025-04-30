@@ -12,6 +12,16 @@ from xfd_api.tasks.vulnScanningSync import (
     create_vuln_scan_summary,
     enforce_latest_flag_port_scan,
 )
+from xfd_mini_dl.models import Organization
+
+
+def rebuild_org_id_dict(db_name="mini_data_lake"):
+    """Rebuild a mapping from organization acronym to UUID."""
+    return {
+        org.acronym: str(org.id)
+        for org in Organization.objects.using(db_name).all()
+        if org.acronym  # defensive check
+    }
 
 
 def handler(event):
@@ -25,7 +35,7 @@ def handler(event):
             LOGGER.error("error flagging latest port scans: %s", e)
         try:
             LOGGER.info("Creating Host summaries.")
-            create_daily_host_summary()
+            create_daily_host_summary(rebuild_org_id_dict())
 
         except Exception as e:
             LOGGER.error("error saving host summary: %s", e)

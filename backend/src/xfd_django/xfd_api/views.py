@@ -954,7 +954,7 @@ async def sync(
 ):
     """Post organizations for datalake sync."""
     try:
-        return await sync_post(sync_body, request)
+        return await sync_post(sync_body, request, current_user)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -1453,7 +1453,9 @@ async def get_vulnerability_by_source_id_route(
     tags=["Blocklist"],
 )
 async def get_blocklist(
-    request: Request, ip_address: str = Query(..., description="IP address to check")
+    request: Request,
+    ip_address: str = Query(..., description="IP address to check"),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Determine if IP is on the blocklist."""
-    return await handle_check_ip(ip_address)
+    return await handle_check_ip(ip_address, current_user)
