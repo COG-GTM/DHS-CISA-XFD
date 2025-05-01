@@ -6098,12 +6098,6 @@ class XpanseAlerts(models.Model):
     host_name = models.TextField(
         blank=True, null=True, help_text="IP or domain where the alert points."
     )
-    # service = models.ForeignKey(
-    #     "Service",
-    #     on_delete=models.CASCADE,
-    #     db_column="service_id",
-    #     help_text="FK: Foreign Key to the linked service",
-    # )
     alert_action = models.TextField(
         blank=True,
         null=True,

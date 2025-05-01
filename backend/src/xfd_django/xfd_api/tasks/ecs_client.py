@@ -58,7 +58,7 @@ class ECSClient:
                     container = self.docker.containers.run(
                         "crossfeed-worker",
                         name=container_name,
-                        network_mode="xfd_backend",
+                        network_mode="backend",
                         mem_limit="4g",
                         environment={
                             "CROSSFEED_COMMAND_OPTIONS": json.dumps(command_options),
@@ -106,6 +106,7 @@ class ECSClient:
                             "SERVICE_QUEUE_URL": os.getenv("QUEUE_URL", ""),
                             "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
                             "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
+                            "QUEUE_URL": os.getenv("QUEUE_URL", ""),
                             "XPANSE_ORG_SYNC_BUCKET_NAME": os.getenv(
                                 "XPANSE_ORG_SYNC_BUCKET_NAME"
                             ),
