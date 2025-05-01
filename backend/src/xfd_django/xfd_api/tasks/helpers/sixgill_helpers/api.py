@@ -105,7 +105,7 @@ def intel_post(auth, query, frm, scroll, result_size):
         "recent_items": False,
         "safe_content_size": True,
     }
-    resp = requests.post(url, headers=headers, json=payload)
+    resp = requests.post(url, headers=headers, json=payload, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while resp.status_code != 200 and retry_count < max_retries:
@@ -121,7 +121,7 @@ def intel_post(auth, query, frm, scroll, result_size):
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.post(url, headers=headers, json=payload)
+        resp = requests.post(url, headers=headers, json=payload, timeout=10)
         retry_count += 1
     # Return result
     resp = resp.json()
@@ -140,7 +140,7 @@ def intel_post_next(auth, scroll_id):
         "scroll_id": scroll_id,
         "recent_items": False,
     }
-    resp = requests.post(url, headers=headers, json=payload)
+    resp = requests.post(url, headers=headers, json=payload, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while resp.status_code != 200 and retry_count < max_retries:
@@ -155,7 +155,7 @@ def intel_post_next(auth, scroll_id):
             f"Retrying Cybersixgill /intel_items/next endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.post(url, headers=headers, json=payload)
+        resp = requests.post(url, headers=headers, json=payload, timeout=10)
         retry_count += 1
     # Return result
     resp = resp.json()
@@ -171,7 +171,7 @@ def credential_auth(auth, params):
         "Cache-Control": "no-cache",
         "Authorization": "Bearer " + auth,
     }
-    resp = requests.get(url, headers=headers, params=params)
+    resp = requests.get(url, headers=headers, params=params, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while resp.status_code != 200 and retry_count < max_retries:
@@ -187,7 +187,7 @@ def credential_auth(auth, params):
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
         retry_count += 1
     resp = resp.json()
     # Return result
@@ -214,7 +214,7 @@ def dve_top_cves():
             "from_index": 0,
         }
     )
-    resp = requests.post(url, headers=headers, data=data)
+    resp = requests.post(url, headers=headers, data=data, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while resp.status_code != 200 and retry_count < max_retries:
@@ -223,7 +223,7 @@ def dve_top_cves():
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.post(url, headers=headers, data=data)
+        resp = requests.post(url, headers=headers, data=data, timeout=10)
         retry_count += 1
     resp = resp.json()
     # Sort and clean top CVE data
@@ -264,7 +264,7 @@ def get_sixgill_organizations():
         "Cache-Control": "no-cache",
         "Authorization": "Bearer " + auth,
     }
-    orgs = requests.get(url, headers=headers)
+    orgs = requests.get(url, headers=headers, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while orgs.status_code != 200 and retry_count < max_retries:
@@ -273,7 +273,7 @@ def get_sixgill_organizations():
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {orgs.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        orgs = requests.get(url, headers=headers)
+        orgs = requests.get(url, headers=headers, timeout=10)
         retry_count += 1
     orgs = orgs.json()
     df_orgs = pd.DataFrame(orgs)
