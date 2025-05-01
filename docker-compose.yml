@@ -164,10 +164,9 @@ services:
       - PW_XFD_2FA_ISSUER=${PW_XFD_2FA_ISSUER}
       - PW_XFD_2FA_SECRET=${PW_XFD_2FA_SECRET}
       - PW_XFD_PASSWORD=${PW_XFD_PASSWORD}
-      - PW_XFD_URL=${PW_XFD_URL}
+      - PW_XFD_URL=http://xfd-frontend-1:3000
       - PW_XFD_USER_ROLE=${PW_XFD_USER_ROLE}
       - PW_XFD_USERNAME=${PW_XFD_USERNAME}
-      - PW_DOCKER=true
     command: >
       /bin/bash -c "npm ci && npx playwright install --with-deps && npx playwright test"
 
