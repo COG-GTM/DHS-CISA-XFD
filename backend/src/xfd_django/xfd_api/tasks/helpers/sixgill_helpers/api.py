@@ -27,7 +27,7 @@ def alerts_list(auth, organization_id, fetch_size, offset):
         "fetch_size": fetch_size,
         "offset": offset,
     }
-    resp = requests.get(url, headers=headers, params=payload)
+    resp = requests.get(url, headers=headers, params=payload, timeout=10)
 
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
@@ -50,7 +50,7 @@ def alerts_list(auth, organization_id, fetch_size, offset):
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}) for chunk at offset {offset} , attempt {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.get(url, headers=headers, params=payload)
+        resp = requests.get(url, headers=headers, params=payload, timeout=10)
         retry_count += 1
     # Return result
     resp = resp.json()
@@ -68,7 +68,7 @@ def alerts_count(organization_id):
         "Authorization": "Bearer " + auth,
     }
     payload = {"organization_id": organization_id}
-    resp = requests.get(url, headers=headers, params=payload)
+    resp = requests.get(url, headers=headers, params=payload, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while resp.status_code != 200 and retry_count < max_retries:
@@ -77,7 +77,7 @@ def alerts_count(organization_id):
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.get(url, headers=headers, params=payload)
+        resp = requests.get(url, headers=headers, params=payload, timeout=10)
         retry_count += 1
     resp = resp.json()
     # Return result
@@ -294,7 +294,7 @@ def org_assets(org_id):
         "Authorization": "Bearer " + auth,
     }
     payload = {"organization_id": org_id}
-    resp = requests.get(url, headers=headers, params=payload)
+    resp = requests.get(url, headers=headers, params=payload, timeout=10)
     # Retry clause in case Cybersixgill's API falters
     retry_count, max_retries, time_delay = 0, 10, 5
     while resp.status_code != 200 and retry_count < max_retries:
@@ -303,7 +303,7 @@ def org_assets(org_id):
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {resp.status_code}), attmept {retry_count+1} of {max_retries}"
         )
         time.sleep(time_delay)
-        resp = requests.get(url, headers=headers, params=payload)
+        resp = requests.get(url, headers=headers, params=payload, timeout=10)
         retry_count += 1
     resp = resp.json()
     # Return result

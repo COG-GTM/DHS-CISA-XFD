@@ -30,7 +30,7 @@ def cybersix_token():
 
     for attempt in range(1, 15):
         try:
-            resp = requests.post(url, headers=headers, data=payload)
+            resp = requests.post(url, headers=headers, data=payload, timeout=10)
             resp.raise_for_status()
             return resp.json()["access_token"]
         except Exception as e:
