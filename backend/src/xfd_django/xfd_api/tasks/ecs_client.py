@@ -77,8 +77,6 @@ class ECSClient:
                             "MDL_NAME": os.getenv("MDL_NAME"),
                             "MDL_USERNAME": os.getenv("MDL_USERNAME"),
                             "MDL_PASSWORD": os.getenv("MDL_PASSWORD"),
-                            "MI_ACCOUNT_NAME": os.getenv("MI_ACCOUNT_NAME"),
-                            "MI_PASSWORD": os.getenv("MI_PASSWORD"),
                             "NIST_API_KEY": os.getenv("NIST_API_KEY"),
                             "PE_DB_NAME": os.getenv("PE_DB_NAME"),
                             "PE_DB_USERNAME": os.getenv("PE_DB_USERNAME"),
@@ -87,8 +85,6 @@ class ECSClient:
                             "CENSYS_API_SECRET": os.getenv("CENSYS_API_SECRET"),
                             "WORKER_USER_AGENT": os.getenv("WORKER_USER_AGENT"),
                             "SHODAN_API_KEY": command_options["SHODAN_API_KEY"],
-                            "SIXGILL_CLIENT_ID": os.getenv("SIXGILL_CLIENT_ID"),
-                            "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET"),
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
                             "WHOIS_XML_KEY": os.getenv("WHOIS_XML_KEY"),
                             "WHOIS_XML_THREAD_COUNT": os.getenv(
