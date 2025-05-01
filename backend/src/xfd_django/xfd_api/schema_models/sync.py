@@ -10,6 +10,8 @@ from pydantic import BaseModel
 class SyncResponse(BaseModel):
     """Response model for sync operations."""
 
+    status: str
+
 
 class XpanseSyncResponse(BaseModel):
     """Response model for Xpanse sync operations."""

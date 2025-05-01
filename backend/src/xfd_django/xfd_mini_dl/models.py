@@ -32,7 +32,11 @@ class AutoLengthCheckModel(models.Model):
         for field in self._meta.fields:
             if isinstance(field, models.CharField):
                 value = getattr(self, field.name)
-                if value and field.max_length and len(value) > field.max_length:
+                if (
+                    isinstance(value, str)
+                    and field.max_length
+                    and len(value) > field.max_length
+                ):
                     LOGGER.warning(
                         "[%s] Auto-truncating field '%s': %s → %s chars",
                         self.__class__.__name__,
@@ -1103,10 +1107,9 @@ class ScanTask(models.Model):
 class Service(models.Model):
     """The Service View."""
 
-    id = models.UUIDField(
+    id = models.TextField(
         primary_key=True,
-        default=uuid.uuid4,
-        help_text="Unique identifier for a web service running on a stakeholders attack surface.",
+        help_text="Unique identifier for the service object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -4218,7 +4221,7 @@ class DataSource(models.Model):
         default=uuid.uuid4,
         help_text="PK: Unique identifier for data_sources",
     )
-    name = models.TextField(help_text="Name of data source")
+    name = models.TextField(unique=True, help_text="Name of data source")
     description = models.TextField(help_text="Description of data source")
     last_run = models.DateField(help_text="Date that data source was last ran")
 
@@ -5404,12 +5407,12 @@ class SubDomains(AutoLengthCheckModel):
         auto_now_add=True,
         blank=True,
         null=True,
-        help_text="Date and time of the first time teh subdomain was seen.",
+        help_text="Date and time of the first time the subdomain was seen.",
     )
     last_seen = models.DateTimeField(
         blank=True,
         null=True,
-        auto_now=True,
+        auto_now_add=True,
         help_text="Date of the last time the subdomain was seen.",
     )
     created_at = models.DateTimeField(
