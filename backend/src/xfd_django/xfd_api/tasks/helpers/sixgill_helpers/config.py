@@ -1,4 +1,4 @@
-"""Tasks for creating cybersix token for cybersixgill scan"""
+"""Tasks for creating cybersix token for cybersixgill scan."""
 
 # Standard Python Libraries
 import logging
