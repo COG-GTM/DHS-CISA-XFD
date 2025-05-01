@@ -40,17 +40,18 @@ export const RouteGuard: React.FC<AuthRedirectRouteProps> = ({
     return null;
   }
 
+  // User must accept terms
   if (user && userMustSign) {
-    // user has authenticated but needs to sign terms
     console.log('User must sign check');
     history.push('/terms');
     return null;
   }
 
-  if (user && user.loginBlockedByMaintenance) {
-    logout();
-    return null;
-  }
+  // TODO: Uncomment if we decide to fully block logins during maintenance windows.
+  // if (user && user.login_blocked_by_maintenance) {
+  //   logout();
+  //   return null;
+  // }
 
   if (typeof unauth === 'string' && !user) {
     history.push(unauth);
@@ -58,10 +59,10 @@ export const RouteGuard: React.FC<AuthRedirectRouteProps> = ({
   }
 
   if (user && permissions && permissions.length > 0) {
-    // user is not globalAdmin and invalid userType permissions
+    // user is not globalAdmin and invalid user_type permissions
     if (
-      user.userType !== 'globalAdmin' &&
-      !permissions.includes(user.userType)
+      user.user_type !== 'globalAdmin' &&
+      !permissions.includes(user.user_type)
     ) {
       console.log('User access denied. Logging out!');
       logout();

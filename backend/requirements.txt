@@ -24,6 +24,7 @@ dnspython==2.7.0
 docker==7.1.0
 elasticsearch==7.9.0
 email_validator==2.2.0
+faker==37.1.0
 fastapi==0.115.11
 fastapi-cli==0.0.6
 frozenlist==1.5.0

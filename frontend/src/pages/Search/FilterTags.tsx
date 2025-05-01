@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { classes, Root } from './Styling/filterTagsStyle';
 import { ContextType } from '../../context/SearchProvider';
-import { Chip } from '@mui/material';
+import { Chip, IconButton } from '@mui/material';
+import { FilterAlt } from '@mui/icons-material';
 import { REGIONAL_ADMIN, useUserLevel } from 'hooks/useUserLevel';
 import { STANDARD_USER } from 'context/userStateUtils';
 import { REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS } from 'hooks/useUserTypeFilters';
 import { useLocation } from 'react-router-dom';
+import { useFilterDrawerContext } from 'context/FilterDrawerContext';
 
 interface Props {
   filters: ContextType['filters'];
@@ -35,7 +37,7 @@ const ellipsisPastIndex: EllipsisPastIndex<string> = (source, index) => {
 };
 
 const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
-  'organization.regionId': {
+  'organization.region_id': {
     labelAccessor: (t) => {
       return 'Region';
     },
@@ -101,7 +103,7 @@ const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
       return t;
     }
   },
-  fromRootDomain: {
+  from_root_domain: {
     labelAccessor: (t) => {
       return 'Root Domain(s)';
     },
@@ -114,7 +116,7 @@ const FIELD_TO_LABEL_MAP: FieldToLabelMap = {
       return t;
     }
   },
-  organizationId: {
+  organization_id: {
     labelAccessor: (t) => {
       return 'Organization';
     },
@@ -199,6 +201,8 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
   const { pathname } = useLocation();
 
   const { userLevel } = useUserLevel();
+  const { setIsFilterDrawerOpen, isFilterDrawerOpen } =
+    useFilterDrawerContext();
 
   const disabledFilters = useMemo(() => {
     if (userLevel === STANDARD_USER) {
@@ -238,6 +242,13 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
 
   return (
     <Root aria-live="polite" aria-atomic="true">
+      <IconButton
+        aria-label="filter-drawer-toggle"
+        sx={{ mt: '0.5rem' }}
+        onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
+      >
+        <FilterAlt />
+      </IconButton>
       {filtersByColumn.length === 0 && pathname === '/inventory' ? (
         <Chip
           color="primary"

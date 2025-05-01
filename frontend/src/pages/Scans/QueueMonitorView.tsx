@@ -39,9 +39,9 @@ const QueueMonitorView: React.FC = () => {
 
   const queueColumns: GridColDef[] = [
     { field: 'name', headerName: 'Queue Name', flex: 2 },
-    { field: 'messagesAvailable', headerName: 'Available', flex: 1 },
-    { field: 'messagesInFlight', headerName: 'In-Flight', flex: 1 },
-    { field: 'messagesDelayed', headerName: 'Delayed', flex: 1 }
+    { field: 'messages_available', headerName: 'Available', flex: 1 },
+    { field: 'messages_in_flight', headerName: 'In-Flight', flex: 1 },
+    { field: 'messages_delayed', headerName: 'Delayed', flex: 1 }
   ];
 
   return (
