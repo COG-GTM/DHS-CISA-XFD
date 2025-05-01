@@ -312,16 +312,11 @@ async def get_call_all_cves(
     current_user: User = Depends(get_current_active_user),
     page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
     per_page: int = Query(100, ge=1, description="How many items per page."),
-    since_timestamp: Optional[datetime] = Query(
-        None,
-        description="Only return CVEs modified at or after this ISO-8601 timestamp",
-    ),
 ):
     """
     Return paginated CVEs plus an X-Salted-Checksum header for integrity.
 
     - `page` & `per_page` control pagination.
-    - `since_timestamp` filters on `modified_at >= since_timestamp`.
     - Only global write-admins may call this.
     """
     # fetch & paginate
@@ -330,7 +325,6 @@ async def get_call_all_cves(
             current_user,
             page=page,
             per_page=per_page,
-            since_timestamp=since_timestamp,
         )
     except HTTPException:
         raise

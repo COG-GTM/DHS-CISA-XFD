@@ -1,7 +1,7 @@
 """CVE Sync scan hitting new FastAPI endpoint."""
 # --- Standard Libraries ---
 # Standard Python Libraries
-import datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import logging
@@ -19,8 +19,11 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
+from xfd_api.helpers.date_time_helpers import calculate_days_back
+
 # --- Your CVE model import ---
 from xfd_mini_dl.models import Cve as CveModel
+from xfd_mini_dl.models import DataSource
 
 # --- Constants & Logging ---
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -125,25 +128,52 @@ def save_cves_to_db(cve_list):
 
 def handler(command_options=None):
     """Fetch all CVEs and save them locally."""
+    nist_source, _ = DataSource.objects.get_or_create(
+        name="Nist",
+        defaults={
+            "description": "Nist cve capture",
+            "last_run": timezone.now().date(),
+        },
+    )
+
+    since_date = calculate_days_back(15)
+
     try:
         LOGGER.info("Starting CVE sync…")
-        resp = requests.post(CVE_API_URL, headers=HEADERS, timeout=60)
-        resp.raise_for_status()
+        page = 1
+        per_page = 200
+        done = False
 
-        if not validate_response_checksum(resp):
-            LOGGER.error("Checksum mismatch!")
-            return {"statusCode": 500, "body": "Checksum mismatch"}
+        while not done:
+            payload = {
+                "page": page,
+                "page_size": per_page,
+                "since_date": since_date,
+            }
 
-        body = resp.json()
-        if body.get("status") != "ok":
-            LOGGER.error("API returned bad status: %s", body)
-            return {"statusCode": 500, "body": "Bad status"}
+            resp = requests.post(CVE_API_URL, headers=HEADERS, json=payload, timeout=60)
+            resp.raise_for_status()
 
-        payload = body.get("payload", [])
-        LOGGER.info("Fetched %s CVEs", len(payload))
-        save_cves_to_db(payload)
+            if not validate_response_checksum(resp):
+                LOGGER.error("Checksum mismatch!")
+                return {"statusCode": 500, "body": "Checksum mismatch"}
+
+            body = resp.json()
+            if body.get("status") != "ok":
+                LOGGER.error("API returned bad status: %s", body)
+                return {"statusCode": 500, "body": "Bad status"}
+            total_pages = resp.get("total_pages", 1)
+            current_page = resp.get("current_page", 1)
+            payload = body.get("payload", [])
+            LOGGER.info("Fetched %s CVEs", len(payload))
+            save_cves_to_db(payload)
+            if current_page >= total_pages:
+                done = True
+            else:
+                page += 1
         LOGGER.info("CVE sync completed successfully")
-        return {"statusCode": 200, "body": "CVE sync successful"}
+
+        return {"statusCode": 200, "body": "Shodan sync completed successfully."}
 
     except Exception as e:
         LOGGER.error("Sync error: %s", e)
