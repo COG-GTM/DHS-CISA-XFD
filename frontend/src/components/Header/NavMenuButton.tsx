@@ -95,15 +95,15 @@ export const NavMenuButton: React.FC<Props> = ({ menuItems, title }) => {
         ? '3px solid'
         : '3px solid transparent'
       : isActive
-        ? '3px solid'
-        : '3px solid transparent',
+      ? '3px solid'
+      : '3px solid transparent',
     borderColor: isDropdown
       ? open
         ? 'primary.dark'
         : 'transparent'
       : isActive
-        ? 'primary.dark'
-        : 'transparent',
+      ? 'primary.dark'
+      : 'transparent',
     borderRadius: 0
   };
 
