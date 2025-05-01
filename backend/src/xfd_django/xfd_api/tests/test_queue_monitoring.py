@@ -8,8 +8,8 @@ import boto3
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import User, UserType
 from xfd_django.asgi import app
+from xfd_mini_dl.models import User, UserType
 
 client = TestClient(app)
 
@@ -48,17 +48,17 @@ class FakeSQSClientNoResults:
         return {"Attributes": {}}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_success(monkeypatch):
     """Test that searching queues returns correct data when SQS provides one queue."""
     # Create a GlobalView user
     user = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email=f"{uuid.uuid4().hex}@example.com",
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     # Override boto3.client to return our FakeSQSClient
@@ -71,7 +71,7 @@ def test_search_queues_success(monkeypatch):
     )
 
     search_payload = {
-        "pageSize": 15,
+        "page_size": 15,
         "page": 1,
         "sort": "name",
         "order": "ASC",
@@ -92,21 +92,21 @@ def test_search_queues_success(monkeypatch):
     result = data["result"][0]
     # The queue name is extracted as the last part of the URL ("testQueue")
     assert result["name"] == "testQueue"
-    assert result["messagesAvailable"] == 5
-    assert result["messagesInFlight"] == 2
-    assert result["messagesDelayed"] == 1
+    assert result["messages_available"] == 5
+    assert result["messages_in_flight"] == 2
+    assert result["messages_delayed"] == 1
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_no_results(monkeypatch):
     """Test that searching queues returns an empty result when no queues are found."""
     user = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email=f"{uuid.uuid4().hex}@example.com",
-        userType=UserType.GLOBAL_VIEW,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
 
     monkeypatch.setattr(
@@ -118,7 +118,7 @@ def test_search_queues_no_results(monkeypatch):
     )
 
     search_payload = {
-        "pageSize": 15,
+        "page_size": 15,
         "page": 1,
         "sort": "name",
         "order": "ASC",
@@ -137,11 +137,11 @@ def test_search_queues_no_results(monkeypatch):
     assert data["result"] == []
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_queues_unauthorized():
     """Test that the endpoint returns 401 when no valid authentication is provided."""
     search_payload = {
-        "pageSize": 15,
+        "page_size": 15,
         "page": 1,
         "sort": "name",
         "order": "ASC",

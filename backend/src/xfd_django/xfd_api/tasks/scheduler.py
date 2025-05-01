@@ -15,11 +15,11 @@ django.setup()
 
 # Third-Party Libraries
 from xfd_api.helpers.getScanOrganizations import get_scan_organizations
-
-# Import Django models and helper functions
-from xfd_api.models import Organization, Scan, ScanTask
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_api.tasks.scanExecution import handler as scan_execution_handler
+
+# Import Django models and helper functions
+from xfd_mini_dl.models import Organization, Scan, ScanTask
 
 
 class Scheduler:
@@ -37,8 +37,41 @@ class Scheduler:
 
     def launch_scan_execution(self, scan):
         """Prepare and send scan execution request."""
+        # If global scan, ignore queue and start 1 concurrent task
+        scan_schema = SCAN_SCHEMA.get(scan.name, {})
+        global_scan = getattr(scan_schema, "global_scan", False)
+        if global_scan:
+            print("This is a global scan.")
+            if not self.should_run_scan(scan):
+                print(
+                    "Skipping global scan execution due to recent activity or constraints."
+                )
+                return
+            # Now pass organizations to scanExecution
+            event_payload = {
+                "scanId": str(scan.id),
+                "scanType": scan.name,
+                "desiredCount": 1,
+                "organizations": [],
+                "isPe": False,
+            }
+            try:
+                response = scan_execution_handler(event_payload, None)
+                print("scanExecution handler response: {}".format(response))
+
+                # Set manual_run_pending to False since scan is now launched
+                scan.manual_run_pending = False
+                scan.last_run = timezone.now()
+                scan.save()
+                print("Updated scan: manual_run_pending set to False")
+
+            except Exception as e:
+                print("Error invoking scanExecution: {}".format(e))
+
+            return
+
         # Get organizations to run on
-        orgs = get_scan_organizations(scan) if scan.isGranular else self.organizations
+        orgs = get_scan_organizations(scan) if scan.is_granular else self.organizations
         filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
 
         if not filtered_orgs:
@@ -47,34 +80,6 @@ class Scheduler:
                     scan.name
                 )
             )
-            return
-
-        # If global scan, ignore queue and start 1 concurrent task
-        scan_schema = SCAN_SCHEMA.get(scan.name, {})
-        global_scan = getattr(scan_schema, "global_scan", False)
-        if global_scan:
-            print("This is a global scan.")
-            # Now pass organizations to scanExecution
-            event_payload = {
-                "scanId": str(scan.id),
-                "scanType": scan.name,
-                "desiredCount": 1,
-                "organizations": list(filtered_orgs),
-                "isPe": False,
-            }
-            try:
-                response = scan_execution_handler(event_payload, None)
-                print("scanExecution handler response: {}".format(response))
-
-                # Set manualRunPending to False since scan is now launched
-                scan.manualRunPending = False
-                scan.lastRun = timezone.now()
-                scan.save()
-                print("Updated scan: manualRunPending set to False")
-
-            except Exception as e:
-                print("Error invoking scanExecution: {}".format(e))
-
             return
 
         # Prepare scan specific queue
@@ -135,7 +140,7 @@ class Scheduler:
         event_payload = {
             "scanId": str(scan.id),
             "scanType": scan.name,
-            "desiredCount": scan.concurrentTasks,
+            "desiredCount": scan.concurrent_tasks,
             "organizations": list(filtered_orgs),
             "isPe": False,
         }
@@ -143,11 +148,11 @@ class Scheduler:
             response = scan_execution_handler(event_payload, None)
             print("scanExecution handler response: {}".format(response))
 
-            # Set manualRunPending to False since scan is now launched
-            scan.manualRunPending = False
-            scan.lastRun = timezone.now()
+            # Set manual_run_pending to False since scan is now launched
+            scan.manual_run_pending = False
+            scan.last_run = timezone.now()
             scan.save()
-            print("Updated scan: manualRunPending set to False")
+            print("Updated scan: manual_run_pending set to False")
 
         except Exception as e:
             print("Error invoking scanExecution: {}".format(e))
@@ -157,27 +162,31 @@ class Scheduler:
         Determine whether the scan should run for a given organization.
 
         This method uses several criteria:
-         1. If manualRunPending is set, always run.
-         2. Check if enough time has passed since the scan last ran (using scan.lastRun and frequency).
+         1. If manual_run_pending is set, always run.
+         2. Check if enough time has passed since the scan last ran (using scan.last_run and frequency).
          3. Check for currently running or recently finished scan tasks.
         """
         scan_schema = SCAN_SCHEMA.get(scan.name, {})
-        is_passive = getattr(scan_schema, "isPassive", False)
+        is_passive = getattr(scan_schema, "is_passive", False)
         global_scan = getattr(scan_schema, "global_scan", False)
 
         # Don't run non-passive scans on passive organizations.
-        if organization and organization.isPassive and not is_passive:
+        if organization and organization.is_passive and not is_passive:
             return False
 
-        # Always run scans that have manualRunPending set to True.
-        if scan.manualRunPending:
+        # Always run scans that have manual_run_pending set to True.
+        if scan.manual_run_pending:
             return True
 
-        # Check if the scan has run recently based on its lastRun timestamp.
-        if scan.lastRun:
+        # Check if the scan has run recently based on its last_run timestamp.
+        if scan.last_run:
+            if timezone.is_naive(scan.last_run):
+                scan.last_run = timezone.make_aware(
+                    scan.last_run, timezone.get_current_timezone()
+                )
             # Assuming scan.frequency is expressed in days, convert to seconds.
             frequency_seconds = scan.frequency * 86400
-            if (timezone.now() - scan.lastRun).total_seconds() < frequency_seconds:
+            if (timezone.now() - scan.last_run).total_seconds() < frequency_seconds:
                 return False
 
         def filter_scan_tasks(tasks):
@@ -190,31 +199,31 @@ class Scheduler:
         last_running_scan_task = filter_scan_tasks(
             ScanTask.objects.filter(
                 status__in=["created", "queued", "requested", "started"]
-            ).order_by("-createdAt")
+            ).order_by("-created_at")
         ).first()
         if last_running_scan_task:
             return False
 
         last_finished_scan_task = filter_scan_tasks(
             ScanTask.objects.filter(
-                status__in=["finished", "failed"], finishedAt__isnull=False
-            ).order_by("-finishedAt")
+                status__in=["finished", "failed"], finished_at__isnull=False
+            ).order_by("-finished_at")
         ).first()
-        if last_finished_scan_task and last_finished_scan_task.finishedAt:
+        if last_finished_scan_task and last_finished_scan_task.finished_at:
             frequency_seconds = scan.frequency * 86400
-            if timezone.is_naive(last_finished_scan_task.finishedAt):
-                last_finished_scan_task.finishedAt = timezone.make_aware(
-                    last_finished_scan_task.finishedAt, timezone.get_current_timezone()
+            if timezone.is_naive(last_finished_scan_task.finished_at):
+                last_finished_scan_task.finished_at = timezone.make_aware(
+                    last_finished_scan_task.finished_at, timezone.get_current_timezone()
                 )
             if (
-                timezone.now() - last_finished_scan_task.finishedAt
+                timezone.now() - last_finished_scan_task.finished_at
             ).total_seconds() < frequency_seconds:
                 return False
 
         if (
             last_finished_scan_task
-            and last_finished_scan_task.finishedAt
-            and scan.isSingleScan
+            and last_finished_scan_task.finished_at
+            and scan.is_single_scan
         ):
             print("Single scan")
             return False
@@ -224,7 +233,7 @@ class Scheduler:
     def run(self):
         """Execute scans based on their configurations."""
         for scan in self.scans:
-            if getattr(scan, "concurrentTasks", 0):
+            if getattr(scan, "concurrent_tasks", 0):
                 self.launch_scan_execution(scan)
 
 

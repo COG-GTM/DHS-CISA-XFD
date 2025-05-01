@@ -37,13 +37,13 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     addFilter,
     removeFilter,
     results,
-    sortDirection,
-    sortField,
+    sort_direction,
+    sort_field,
     setSort,
     totalPages,
     totalResults,
     setSearchTerm,
-    searchTerm,
+    search_term,
     noResults
   } = props;
 
@@ -57,7 +57,7 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     user
   } = useAuthContext();
 
-  const advanceFiltersReq = filters.length > 1 || searchTerm !== ''; //Prevents a user from saving a search without advanced filters
+  const advanceFiltersReq = filters.length > 1 || search_term !== ''; //Prevents a user from saving a search without advanced filters
 
   const fetchDomainsExport = async (): Promise<string> => {
     try {
@@ -65,13 +65,13 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         current,
         filters,
         resultsPerPage,
-        searchTerm,
-        sortDirection,
-        sortField
+        search_term,
+        sort_direction,
+        sort_field
       };
       if (!showAllOrganizations && currentOrganization) {
-        if ('rootDomains' in currentOrganization)
-          body.organizationId = currentOrganization.id;
+        if ('root_domains' in currentOrganization)
+          body.organization_id = currentOrganization.id;
         else body.tagId = currentOrganization.id;
       }
       const { url } = await apiPost('/search/export', {
@@ -85,18 +85,18 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
   };
 
   const filtersToDisplay = useMemo(() => {
-    if (searchTerm !== '') {
+    if (search_term !== '') {
       return [
         ...filters,
         {
           field: 'query',
-          values: [searchTerm],
+          values: [search_term],
           onClear: () => setSearchTerm('', { shouldClearFilters: false })
         }
       ];
     }
     return filters;
-  }, [filters, searchTerm, setSearchTerm]);
+  }, [filters, search_term, setSearchTerm]);
 
   const userLevel = useUserLevel().userLevel;
 
@@ -129,18 +129,18 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
           justifyContent="space-between"
         >
           <SortBar
-            sortField={sortField}
-            sortDirection={sortDirection}
+            sort_field={sort_field}
+            sort_direction={sort_direction}
             setSort={setSort}
             isFixed={resultsScrolled}
             advancedFiltersReq={advanceFiltersReq}
           />
           <SaveSearchModal
-            searchTerm={searchTerm}
+            search_term={search_term}
             filters={filters}
             totalResults={totalResults}
-            sortField={''}
-            sortDirection={''}
+            sort_field={''}
+            sort_direction={''}
             advancedFiltersReq={advanceFiltersReq}
           />
         </Stack>
@@ -276,12 +276,12 @@ export const Dashboard = withSearch(
     totalResults,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sortDirection,
-    sortField,
+    sort_direction,
+    sort_field,
     setSort,
     resultsPerPage,
     setResultsPerPage,
@@ -296,12 +296,12 @@ export const Dashboard = withSearch(
     totalResults,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sortDirection,
-    sortField,
+    sort_direction,
+    sort_field,
     setSort,
     resultsPerPage,
     setResultsPerPage,
