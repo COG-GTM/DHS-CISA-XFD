@@ -391,7 +391,7 @@ SCAN_SCHEMA = {
     ),
     "cybersixgill": ScanSchema(
         type="fargate",
-        isPassive=True,
+        is_passive=True,
         global_scan=True,
         cpu="1024",
         memory="8192",
