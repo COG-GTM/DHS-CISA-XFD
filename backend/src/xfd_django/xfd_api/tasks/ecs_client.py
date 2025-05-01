@@ -63,6 +63,7 @@ class ECSClient:
                         environment={
                             "CROSSFEED_COMMAND_OPTIONS": json.dumps(command_options),
                             "CF_API_KEY": os.getenv("CF_API_KEY"),
+                            "CHECKSUM_SALT": os.getenv("CHECKSUM_SALT"),
                             "PE_API_KEY": os.getenv("PE_API_KEY"),
                             "DB_DIALECT": os.getenv("DB_DIALECT"),
                             "DB_HOST": os.getenv("DB_HOST"),
@@ -76,8 +77,6 @@ class ECSClient:
                             "MDL_NAME": os.getenv("MDL_NAME"),
                             "MDL_USERNAME": os.getenv("MDL_USERNAME"),
                             "MDL_PASSWORD": os.getenv("MDL_PASSWORD"),
-                            "MI_ACCOUNT_NAME": os.getenv("MI_ACCOUNT_NAME"),
-                            "MI_PASSWORD": os.getenv("MI_PASSWORD"),
                             "NIST_API_KEY": os.getenv("NIST_API_KEY"),
                             "PE_DB_NAME": os.getenv("PE_DB_NAME"),
                             "PE_DB_USERNAME": os.getenv("PE_DB_USERNAME"),
@@ -86,8 +85,6 @@ class ECSClient:
                             "CENSYS_API_SECRET": os.getenv("CENSYS_API_SECRET"),
                             "WORKER_USER_AGENT": os.getenv("WORKER_USER_AGENT"),
                             "SHODAN_API_KEY": command_options["SHODAN_API_KEY"],
-                            "SIXGILL_CLIENT_ID": os.getenv("SIXGILL_CLIENT_ID"),
-                            "SIXGILL_CLIENT_SECRET": os.getenv("SIXGILL_CLIENT_SECRET"),
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
                             "WHOIS_XML_KEY": os.getenv("WHOIS_XML_KEY"),
                             "WHOIS_XML_THREAD_COUNT": os.getenv(
@@ -112,6 +109,7 @@ class ECSClient:
                             ),
                             "XPANSE_API_KEY": os.getenv("XPANSE_API_KEY"),
                             "XPANSE_AUTH_ID": os.getenv("XPANSE_AUTH_ID"),
+                            "SERVICE_QUEUE_URL": os.getenv("QUEUE_URL", ""),
                             "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
                             "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
                         },
@@ -160,17 +158,11 @@ class ECSClient:
                                 if memory
                                 else "",
                             },
-                        ]
-                        + (
-                            [
-                                {
-                                    "name": "SHODAN_API_KEY",
-                                    "value": command_options["SHODAN_API_KEY"],
-                                }
-                            ]
-                            if "SHODAN_API_KEY" in command_options
-                            else []
-                        ),
+                            {
+                                "name": "SHODAN_API_KEY",
+                                "value": command_options.get("SHODAN_API_KEY") or "",
+                            },
+                        ],
                     }
                 ],
             },
