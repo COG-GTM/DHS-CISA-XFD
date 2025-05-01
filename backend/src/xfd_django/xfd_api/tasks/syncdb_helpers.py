@@ -621,7 +621,11 @@ def create_api_key_for_user(user):
     )
 
     # Print the raw key for debugging or manual testing
-    print("Created API key for user {}: {}".format(user.email, key))
+    print(
+        "Created API key for user, keep this and enter at .env file CF_API_KEY {}: {}".format(
+            user.email, key
+        )
+    )
 
 
 def generate_random_name():
