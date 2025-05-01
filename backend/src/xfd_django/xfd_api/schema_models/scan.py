@@ -391,10 +391,11 @@ SCAN_SCHEMA = {
     "xpanse_alert_pull": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Xpanse alert data from Xpanse API",
+        max_concurrent_tasks=3,
     ),
     "xpanse_org_sync": ScanSchema(
         type="fargate",

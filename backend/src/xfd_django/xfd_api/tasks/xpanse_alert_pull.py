@@ -324,7 +324,6 @@ def pull_alerts_data(linked_org_list, business_units_list=[]):
         business_unit = linking_dict.get(org_acronym, None)
         request_data = {"use_page_token": True, "search_from": 0, "search_to": 5000}
         filters = []
-        LOGGER.info("Running Xpanse alert pull on %s", org)
         filters.append(
             {"field": "business_units_list", "operator": "in", "value": [org]}
         )
@@ -344,6 +343,7 @@ def pull_alerts_data(linked_org_list, business_units_list=[]):
             resp_dict = response.json()
             page_token = resp_dict["reply"]["next_page_token"]
             formatted_alerts = format_alerts(resp_dict["reply"]["alerts"])
+            LOGGER.info("Found %d alerts", len(formatted_alerts))
             for alert in formatted_alerts:
                 insert_xpanse_alert(alert, mdl_org_record, business_unit)
 
@@ -365,7 +365,6 @@ def pull_alerts_data(linked_org_list, business_units_list=[]):
 
             LOGGER.info("Done Xpanse alert pull on %s", org)
         except Exception as e:
-            print("Here", e)
             LOGGER.error("Error querying assets for %s: %s.", org, e)
 
 
@@ -526,17 +525,20 @@ def extract_business_units(alert):
 
 def match_services(service_ids, services):
     """Match services to service ID."""
-    matched = []
-    for service_id in service_ids:
-        try:
-            match = next(
-                (d for d in services if d.get("service_id") == service_id), None
-            )
-            if match:
-                matched.append(match)
-        except (TypeError, AttributeError) as e:
-            LOGGER.warning(f"Failed to process service ID '{service_id}': {e}")
-    return matched
+    try:
+        matched = []
+        for service_id in service_ids:
+            try:
+                match = next(
+                    (d for d in services if d.get("service_id") == service_id), None
+                )
+                if match:
+                    matched.append(match)
+            except (TypeError, AttributeError) as e:
+                LOGGER.warning(f"Failed to process service ID '{service_id}': {e}")
+        return matched
+    except ValueError:
+        return []
 
 
 def build_alert_dict(alert, business_units_list, current_services):
@@ -681,14 +683,10 @@ def format_asset(asset):
     return asset_dict
 
 
-def get_linked_business_units(org_list):
+def get_linked_business_units(acronym):
     """Get linked business units from the database."""
     try:
-        org_records = None
-        if len(org_list) == 0:
-            org_records = Organization.objects.all()
-        else:
-            org_records = Organization.objects.filter(acronym__in=org_list)
+        org_records = Organization.objects.filter(acronym=acronym)
         return XpanseBusinessUnits.objects.filter(cyhy_db_name__in=org_records)
     except Exception as e:
         LOGGER.error("Error querying linked business units: %s", e)
@@ -697,8 +695,12 @@ def get_linked_business_units(org_list):
 
 def main(event):
     """Run Xpanse scans."""
-    orgs_list = event.get("organizations", [])
-    linked_business_units = get_linked_business_units(orgs_list)
+    organizationId = event.get("organizationId", None)
+    org_record = Organization.objects.get(id=organizationId)
+    bu_record = XpanseBusinessUnits.objects.get(cyhy_db_name=org_record)
+    orgs_list = [bu_record.entity_name]
+    org_acronym = org_record.acronym
+    linked_business_units = get_linked_business_units(org_acronym)
     pull_alerts_data(linked_business_units, orgs_list)
     return 1
 
