@@ -222,7 +222,7 @@ const Risk: React.FC<ContextType> = ({
     filters.forEach((filter) => {
       if (
         filter.field !== 'organization.region_id' &&
-        filter.field !== 'organizationId'
+        filter.field !== 'organization_id'
       ) {
         removeFilter(filter.field, filter.values[0], filter.type);
       }
