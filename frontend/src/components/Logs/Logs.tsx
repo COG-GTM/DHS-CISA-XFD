@@ -24,7 +24,16 @@ interface LogDetails {
   created_at: string;
   event_type: string;
   result: string;
-  payload: string;
+  // payload: string;
+  payload: {
+    user?: {
+      email: string;
+    };
+    user_performed_assignment: {
+      email: string;
+      [key: string]: any;
+    };
+  };
 }
 
 export const Logs: FC<LogsProps> = () => {
@@ -75,16 +84,19 @@ export const Logs: FC<LogsProps> = () => {
       flex: 1.25
     },
     {
-      field: 'user assigned',
+      field: 'payload.user.email',
       headerName: 'User Assigned',
       minWidth: 100,
-      flex: 1.5
+      flex: 1.5,
+      valueGetter: (params) => params.row.payload?.user?.email || 'N/A'
     },
     {
-      field: 'assigned by',
+      field: 'payload.user_performed_assignment.email',
       headerName: 'Assigned By',
       minWidth: 100,
-      flex: 1.5
+      flex: 1.5,
+      valueGetter: (params) =>
+        params.row.payload?.user_performed_assignment?.email || 'N/A'
     },
     {
       field: 'result',
