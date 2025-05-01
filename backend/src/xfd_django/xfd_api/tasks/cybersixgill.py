@@ -100,7 +100,7 @@ class Cybersixgill:
                     failed.append(f"{org_id} mentions")
             # Run credential scan
             if "credentials" in self.method_list:
-                if self.get_credentials(org, org_id, sixgill_id) == 1:
+                if self.get_credentials(org, sixgill_id) == 1:
                     failed.append(f"{org_id} credentials")
 
         # Log any failed scans
