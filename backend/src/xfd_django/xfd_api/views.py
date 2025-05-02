@@ -302,9 +302,9 @@ async def call_get_cves_by_name(cve_name):
 # --- NIST CVE endpoint, CRASM-2431 ---
 @api_router.post(
     "/dmz_sync/cves",
+    dependencies=[Depends(get_current_active_user)],
     response_model=GetAllCvesResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(get_current_active_user)],
     tags=["CVEs to sync to LZ db"],
 )
 async def get_call_all_cves(
