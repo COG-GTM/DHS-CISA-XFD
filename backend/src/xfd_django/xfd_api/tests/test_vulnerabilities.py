@@ -539,10 +539,9 @@ def test_search_vulnerabilities_by_organization_id(
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
-    """Test vulnerability."""
-    is_kev_to_search = search_fields["is_kev"]
-
+@pytest.mark.parametrize("is_kev_to_search", [True, False])
+def test_search_vulnerabilities_by_is_kev(user, refresh_vuln_views, is_kev_to_search):
+    """Test filtering vulnerabilities by is_kev=True or is_kev=False."""
     response = client.post(
         "/vulnerabilities/search",
         json={"page": 1, "filters": {"is_kev": is_kev_to_search}, "pageSize": 25},
@@ -550,21 +549,16 @@ def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_view
     )
 
     assert response.status_code == 200
-
     data = response.json()
 
     assert data is not None, "Response is empty"
-    assert "result" in data, "Response does not contain 'result' key"
-    assert (
-        len(data["result"]) > 0
-    ), "No vulnerabilities found for the given is_kev value {}".format(is_kev_to_search)
+    assert "result" in data, "Missing 'result' key"
+    assert len(data["result"]) > 0, f"No results for is_kev={is_kev_to_search}"
 
     for vuln in data["result"]:
         assert (
             vuln["is_kev"] == is_kev_to_search
-        ), "Vulnerability with ID {} does not have the expected 'is_kev' value {}".format(
-            vuln["id"], is_kev_to_search
-        )
+        ), f"Vuln {vuln['id']} has is_kev={vuln['is_kev']}, expected {is_kev_to_search}"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
