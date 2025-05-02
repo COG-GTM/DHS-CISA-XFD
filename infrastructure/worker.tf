@@ -393,12 +393,12 @@ resource "aws_ecs_task_definition" "worker" {
 
       },
       {
-          "name": "QUALYS_PASSWORD",
-          "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
+        "name": "QUALYS_PASSWORD",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
       },
       {
-          "name": "NIST_API_KEY",
-          "valueFrom": "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
+        "name": "NIST_API_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
       },
       {
         "name": "WHOIS_XML_KEY",
