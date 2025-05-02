@@ -1090,7 +1090,15 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
+                null as kev_results,
+                --Additional fields requested:
+                t.ip_string,
+                vs.cvss_vector,
+                t.cvss_severity as severity_int,
+                vs.plugin_id,
+                vs.solution,
+                vs.synopsis,
+                vs.plugin_output as results
             FROM ticket t
             LEFT JOIN LATERAL (
                 SELECT te.*
@@ -1144,7 +1152,15 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
+                null as kev_results,
+                --Additional Data requested
+                null AS ip_string,
+                null AS cvss_vector,
+                null::int AS severity_int,
+                null as plugin_id,
+                null AS solution,
+                null AS synopsis,
+                null AS results
             FROM shodan_vulns as sv
             LEFT JOIN LATERAL (
                 SELECT sub_domain_id
@@ -1189,8 +1205,16 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
-            FROM (
+                null as kev_results,
+                --Additional Data requested
+                null AS ip_string,
+                null AS cvss_vector,
+                null::int AS severity_int,
+                null as plugin_id,
+                null AS solution,
+                null AS synopsis,
+                null AS results
+                FROM (
                 SELECT
                     ce.credential_exposures_uid::text AS vuln_id,
                     'credential_breach' AS scan_source,
