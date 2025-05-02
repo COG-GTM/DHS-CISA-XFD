@@ -82,12 +82,7 @@ from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
 from .schema_models.cve import GetAllCvesResponse
-from .schema_models.dmz_sync import (
-    CredSyncResponse,
-    DataSource,
-    SyncRequest,
-    ShodanSyncResponse,
-)
+from .schema_models.dmz_sync import CredSyncResponse, ShodanSyncResponse, SyncRequest
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema

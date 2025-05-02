@@ -1,23 +1,22 @@
 """CredentialSync scan."""
 # Standard Python Libraries
 import datetime
+import logging
 import os
-import time
 
 # Third-Party Libraries
 import django
 from django.conf import settings
 from django.utils import timezone
-import logging
+from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_api.helpers.date_time_helpers import calculate_days_back
-from xfd_api.helpers.data_pull_history import update_query_timestamp, get_last_queried
 from xfd_api.helpers.dmz_sync_helper import query_api
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
     DataSource,
     Organization,
-    SubDomains
+    SubDomains,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -41,6 +40,7 @@ unknown_data_source, uds_created = DataSource.objects.get_or_create(
         "last_run": timezone.now().date(),  # Sets the current date and time
     },
 )
+
 
 def handler(event):
     """Retrieve and save credential breaches and exposures from the DMZ."""
@@ -68,12 +68,12 @@ def main():
     try:
         # all_orgs = Organization.objects.all()
         # For testing
-        all_orgs = Organization.objects.filter(acronym__in=['USAGM', 'DHS'])
-        
+        all_orgs = Organization.objects.filter(acronym__in=["USAGM", "DHS"])
+
         # since_timestamp_str = calculate_days_back(15)
 
         for org in all_orgs:
-            since_timestamp = get_last_queried(Organization,'credential_sync')
+            since_timestamp = get_last_queried(Organization, "credential_sync")
 
             if since_timestamp:
                 since_timestamp_str = since_timestamp.isoformat()
@@ -91,7 +91,13 @@ def main():
             page_number = 1
 
             while not done:
-                response = query_api("/dmz_sync/cred_sync", acronym, since_timestamp_str, page_size, page_number)
+                response = query_api(
+                    "/dmz_sync/cred_sync",
+                    acronym,
+                    since_timestamp_str,
+                    page_size,
+                    page_number,
+                )
                 if response:
                     total_pages = process_response(response, org)
                     # save_findings_to_db(cred_exposures_array, cred_breaches_array, org)
@@ -104,18 +110,12 @@ def main():
 
             update_query_timestamp(start_pulling_time)
 
-
-            
-
-        
-        
     except Exception as e:
         print("Scan failed to complete: {error}".format(error=e))
 
 
 def process_response(response, org):
     """Save credential exposure and breach data to the mini datalake using Django ORM."""
-
     data = response.json()
 
     cred_breaches_array = data.get("credential_breaches", [])
@@ -181,7 +181,7 @@ def process_response(response, org):
                         defaults={
                             "is_root_domain": True,
                             "enumerate_subs": False,
-                            "identified":True,
+                            "identified": True,
                             "current": True,
                             "data_source": data_source_dict[
                                 exposure.get("data_source_name", "Unknown")
@@ -195,19 +195,22 @@ def process_response(response, org):
                     organization=org,
                     defaults={
                         "root_domain": root_obj,
-                        "is_root_domain": exposure.get("root_domain") == exposure.get("sub_domain_string"),
-                        "data_source": data_source_dict[exposure.get("data_source_name", "Unknown")],
+                        "is_root_domain": exposure.get("root_domain")
+                        == exposure.get("sub_domain_string"),
+                        "data_source": data_source_dict[
+                            exposure.get("data_source_name", "Unknown")
+                        ],
                         "last_seen": datetime.datetime.now(datetime.timezone.utc),
                         "current": True,
                         "identified": True,
                         "from_root_domain": exposure.get("root_domain"),
                         "enumerate_subs": False,
-                        "subdomain_source": exposure.get("data_source_name", "Unknown")
+                        "subdomain_source": exposure.get("data_source_name", "Unknown"),
                     },
                 )
                 if sd_created:
-                    sub_obj.current=True
-                    sub_obj.last_seen=datetime.datetime.now(datetime.timezone.utc)
+                    sub_obj.current = True
+                    sub_obj.last_seen = datetime.datetime.now(datetime.timezone.utc)
                     sub_obj.save()
                 CredentialExposures.objects.update_or_create(
                     breach_name=exposure.get("breach_name"),

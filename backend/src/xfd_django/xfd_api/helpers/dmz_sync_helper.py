@@ -1,17 +1,21 @@
-import datetime
+"""DMZ Sync helper functions."""
+# Standard Python Libraries
 import hashlib
 import json
 import logging
 import os
 import time
+
+# Third-Party Libraries
 import requests
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
+
 def query_api(url_route, acronym, last_seen_after, page_size=50, page_number=1):
-    """Pull ASM sync data from the DMZ."""
+    """Pull dmz sync data from the DMZ."""
     url = os.getenv("DMZ_URL") + url_route
 
     payload = json.dumps(
@@ -32,7 +36,7 @@ def query_api(url_route, acronym, last_seen_after, page_size=50, page_number=1):
     while response.status_code != 200 and retry_count <= max_retries:
         if response.status_code:
             LOGGER.info(
-                "Retrying MDL AMS_Sync endpoint (code %d), attempt %d of %d (url: %s)",
+                "Retrying MDL DMZ_sync endpoint (code %d), attempt %d of %d (url: %s)",
                 response.status_code,
                 retry_count,
                 max_retries,
@@ -58,6 +62,7 @@ def query_api(url_route, acronym, last_seen_after, page_size=50, page_number=1):
         return None
 
     # print(response.text)
+
 
 def validate_response_checksum(response):
     """Validate the checksum from an API response."""

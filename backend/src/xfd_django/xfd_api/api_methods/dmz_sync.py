@@ -3,28 +3,18 @@
 
 # Third-Party Libraries
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Prefetch, Q
+from django.db.models import Q
 from fastapi import HTTPException
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
-    DataSource,
-    Ip,
-    IpsSubs,
     Organization,
-    ShodanAssets, 
+    ShodanAssets,
     ShodanVulns,
-    SubDomains,
 )
 
 from ..auth import is_global_write_admin
-from ..schema_models.dmz_sync import (
-    CredentialBreach,
-    CredentialExposure,
-    IpInsert,
-    IpsSub,
-    LooseSub,
-)
+from ..schema_models.dmz_sync import CredentialBreach, CredentialExposure
 
 
 # POST: /dmz_sync/shodan_sync

@@ -2,10 +2,10 @@
 
 # Standard Python Libraries
 from datetime import datetime, timedelta
-import uuid
-import json
 import hashlib
+import json
 import os
+import uuid
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
@@ -15,15 +15,12 @@ import pytest
 from xfd_api.auth import create_jwt_token
 from xfd_django.asgi import app
 from xfd_mini_dl.models import (
-    CredentialBreaches, 
+    CredentialBreaches,
     CredentialExposures,
     DataSource,
-    Ip, 
-    IpsSubs, 
     Organization,
     ShodanAssets,
     ShodanVulns,
-    SubDomains,
     User,
     UserType,
 )
@@ -182,7 +179,9 @@ def test_shodan_sync_org_not_found():
     assert response.status_code == 404
     assert response.json()["detail"] == "Parent organization not found"
 
-### Cred Sync Endpoint Test ###
+
+# ===== Cred Sync Endpoint Test =====
+
 
 @pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_cred_sync_success(admin_user, organization):
@@ -191,7 +190,7 @@ def test_cred_sync_success(admin_user, organization):
         "since_date": "2023-01-01T00:00:00",
         "page": 1,
         "page_size": 25,
-        "acronym":'DHS'
+        "acronym": "DHS",
     }
 
     response = client.post(
@@ -214,7 +213,7 @@ def test_cred_sync_unauthorized(organization):
         "since_date": "2023-01-01T00:00:00",
         "page": 1,
         "page_size": 25,
-        "acronym": "DHS"
+        "acronym": "DHS",
     }
 
     response = client.post("/dmz_sync/cred_sync", json=cred_sync_payload)
@@ -230,7 +229,7 @@ def test_cred_sync_invalid_date_format(admin_user):
         "since_date": "invalid-date",
         "page": 1,
         "page_size": 25,
-        "acronym": "DHS"
+        "acronym": "DHS",
     }
 
     response = client.post(
@@ -269,7 +268,7 @@ def test_cred_sync_no_results(admin_user):
         "since_date": "2030-01-01T00:00:00",  # Future date, no data should match
         "page": 1,
         "page_size": 25,
-        "acronym": "DHS"
+        "acronym": "DHS",
     }
 
     response = client.post(
@@ -283,10 +282,16 @@ def test_cred_sync_no_results(admin_user):
     assert data["total_pages"] == 1
     assert len(data["credential_exposures"]) == 0
 
+
 @pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_checksum_header(admin_user):
     """Ensure the X-Salted-Checksum is correctly computed."""
-    payload = {"since_date": "2024-01-01T00:00:00", "page": 1, "page_size": 25, "acronym": "DHS"}
+    payload = {
+        "since_date": "2024-01-01T00:00:00",
+        "page": 1,
+        "page_size": 25,
+        "acronym": "DHS",
+    }
 
     response = client.post(
         "/dmz_sync/cred_sync",
@@ -303,7 +308,7 @@ def test_checksum_header(admin_user):
 
 @pytest.fixture
 def setup_test_data(organization):
-    """Setup test data with a breach and two associated credential exposures."""
+    """Set up test data with a breach and two associated credential exposures."""
     breach = CredentialBreaches.objects.create(
         breach_name="Test Breach",
         breach_date=datetime(2024, 1, 1),
@@ -313,29 +318,30 @@ def setup_test_data(organization):
 
     credential_1 = CredentialExposures.objects.create(
         email="user1@example.com",
-        password="hashedpassword1",
+        password="hashedpassword1",  # nosec
         credential_breach=breach,
         created_at=datetime(2024, 2, 1),
         modified_date=datetime(2024, 2, 10),
         breach_name="Test Breach",
         organization=organization,
         sub_domain_string="example.com",
-        root_domain="example.com"
+        root_domain="example.com",
     )
 
     credential_2 = CredentialExposures.objects.create(
         email="user2@example.com",
-        password="hashedpassword2",
+        password="hashedpassword2",  # nosec
         credential_breach=breach,
         created_at=datetime(2024, 2, 1),
         modified_date=datetime(2024, 2, 10),
         breach_name="Test Breach",
         organization=organization,
         sub_domain_string="example.com",
-        root_domain="example.com"
+        root_domain="example.com",
     )
 
     yield breach, credential_1, credential_2
+
 
 @pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_cred_sync_pagination(admin_user, setup_test_data):
@@ -344,7 +350,7 @@ def test_cred_sync_pagination(admin_user, setup_test_data):
         "since_date": "2024-01-01T00:00:00",
         "page": 1,
         "page_size": 1,  # Should only return one record
-        "acronym": "DHS"
+        "acronym": "DHS",
     }
 
     response = client.post(
@@ -356,7 +362,7 @@ def test_cred_sync_pagination(admin_user, setup_test_data):
     assert response.status_code == 200
 
     data = response.json()
-    
+
     # Validate pagination
     assert data["current_page"] == 1
     assert data["total_pages"] >= 2  # Since we have 2 records and page_size=1
