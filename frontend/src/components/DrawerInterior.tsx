@@ -38,7 +38,7 @@ interface Props {
   removeFilter: ContextType['removeFilter'];
   filters: ContextType['filters'];
   facets: ContextType['facets'];
-  searchTerm: ContextType['searchTerm'];
+  search_term: ContextType['search_term'];
   setSearchTerm: ContextType['setSearchTerm'];
   initialFilters: any[];
 }
@@ -69,7 +69,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     addFilter,
     removeFilter,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     initialFilters
   } = props;
@@ -97,7 +97,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
   const displaySavedSearch = (id: string) => {
     const savedSearch = savedSearches.find((search) => search.id === id);
     if (savedSearch) {
-      setSearchTerm(savedSearch.searchTerm, {
+      setSearchTerm(savedSearch.search_term, {
         shouldClearFilters: true,
         autocompleteResults: false
       });
@@ -128,7 +128,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
 
   const selectedFiltersAndSearch = filters.filter(
     (filter) =>
-      !initialFilters.some((f) => f.field === filter.field) || searchTerm
+      !initialFilters.some((f) => f.field === filter.field) || search_term
   );
 
   const revertSearch = () => {
@@ -177,8 +177,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )
     : [];
 
-  const fromDomainFacet: any[] = facets['fromRootDomain']
-    ? facets['fromRootDomain'][0].data.sort(
+  const fromDomainFacet: any[] = facets['from_root_domain']
+    ? facets['from_root_domain'][0].data.sort(
         (a: { value: string }, b: { value: string }) =>
           a.value.localeCompare(b.value)
       )
@@ -345,17 +345,17 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <div>Root Domain(s)</div>
-            {filtersByColumn['fromRootDomain']?.length > 0 && (
+            {filtersByColumn['from_root_domain']?.length > 0 && (
               <FiltersApplied />
             )}
           </AccordionSummary>
           <AccordionDetails classes={{ root: classes.details }}>
             <FacetFilter
               options={fromDomainFacet}
-              selected={filtersByColumn['fromRootDomain'] ?? []}
-              onSelect={(value) => addFilter('fromRootDomain', value, 'any')}
+              selected={filtersByColumn['from_root_domain'] ?? []}
+              onSelect={(value) => addFilter('from_root_domain', value, 'any')}
               onDeselect={(value) =>
-                removeFilter('fromRootDomain', value, 'any')
+                removeFilter('from_root_domain', value, 'any')
               }
             />
           </AccordionDetails>
@@ -527,8 +527,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
 };
 
 export const DrawerInteriorWithSearch = withSearch(
-  ({ searchTerm, setSearchTerm }: ContextType) => ({
-    searchTerm,
+  ({ search_term, setSearchTerm }: ContextType) => ({
+    search_term,
     setSearchTerm
   })
 )(DrawerInterior);

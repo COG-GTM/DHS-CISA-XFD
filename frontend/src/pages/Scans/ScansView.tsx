@@ -55,8 +55,9 @@ export interface ScansRow {
   tags: string;
   mode: string;
   frequency: number;
-  lastRun: string;
+  last_run: string;
   description: string;
+  concurrent_tasks: number;
 }
 
 const ScansView: React.FC = () => {
@@ -79,10 +80,11 @@ const ScansView: React.FC = () => {
     organizations: [],
     frequency: 1,
     frequencyUnit: 'minute',
-    isGranular: false,
-    isUserModifiable: false,
-    isSingleScan: false,
-    tags: []
+    is_granular: false,
+    is_user_modifiable: false,
+    is_single_scan: false,
+    tags: [],
+    concurrent_tasks: 1
   });
 
   const fetchScans = useCallback(async () => {
@@ -151,6 +153,21 @@ const ScansView: React.FC = () => {
     }
   };
 
+  const formatFrequency = (frequency: number): string => {
+    if (frequency >= 86400 && frequency % 86400 === 0) {
+      const days = frequency / 86400;
+      return `${days} day${days > 1 ? 's' : ''}`;
+    } else if (frequency >= 3600 && frequency % 3600 === 0) {
+      const hours = frequency / 3600;
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    } else if (frequency >= 60 && frequency % 60 === 0) {
+      const minutes = frequency / 60;
+      return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    } else {
+      return `${frequency} second${frequency !== 1 ? 's' : ''}`;
+    }
+  };
+
   /**
    * Manually runs a single scan, then immediately invokes the
    * scheduler so the scan is run.
@@ -191,16 +208,18 @@ const ScansView: React.FC = () => {
       name: scan.name,
       tags: scan.tags.map((tag) => tag.name).join(', '),
       mode:
-        scanSchema[scan.name] && scanSchema[scan.name].isPassive
+        scanSchema[scan.name] && scanSchema[scan.name].is_passive
           ? 'Passive'
           : 'Active',
       frequency: scan.frequency,
-      lastRun:
-        !scan.lastRun ||
-        new Date(scan.lastRun).getTime() === new Date(0).getTime()
+      last_run:
+        !scan.last_run ||
+        new Date(scan.last_run).getTime() === new Date(0).getTime()
           ? 'None'
-          : `${formatDistanceToNow(parseISO(scan.lastRun))} ago`,
-      description: scanSchema[scan.name]?.description
+          : `${formatDistanceToNow(parseISO(scan.last_run))} ago`,
+      description: scanSchema[scan.name]?.description,
+      concurrent_tasks: scan.concurrent_tasks,
+      is_single_scan: scan.is_single_scan
     };
   });
 
@@ -231,8 +250,27 @@ const ScansView: React.FC = () => {
     { field: 'name', headerName: 'Name', minWidth: 100, flex: 1 },
     { field: 'tags', headerName: 'Tags', minWidth: 100, flex: 1 },
     { field: 'mode', headerName: 'Mode', minWidth: 100, flex: 1 },
-    { field: 'frequency', headerName: 'Frequency', minWidth: 100, flex: 1 },
-    { field: 'lastRun', headerName: 'Last Run', minWidth: 100, flex: 1 },
+    {
+      field: 'frequency',
+      headerName: 'Frequency',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params: GridRenderCellParams) => {
+        if (params.row.is_single_scan) {
+          return 'Single Scan';
+        }
+        return formatFrequency(Number(params.value));
+      }
+    },
+    { field: 'last_run', headerName: 'Last Run', minWidth: 100, flex: 1 },
+    {
+      field: 'concurrent_tasks',
+      headerName: 'Concurrent Tasks',
+      minWidth: 100,
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center'
+    },
     {
       field: 'delete',
       headerName: 'Delete',

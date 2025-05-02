@@ -4,13 +4,24 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
+from xfd_mini_dl.models import User
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
@@ -19,8 +30,9 @@ from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
-from .api_methods.cve import get_cves_by_id, get_cves_by_name
+from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
     delete_saved_search,
@@ -36,6 +48,8 @@ from .api_methods.stats import (
     get_stats,
     get_user_ports_count,
     get_user_services_count,
+    get_vs_condensed_trending_data,
+    get_vs_trending_data,
     stats_latest_vulns,
     stats_most_common_vulns,
 )
@@ -54,12 +68,11 @@ from .api_methods.user_log_search import search_logs
 from .api_methods.vulnerability import (
     export_vulnerabilities,
     get_vulnerability_by_id,
+    get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
-    update_vulnerability,
 )
 from .auth import get_current_active_user, handle_okta_callback
 from .login_gov import callback
-from .models import User
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
 from .schema_models import scan_tasks as scanTaskSchema
@@ -68,15 +81,17 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
+from .schema_models.cve import GetAllCvesResponse
 from .schema_models.dmz_sync import (
-    AsmSyncResponse,
     CredSyncResponse,
     DataSource,
-    PagedOrgDateRequest,
+    SyncRequest,
+    ShodanSyncResponse,
 )
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
+from .schema_models.queue_monitoring import QueueListResponse, QueueSearch
 from .schema_models.saved_search import (
     SavedSearchCreate,
     SavedSearchList,
@@ -95,11 +110,13 @@ from .schema_models.user import User as UserSchema
 from .schema_models.user import UserResponseV2, VersionModel
 from .schema_models.user_log_schema import LogSearch, LogSearchResponse
 from .schema_models.vulnerability import (
+    CredBreachVulnerabilityResponse,
+    GetVulnerabilityResponse,
+    ShodanVulnerabiltyResponse,
+    VsVulnerabilityResponse,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
-from .schema_models.vulnerability import GetVulnerabilityResponse
-from .schema_models.vulnerability import Vulnerability as VulnerabilitySchema
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
     get_organization_sync,
@@ -153,7 +170,7 @@ async def matomo_proxy(
         )
 
     # Ensure only global admin can access other paths
-    if current_user.userType != "globalAdmin":
+    if current_user.user_type != "globalAdmin":
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to Matomo
@@ -174,7 +191,7 @@ async def pe_proxy(
 ):
     """Proxy requests to the P&E Django application."""
     # Ensure only Global Admin and Global View users can access
-    if current_user.userType not in ["globalView", "globalAdmin"]:
+    if current_user.user_type not in ["globalView", "globalAdmin"]:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to the P&E Django application
@@ -285,6 +302,63 @@ async def call_get_cves_by_id(cve_id):
 async def call_get_cves_by_name(cve_name):
     """Get Cve by name."""
     return get_cves_by_name(cve_name)
+
+
+# --- NIST CVE endpoint, CRASM-2431 ---
+@api_router.post(
+    "/dmz_sync/cves",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetAllCvesResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["CVEs to sync to LZ db"],
+)
+async def get_call_all_cves(
+    response: Response,
+    current_user: User = Depends(get_current_active_user),
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(100, ge=1, description="How many items per page."),
+):
+    """
+    Return paginated CVEs plus an X-Salted-Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - Only global write-admins may call this.
+    """
+    # fetch & paginate
+    try:
+        total_pages, records = await get_all_cves(
+            current_user,
+            page=page,
+            per_page=per_page,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {e}",
+        )
+
+    # serialize
+    raw = [CveSchema.from_orm(r).model_dump() for r in records]
+    # …and then convert any UUID/datetime in there into plain strings
+    payload = jsonable_encoder(raw)
+
+    response_obj = {
+        "status": "ok",
+        "payload": payload,
+    }
+
+    # checksum
+    json_str = json.dumps(response_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    response.headers["X-Salted-Checksum"] = checksum
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=response_obj,
+        headers={"X-Salted-Checksum": checksum},
+    )
 
 
 # ========================================
@@ -485,7 +559,7 @@ async def get_organizations_by_state(
 
 
 @api_router.get(
-    "/organizations/regionId/{region_id}",
+    "/organizations/region_id/{region_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=List[OrganizationSchema.GetOrganizationSchema],
     tags=["Organizations"],
@@ -562,11 +636,11 @@ async def delete_organization(
     action="USER ASSIGNED",
     message_or_cb=lambda current_user, response, organization_id, user_data, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedAssignment": serialize_user(current_user),
+        "user_performed_assignment": serialize_user(current_user),
         "organization": serialize_organization(get_organization_sync(organization_id)),
         "role": user_data.role,
-        "user": serialize_user(get_user_sync(user_data.userId))
-        if user_data.userId
+        "user": serialize_user(get_user_sync(user_data.user_id))
+        if user_data.user_id
         else None,
     },
 )
@@ -604,12 +678,12 @@ async def approve_role(
     action="USER ROLE REMOVED",
     message_or_cb=lambda current_user, response, organization_id, role_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedRemoval": serialize_user(current_user),
-        "fromOrganization": serialize_organization(
+        "user_performed_removal": serialize_user(current_user),
+        "from_organization": serialize_organization(
             get_organization_sync(organization_id)
         ),
-        "roleId": role_id,
-        "removalResult": response,
+        "role_id": role_id,
+        "removal_result": response,
     },
 )
 async def remove_role(
@@ -647,11 +721,11 @@ async def update_granular_scan(
 )
 async def list_organizations_v2(
     state: Optional[List[str]] = Query(None),
-    regionId: Optional[List[str]] = Query(None),
+    region_id: Optional[List[str]] = Query(None),
     current_user: User = Depends(get_current_active_user),
 ):
     """Retrieve a list of all organizations (version 2)."""
-    return organization.list_organizations_v2(state, regionId, current_user)
+    return organization.list_organizations_v2(state, region_id, current_user)
 
 
 @api_router.post(
@@ -665,6 +739,25 @@ async def search_organizations(
 ):
     """Search for organizations in Elasticsearch."""
     return organization.search_organizations_task(search_body, current_user)
+
+
+# ========================================
+#   Queue Monitoring Endpoints
+# ========================================
+
+
+@api_router.post(
+    "/queues/search",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=QueueListResponse,
+    tags=["Queues"],
+)
+async def search_queues(
+    search_data: Optional[QueueSearch] = Body(None),
+    current_user=Depends(get_current_active_user),
+):
+    """List SQS queues with metadata (message count, in-flight, delayed)."""
+    return list_queues(search_data, current_user)
 
 
 # ========================================
@@ -703,12 +796,12 @@ async def call_create_saved_search(
     request = {
         "name": saved_search.name,
         "count": saved_search.count,
-        "sortDirection": saved_search.sortDirection,
-        "sortField": saved_search.sortField,
-        "searchTerm": saved_search.searchTerm,
-        "searchPath": saved_search.searchPath,
+        "sort_direction": saved_search.sort_direction,
+        "sort_field": saved_search.sort_field,
+        "search_term": saved_search.search_term,
+        "search_path": saved_search.search_path,
         "filters": saved_search.filters,
-        "createdById": current_user,
+        "created_by_id": current_user,
     }
 
     return create_saved_search(request)
@@ -757,10 +850,10 @@ async def call_update_saved_search(
         "saved_search_id": saved_search_id,
         "name": saved_search.name,
         "count": saved_search.count,
-        "searchTerm": saved_search.searchTerm,
-        "sortDirection": saved_search.sortDirection,
-        "sortField": saved_search.sortField,
-        "searchPath": saved_search.searchPath,
+        "search_term": saved_search.search_term,
+        "sort_direction": saved_search.sort_direction,
+        "sort_field": saved_search.sort_field,
+        "search_path": saved_search.search_path,
         "filters": saved_search.filters,
     }
 
@@ -940,7 +1033,7 @@ async def sync(
 ):
     """Post organizations for datalake sync."""
     try:
-        return await sync_post(sync_body, request)
+        return await sync_post(sync_body, request, current_user)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -982,6 +1075,32 @@ async def export_endpoint(
 # ========================================
 #   Stat Endpoints
 # ========================================
+@api_router.post(
+    "/stats/trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.VsTrendResponse,
+    tags=["Stats"],
+)
+async def get_vs_trending_stats(
+    filter_data: stat_schema.TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve VS Summary data filtered by the user."""
+    return get_vs_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/stats/condensed_trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.VsTrendCondensedResponse,
+    tags=["Stats"],
+)
+async def get_vs_condensed_trending_stats(
+    filter_data: stat_schema.TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve VS Summary data filtered by the user."""
+    return get_vs_condensed_trending_data(filter_data.filters, current_user)
 
 
 @api_router.post(
@@ -1151,24 +1270,26 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 
 @api_router.delete(
-    "/users/{userId}",
+    "/users/{user_id}",
     response_model=OrganizationSchema.DeleteUserResponseModel,
     dependencies=[Depends(get_current_active_user)],
     tags=["Users"],
 )
 @log_action(
     action="USER DENY/REMOVE",
-    message_or_cb=lambda current_user, response, userId, **kwargs: {
+    message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedRemoval": serialize_user(current_user) if current_user else None,
-        "removalResult": response,
+        "user_performed_removal": serialize_user(current_user)
+        if current_user
+        else None,
+        "removal_result": response,
     },
 )
 async def call_delete_user(
-    userId: str, current_user: User = Depends(get_current_active_user)
+    user_id: str, current_user: User = Depends(get_current_active_user)
 ):
     """Delete user."""
-    return delete_user(userId, current_user)
+    return delete_user(user_id, current_user)
 
 
 @api_router.get(
@@ -1183,16 +1304,16 @@ async def call_get_users(current_user: User = Depends(get_current_active_user)):
 
 
 @api_router.get(
-    "/users/regionId/{regionId}",
+    "/users/region_id/{region_id}",
     response_model=List[UserResponseV2],
     dependencies=[Depends(get_current_active_user)],
     tags=["Users"],
 )
 async def call_get_users_by_region_id(
-    regionId, current_user: User = Depends(get_current_active_user)
+    region_id, current_user: User = Depends(get_current_active_user)
 ):
     """Call get_users_by_region_id()."""
-    return get_users_by_region_id(regionId, current_user)
+    return get_users_by_region_id(region_id, current_user)
 
 
 @api_router.get(
@@ -1216,12 +1337,12 @@ async def call_get_users_by_state(
 )
 async def call_get_users_v2(
     state: Optional[str] = Query(None),
-    regionId: Optional[str] = Query(None),
-    invitePending: Optional[bool] = Query(None),
+    region_id: Optional[str] = Query(None),
+    invite_pending: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_active_user),
 ):
     """Get users with filter."""
-    return get_users_v2(state, regionId, invitePending, current_user)
+    return get_users_v2(state, region_id, invite_pending, current_user)
 
 
 @api_router.put(
@@ -1249,9 +1370,11 @@ async def update_user_v2_view(
     action="USER APPROVE",
     message_or_cb=lambda current_user, response, user_id, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedApproval": serialize_user(current_user) if current_user else None,
-        "userToApprove": serialize_user(get_user_sync(user_id)) if user_id else None,
-        "approvalResult": response,
+        "user_performed_approval": serialize_user(current_user)
+        if current_user
+        else None,
+        "user_to_approve": serialize_user(get_user_sync(user_id)) if user_id else None,
+        "approval_result": response,
     },
 )
 async def register_approve(
@@ -1284,9 +1407,9 @@ async def register_deny(
     action="USER INVITE",
     message_or_cb=lambda current_user, response, new_user, **kwargs: {
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "userPerformedInvite": serialize_user(current_user) if current_user else None,
-        "invitePayload": new_user.dict() if new_user else None,
-        "createdUserRecord": response,
+        "user_performed_invite": serialize_user(current_user) if current_user else None,
+        "invite_payload": new_user.dict() if new_user else None,
+        "created_user_record": response,
     },
 )
 async def invite_user(
@@ -1314,7 +1437,7 @@ async def call_search_vulnerabilities(
     """Search vulnerabilities."""
     vulnerabilities, count = search_vulnerabilities(vulnerability_search, current_user)
 
-    if vulnerability_search.groupBy:
+    if vulnerability_search.group_by:
         # Handle grouped results appropriately
         return VulnerabilitySearchResponse(result=vulnerabilities, count=count)
 
@@ -1355,24 +1478,46 @@ async def call_get_vulnerability_by_id(
     return get_vulnerability_by_id(vulnerability_id, current_user)
 
 
-@api_router.put(
-    "/vulnerabilities/{vulnerability_id}",
+@api_router.get(
+    "/vulnerabilities/{scan_source}/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
-    response_model=VulnerabilitySchema,
+    response_model=Union[
+        CredBreachVulnerabilityResponse,
+        VsVulnerabilityResponse,
+        ShodanVulnerabiltyResponse,
+    ],
     tags=["Vulnerabilities"],
 )
-async def call_update_vulnerability(
-    vulnerability_id,
-    data: VulnerabilitySchema,
+async def get_vulnerability_by_source_id_route(
+    scan_source: str,
+    vulnerability_id: str,
     current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Update vulnerability by id.
+    """Get vulnerability by id."""
+    return get_vulnerability_by_scan_source_and_id(
+        scan_source, vulnerability_id, current_user
+    )
 
-    Returns:
-        object: a single vulnerability object that has been modified.
-    """
-    return update_vulnerability(vulnerability_id, data, current_user)
+
+# TODO: Deprecated until frontend feature is re-enabled
+# @api_router.put(
+#     "/vulnerabilities/{vulnerability_id}",
+#     dependencies=[Depends(get_current_active_user)],
+#     response_model=VulnerabilitySchema,
+#     tags=["Vulnerabilities"],
+# )
+# async def call_update_vulnerability(
+#     vulnerability_id,
+#     data: VulnerabilitySchema,
+#     current_user: User = Depends(get_current_active_user),
+# ):
+#     """
+#     Update vulnerability by id.
+
+#     Returns:
+#         object: a single vulnerability object that has been modified.
+#     """
+#     return update_vulnerability(vulnerability_id, data, current_user)
 
 
 # ========================================
@@ -1387,10 +1532,12 @@ async def call_update_vulnerability(
     tags=["Blocklist"],
 )
 async def get_blocklist(
-    request: Request, ip_address: str = Query(..., description="IP address to check")
+    request: Request,
+    ip_address: str = Query(..., description="IP address to check"),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Determine if IP is on the blocklist."""
-    return await handle_check_ip(ip_address)
+    return await handle_check_ip(ip_address, current_user)
 
 
 # ========================================
@@ -1398,21 +1545,10 @@ async def get_blocklist(
 # ========================================
 
 
-@api_router.get(
-    "/dmz_sync/data_sources",
-    dependencies=[Depends(get_current_active_user)],
-    response_model=List[DataSource],
-    tags=["Data Sources"],
-)
-async def list_data_sources(current_user: User = Depends(get_current_active_user)):
-    """Retrieve a list of all data sources."""
-    return dmz_sync_methods.list_data_sources(current_user)
-
-
 def serialize_custom(obj):
     """Recursively convert objects to JSON-serializable formats."""
-    if isinstance(obj, datetime):
-        return obj.isoformat()  # Convert datetime to ISO 8601 string
+    if isinstance(obj, (datetime, UUID)):
+        return str(obj)  # Convert datetime and UUID to ISO 8601 string
     elif isinstance(obj, list):
         return [serialize_custom(item) for item in obj]  # Recursively process lists
     elif isinstance(obj, dict):
@@ -1422,29 +1558,27 @@ def serialize_custom(obj):
     return obj
 
 
-# POST
 @api_router.post(
-    "/dmz_sync/asm_sync",
+    "/dmz_sync/shodan_sync",
     dependencies=[Depends(get_current_active_user)],
-    response_model=AsmSyncResponse,
+    response_model=ShodanSyncResponse,
     tags=["DMZ Sync"],
 )
-async def asm_sync(
-    asm_sync_data: PagedOrgDateRequest,
+async def shodan_sync(
+    shodan_data: SyncRequest,
     current_user: User = Depends(get_current_active_user),
 ):
-    """Return ASM_sync findings for a provided org."""
-    response_data = dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
-    # # response_json = json.dumps(response_data, sort_keys=True)
-    # Convert response data to a JSON-serializable format
+    """Return Shodan Assets and Vulns for a provided org with checksum verification."""
+    response_data = dmz_sync_methods.dmz_shodan_sync(shodan_data, current_user)
+
     response_serializable = serialize_custom(response_data)
 
-    response_json = json.dumps(response_serializable, default=str, sort_keys=True)
-
-    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
-
+    # Consistent JSON encoding: sort keys to ensure deterministic output
+    response_json_obj = {"status": "ok", "payload": response_serializable}
+    json_str = json.dumps(response_json_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
     return JSONResponse(
-        content=response_serializable, headers={"X-Salted-Checksum": checksum}
+        content=response_json_obj, headers={"X-Salted-Checksum": checksum}
     )
 
 
@@ -1456,10 +1590,10 @@ async def asm_sync(
     tags=["DMZ Sync"],
 )
 async def cred_sync(
-    cred_sync_data: PagedOrgDateRequest,
+    cred_sync_data: SyncRequest,
     current_user: User = Depends(get_current_active_user),
 ):
-    """Return ASM_sync findings for a provided org."""
+    """Return Credential Breach findings for a requested org with checksum verification.."""
     response_data = dmz_sync_methods.dmz_cred_sync(cred_sync_data, current_user)
     # # response_json = json.dumps(response_data, sort_keys=True)
     # Convert response data to a JSON-serializable format

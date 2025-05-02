@@ -19,11 +19,11 @@ export const OrganizationList: React.FC<{
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [chosenTags, setChosenTags] = useState<string[]>([]);
   const history = useHistory();
-  const regionId = user?.regionId;
+  const region_id = user?.region_id;
 
   const getOrgsUrl = () => {
-    if (user?.userType === 'regionalAdmin') {
-      return `/organizations/regionId/${regionId}`;
+    if (user?.user_type === 'regionalAdmin') {
+      return `/organizations/region_id/${region_id}`;
     } else {
       return `/v2/organizations`;
     }
@@ -34,12 +34,13 @@ export const OrganizationList: React.FC<{
   const orgCols: GridColDef[] = [
     { field: 'name', headerName: 'Organization', minWidth: 100, flex: 2 },
     { field: 'state', headerName: 'State', minWidth: 100, flex: 1 },
-    { field: 'regionId', headerName: 'Region', minWidth: 100, flex: 1 },
+    { field: 'region_id', headerName: 'Region', minWidth: 100, flex: 1 },
     {
       field: 'view',
       headerName: 'View/Edit',
       minWidth: 100,
       flex: 1,
+      disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `View or edit organization ${cellValues.row.name}`;
         const descriptionId = `description-${cellValues.row.id}`;
@@ -100,7 +101,7 @@ export const OrganizationList: React.FC<{
     }
   }, [fetchOrganizations, parent]);
 
-  const addOrgButton = user?.userType === 'globalAdmin' && (
+  const addOrgButton = user?.user_type === 'globalAdmin' && (
     <Button
       size="small"
       sx={{ '& .MuiButton-startIcon': { mr: '2px', mb: '2px' } }}
@@ -119,7 +120,7 @@ export const OrganizationList: React.FC<{
           columns={orgCols}
           slots={{ toolbar: CustomToolbar }}
           slotProps={{
-            toolbar: { children: addOrgButton }
+            toolbar: { children: addOrgButton, exportTitle: 'Organizations' }
           }}
           initialState={{
             pagination: { paginationModel: { pageSize: 15 } }

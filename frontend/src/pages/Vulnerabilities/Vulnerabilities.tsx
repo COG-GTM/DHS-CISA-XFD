@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
 import { Vulnerability as VulnerabilityType } from 'types';
@@ -9,8 +9,10 @@ import {
   Box,
   Button,
   IconButton,
-  MenuItem,
-  Menu,
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
+  // MenuItem,
+  // Menu,
+  Link,
   Paper,
   Stack,
   Typography
@@ -24,7 +26,8 @@ import {
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import CustomNoRowsOverlay from 'components/DataGrid/CustomNoRowsOverlay';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+// To-do: Re-enable this as part of Status dropdown once the feature is approved.
+// import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getSeverityColor } from 'pages/Risk/utils';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { truncateString } from 'utils/dataTransformUtils';
@@ -56,7 +59,7 @@ export interface LooseVulnerabilityRow {
   domain: string | undefined;
   domainId: string | undefined;
   product: string;
-  createdAt: string;
+  created_at: string;
   state: string;
 }
 
@@ -74,13 +77,15 @@ interface LocationState {
   title: string;
 }
 
-export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
-  groupBy = undefined
+export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
+  group_by = undefined
 }: {
   children?: React.ReactNode;
-  groupBy?: string;
+  group_by?: string;
 }) => {
-  const { currentOrganization, apiPost, apiPut, user } = useAuthContext();
+  const { currentOrganization, apiPost, user } = useAuthContext();
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
+  // const { apiPut } = useAuthContext();
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [loadingError, setLoadingError] = useState(false);
@@ -88,26 +93,27 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
 
   // TO-DO
   // Implement regional rollup for vulnerabilities view to allow for proper vunl drilldown from dashboard
-  const updateVulnerability = useCallback(
-    async (index: number, body: { [key: string]: string }) => {
-      try {
-        const updatedVulns = await apiPut<Vulnerability>(
-          '/vulnerabilities/' + vulnerabilities[index].id,
-          {
-            body: body
-          }
-        );
-        setVulnerabilities((prevState) =>
-          prevState.map((orgVulns, targetIndex) =>
-            targetIndex === index ? updatedVulns : orgVulns
-          )
-        );
-      } catch (e) {
-        console.error(e);
-      }
-    },
-    [setVulnerabilities, apiPut, vulnerabilities]
-  );
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
+  // const updateVulnerability = useCallback(
+  //   async (index: number, body: { [key: string]: string }) => {
+  //     try {
+  //       const updatedVulns = await apiPut<Vulnerability>(
+  //         '/vulnerabilities/' + vulnerabilities[index].id,
+  //         {
+  //           body: body
+  //         }
+  //       );
+  //       setVulnerabilities((prevState) =>
+  //         prevState.map((orgVulns, targetIndex) =>
+  //           targetIndex === index ? updatedVulns : orgVulns
+  //         )
+  //       );
+  //     } catch (e) {
+  //       console.error(e);
+  //     }
+  //   },
+  //   [setVulnerabilities, apiPut, vulnerabilities]
+  // );
 
   const vulnerabilitiesSearch = useCallback(
     async ({
@@ -115,14 +121,14 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       page,
       pageSize = PAGE_SIZE,
       doExport = false,
-      groupBy = undefined,
+      group_by = undefined,
       showAll = false
     }: {
       filters: GridFilterItem[];
       page: number;
       pageSize?: number;
       doExport?: boolean;
-      groupBy?: string;
+      group_by?: string;
       showAll?: boolean;
     }): Promise<ApiResponse | undefined> => {
       try {
@@ -159,13 +165,13 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         if (
           currentOrganization &&
           !userOrgIsExcluded &&
-          user?.userType === 'standard'
+          user?.user_type === 'standard'
         ) {
           tableFilters['organization'] = currentOrganization.id;
         }
-        if (tableFilters['isKev']) {
+        if (tableFilters['is_kev']) {
           // Convert string to boolean filter.
-          tableFilters['isKev'] = tableFilters['isKev'] === 'true';
+          tableFilters['is_kev'] = tableFilters['is_kev'] === 'true';
         }
         return await apiPost<ApiResponse>(
           doExport ? '/vulnerabilities/export' : '/vulnerabilities/search',
@@ -174,7 +180,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
               page,
               filters: tableFilters,
               pageSize,
-              groupBy,
+              group_by,
               showAll
             }
           }
@@ -185,7 +191,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         return;
       }
     },
-    [apiPost, currentOrganization, user?.userType]
+    [apiPost, currentOrganization, user?.user_type]
   );
 
   const fetchVulnerabilities = useCallback(
@@ -195,7 +201,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
           filters: query.filters,
           page: query.page,
           pageSize: query.pageSize ?? PAGE_SIZE,
-          groupBy,
+          group_by,
           showAll: query.showAll
         });
         if (!resp) return;
@@ -230,7 +236,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
         setIsLoading(false);
       }
     },
-    [vulnerabilitiesSearch, groupBy]
+    [vulnerabilitiesSearch, group_by]
   );
 
   const history = useHistory();
@@ -281,38 +287,43 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       operator: filter.operator
     }))
   });
+
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
   // Row scoped menu state management for vulnerability status updates
-  interface MenuState {
-    [key: string]: {
-      anchorEl: HTMLElement | null;
-      open: boolean;
-    };
-  }
+  // interface MenuState {
+  //   [key: string]: {
+  //     anchorEl: HTMLElement | null;
+  //     open: boolean;
+  //   };
+  // }
 
-  const [menuState, setMenuState] = useState<MenuState>({});
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
+  // const [menuState, setMenuState] = useState<MenuState>({});
 
-  const handleMenuClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    rowId: any
-  ) => {
-    setMenuState((prev) => ({
-      ...prev,
-      [rowId]: {
-        anchorEl: event.currentTarget,
-        open: true
-      }
-    }));
-  };
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
+  // const handleMenuClick = (
+  //   event: React.MouseEvent<HTMLButtonElement>,
+  //   rowId: any
+  // ) => {
+  //   setMenuState((prev) => ({
+  //     ...prev,
+  //     [rowId]: {
+  //       anchorEl: event.currentTarget,
+  //       open: true
+  //     }
+  //   }));
+  // };
 
-  const handleClose = (rowId: any) => {
-    setMenuState((prev) => ({
-      ...prev,
-      [rowId]: {
-        ...prev[rowId],
-        open: false
-      }
-    }));
-  };
+  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
+  // const handleClose = (rowId: any) => {
+  //   setMenuState((prev) => ({
+  //     ...prev,
+  //     [rowId]: {
+  //       ...prev[rowId],
+  //       open: false
+  //     }
+  //   }));
+  // };
 
   const resetVulnerabilities = useCallback(() => {
     setInitialFilters([]);
@@ -420,7 +431,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       id: vuln.id,
       title: vuln.title,
       severity: severity,
-      kev: vuln.isKev ? 'Yes' : 'No',
+      kev: vuln.is_kev ? 'Yes' : 'No',
       domain: vuln?.domain?.name,
       domainId: vuln?.domain?.id,
       product: vuln.cpe
@@ -431,10 +442,10 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
           vuln.service.products[0].cpe
         ? vuln.service.products[0].cpe || 'N/A'
         : 'N/A',
-      createdAt: vuln?.createdAt
+      created_at: vuln?.created_at
         ? `${differenceInCalendarDays(
             Date.now(),
-            parseISO(vuln?.createdAt)
+            parseISO(vuln?.created_at)
           )} days`
         : '',
       state: vuln.state + (vuln.substate ? ` (${vuln.substate})` : '')
@@ -457,24 +468,22 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       renderCell: (cellValues: GridRenderCellParams) => {
         if (cellValues.row.title.startsWith('CVE')) {
           return (
-            <Button
+            <Link
+              component={RouterLink}
+              to={{
+                pathname: '/inventory/vulnerability/' + cellValues.row.id
+              }}
               aria-label={`View NIST entry for ${cellValues.row.title}`}
               tabIndex={cellValues.tabIndex}
-              color="primary"
-              style={{ textDecorationLine: 'underline' }}
-              endIcon={<OpenInNewIcon />}
-              onClick={() =>
-                window.open(
-                  'https://nvd.nist.gov/vuln/detail/' + cellValues.row.title
-                )
-              }
             >
               {cellValues.row.title}
-            </Button>
+            </Link>
           );
         }
         return (
-          <Typography pl={1}>{truncateString(cellValues.row.title)}</Typography>
+          <Typography variant="uiElementsI" pl={1}>
+            {truncateString(cellValues.row.title)}
+          </Typography>
         );
       }
     },
@@ -537,19 +546,16 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       flex: 1.5,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
-          <Button
+          <Link
+            component={RouterLink}
+            to={{
+              pathname: '/inventory/domain/' + cellValues.row.domainId
+            }}
             aria-label={`View details for ${cellValues.row.domain}`}
             tabIndex={cellValues.tabIndex}
-            color="primary"
-            style={{ textDecorationLine: 'underline' }}
-            sx={{ justifyContent: 'flex-start' }}
-            endIcon={<OpenInNewIcon />}
-            onClick={() =>
-              history.push('/inventory/domain/' + cellValues.row.domainId)
-            }
           >
             {cellValues.row.domain}
-          </Button>
+          </Link>
         );
       }
     },
@@ -560,7 +566,7 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       flex: 1
     },
     {
-      field: 'createdAt',
+      field: 'created_at',
       headerName: 'Days Open',
       minWidth: 100,
       flex: 0.5
@@ -569,69 +575,72 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
       field: 'state',
       headerName: 'Status',
       minWidth: 100,
-      flex: 1,
-      renderCell: (cellValues: GridRenderCellParams) => {
-        const handleUpdate = (id: string, substate: string) => {
-          const index = vulnerabilities.findIndex((v) => v.id === id);
-          updateVulnerability(index, {
-            substate: substate
-          });
-        };
+      flex: 1
+      // To-do: Re-enable this Status dropdown once the feature is approved.
+      // Summary: Per CRASM-1090, the status dropdown was removed in favor of static text.
+      // renderCell: (cellValues: GridRenderCellParams) => {
+      //   const handleUpdate = (id: string, substate: string) => {
+      //     const index = vulnerabilities.findIndex((v) => v.id === id);
+      //     updateVulnerability(index, {
+      //       substate: substate
+      //     });
+      //   };
 
-        return (
-          <div>
-            <Button
-              id={`basic-button-${cellValues.row.id}`}
-              style={{ textDecorationLine: 'underline' }}
-              aria-controls={
-                menuState[cellValues.row.id]?.open
-                  ? `basic-menu-${cellValues.row.id}`
-                  : undefined
-              }
-              aria-haspopup="true"
-              aria-expanded={
-                menuState[cellValues.row.id]?.open ? 'true' : undefined
-              }
-              tabIndex={cellValues.tabIndex}
-              endIcon={<ExpandMoreIcon />}
-              onClick={(event) => handleMenuClick(event, cellValues.row.id)}
-            >
-              {cellValues.row.state}
-            </Button>
-            <Menu
-              id={`basic-menu-${cellValues.row.id}`}
-              anchorEl={menuState[cellValues.row.id]?.anchorEl}
-              open={menuState[cellValues.row.id]?.open}
-              onClose={() => handleClose(cellValues.row.id)}
-              MenuListProps={{
-                'aria-labelledby': `basic-button-${cellValues.row.id}`
-              }}
-            >
-              {Object.keys(stateMap).map((substate) => (
-                <MenuItem
-                  key={`${cellValues.row.id}-${substate}`}
-                  id={`menu-item-${cellValues.row.id}-${substate}`}
-                  onClick={() => {
-                    handleUpdate(cellValues.row.id, substate);
-                    handleClose(cellValues.row.id);
-                  }}
-                >
-                  {substate === 'unconfirmed' || substate === 'exploitable'
-                    ? 'Open'
-                    : 'Closed'}
-                  {` (${substate})`}
-                </MenuItem>
-              ))}
-            </Menu>
-          </div>
-        );
-      }
+      //   return (
+      //     <div>
+      //       <Button
+      //         id={`basic-button-${cellValues.row.id}`}
+      //         style={{ textDecorationLine: 'underline' }}
+      //         aria-controls={
+      //           menuState[cellValues.row.id]?.open
+      //             ? `basic-menu-${cellValues.row.id}`
+      //             : undefined
+      //         }
+      //         aria-haspopup="true"
+      //         aria-expanded={
+      //           menuState[cellValues.row.id]?.open ? 'true' : undefined
+      //         }
+      //         tabIndex={cellValues.tabIndex}
+      //         endIcon={<ExpandMoreIcon />}
+      //         onClick={(event) => handleMenuClick(event, cellValues.row.id)}
+      //       >
+      //         {cellValues.row.state}
+      //       </Button>
+      //       <Menu
+      //         id={`basic-menu-${cellValues.row.id}`}
+      //         anchorEl={menuState[cellValues.row.id]?.anchorEl}
+      //         open={menuState[cellValues.row.id]?.open}
+      //         onClose={() => handleClose(cellValues.row.id)}
+      //         MenuListProps={{
+      //           'aria-labelledby': `basic-button-${cellValues.row.id}`
+      //         }}
+      //       >
+      //         {Object.keys(stateMap).map((substate) => (
+      //           <MenuItem
+      //             key={`${cellValues.row.id}-${substate}`}
+      //             id={`menu-item-${cellValues.row.id}-${substate}`}
+      //             onClick={() => {
+      //               handleUpdate(cellValues.row.id, substate);
+      //               handleClose(cellValues.row.id);
+      //             }}
+      //           >
+      //             {substate === 'unconfirmed' || substate === 'exploitable'
+      //               ? 'Open'
+      //               : 'Closed'}
+      //             {` (${substate})`}
+      //           </MenuItem>
+      //         ))}
+      //       </Menu>
+      //     </div>
+      //   );
+      // }
     },
     {
       field: 'viewDetails',
       headerName: 'Details',
       minWidth: 75,
       flex: 0.5,
+      disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -691,7 +700,8 @@ export const Vulnerabilities: React.FC<{ groupBy?: string }> = ({
                 toolbar: {
                   children: onlyOpenVulns
                     ? showAllVulnsButton
-                    : showOpenVulnsButton
+                    : showOpenVulnsButton,
+                  exportTitle: 'Vulnerabilities'
                 },
                 noRowsOverlay: { children: noRowsOverlay }
               }}
