@@ -197,13 +197,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Matches detected software versions to CVEs from NIST NVD and CISA's Known Exploited Vulnerabilities Catalog.",
     ),
-    "dnstwist": ScanSchema(
+    "dns_twist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=False,
         cpu="2048",
         memory="16384",
         description="Domain name permutation engine for detecting similar registered domains.",
+        max_concurrent_tasks=10000,
     ),
     "dotgov": ScanSchema(
         type="fargate",
