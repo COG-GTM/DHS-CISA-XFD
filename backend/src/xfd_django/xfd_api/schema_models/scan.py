@@ -406,7 +406,7 @@ SCAN_SCHEMA = {
         description="Pull in Xpanse alert data from Xpanse API",
         max_concurrent_tasks=3,
     ),
-     "xpanse_org_sync": ScanSchema(
+    "xpanse_org_sync": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,
