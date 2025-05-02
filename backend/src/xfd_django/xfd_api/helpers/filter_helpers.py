@@ -2,6 +2,7 @@
 # Third-Party Libraries
 from django.db.models.query import Q, QuerySet
 from fastapi import HTTPException
+from xfd_mini_dl.models import CisaKevCatalog
 
 from ..schema_models.vulnerability import VulnerabilityFilters
 
@@ -166,7 +167,11 @@ def apply_vuln_filters(
 
     # Exact match on is_kev (True/False)
     if vulnerability_filters.is_kev is not None:
-        q &= Q(is_kev=vulnerability_filters.is_kev)
+        kev_ids = CisaKevCatalog.objects.values_list("cve_id", flat=True)
+        if vulnerability_filters.is_kev:
+            q &= Q(cve__in=kev_ids)
+        else:
+            q &= ~Q(cve__in=kev_ids)
 
     # Apply the final Q object filter
     filtered = vulnerabilities.filter(q)
