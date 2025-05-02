@@ -140,6 +140,15 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Open source tool that integrates passive APIs and active subdomain enumeration in order to discover target subdomains",
     ),
+    "asm_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Enumerate and sync org assets.",
+        max_concurrent_tasks=1,
+    ),
     "censys": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -303,6 +312,14 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="SSL certificate inspection",
     ),
+    "sync_asm_sync": ScanSchema(
+        type="fargate",
+        isPassive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull synced assets from DMZ.",
+    ),
     "test": ScanSchema(
         type="fargate",
         is_passive=False,
@@ -363,15 +380,6 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Xpanse alert data from commercial mdl",
-    ),
-    "asm_sync": ScanSchema(
-        type="fargate",
-        is_passive=True,
-        global_scan=False,
-        cpu="1024",
-        memory="8192",
-        description="Enumerate and sync org assets.",
-        max_concurrent_tasks=1,
     ),
     "refresh_vs_summaries": ScanSchema(
         type="fargate",

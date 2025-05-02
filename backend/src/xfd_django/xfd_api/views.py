@@ -71,7 +71,7 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
-from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
+from .schema_models.dmz_sync import AsmSyncResponse, ShodanSyncResponse, SyncRequest
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1483,6 +1483,32 @@ def serialize_custom(obj):
             key: serialize_custom(value) for key, value in obj.items()
         }  # Recursively process dicts
     return obj
+
+
+# POST
+@api_router.post(
+    "/dmz_sync/asm_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=AsmSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def asm_sync(
+    asm_sync_data: SyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return ASM_sync findings for a provided org."""
+    response_data = dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
+    # # response_json = json.dumps(response_data, sort_keys=True)
+    # Convert response data to a JSON-serializable format
+    response_serializable = serialize_custom(response_data)
+
+    response_json = json.dumps(response_serializable, default=str, sort_keys=True)
+
+    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
+
+    return JSONResponse(
+        content=response_serializable, headers={"X-Salted-Checksum": checksum}
+    )
 
 
 @api_router.post(
