@@ -538,10 +538,6 @@ def test_search_vulnerabilities_by_organization_id(
             )
 
 
-# Third-Party Libraries
-import pytest
-
-
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @pytest.mark.parametrize("is_kev_to_search", [True, False])
 def test_search_vulnerabilities_by_is_kev(user, refresh_vuln_views, is_kev_to_search):
