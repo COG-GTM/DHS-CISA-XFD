@@ -1,7 +1,7 @@
 """CVE Sync scan hitting new FastAPI endpoint."""
 # --- Standard Libraries ---
 # Standard Python Libraries
-from datetime import datetime, timezone
+from datetime import datetime
 import hashlib
 import json
 import logging
@@ -11,6 +11,9 @@ from urllib.parse import urljoin
 # Third-Party Libraries
 # --- Third-Party Libraries ---
 import django
+from django.conf import settings
+from django.db import connections
+from django.utils import timezone
 import requests
 
 # --- Django setup ---
@@ -31,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 HEADERS = {
-    "X-API-KEY": os.getenv("DMZ_API_KEY"),
+    "X-API-KEY": os.getenv("CF_API_KEY"),
     "Content-Type": "application/json",
 }
 
@@ -44,6 +47,8 @@ if base_url.endswith("/sync"):
 else:
     # fallback: join “/cves” onto whatever they provided
     CVE_API_URL = urljoin(base_url + "/", "dmz_sync/cves")
+
+LOGGER.info("CVE API URL: %s", CVE_API_URL)
 
 
 def validate_response_checksum(response):
@@ -121,7 +126,40 @@ def save_cves_to_db(cve_list):
         }
 
         try:
-            CveModel.objects.update_or_create(id=item["id"], defaults=defaults)
+            LOGGER.info(
+                "✏️  Writing to %r via alias %r",
+                CveModel._meta.db_table,
+                CveModel.objects.db_manager("mini_data_lake_secondary").db,
+            )
+            alias = "mini_data_lake_secondary"
+            LOGGER.info(
+                "ENV AT STARTUP: MDL_SECONDARY_NAME=%r",
+                os.environ.get("MDL_SECONDARY_NAME"),
+            )
+            LOGGER.info(
+                "SECONDARY DB CONFIG: %r",
+                settings.DATABASES["mini_data_lake_secondary"],
+            )
+
+            # 1) Which database name are we really hitting?
+            LOGGER.info(
+                "→ Runtime DB NAME: %r", connections[alias].settings_dict["NAME"]
+            )
+
+            # 2) What tables are visible?
+            tables = connections[alias].introspection.table_names()
+            LOGGER.info("→ %d tables visible: %r", len(tables), tables)
+
+            # 3) Is 'cve' in that list?
+            LOGGER.info("→ 'cve' present? %s", "cve" in tables)
+
+            # 4) What’s the Postgres search_path?
+            with connections[alias].cursor() as cur:
+                cur.execute("SHOW search_path")
+                LOGGER.info("→ search_path: %r", cur.fetchone())
+            CveModel.objects.db_manager(alias).update_or_create(
+                id=item["id"], defaults=defaults
+            )
         except Exception as e:
             LOGGER.error("Error saving CVE %s: %s", item["id"], e)
 
@@ -151,7 +189,11 @@ def handler(command_options=None):
                 "since_date": since_date,
             }
 
+            LOGGER.info("Fetching page %s with payload: %s", page, payload)
+
             resp = requests.post(CVE_API_URL, headers=HEADERS, json=payload, timeout=60)
+            LOGGER.info("Response status code: %s", resp)
+            LOGGER.info("Response content: %s", resp.status_code)
             resp.raise_for_status()
 
             if not validate_response_checksum(resp):
@@ -162,8 +204,8 @@ def handler(command_options=None):
             if body.get("status") != "ok":
                 LOGGER.error("API returned bad status: %s", body)
                 return {"statusCode": 500, "body": "Bad status"}
-            total_pages = resp.get("total_pages", 1)
-            current_page = resp.get("current_page", 1)
+            total_pages = body.get("total_pages", 1)
+            current_page = body.get("current_page", 1)
             payload = body.get("payload", [])
             LOGGER.info("Fetched %s CVEs", len(payload))
             save_cves_to_db(payload)
