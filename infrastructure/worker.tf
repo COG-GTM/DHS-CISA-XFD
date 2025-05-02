@@ -385,7 +385,7 @@ resource "aws_ecs_task_definition" "worker" {
       },
       {
         "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
-        "valueFrom": "${data.aws_ssm_parameter.ssm_xpanse_org_sync_bucket_name.arn}"
+        "valueFrom": "${data.aws_ssm_parameter.xpanse_org_sync_bucket_name.arn}"
       },
       {
         "name": "QUALYS_USERNAME",
