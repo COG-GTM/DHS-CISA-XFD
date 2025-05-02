@@ -78,13 +78,12 @@ def main(command_options):
         organization = orgs_to_sync.first()
         get_data_sources()
 
-        
         LOGGER.info("Pulling ASM data for %s", organization.acronym)
         # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         acronym = organization.acronym
         page_size = 10
         page_number = 1
-        
+
         last_seen_after = calculate_days_back(15)
         response = query_api(acronym, last_seen_after, page_size, page_number)
 
@@ -104,7 +103,7 @@ def main(command_options):
                 LOGGER.error("Failed to query DMZ ASM Sync API.")
                 break
         flag_asset_changes(organization)
-        LOGGER.info("Completed pulling ASM data for %s", org.acronym)
+        LOGGER.info("Completed pulling ASM data for %s", organization.acronym)
 
     except Exception as e:
         LOGGER.error("Error Running Sync ASM Sync: %s", e)
@@ -142,7 +141,7 @@ def query_api(acronym, last_seen_after, page_size=50, page_number=1):
             "since_date": last_seen_after,
         }
     )
-    
+
     response = requests.request("POST", url, headers=HEADERS, data=payload, timeout=29)
     retry_count, max_retries, time_delay = 1, 10, 5
     while response.status_code != 200 and retry_count <= max_retries:
