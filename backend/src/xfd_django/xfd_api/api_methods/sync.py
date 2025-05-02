@@ -17,20 +17,25 @@ from fastapi import HTTPException, Request
 from xfd_api.tasks.vulnScanningSync import save_organization_to_mdl
 from xfd_mini_dl.models import Organization, Sector
 
+from ..auth import is_global_view_admin
 from ..helpers.s3_client import S3Client
+from ..schema_models.sync import SyncResponse
 from ..utils.csv_utils import create_checksum
 
 
-async def sync_post(sync_body, request: Request):
+async def sync_post(sync_body, request: Request, current_user):
     """Ingest and persist organization data to the data lake."""
     try:
+        if not is_global_view_admin(current_user):
+            raise HTTPException(status_code=403, detail="Unauthorized")
+
         headers = request.headers
         request_checksum = headers.get("x-checksum")
         if not request_checksum or not sync_body.data:
-            raise HTTPException(status_code=500)
+            raise HTTPException(status_code=500, detail="No checksum error")
 
         if request_checksum != create_checksum(sync_body.data):
-            raise HTTPException(status_code=500)
+            raise HTTPException(status_code=500, detail="Checksum doesn't match error.")
 
         # Use MinIO client to save CSV data to S3
         s3_client = S3Client()
@@ -39,7 +44,7 @@ async def sync_post(sync_body, request: Request):
 
         s3_url = s3_client.save_csv(sync_body.data, file_name)
         if not s3_url:
-            raise HTTPException(status_code=500)
+            raise HTTPException(status_code=500, detail="No S3 URL.")
 
         parsed_data = json.loads(sync_body.data)
 
@@ -60,10 +65,16 @@ async def sync_post(sync_body, request: Request):
                         org, item.get("sectors", []), db_name="mini_data_lake"
                     )
 
-            except Exception:
-                raise HTTPException(status_code=500)
-    except Exception:
-        raise HTTPException(status_code=500)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        return SyncResponse(status="success")
+
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def parse_cursor(cursor_header):

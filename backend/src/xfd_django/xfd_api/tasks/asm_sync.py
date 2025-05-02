@@ -47,7 +47,7 @@ def handler(event):
         if not is_dmz and not is_local:
             LOGGER.warning("Scan can only be run in the DMZ or locally. Exitting now.")
             return {
-                "statusCode": 200,
+                "status_code": 200,
                 "body": "DMZ Shodan Vulnerabilities and Asset cannot run outside the DMZ.",
             }
         main(event)
@@ -56,7 +56,7 @@ def handler(event):
             "body": "DMZ Shodan Vulnerabilities and Asset sync completed successfully.",
         }
     except Exception as e:
-        return {"statusCode": 500, "body": str(e)}
+        return {"status_code": 500, "body": str(e)}
 
 
 def main(event):
@@ -64,15 +64,11 @@ def main(event):
     try:
         flag_cidr_changes()
 
-        # Query orgs to run on
-        # org_ids = event.get("organizationIds", [])
-        # if org_ids:
-        #     orgs_to_sync = Organization.objects.filter(id__in=org_ids)
-        # else:
-        #     orgs_to_sync = Organization.objects.all()
+        organization_id = event.get("organizationId")
 
-        # orgs_to_sync = Organization.objects.all()
-        orgs_to_sync = Organization.objects.filter(acronym__in=["USAGM", "DHS"])
+        orgs_to_sync = Organization.objects.filter(id__in=[organization_id])
+        for org in orgs_to_sync:
+            LOGGER.info("Running ASM Sync on organization %s", org.name)
         # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         enumerate_subs(orgs_to_sync)
 

@@ -89,9 +89,11 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.pe_shodan_api_keys.arn}",
           "${data.aws_ssm_parameter.sixgill_client_id.arn}",
           "${data.aws_ssm_parameter.intelx_api_key.arn}",
+          "${data.aws_ssm_parameter.checksum_salt.arn}",
           "${data.aws_ssm_parameter.xpanse_api_key.arn}",
           "${data.aws_ssm_parameter.xpanse_auth_id.arn}",
           "${data.aws_ssm_parameter.whoisxml_api_key.arn}",
+          "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}",
           "${data.aws_ssm_parameter.qualys_username.arn}",
           "${data.aws_ssm_parameter.qualys_password.arn}",
           "${data.aws_ssm_parameter.sixgill_client_secret.arn}",
@@ -110,7 +112,8 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_redshift_user.arn}",
           "${data.aws_ssm_parameter.ssm_redshift_password.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
-          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
+          "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}",
+          "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
         ]
     },
     {
@@ -378,6 +381,39 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "DMZ_SYNC_ENDPOINT",
         "valueFrom": "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}"
+      },
+      {
+        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
+        "value": "${var.crossfeed-xpanse-org-sync}"
+      },
+      {
+        "name": "QUALYS_USERNAME",
+        "valueFrom": "${data.aws_ssm_parameter.qualys_username.arn}"
+
+      },
+      {
+          "name": "QUALYS_PASSWORD",
+          "valueFrom": "${data.aws_ssm_parameter.qualys_password.arn}"
+      },
+      {
+          "name": "NIST_API_KEY",
+          "valueFrom": "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
+      },
+      {
+        "name": "WHOIS_XML_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.whoisxml_api_key.arn}"
+      },
+      {
+        "name": "WHOIS_XML_THREAD_COUNT",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_whoisxml_thread_count.arn}"
+      },
+      {
+        "name": "INTELX_API_KEY",
+        "valueFrom": "${data.aws_ssm_parameter.intelx_api_key.arn}"
+      },
+      {
+        "name": "CHECKSUM_SALT",
+        "valueFrom": "${data.aws_ssm_parameter.checksum_salt.arn}"
       }
     ]
   }
@@ -423,9 +459,13 @@ data "aws_ssm_parameter" "sixgill_client_id" { name = var.ssm_sixgill_client_id 
 
 data "aws_ssm_parameter" "intelx_api_key" { name = var.ssm_intelx_api_key }
 
+data "aws_ssm_parameter" "checksum_salt" { name = var.ssm_checksum_salt }
+
 data "aws_ssm_parameter" "xpanse_api_key" { name = var.ssm_xpanse_api_key }
 
 data "aws_ssm_parameter" "whoisxml_api_key" { name = var.ssm_whoisxml_api_key }
+
+data "aws_ssm_parameter" "ssm_whoisxml_thread_count" { name = var.ssm_whoisxml_thread_count }
 
 data "aws_ssm_parameter" "qualys_username" { name = var.ssm_qualys_username }
 
@@ -474,6 +514,8 @@ data "aws_ssm_parameter" "ssm_redshift_password" { name = var.ssm_redshift_passw
 data "aws_ssm_parameter" "ssm_dmz_api_key" { name = var.ssm_dmz_api_key }
 
 data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpoint }
+
+data "aws_ssm_parameter" "ssm_nist_api_key" { name = var.ssm_nist_api_key }
 
 
 resource "aws_s3_bucket" "export_bucket" {

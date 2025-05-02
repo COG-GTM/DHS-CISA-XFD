@@ -8,18 +8,16 @@ data synchronization by interfacing with the data lake and database models.
 # Standard Python Libraries
 import datetime
 import json
+import logging
 import os
 from typing import Dict
 from uuid import uuid1
 
 # Third-Party Libraries
-from django.db import transaction
+from dateutil import parser  # type: ignore
+from django.db import connections, models, transaction
 from django.db.models import Exists, OuterRef, Prefetch
 from django.db.utils import IntegrityError
-from xfd_api.models import Domain as XFDDomain
-from xfd_api.models import Organization as XFDOrganization
-from xfd_api.models import Service as XFDService
-from xfd_api.models import Vulnerability as XFDVulnerability
 from xfd_mini_dl.models import (
     Cidr,
     CidrOrgs,
@@ -27,11 +25,31 @@ from xfd_mini_dl.models import (
     Host,
     Ip,
     Location,
+    NMIServiceGroup,
     Organization,
     PortScan,
+    RiskyServiceGroup,
     Ticket,
+    TicketEvent,
     VulnScan,
 )
+
+
+def safe_parse_date(value):
+    """Safely parse a date string into a datetime object."""
+    try:
+        if value:
+            return parser.parse(value)
+    except (parser.ParserError, TypeError, ValueError):
+        return None  # or you can log it / raise a custom error
+    return None
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(message)s",
+)
+LOGGER = logging.getLogger(__name__)
 
 
 def save_port_scan_to_datalake(port_scan_obj):
@@ -48,42 +66,103 @@ def save_port_scan_to_datalake(port_scan_obj):
     #     f"Starting to save port scan {port_scan_obj.get('ipString')} {port_scan_obj.get('port')} to datalake"
     # )
 
-    # Map fields to match Django model expectations
-    field_mapping = {"organization": "organization_id", "ip": "ip_id"}
-
-    # Determine fields to update, excluding 'id'
-    port_scan_updated_values = {
-        field_mapping.get(key, key): value
-        for key, value in port_scan_obj.items()
-        if key != "id" and value is not None
-    }
-
+    id = port_scan_obj.get("id")
+    del port_scan_obj["id"]
     try:
         with transaction.atomic(using="mini_data_lake"):
-            if port_scan_updated_values:
-                # Upsert: Insert or update if a conflict occurs
-                port_scan_record, created = PortScan.objects.update_or_create(
-                    id=port_scan_obj.get(
-                        "id", str(uuid1())
-                    ),  # Generate UUID if not provided
-                    defaults=port_scan_updated_values,
-                )
-                print("Updated PortScan" if not created else "Created PortScan")
-                return str(port_scan_record.id)
-            else:
-                # Insert but ignore if the record already exists
-                obj, created = PortScan.objects.get_or_create(
-                    id=port_scan_obj.get("id", str(uuid1())), defaults=port_scan_obj
-                )
-                if not created:
-                    print(f"Found existing PortScan: {obj.id}")
-                return str(obj.id) if obj else None
+            # Insert but ignore if the record already exists
+
+            obj, created = PortScan.objects.update_or_create(
+                id=id, defaults=port_scan_obj
+            )
     except Exception as e:
         print("Error saving PortScan to Datalake", e)
         return None
 
 
-def save_ticket_to_datalake(ticket_obj):
+def save_ticket_event_to_datalake(ticket_event_obj, ticket_id, details):
+    """Save ticket events to Datalake."""
+    id = ticket_event_obj.get("reference")
+    if isinstance(id, str):
+        id = id.replace("ObjectId('", "").replace("')", "")
+
+    is_port_scan = False
+    is_vuln_scan = False
+    port_scan_record = None
+    vuln_scan_record = None
+
+    try:
+        port_scan_record = PortScan.objects.get(id=id)
+        is_port_scan = True
+    except PortScan.DoesNotExist:
+        pass
+    try:
+        vuln_scan_record = VulnScan.objects.get(id=id)
+        is_vuln_scan = True
+    except VulnScan.DoesNotExist:
+        pass
+
+    ticket_service = details.get("service")
+
+    try:
+        if ticket_service:
+            ticket_record = Ticket.objects.get(id=ticket_id)
+            nmi_service_group_record = NMIServiceGroup.objects.filter(
+                service_name=ticket_service
+            ).first()
+            risky_service_group = RiskyServiceGroup.objects.filter(
+                service_name=ticket_service
+            ).first()
+            if nmi_service_group_record:
+                # Set NMI Service Group -> Not a relation, just text mapping field
+                ticket_record.nmi_service_group = nmi_service_group_record.group
+                ticket_record.save()
+                if is_port_scan:
+                    port_scan_record.nmi_service_group = nmi_service_group_record.group
+                    port_scan_record.save()
+                if is_vuln_scan:
+                    vuln_scan_record.nmi_service_group = nmi_service_group_record.group
+                    vuln_scan_record.save()
+            if risky_service_group:
+                # Set Risky Service Group -> Not a relation, just text mapping field
+                ticket_record.risky_service_group = risky_service_group.group
+                ticket_record.save()
+                if is_port_scan:
+                    port_scan_record.risky_service_group = risky_service_group.group
+                    port_scan_record.save()
+                if is_vuln_scan:
+                    vuln_scan_record.risky_service_group = risky_service_group.group
+                    vuln_scan_record.save()
+    except Exception as e:
+        LOGGER.info("Error setting NMIServiceGroup or RiskyServiceGroup", e)
+
+    shaped = {
+        "reference": id,
+        "port_scan_id": id if is_port_scan else None,
+        "vuln_scan_id": id if is_vuln_scan else None,
+        "action": ticket_event_obj.get("action"),
+        "reason": ticket_event_obj.get("reason"),
+        "event_timestamp": safe_parse_date(ticket_event_obj.get("time")),
+        "ticket_id": ticket_id,
+    }
+    try:
+        ticket_event_record = TicketEvent.objects.create(**shaped)
+        return ticket_event_record
+    except IntegrityError:
+        return None
+
+
+def get_latest_os_type(ip_str):
+    """Extract OS type for a given ip."""
+    port_scan = (
+        PortScan.objects.filter(ip_string=ip_str, service_os_type__isnull=False)
+        .order_by("-time_scanned")
+        .first()
+    )
+    return port_scan.service_os_type if port_scan else None
+
+
+def save_ticket_to_datalake(ticket_obj, events, details):
     """
     Save a Ticket record to the datalake, performing an upsert if necessary.
 
@@ -94,40 +173,26 @@ def save_ticket_to_datalake(ticket_obj):
         str or None: The ID of the inserted/updated record.
     """
     # print("Starting to save Ticket to datalake")
-
-    # Map fields to match Django model expectations
-    field_mapping = {"organization": "organization_id", "ip": "ip_id", "cve": "cve_id"}
-
-    # Determine fields to update, excluding 'id'
-    ticket_updated_values = {
-        field_mapping.get(key, key): value
-        for key, value in ticket_obj.items()
-        if key != "id" and value is not None
-    }
+    obj = None
+    id = ticket_obj.get("id")
+    del ticket_obj["id"]
 
     try:
         with transaction.atomic(using="mini_data_lake"):
-            if ticket_updated_values:
-                # Upsert: Insert or update if a conflict occurs
-                ticket_record, created = Ticket.objects.update_or_create(
-                    id=ticket_obj.get(
-                        "id", str(uuid1())
-                    ),  # Generate UUID if not provided
-                    defaults=ticket_updated_values,
-                )
-                print("Updated Ticket" if not created else "Created Ticket")
-                return str(ticket_record.id)
-            else:
-                # Insert but ignore if the record already exists
-                obj, created = Ticket.objects.get_or_create(
-                    id=ticket_obj.get("id", str(uuid1())), defaults=ticket_obj
-                )
-                if not created:
-                    print(f"Found existing Ticket: {obj.id}")
-                return str(obj.id) if obj else None
+            # Insert but ignore if the record already exists
+
+            obj, created = Ticket.objects.update_or_create(id=id, defaults=ticket_obj)
     except Exception as e:
         print("Error saving Ticket to Datalake", e)
+
+    try:
+        for event in events:
+            save_ticket_event_to_datalake(event, obj.id, details)
+    except Exception as e:
+        print("Error saving TicketEvent to Datalake", e)
+        LOGGER.error("Error saving TicketEvent to Datalake, %s", e)
         return None
+    return None
 
 
 def save_host(host_data: Dict) -> str:
@@ -139,22 +204,33 @@ def save_host(host_data: Dict) -> str:
     Returns:
         str: The ID of the inserted/updated record.
     """
-    excluded_keys = {"id"}
-    key_mapping = {"organization": "organizationId", "ip": "ip_id"}
-
-    host_updated_values = [
-        key_mapping.get(key, key)
-        for key in host_data.keys()
-        if key not in excluded_keys and host_data[key] is not None
-    ]
+    id = host_data.get("id")
+    del host_data["id"]
 
     with transaction.atomic(using="mini_data_lake"):
-        host, created = Host.objects.update_or_create(
-            id=host_data.get("id"),
-            defaults={key: host_data[key] for key in host_updated_values},
-        )
+        host, created = Host.objects.update_or_create(id=id, defaults=host_data)
 
     return str(host.id)
+
+
+def truncate_charfields(model_cls, data_dict):
+    """Trim or stringify charfields in the given data dict to their model-defined max_length."""
+    for field in model_cls._meta.fields:
+        if isinstance(field, models.CharField):
+            val = data_dict.get(field.name)
+            if val is None:
+                continue
+            if not isinstance(val, str):
+                val = str(val)
+            if field.max_length and len(val) > field.max_length:
+                LOGGER.warning(
+                    "Truncating field %s: %d → %d",
+                    field.name,
+                    len(val),
+                    field.max_length,
+                )
+                val = val[: field.max_length]
+            data_dict[field.name] = val
 
 
 def save_vuln_scan(vuln_scan: Dict) -> str:
@@ -166,26 +242,14 @@ def save_vuln_scan(vuln_scan: Dict) -> str:
     Returns:
         str: The ID of the inserted/updated record.
     """
-    vuln_scan_updated_values = [
-        "organizationId"
-        if key == "organization"
-        else "ipId"
-        if key == "ip"
-        else "cveId"
-        if key == "cve"
-        else key
-        if vuln_scan[key] is not None and key != "id"
-        else ""
-        for key in vuln_scan.keys()
-    ]
+    id = vuln_scan.get("id")
+    del vuln_scan["id"]
+    truncate_charfields(VulnScan, vuln_scan)
+    if isinstance(id, str):
+        id = id.replace("ObjectId('", "").replace("')", "")
 
-    # Filter out empty values
-    vuln_scan_updated_values = [key for key in vuln_scan_updated_values if key]
-
-    # Upsert into the database
     vuln_scan_obj, created = VulnScan.objects.update_or_create(
-        id=vuln_scan.get("id"),
-        defaults={key: vuln_scan[key] for key in vuln_scan_updated_values},
+        id=id, defaults=vuln_scan
     )
 
     return str(vuln_scan_obj.id)
@@ -203,8 +267,6 @@ def save_cve_to_datalake(cve_obj):
     """
     cve_name = cve_obj.get("name")
 
-    print(f"Starting to save CVE to datalake: {cve_name}")
-
     # Determine fields to update, excluding 'name'
     cve_updated_values = [
         key
@@ -219,18 +281,16 @@ def save_cve_to_datalake(cve_obj):
                 cve_record, created = Cve.objects.update_or_create(
                     name=cve_name,
                     defaults={key: cve_obj[key] for key in cve_updated_values}
-                    | {"id": str(1())},
+                    | {"id": str(1)},
                 )
                 print("Updated CVE" if not created else "Created CVE")
-                return str(cve_record.id)
+                return cve_record
             else:
                 # Insert but ignore if the record already exists
                 obj, created = Cve.objects.get_or_create(
                     name=cve_name, defaults=cve_obj | {"id": str(uuid1())}
                 )
-                if not created:
-                    print(f"Found existing CVE: {obj.id}")
-                return str(obj.id) if obj else None
+                return obj
     except Exception as e:
         print("Error saving CVE to Datalake", e)
         return None
@@ -257,7 +317,7 @@ def save_ip_to_datalake(ip_obj):
     ]
     try:
         org_record = Organization.objects.get(id=str(organization["id"]))
-        with transaction.atomic(using="mini_data_lake_lz"):
+        with transaction.atomic(using="mini_data_lake"):
             if ip_updated_values:
                 # Upsert: Insert or update if a conflict occurs
                 ip_record, created = Ip.objects.update_or_create(
@@ -265,7 +325,6 @@ def save_ip_to_datalake(ip_obj):
                     organization=org_record or None,
                     defaults={key: ip_obj[key] for key in ip_updated_values},
                 )
-                print("Updated IP")
                 return ip_record
             else:
                 # Insert but ignore if the record already exists
@@ -287,7 +346,7 @@ def save_ip_to_datalake(ip_obj):
 
 
 # Helper and utility functions
-def fetch_orgs_and_relations(db_name="mini_data_lake_lz"):
+def fetch_orgs_and_relations(db_name="mini_data_lake"):
     """Fetch organizations along with related sectors, CIDRs (via CidrOrgs), and child organizations.
 
     Returns:
@@ -295,11 +354,11 @@ def fetch_orgs_and_relations(db_name="mini_data_lake_lz"):
     """
     sectors_prefetch = Prefetch("sectors")
     cidr_orgs_prefetch = Prefetch(
-        "cidrorgs_set",  # Default reverse name for ForeignKey in Django
+        "cidrorgs",  # Default reverse name for ForeignKey in Django
         queryset=CidrOrgs.objects.using(db_name).select_related("cidr"),
     )
     children_prefetch = Prefetch(
-        "organization_set"
+        "children"
     )  # Reverse ForeignKey for children organizations
 
     # Annotate organizations to identify if their id exists in another record's parent_id
@@ -348,6 +407,7 @@ def organization_to_dict(org):
         "updated_at": org.updated_at.isoformat(),
         "type": org.type,
         "stakeholder": org.stakeholder,
+        "region_id": str(org.region_id) if org.region_id else None,
         "enrolled_in_vs_timestamp": org.enrolled_in_vs_timestamp.isoformat(),
         "period_start_vs_timestamp": org.period_start_vs_timestamp.isoformat(),
         "report_types": org.report_types,
@@ -360,7 +420,7 @@ def organization_to_dict(org):
             "county_fips": org.location.county_fips,
             "gnis_id": org.location.gnis_id,
             "state_abrv": org.location.state_abrv,
-            "stateFips": org.location.state_fips,
+            "state_fips": org.location.state_fips,
             "state": org.location.state,
         }
         if org.location
@@ -373,8 +433,7 @@ def organization_to_dict(org):
         if org.parent
         else None,
         "children": [
-            {"id": str(child.id), "name": child.name}
-            for child in org.organization_set.all()
+            {"id": str(child.id), "name": child.name} for child in org.children.all()
         ],
         "sectors": [
             {"id": str(sector.id), "name": sector.name, "acronym": sector.acronym}
@@ -386,13 +445,13 @@ def organization_to_dict(org):
                 "start_ip": str(cidr_org.cidr.start_ip),
                 "end_ip": str(cidr_org.cidr.end_ip),
             }
-            for cidr_org in org.cidrorgs_set.all()
+            for cidr_org in org.cidrorgs.all()
         ],
     }
 
 
 def save_organization_to_mdl(
-    org_dict, network_list, location, db_name="mini_data_lake_lz"
+    org_dict, network_list, location, db_name="mini_data_lake"
 ) -> Organization:
     """Save or update an organization in the specified database.
 
@@ -412,12 +471,12 @@ def save_organization_to_mdl(
     Returns:
         Organization: The created or updated organization instance.
     """
-    print("Saving Organization")
+    # print("Saving Organization")
     location_obj = None
     if location:
         try:
             location_obj, created = Location.objects.using(db_name).update_or_create(
-                gnis_id=location["gnis_id"],  # Lookup field
+                gnis_id=str(location["gnis_id"]),  # Lookup field
                 defaults={  # Fields to update or set if creating
                     "name": location.get("name", None),
                     "country_abrv": location.get("country_abrv", None),
@@ -447,6 +506,14 @@ def save_organization_to_mdl(
         organization_obj.report_types = org_dict["report_types"]
         organization_obj.scan_types = org_dict["scan_types"]
         organization_obj.location = location_obj
+        organization_obj.region_id = org_dict["region_id"]
+        organization_obj.state = org_dict["state"]
+        organization_obj.state_name = org_dict["state_name"]
+        organization_obj.county = org_dict["county"]
+        organization_obj.county_fips = org_dict["county_fips"]
+        organization_obj.state_fips = org_dict["state_fips"]
+        organization_obj.country = org_dict["country"]
+        organization_obj.country_name = org_dict["country_name"]
         organization_obj.save()
         org_obj = organization_obj
     except Organization.DoesNotExist:
@@ -456,6 +523,14 @@ def save_organization_to_mdl(
             acronym=org_dict["acronym"],
             retired=org_dict["retired"],
             type=org_dict["type"],
+            region_id=org_dict["region_id"],
+            state=org_dict["state"],
+            state_name=org_dict["state_name"],
+            county=org_dict["county"],
+            county_fips=org_dict["county_fips"],
+            state_fips=org_dict["state_fips"],
+            country=org_dict["country"],
+            country_name=org_dict["country_name"],
             stakeholder=org_dict["stakeholder"],
             enrolled_in_vs_timestamp=org_dict["enrolled_in_vs_timestamp"],
             period_start_vs_timestamp=org_dict["period_start_vs_timestamp"],
@@ -483,7 +558,7 @@ def save_organization_to_mdl(
     return org_obj
 
 
-def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake_lz"):
+def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake"):
     """
     Create or update a CIDR record in the specified database, linking it to the provided organization.
 
@@ -518,7 +593,6 @@ def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake
                 organization=org,
                 cidr=cidr_obj,
                 defaults={
-                    "cidr_orgs_id": str(uuid1()),
                     "last_seen": datetime.datetime.today().date(),
                     "current": True,
                 },
@@ -549,7 +623,7 @@ def load_test_data(data_set: str) -> list:
         "vuln_scan": "~/Downloads/vuln_scan_sample.json",
         "port_scans": "~/Downloads/port_scans_sample.json",
         "hosts": "~/Downloads/hosts_sample.json",
-        "tickets": "~/Downloads/tickets_sample.json",
+        "tickets": "~/Downloads/tickets_sample_new.json",
     }
 
     file_path = file_paths.get(data_set)
@@ -566,6 +640,37 @@ def load_test_data(data_set: str) -> list:
         return json.load(file)
 
 
+def enforce_latest_flag_port_scan():
+    """
+    Enforce the `latest` boolean flag on the PortScan table.
+
+    Marks only the most recent scan for each (organization_id, ip_string, port)
+    as `latest=True`. All others are set to `False`.
+    """
+    sql = """
+        WITH latest_scans AS (
+            SELECT DISTINCT ON (organization_id, ip_string, port)
+                id
+            FROM port_scan
+            WHERE time_scanned IS NOT NULL
+            ORDER BY organization_id, ip_string, port, time_scanned DESC
+        )
+        UPDATE port_scan
+        SET latest = (id IN (SELECT id FROM latest_scans))
+    """
+
+    try:
+        with connections["mini_data_lake"].cursor() as cursor, transaction.atomic(
+            using="mini_data_lake"
+        ):
+            LOGGER.info("Enforcing `latest` flag on PortScan table...")
+            cursor.execute(sql)
+            LOGGER.info("Successfully enforced `latest` flags on PortScan records.")
+    except Exception as e:
+        LOGGER.error("Failed to enforce `latest` flags on PortScan: %s", e)
+        raise
+
+
 def map_severity(severity):
     """Map a severity score to a severity level."""
     if severity == 0 or severity is None:
@@ -577,57 +682,3 @@ def map_severity(severity):
     if severity < 9:
         return "High"
     return "Critical"
-
-
-def save_vuln_scan_to_xfd_db(vuln):
-    """Save a vulnerability scan record to the XFD database."""
-    owner_acronym = vuln.get("owner")
-    vuln_title = vuln.get("cve") if vuln.get("cve") else vuln.get("description")
-    xfd_org_record = None
-    xfd_domain_record = None
-    try:
-        # Fetch the organization record from the XFD database
-        xfd_org_record = XFDOrganization.objects.get(acronym=owner_acronym)
-    except XFDOrganization.DoesNotExist:
-        # If the organization record does not exist, stop execution
-        return
-    try:
-        xfd_domain_record = XFDDomain.objects.get(
-            name=vuln.get("ip"), organization=xfd_org_record
-        )
-    except XFDDomain.DoesNotExist:
-        xfd_domain_record = XFDDomain.objects.create(
-            ip=vuln.get("ip"),
-            ipOnly=True,
-            name=vuln.get("ip"),
-            organization=xfd_org_record,
-        )
-        print(f"Created domain: {xfd_domain_record} for organization: {xfd_org_record}")
-    try:
-        xfd_service_record = XFDService.objects.get(
-            domain=xfd_domain_record, port=vuln.get("port")
-        )
-    except XFDService.DoesNotExist:
-        xfd_service_record = XFDService.objects.create(
-            createdAt=datetime.datetime.now(datetime.timezone.utc),
-            updatedAt=datetime.datetime.now(datetime.timezone.utc),
-            domain=xfd_domain_record,
-            port=vuln.get("port"),
-            service=vuln.get("service"),
-        )
-    try:
-        XFDVulnerability.objects.get(domain=xfd_domain_record, title=vuln_title)
-    except XFDVulnerability.DoesNotExist:
-        XFDVulnerability.objects.update_or_create(
-            title=vuln_title,  # Fields to match an existing record
-            domain=xfd_domain_record,  # Fields to match an existing record
-            defaults={  # Fields to update or insert if the record doesn't exist
-                "description": vuln.get("description"),
-                "createdAt": datetime.datetime.now(datetime.timezone.utc),
-                "updatedAt": datetime.datetime.now(datetime.timezone.utc),
-                "severity": map_severity(vuln.get("severity")),
-                "cvss": vuln.get("cvss3_base_score"),
-                "source": vuln.get("source"),
-                "service": xfd_service_record,
-            },
-        )

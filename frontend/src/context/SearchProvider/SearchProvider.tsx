@@ -19,8 +19,8 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
     trackUrlState: false,
     initialState: {
       resultsPerPage: 15,
-      sortField: 'name',
-      sortDirection: 'asc'
+      sort_field: 'name',
+      sort_direction: 'asc'
     },
 
     onResultClick: () => {
@@ -29,8 +29,8 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
     onAutocompleteResultClick: (e: any, f: any) => {
       console.error(e, f);
     },
-    onAutocomplete: async ({ searchTerm }: { searchTerm: string }) => {
-      // const requestBody = buildAutocompleteRequest({ searchTerm });
+    onAutocomplete: async ({ search_term }: { search_term: string }) => {
+      // const requestBody = buildAutocompleteRequest({ search_term });
       // const json = await apiPost<ApiResponse>('/search', {
       //   body: {
       //     ...requestBody
@@ -54,24 +54,26 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
         current,
         filters,
         resultsPerPage,
-        searchTerm,
-        sortDirection,
-        sortField
+        search_term,
+        sort_direction,
+        sort_field
       } = state;
       const body: any = {
         current,
         filters,
         resultsPerPage,
-        searchTerm,
-        sortDirection,
-        sortField
+        search_term,
+        sort_direction,
+        sort_field
       };
 
       const responseJson = await apiPost<ApiResponse>('/search', {
         body
       });
       const responseJsonWithDisjunctiveFacetCounts =
-        await applyDisjunctiveFaceting(responseJson, state, ['fromRootDomain']);
+        await applyDisjunctiveFaceting(responseJson, state, [
+          'from_root_domain'
+        ]);
       return buildState(responseJsonWithDisjunctiveFacetCounts, resultsPerPage);
     }
   };

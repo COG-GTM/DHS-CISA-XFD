@@ -11,34 +11,21 @@ import {
   DataGrid,
   GridColDef,
   GridFilterItem,
-  GridRenderEditCellParams,
-  GridToolbar,
-  GridToolbarColumnsButton,
-  GridToolbarDensitySelector,
-  GridToolbarFilterButton
+  GridRenderEditCellParams
 } from '@mui/x-data-grid';
 import { useAuthContext } from 'context';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import React, { FC, useCallback, useEffect, useState } from 'react';
+import CustomToolbar from 'components/DataGrid/CustomToolbar';
 
 interface LogsProps {}
 
 interface LogDetails {
-  createdAt: string;
-  eventType: string;
+  created_at: string;
+  event_type: string;
   result: string;
   payload: string;
 }
-
-const CustomToolbar = () => {
-  return (
-    <GridToolbar>
-      <GridToolbarColumnsButton />
-      <GridToolbarFilterButton />
-      <GridToolbarDensitySelector />
-    </GridToolbar>
-  );
-};
 
 export const Logs: FC<LogsProps> = () => {
   const { apiPost } = useAuthContext();
@@ -82,7 +69,7 @@ export const Logs: FC<LogsProps> = () => {
 
   const logCols: GridColDef[] = [
     {
-      field: 'eventType',
+      field: 'event_type',
       headerName: 'Event',
       minWidth: 100,
       flex: 1
@@ -94,7 +81,7 @@ export const Logs: FC<LogsProps> = () => {
       flex: 1
     },
     {
-      field: 'createdAt',
+      field: 'created_at',
       headerName: 'Timestamp',
       type: 'dateTime',
       minWidth: 100,

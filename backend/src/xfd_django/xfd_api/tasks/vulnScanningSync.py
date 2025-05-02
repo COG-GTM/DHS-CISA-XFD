@@ -5,34 +5,70 @@ port scans, hosts, and tickets from Redshift into the Django models.
 """
 
 # Standard Python Libraries
+from collections import Counter
+
 # Uncomment the above to run the script standalone
 import datetime
-from ipaddress import IPv4Network, IPv6Network
+from ipaddress import IPv4Network, IPv6Network, ip_network
 import json
+import logging
 import os
+import traceback
 
 # Third-Party Libraries
+from dateutil import parser  # type: ignore
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
+from django.db.models.functions import Power
+from django.utils import timezone
 import psycopg2
 import requests
+from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
+from xfd_api.tasks.syncdb_helpers import (
+    create_domain_view,
+    create_service_view,
+    create_vuln_materialized_views,
+    create_vuln_normal_views,
+)
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
 from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
+    enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
+    get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
-    save_host,
     save_ip_to_datalake,
     save_organization_to_mdl,
     save_port_scan_to_datalake,
     save_ticket_to_datalake,
     save_vuln_scan,
-    save_vuln_scan_to_xfd_db,
 )
-from xfd_mini_dl.models import Organization, Sector
+from xfd_mini_dl.models import (
+    Cidr,
+    Host,
+    HostSummary,
+    NMIServiceGroup,
+    Organization,
+    PortScan,
+    PortScanServiceSummary,
+    PortScanSummary,
+    RiskyServiceGroup,
+    Sector,
+    Ticket,
+    VulnScanSummary,
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(message)s",
+    filename="vuln_scanning_sync.log",
+)
+LOGGER = logging.getLogger(__name__)
+IS_LOCAL = os.getenv("IS_LOCAL")
 
 
-async def handler(event):
+def handler(event):
     """Handle execution of the vulnerability scanning sync task.
 
     This function serves as the entry point for triggering the synchronization
@@ -47,9 +83,10 @@ async def handler(event):
     """
     try:
         main()
-        return {"statusCode": 200, "body": "VS Sync completed successfully"}
+        return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
-        return {"statusCode": 500, "body": str(e)}
+        LOGGER.info("Error occurred: %s", e)
+        return {"status_code": 500, "body": str(e)}
 
 
 def query_redshift(query, params=None):
@@ -59,66 +96,130 @@ def query_redshift(query, params=None):
         user=os.environ.get("REDSHIFT_USER"),
         password=os.environ.get("REDSHIFT_PASSWORD"),
         host=os.environ.get("REDSHIFT_HOST"),
-        poert=5439,
+        port=5439,
     )
 
     try:
-        cursor = conn.cursor(
-            cursor_factory=psycopg2.extras.DictCursor
-        )  # Use DictCursor for row dicts
-        cursor.execute(query, params or ())
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)  # <-- this avoids the IndexError
         results = cursor.fetchall()
-        return [dict(row) for row in results]  # Convert to list of dicts
+        return [dict(row) for row in results]
     finally:
         cursor.close()
         conn.close()
 
 
+def fetch_in_chunks(base_query: str, chunk_size: int = 5000):
+    """Yield chunks of rows from Redshift using LIMIT/OFFSET pagination."""
+    offset = 0
+    while True:
+        query = f"{base_query} LIMIT {chunk_size} OFFSET {offset}"
+        chunk = fetch_from_redshift(query)
+        if not chunk:
+            break
+        yield chunk
+        offset += chunk_size
+
+
 def main():
     """Execute the vulnerability scanning synchronization task."""
-    print("Starting VS Sync scan")
+    LOGGER.info("Started VulnScanningSync scan...")
+
     # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
+    LOGGER.info("Fetched %d requests from Redshift", len(request_list))
     org_id_dict = process_orgs(request_list)
+    LOGGER.info("Completed saving organizations to the LZ MDL.")
+
     # Process Organizations & Relations
-    process_organizations_and_relations()
+    send_organizations_to_dmz()
 
     # Process Vulnerability Scans
+    LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.vulns_scans WHERE time >= DATE_SUB(NOW(), INTERVAL 2 DAY);"
+        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '2 days';"
     )
+    LOGGER.info("Fetched %d vulnerability scans from Redshift", len(vuln_scans))
     if vuln_scans:
         process_vulnerability_scans(vuln_scans, org_id_dict)
+        LOGGER.info("Finished processing vulnerability scans")
 
     # Process Host Scans
-    host_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.hosts WHERE last_change >= DATE_SUB(NOW(), INTERVAL 2 DAY);"
-    )
-    if host_scans:
-        process_host_scans(host_scans, org_id_dict)
+    LOGGER.info("Started processing host scans...")
+    create_daily_host_summary(org_id_dict)
 
-    # Process Tickets
-    tickets = fetch_from_redshift(
-        "SELECT * FROM vmtableau.tickets WHERE last_change >= DATE_SUB(NOW(), INTERVAL 2 DAY);"
+    # Port Scans (Chunked)
+    LOGGER.info("Started processing port scans...")
+    base_query = (
+        "SELECT * FROM vmtableau.port_scans "
+        "WHERE time >= GETDATE() - INTERVAL '2 days'"
     )
-    if tickets:
-        process_tickets(tickets, org_id_dict)
 
-    # Process Port Scans
-    port_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.port_scans WHERE time >= DATE_SUB(NOW(), INTERVAL 2 DAY);"
+    total_processed = 0
+    chunk_number = 1
+    for chunk in fetch_in_chunks(base_query):
+        LOGGER.info(
+            "Processing port scan chunk #%d with %d rows", chunk_number, len(chunk)
+        )
+        process_port_scans(chunk, org_id_dict)
+        total_processed += len(chunk)
+        chunk_number += 1
+
+    if total_processed == 0:
+        LOGGER.warning("No port scans found in Redshift for the last 2 days.")
+    else:
+        LOGGER.info(
+            "Processed %d total port scans across %d chunks",
+            total_processed,
+            chunk_number - 1,
+        )
+        enforce_latest_flag_port_scan()
+        create_port_scan_summary()
+        create_port_scan_service_summaries()
+        LOGGER.info("Finished processing port scans")
+
+    # Process Tickets (Chunked)
+    LOGGER.info("Started processing tickets...")
+    base_query = (
+        "SELECT * FROM vmtableau.tickets "
+        "WHERE last_change >= GETDATE() - INTERVAL '2 days'"
     )
-    if port_scans:
-        process_port_scans(port_scans, org_id_dict)
 
-    print("VS Sync scan completed successfully!")
+    total_processed = 0
+    chunk_number = 1
+    for chunk in fetch_in_chunks(base_query):
+        LOGGER.info(
+            "Processing ticket chunk #%d with %d rows", chunk_number, len(chunk)
+        )
+        process_tickets(chunk, org_id_dict)
+        total_processed += len(chunk)
+        chunk_number += 1
+
+    if total_processed == 0:
+        LOGGER.warning("No tickets found in Redshift for the last 2 days.")
+    else:
+        LOGGER.info(
+            "Processed %d total tickets across %d chunks",
+            total_processed,
+            chunk_number - 1,
+        )
+        LOGGER.info("Finished processing tickets")
+        create_vuln_scan_summary()
+
+    create_domain_view("mini_data_lake")
+    create_service_view("mini_data_lake")
+    create_vuln_normal_views("mini_data_lake")
+    create_vuln_materialized_views("mini_data_lake")
 
 
 def detect_data_set(query):
     """Detect the data set from the query."""
     if "requests" in query:
         return "requests"
-    if "vulns_scans" in query:
+    if "vuln_scans" in query:
         return "vuln_scan"
     if "hosts" in query:
         return "hosts"
@@ -131,7 +232,6 @@ def detect_data_set(query):
 
 def fetch_from_redshift(query):
     """Fetch data from Redshift and log execution time."""
-    IS_LOCAL = True
     if IS_LOCAL:
         data_set = detect_data_set(query)
         return load_test_data(data_set)
@@ -140,10 +240,11 @@ def fetch_from_redshift(query):
         result = query_redshift(query)
         end_time = datetime.datetime.now()
         duration_seconds = (end_time - start_time).total_seconds()
-        print(f"[Redshift] [{duration_seconds}s] [{len(result)} records] {query}")
-        return result.rows
+        LOGGER.info(f"[Redshift] [{duration_seconds}s] [{len(result)} records] {query}")
+        return result
     except Exception as e:
-        print(f"Error fetching data from Redshift: {e}")
+        LOGGER.info("Error fetching data from Redshift: %s", e)
+        LOGGER.info("Erroneous query: %s", query)
         return []
 
 
@@ -157,22 +258,29 @@ def save_json_to_file(data, filename="test.json"):
         print(f"Error saving JSON to file: {e}")
 
 
-def process_organizations_and_relations():
+def send_organizations_to_dmz():
     """Fetch organizations and sync with the external API."""
     try:
         shaped_orgs = fetch_orgs_and_relations()
         if not shaped_orgs:
             return
 
-        chunks = chunk_list_by_bytes(shaped_orgs, 2097152)
+        # 100_000 = 100 KB
+        chunks = chunk_list_by_bytes(shaped_orgs, 100_000)
         for idx, chunk_info in enumerate(chunks):
             chunk = chunk_info["chunk"]
             bounds = chunk_info["bounds"]
-            # save_json_to_file(json.dumps(chunk), f"org_chunk_{idx}.json")
+            LOGGER.info(
+                "Sending chunk %d - %d to sync API", bounds["start"], bounds["end"]
+            )
             send_csv_to_sync(json.dumps(chunk), bounds)
 
     except Exception as e:
-        print(f"Error processing organization data: {e}")
+        LOGGER.error(
+            "Error sending organizations to DMZ sync endpoint:\n%s",
+            traceback.format_exc(),
+        )
+        print(e)
 
 
 def send_csv_to_sync(csv_data, bounds):
@@ -181,21 +289,37 @@ def send_csv_to_sync(csv_data, bounds):
     try:
         checksum = create_checksum(csv_data)
     except Exception as e:
-        print(f"Error creating checksum: {e}")
+        LOGGER.error("Error creating checksum: %s", e)
         return
 
     headers = {
         "x-checksum": checksum,
         "x-cursor": f"{bounds['start']}-{bounds['end']}",
         "Content-Type": "application/json",
-        "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0N2Q0MDk3LWM5ZTEtNGMxZS1iMmY0LWY2Mjg4OTU3NTlkMCIsImVtYWlsIjoiSkFOU09OLkJVTkNFQGFzc29jaWF0ZXMuY2lzYS5kaHMuZ292IiwiZXhwIjoxNzQxMzc1NTQwfQ.Yo4A0fBP8cF00ODKgxD5U2NaffXv1k3nmaN4jv5kyVs",
+        "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
 
-    response = requests.post(
-        "http://localhost:3000/sync", json=body, headers=headers, timeout=60
-    )
-    if response.status_code == 200:
-        print("CSV successfully sent to /sync")
+    try:
+        response = requests.post(
+            os.getenv("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
+        )
+        response.raise_for_status()
+        LOGGER.info("Successfully sent chunk to sync API")
+    except requests.exceptions.HTTPError as http_err:
+        try:
+            error_data = response.json()
+            error_detail = error_data.get("detail", error_data)
+            print(http_err)
+        except ValueError:
+            error_detail = response.text
+        LOGGER.error(
+            "HTTPError sending chunk to sync API:\nStatus Code: %s\nDetail: %s\nHeaders: %s",
+            response.status_code,
+            error_detail,
+            response.headers,
+        )
+    except Exception as e:
+        LOGGER.error("Unexpected error sending chunk: %s", str(e))
 
 
 def process_vulnerability_scans(vuln_scans, org_id_dict):
@@ -214,108 +338,617 @@ def process_vulnerability_scans(vuln_scans, org_id_dict):
                 if vuln.get("ip")
                 else None
             )
-            cve_id = (
+            cve = (
                 save_cve_to_datalake({"name": vuln["cve"]}) if vuln.get("cve") else None
             )
-
-            vuln_scan_dict = build_vuln_scan_dict(vuln, owner_id, ip_id, cve_id)
-            save_vuln_scan(vuln_scan_dict)
+            vuln_scan_dict = build_vuln_scan_dict(vuln, owner_id, ip_id, cve)
+            try:
+                save_vuln_scan(vuln_scan_dict)
+            except Exception as e:
+                LOGGER.error("Error saving vulnerability scan: %s", e)
+                print(traceback.format_exc())
         except Exception as e:
-            print(f"Error processing vulnerability scan: {e}")
-    for vuln in vuln_scans:
-        save_vuln_scan_to_xfd_db(vuln)
+            LOGGER.error("Error processing Vulnerability Scan: %s", e)
+            print(traceback.format_exc())
 
 
-def build_vuln_scan_dict(vuln, owner_id, ip_id, cve_id):
+def safe_fromisoformat(date_input) -> datetime.datetime | None:
+    """Safely convert input to datetime, or return None if invalid."""
+    if isinstance(date_input, datetime.datetime):
+        return date_input
+    if isinstance(date_input, str):
+        try:
+            return parser.isoparse(date_input)
+        except Exception as e:
+            LOGGER.warning(
+                "Failed to parse datetime from string: %s | Error: %s", date_input, e
+            )
+            return None
+    return None
+
+
+def build_vuln_scan_dict(vuln, owner_id, ip_id, cve):
     """Construct a vulnerability scan dictionary."""
     return {
         "id": vuln.get("_id"),
-        "organization_id": owner_id,
-        "ip_id": ip_id.ip_hash if ip_id else None,
-        "cve_id": cve_id if cve_id else None,
-        "cve_string": vuln.get("cve"),
+        "cert_id": vuln.get("cert", None),
+        "cpe": vuln.get("cpe", None),
+        "cve_string": vuln.get("cve", None),
+        "cve": cve,
+        "cvss_base_score": vuln.get("cvss_base_score", None),
+        "cvss_temporal_score": vuln.get("cvss_temporal_score", None),
+        "cvss_temporal_vector": vuln.get("cvss_temporal_vector", None),
+        "cvss_vector": vuln.get("cvss_vector", None),
+        "description": vuln.get("description", None)[:255],
+        "exploit_available": vuln.get("exploit_available", None),
+        "exploitability_ease": vuln.get("exploit_ease", None),
+        "ip_string": vuln.get("ip", None),
+        "ip": ip_id if ip_id else None,
+        "latest": vuln.get("latest", None),
+        "owner": vuln.get("owner", None),
+        "osvdb_id": vuln.get("osvdb", None),
+        "organization": Organization.objects.get(id=owner_id),
+        "patch_publication_timestamp": safe_fromisoformat(
+            vuln.get("patch_publication_date", None)
+        ),
+        "cisa_known_exploited": safe_fromisoformat(
+            vuln.get("cisa-known-exploited", None)
+        ),
+        "port": vuln.get("port", None),
+        "port_protocol": vuln.get("protocol", None),
+        "risk_factor": vuln.get("risk_factor", None),
+        "script_version": vuln.get("script_version", None),
+        "see_also": vuln.get("see_also", None),
+        "service": vuln.get("service", None),
         "severity": vuln.get("severity"),
-        "vuln_detection_timestamp": vuln.get("time"),
-        "other_findings": vuln,
+        "solution": vuln.get("solution", None),
+        "source": vuln.get("source", None),
+        "synopsis": vuln.get("synopsis", None),
+        "vuln_detection_timestamp": safe_fromisoformat(vuln.get("time")),
+        "vuln_publication_timestamp": safe_fromisoformat(
+            vuln.get("vuln_publication_timestamp")
+        ),
+        "xref": vuln.get("xref", None),
+        "cwe": vuln.get("cwe", None),
+        "bid": vuln.get("bid", None),
+        "exploited_by_malware": bool(vuln.get("exploited_by_malware", None)),
+        "thorough_tests": bool(vuln.get("thorough_tests", None)),
+        "cvss_score_rationale": vuln.get("cvss_score_rationale", None),
+        "cvss_score_source": vuln.get("cvss_score_source", None),
+        "cvss3_base_score": vuln.get("cvss3_base_score", None),
+        "cvss3_vector": vuln.get("cvss3_vector", None),
+        "cvss3_temporal_vector": vuln.get("cvss3_temporal_vector", None),
+        "cvss3_temporal_score": vuln.get("cvss3_temporal_score", None),
+        "asset_inventory": bool(vuln.get("asset_inventory", None)),
+        "plugin_id": vuln.get("plugin_id", None),
+        "plugin_modification_date": safe_fromisoformat(
+            vuln.get("plugin_modification_date", None)
+        ),
+        "plugin_publication_date": safe_fromisoformat(
+            vuln.get("plugin_publication_date", None)
+        ),
+        "plugin_name": vuln.get("plugin_name", None),
+        "plugin_type": vuln.get("plugin_type", None),
+        "plugin_family": vuln.get("plugin_family", None),
+        "f_name": vuln.get("fname", None),
+        "cisco_bug_id": vuln.get("cisco-bug-id", None),
+        "cisco_sa": vuln.get("cisco-sa", None),
+        "plugin_output": vuln.get("plugin_output", None),
+        "other_findings": {},
     }
 
 
-def process_host_scans(host_scans, org_id_dict):
-    """Process and save host scans."""
-    for host in host_scans:
+def create_daily_host_summary(org_id_dict, summary_date=None):
+    """Create host summary records directly from Redshift data."""
+    if summary_date is None:
+        summary_date = timezone.now().date()
+
+    LOGGER.info("Starting host summary creation directly from Redshift...")
+
+    redshift_query = """
+        SELECT
+            owner,
+            MIN(last_change) AS start_date,
+            MAX(last_change) AS end_date,
+            SUM(CASE WHEN status = 'DONE' THEN 1 ELSE 0 END) AS host_done_count,
+            SUM(CASE WHEN status = 'WAITING' THEN 1 ELSE 0 END) AS host_waiting_count,
+            SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
+            SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END) AS host_ready_count,
+            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'true' THEN 1 ELSE 0 END) AS up_host_count,
+            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'false' THEN 1 ELSE 0 END) AS down_host_count
+        FROM vmtableau.hosts
+        WHERE last_change >= GETDATE() - INTERVAL '100 days'
+        GROUP BY owner;
+    """
+
+    summary_rows = fetch_from_redshift(redshift_query)
+
+    if not summary_rows:
+        LOGGER.warning("No host data found in Redshift to summarize.")
+        return
+
+    LOGGER.info("Fetched %d host summary records from Redshift", len(summary_rows))
+
+    for row in summary_rows:
         try:
-            owner_id = org_id_dict.get(host.get("owner"))
-            ip_id = (
-                save_ip_to_datalake(
-                    {
-                        "ip": host["ip"],
-                        "ip_hash": hash_ip(host["ip"]),
-                        "organization": {"id": owner_id},
-                    }
+            owner = row["owner"]
+            owner_id = org_id_dict.get(owner)
+
+            if not owner_id:
+                LOGGER.warning(
+                    "No matching org_id found for owner %s; skipping.", owner
                 )
-                if host.get("ip")
-                else None
+                continue
+
+            organization = Organization.objects.get(id=owner_id)
+
+            HostSummary.objects.update_or_create(
+                organization=organization,
+                summary_date=summary_date,
+                defaults={
+                    "start_date": row["start_date"],
+                    "end_date": row["end_date"],
+                    "host_done_count": row["host_done_count"],
+                    "host_waiting_count": row["host_waiting_count"],
+                    "host_running_count": row["host_running_count"],
+                    "host_ready_count": row["host_ready_count"],
+                    "up_host_count": row["up_host_count"],
+                    "down_host_count": row["down_host_count"],
+                },
+            )
+        except Organization.DoesNotExist:
+            LOGGER.warning(
+                "Organization ID %s not found in local DB; skipping.", owner_id
+            )
+        except Exception as e:
+            LOGGER.error(
+                "Error creating host summary for owner %s (mapped to %s): %s",
+                owner,
+                owner_id,
+                e,
             )
 
-            host_dict = {
-                "id": host.get("_id"),
-                "organization_id": owner_id,
-                "ip_id": ip_id.ip_hash if ip_id else None,
-                "status": host.get("status"),
-                "updated_timestamp": host.get("last_change"),
-            }
-            save_host(host_dict)
-        except Exception as e:
-            print(f"Error processing host scan: {e}")
+    LOGGER.info("Completed host summary creation from Redshift.")
+
+
+def create_port_scan_summary(summary_date=None):
+    """Create port summary record for each organization."""
+    try:
+        if summary_date is None:
+            summary_date = timezone.now().date()
+
+        for org in Organization.objects.all():
+            scans = PortScan.objects.filter(
+                organization=org,
+                latest=True,  # only latest scans
+                time_scanned__isnull=False,
+            )
+
+            if not scans.exists():
+                continue
+
+            aggregated = scans.aggregate(
+                start_date=Min("time_scanned"),
+                end_date=Max("time_scanned"),
+                open_port_count=Count("id", filter=Q(state="open")),
+                risky_port_count=Count(
+                    "id", filter=Q(risky_service_group__isnull=False)
+                ),
+                nmi_service_count=Count(
+                    "id", filter=Q(nmi_service_group__isnull=False)
+                ),
+                unique_ip_count=Count("ip_string", distinct=True),
+                unique_service_count=Count("service_name", distinct=True),
+            )
+
+            PortScanSummary.objects.update_or_create(
+                organization=org,
+                summary_date=summary_date,
+                defaults={
+                    "start_date": aggregated["start_date"],
+                    "end_date": aggregated["end_date"],
+                    "open_port_count": aggregated["open_port_count"],
+                    "risky_port_count": aggregated["risky_port_count"],
+                    "nmi_service_count": aggregated["nmi_service_count"],
+                    "unique_ip_count": aggregated["unique_ip_count"],
+                    "unique_service_count": aggregated["unique_service_count"],
+                },
+            )
+    except Exception as e:
+        print("Error creating port scan summary: {}".format(e))
+
+
+def create_port_scan_service_summaries(summary_date=None):
+    """Fill the port scan service summary table."""
+    try:
+        if summary_date is None:
+            summary_date = timezone.now().date()
+
+        for org in Organization.objects.all():
+            scans = PortScan.objects.filter(
+                organization=org,
+                latest=True,
+                time_scanned__isnull=False,
+                service_name__isnull=False,
+            )
+
+            if not scans.exists():
+                continue
+
+            # Group by service_name
+            service_names = scans.values_list("service_name", flat=True).distinct()
+
+            for service in service_names:
+                service_scans = scans.filter(service_name=service)
+
+                agg = service_scans.aggregate(
+                    start_date=Min("time_scanned"),
+                    end_date=Max("time_scanned"),
+                    unique_ip_count=Count("ip_string", distinct=True),
+                    unique_service_count=Count("service_name", distinct=True),
+                )
+
+                # Collect risky ports
+                risky_ports_qs = service_scans.filter(risky_service_group__isnull=False)
+                risky_ports = list(
+                    risky_ports_qs.values_list("port", flat=True).distinct()
+                )
+
+                PortScanServiceSummary.objects.update_or_create(
+                    organization=org,
+                    summary_date=summary_date,
+                    service_name=service,
+                    defaults={
+                        "start_date": agg["start_date"],
+                        "end_date": agg["end_date"],
+                        "unique_ip_count": agg["unique_ip_count"],
+                        "unique_service_count": agg["unique_service_count"],
+                        "risky_ports": risky_ports,
+                    },
+                )
+    except Exception as e:
+        print("Error creating port scan service summary: {}".format(e))
 
 
 def process_tickets(tickets, org_id_dict):
     """Process and save ticket data."""
+    # To-Do
+    # Add fields to the Django model: is_kev, first_discovered, risky_service_group
+    # Fields that don't exist in the data? OS
     for ticket in tickets:
         try:
             details = json.loads(ticket.get("details", "{}"))
-            # loc = json.loads(ticket.get("loc", "[]"))
-            ip_id = (
+            owner_id = org_id_dict.get(ticket["owner"])
+            ip = (
                 save_ip_to_datalake(
                     {
                         "ip": ticket["ip"],
                         "ip_hash": hash_ip(ticket["ip"]),
-                        "organization": {"id": org_id_dict.get(ticket["owner"])},
+                        "organization": {"id": owner_id},
                     }
                 )
                 if ticket.get("ip")
                 else None
             )
-            cve_id = (
+            cve = (
                 save_cve_to_datalake({"name": details.get("cve")})
                 if details.get("cve")
                 else None
             )
-
+            lon, lat = json.loads(ticket.get("loc", "[]"))
+            time_closed_str = ticket.get("time_closed")
+            time_opened_str = ticket.get("time_opened")
+            is_risky = "Potentially Risky Service Detected:" in details.get("name", "")
             ticket_dict = {
                 "id": ticket["_id"].replace("ObjectId('", "").replace("')", ""),
-                "organization_id": org_id_dict[ticket["owner"]],
-                "ip_id": ip_id,
-                "cve_id": cve_id,
-                "updated_timestamp": ticket["last_change"],
+                "cve_string": details.get("cve"),
+                "cve": cve,
+                "cvss_base_score": details.get("cvss_base_score"),
+                "cvss_version": details.get("cvss_version"),
+                "vuln_name": details.get("name"),
+                "cvss_score_source": details.get("score_source"),
+                "cvss_severity": details.get("severity"),
+                "vpr_score": details.get("vpr_score"),
+                "false_positive": ticket.get("false_positive"),
+                "ip_string": ticket.get("ip"),
+                "ip": ip,
+                "updated_timestamp": safe_fromisoformat(ticket.get("last_change")),
+                "location_longitude": lon,
+                "location_latitude": lat,
+                "organization": Organization.objects.get(id=owner_id),
+                "vuln_port": ticket.get("port"),
+                "port_protocol": ticket.get("protocol"),
+                "snapshots_bool": bool(ticket.get("snapshots", None)),
+                "vuln_source": ticket.get("source"),
+                "vuln_source_id": ticket.get("source_id"),
+                "closed_timestamp": safe_fromisoformat(time_closed_str)
+                if time_closed_str
+                else None,
+                "opened_timestamp": safe_fromisoformat(time_opened_str)
+                if time_opened_str
+                else None,
+                "is_open": ticket.get("open"),
+                "is_kev": details.get("kev"),
+                "is_risky": is_risky,
+                "service_name": details.get("service"),
+                "operating_system": get_latest_os_type(ticket.get("ip"))
+                if ticket.get("ip")
+                else None,
             }
-            save_ticket_to_datalake(ticket_dict)
+            events = json.loads(ticket.get("events", "[]"))
+            save_ticket_to_datalake(ticket_dict, events, details)
         except Exception as e:
-            print(f"Error processing ticket data: {e}")
+            print(
+                f"Error processing ticket data: {e} - {owner_id} - {ticket.get('owner')}"
+            )
+
+
+def get_asset_owned_count(org):
+    """Return count of IPs in the reported CIDRs for passed org."""
+    # Get only CIDRs currently associated with the org via CidrOrgs.current=True
+    cidrs = Cidr.objects.filter(
+        cidrorgs__organization=org, cidrorgs__current=True, network__isnull=False
+    ).distinct()
+
+    total_ips = 0
+    for cidr in cidrs:
+        try:
+            network = ip_network(str(cidr.network), strict=False)
+            total_ips += network.num_addresses
+        except ValueError:
+            continue  # Skip bad CIDRs
+
+    return total_ips
+
+
+def get_risky_services_count(org):
+    """Return count of risky services for passed org."""
+    return (
+        Ticket.objects.filter(
+            organization=org,
+            is_risky=True,
+            is_open=True,
+            vuln_port__isnull=False,
+        )
+        .values("ip_string", "vuln_port")
+        .distinct()
+        .count()
+    )
+
+
+def create_vuln_scan_summary(summary_date=None):
+    """Fill vuln_scan_summary table for todays date."""
+    if summary_date is None:
+        summary_date = timezone.now().date()
+
+    for org in Organization.objects.all():
+        # Base queryset for this org
+        all_org_tickets = Ticket.objects.filter(organization=org)
+        open_tickets = all_org_tickets.filter(is_open=True)
+        included = open_tickets.filter(
+            false_positive__in=[False, None], vuln_source="nessus"
+        )
+
+        if not included.exists():
+            continue  # Skip orgs with no valid tickets
+
+        start_date = included.aggregate(Min("updated_timestamp"))[
+            "updated_timestamp__min"
+        ]
+        end_date = included.aggregate(Max("updated_timestamp"))[
+            "updated_timestamp__max"
+        ]
+
+        # Severity logic using cvss_severity
+        severity_map = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
+        severity_counts = {
+            f"{name}_severity_count": included.filter(cvss_severity=level).count()
+            for level, name in severity_map.items()
+        }
+        # TODO confirm if the distinct field should be id and not ip_string
+        unique_sev_counts = {
+            f"unique_{name}_severity_count": included.filter(cvss_severity=level)
+            .values("vuln_source_id")
+            .distinct()
+            .count()
+            for level, name in severity_map.items()
+        }
+
+        # KEV by severity
+        kev_counts = {
+            f"{name}_kev_count": included.filter(
+                is_kev=True, cvss_severity=level
+            ).count()
+            for level, name in severity_map.items()
+        }
+
+        def max_ticket_life(qs):
+            """Calculate max ticket life for the passed query."""
+            return max(
+                (
+                    (u - o).days
+                    for o, u in qs.values_list("opened_timestamp", "updated_timestamp")
+                    if o and u
+                ),
+                default=0,
+            )
+
+        critical_max = max_ticket_life(included.filter(cvss_severity=4))
+        high_max = max_ticket_life(included.filter(cvss_severity=3))
+        kev_max = max_ticket_life(included.filter(is_kev=True))
+
+        # Host vuln distribution
+        ip_counts = Counter(included.values_list("ip_string", flat=True))
+        one_to_five = sum(1 for c in ip_counts.values() if 1 <= c <= 5)
+        six_to_nine = sum(1 for c in ip_counts.values() if 6 <= c <= 9)
+        ten_plus = sum(1 for c in ip_counts.values() if c >= 10)
+
+        # Filtered and grouped by CVE string
+        top_cves_qs = (
+            included.filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
+            .values("cve_string")
+            .annotate(
+                count=Count("id"),
+                cvss_base_score=Max(
+                    "cvss_base_score"
+                ),  # or Avg if you want to average across tickets
+                severity=Max(
+                    "cvss_severity"
+                ),  # assuming severity is consistent across same CVE
+                vuln_name=Max("vuln_name"),
+            )
+            .order_by("-count")[:5]
+        )
+
+        top_5_occurring_cves = [
+            {
+                "cve_string": cve["cve_string"],
+                "vuln_name": cve["vuln_name"],
+                "cvss_base_score": float(cve["cvss_base_score"])
+                if cve["cvss_base_score"] is not None
+                else None,
+                "severity_string": severity_map.get(int(cve["severity"]), "unknown")
+                if cve["severity"] is not None
+                else "unknown",
+                "count": cve["count"],
+            }
+            for cve in top_cves_qs
+        ]
+
+        # Same logic but filtered for KEVs
+        top_kevs_qs = (
+            included.filter(is_kev=True)
+            .filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
+            .values("cve_string")
+            .annotate(
+                count=Count("id"),
+                cvss_base_score=Max("cvss_base_score"),
+                severity=Max("cvss_severity"),
+                vuln_name=Max("vuln_name"),
+            )
+            .order_by("-count")[:5]
+        )
+
+        top_5_occurring_kevs = [
+            {
+                "cve_string": kev["cve_string"],
+                "vuln_name": kev["vuln_name"],
+                "cvss_base_score": float(kev["cvss_base_score"])
+                if kev["cvss_base_score"] is not None
+                else None,
+                "severity_string": severity_map.get(int(kev["severity"]), "unknown")
+                if kev["severity"] is not None
+                else "unknown",
+                "count": kev["count"],
+            }
+            for kev in top_kevs_qs
+        ]
+        # Top 5 risky hosts by severity breakdown
+        tickets = Ticket.objects.filter(
+            organization=org,
+            is_open=True,
+            cvss_base_score__isnull=False,
+            ip_string__isnull=False,
+        )
+
+        # Base RRS score expression: (cvss_base_score^7) / 1,000,000
+        weighted_expr = ExpressionWrapper(
+            Power(F("cvss_base_score"), 7) / 1000000, output_field=FloatField()
+        )
+
+        risky_host_qs = (
+            tickets.values("ip_string")
+            .annotate(
+                total=Count("id"),
+                low=Count("id", filter=Q(cvss_severity=1)),
+                medium=Count("id", filter=Q(cvss_severity=2)),
+                high=Count("id", filter=Q(cvss_severity=3)),
+                critical=Count("id", filter=Q(cvss_severity=4)),
+                weighted=Sum(weighted_expr),
+            )
+            .order_by("-weighted")[:5]
+        )
+
+        # Convert to dictionary for JSONField
+        top_5_hosts = {
+            item["ip_string"]: {
+                "total": item["total"],
+                "low": item["low"],
+                "medium": item["medium"],
+                "high": item["high"],
+                "critical": item["critical"],
+                "rrs": round(item["weighted"], 2)
+                if item["weighted"] is not None
+                else 0,
+            }
+            for item in risky_host_qs
+        }
+
+        VulnScanSummary.objects.update_or_create(
+            summary_date=summary_date,
+            organization=org,
+            defaults={
+                "start_date": start_date,
+                "end_date": end_date,
+                "assets_owned_count": get_asset_owned_count(org),
+                "false_positive_count": all_org_tickets.filter(
+                    false_positive=True,
+                    is_open=True,
+                    vuln_source="nessus",
+                ).count(),
+                "vulnerable_host_count": included.values("ip_string")
+                .distinct()
+                .count(),
+                "scanned_asset_count": Host.objects.filter(
+                    organization=org, latest_vulnscan_timestamp__isnull=False
+                )
+                .values("ip_string")
+                .distinct()
+                .count(),
+                "unique_service_count": open_tickets.filter(vuln_source="nmap")
+                .values("vuln_port")
+                .distinct()
+                .count(),
+                "risky_services_count": get_risky_services_count(org),
+                "unsupported_software_count": included.filter(
+                    vuln_name__icontains="unsupported"
+                )
+                .values("ip_string")
+                .distinct()
+                .count(),
+                "unique_os_count": open_tickets.exclude(operating_system__isnull=True)
+                .values("operating_system")
+                .distinct()
+                .count(),
+                **severity_counts,
+                **unique_sev_counts,
+                **kev_counts,
+                "critical_max_age": critical_max,
+                "high_max_age": high_max,
+                "kev_max_age": kev_max,
+                "one_to_five_vulns_count": one_to_five,
+                "six_to_nine_vulns_count": six_to_nine,
+                "ten_plus_vulns_count": ten_plus,
+                "top_5_occurring_cves": top_5_occurring_cves,
+                "top_5_occurring_kevs": top_5_occurring_kevs,
+                "included_tickets": list(included.values_list("id", flat=True)),
+                "top_5_risky_hosts": top_5_hosts,
+            },
+        )
 
 
 def process_port_scans(port_scans, org_id_dict):
     """Process and save port scan data."""
     for port_scan in port_scans:
         try:
-            owner_id = org_id_dict.get(port_scan.get("Owner"))
+            owner_id = org_id_dict.get(port_scan.get("owner"))
             if not owner_id:
                 print(
                     f"{port_scan.get('Owner')} is not a recognized organization, skipping host"
                 )
                 continue
 
-            ip_id = (
+            ip = (
                 save_ip_to_datalake(
                     {
                         "ip": port_scan.get("ip"),
@@ -326,13 +959,45 @@ def process_port_scans(port_scans, org_id_dict):
                 if port_scan.get("ip")
                 else None
             )
-
+            service_obj = json.loads(port_scan.get("service", "{}"))
             port_scan_dict = {
                 "id": port_scan["_id"].replace("ObjectId('", "").replace("')", ""),
-                "organization_id": owner_id,
-                "ip_id": ip_id,
+                "ip_string": port_scan.get("ip"),
+                "ip": ip,
+                "latest": port_scan.get("latest"),
                 "port": port_scan.get("port"),
                 "protocol": port_scan.get("protocol"),
+                "reason": port_scan.get("reason"),
+                "service": port_scan.get("service"),
+                "service_name": service_obj.get("name", None),
+                "service_confidence": service_obj.get("conf", None),
+                "service_method": service_obj.get("method", None),
+                "service_cpe": service_obj.get("cpe", [None])[0],
+                "service_hostname": service_obj.get("hostname", None),
+                "service_extra_info": service_obj.get("extrainfo", None),
+                "service_os_type": service_obj.get("ostype", None),
+                "service_product": service_obj.get("product", None),
+                "service_version": service_obj.get("version", None),
+                "service_tunnel": service_obj.get("tunnel", None),
+                "service_device_type": service_obj.get("devicetype", None),
+                "source": port_scan.get("source"),
+                "state": port_scan.get("state"),
+                "time_scanned": safe_fromisoformat(port_scan.get("time")),
+                "organization": Organization.objects.get(id=owner_id),
+                "risky_service_group": RiskyServiceGroup.objects.filter(
+                    service_name=service_obj.get("name", None)
+                )
+                .values_list("group", flat=True)
+                .first()
+                if service_obj.get("name", None)
+                else None,
+                "nmi_service_group": NMIServiceGroup.objects.filter(
+                    service_name=service_obj.get("name", None)
+                )
+                .values_list("group", flat=True)
+                .first()
+                if service_obj.get("name", None)
+                else None,
             }
             save_port_scan_to_datalake(port_scan_dict)
         except Exception as e:
@@ -341,6 +1006,7 @@ def process_port_scans(port_scans, org_id_dict):
 
 def process_orgs(request_list):
     """Process organization data, save to MDL and return org ID dict for linking."""
+    LOGGER.info("Processing organizations...")
     org_id_dict = {}
     sector_child_dict = {}
     parent_child_dict = {}
@@ -359,7 +1025,7 @@ def process_orgs(request_list):
 
 
 def link_parent_child_organizations(
-    parent_child_dict, org_id_dict, db_name="mini_data_lake_lz"
+    parent_child_dict, org_id_dict, db_name="mini_data_lake"
 ):
     """Link child organizations to their respective parent organizations."""
     for parent_acronym, child_acronyms in parent_child_dict.items():
@@ -387,25 +1053,29 @@ def link_parent_child_organizations(
 
 
 def assign_organizations_to_sectors(
-    sector_child_dict, org_id_dict, db_name="mini_data_lake_lz"
+    sector_child_dict, org_id_dict, db_name="mini_data_lake"
 ):
     """Assign organizations to sectors based on sector-child relationships."""
-    for sector_id, child_acronyms in sector_child_dict.items():
-        try:
-            sector = Sector.objects.using(db_name).get(id=sector_id)
-        except Sector.DoesNotExist:
-            continue
+    try:
+        for sector_id, child_acronyms in sector_child_dict.items():
+            try:
+                sector = Sector.objects.using(db_name).get(id=sector_id)
+            except Sector.DoesNotExist:
+                continue
 
-        organization_ids = [
-            org_id_dict.get(acronym)
-            for acronym in child_acronyms
-            if acronym in org_id_dict
-        ]
+            organization_ids = [
+                org_id_dict.get(acronym)
+                for acronym in child_acronyms
+                if acronym in org_id_dict
+            ]
 
-        if organization_ids:
-            sector.organizations.add(
-                *Organization.objects.using(db_name).filter(id__in=organization_ids)
-            )
+            if organization_ids:
+                sector.organizations.add(
+                    *Organization.objects.using(db_name).filter(id__in=organization_ids)
+                )
+    except Exception as e:
+        print("Error assigning organization to sectors:")
+        print(e)
 
 
 def process_request(request_list, sector_child_dict, parent_child_dict, org_id_dict):
@@ -446,11 +1116,18 @@ def process_request(request_list, sector_child_dict, parent_child_dict, org_id_d
 
 
 def parse_request_data(request):
-    """Parse JSON fields in the request."""
+    """Parse JSON fields in the request if they are strings."""
     json_fields = ["agency", "networks", "report_types", "scan_types", "children"]
     for field in json_fields:
-        if field in request:
-            request[field] = json.loads(request[field]) if request[field] else []
+        val = request.get(field)
+        if isinstance(val, str):
+            try:
+                request[field] = json.loads(val)
+            except Exception as e:
+                LOGGER.warning("Failed to parse %s: %s", field, e)
+                request[field] = {}
+        elif not isinstance(val, (dict, list)):  # corrupt or malformed
+            request[field] = {} if field == "agency" else []
     return request
 
 
@@ -480,7 +1157,11 @@ def process_networks(networks):
     network_list = []
     for cidr in networks:
         try:
-            address = IPv6Network(cidr) if ":" in cidr else IPv4Network(cidr)
+            address = (
+                IPv6Network(cidr, strict=False)
+                if ":" in cidr
+                else IPv4Network(cidr, strict=False)
+            )
             network_list.append(
                 {"network": cidr, "start_ip": address[0], "end_ip": address[-1]}
             )
@@ -507,20 +1188,52 @@ def process_location(org_location):
     }
 
 
+def parse_int(value):
+    """Safely parse integers, return None for blanks."""
+    try:
+        if value == "" or value is None:
+            return None
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
 def process_organization(request, network_list, location_dict, org_id_dict):
     """Save organization data and update org_id_dict."""
     org_data = {
-        "name": request["agency"]["name"],
-        "acronym": request["_id"],
-        "retired": bool(request["retired"]),
-        "type": request["agency"]["type"],
-        "stakeholder": bool(request["stakeholder"]),
-        "enrolled_in_vs_timestamp": request["enrolled"] or datetime.datetime.now(),
+        "name": request.get("agency", {}).get("name"),
+        "acronym": request.get("_id"),
+        "retired": bool(request.get("retired", False)),
+        "type": request.get("agency", {}).get("type"),
+        "state": request.get("agency", {}).get("location", {}).get("state"),
+        "state_name": request.get("agency", {}).get("location", {}).get("state_name"),
+        "county": request.get("agency", {}).get("location", {}).get("county"),
+        "county_fips": parse_int(
+            request.get("agency", {}).get("location", {}).get("county_fips")
+        ),
+        "state_fips": parse_int(
+            request.get("agency", {}).get("location", {}).get("state_fips")
+        ),
+        "country": request.get("agency", {}).get("location", {}).get("country"),
+        "country_name": request.get("agency", {})
+        .get("location", {})
+        .get("country_name"),
+        "region_id": REGION_STATE_MAP.get(
+            request.get("agency", {}).get("location", {}).get("state_name"), None
+        ),
+        "stakeholder": bool(request.get("stakeholder", False)),
+        "enrolled_in_vs_timestamp": request.get("enrolled") or datetime.datetime.now(),
         "period_start_vs_timestamp": request.get("period_start"),
-        "report_types": json.dumps(request.get("report_types")),
-        "scan_types": json.dumps(request.get("scan_types")),
+        "report_types": json.dumps(request.get("report_types", [])),
+        "scan_types": json.dumps(request.get("scan_types", [])),
         "is_passive": False,
     }
+    try:
+        org_record = save_organization_to_mdl(org_data, network_list, location_dict)
+        org_id_dict[request["_id"]] = org_record.id
+    except Exception as e:
+        LOGGER.info("Error saving organization: %s - %s", e, request["_id"])
 
-    org_record = save_organization_to_mdl(org_data, network_list, location_dict)
-    org_id_dict[request["_id"]] = org_record.id
+
+if __name__ == "__main__":
+    main()
