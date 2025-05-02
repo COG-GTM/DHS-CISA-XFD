@@ -185,8 +185,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
-        cpu="1024",
-        memory="8192",
+        cpu="4096",
+        memory="16384",
         description="Pull in vulnerability data from VSs Vulnerability database",
     ),
     "cveSync": ScanSchema(
@@ -253,6 +253,14 @@ SCAN_SCHEMA = {
         global_scan=True,
         description="Update CVE data using the NIST API",
     ),
+    "nist_lz_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in NIST cve data from commercial mdl",
+    ),
     "portscanner": ScanSchema(
         type="fargate",
         is_passive=False,
@@ -291,10 +299,11 @@ SCAN_SCHEMA = {
     "shodan_sync": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Shodan asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
     ),
     "sslyze": ScanSchema(
         type="fargate",
@@ -387,5 +396,22 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="4096",
         description="Fetches and stores the latest CISA Known Exploited Vulnerabilities catalog into the Mini Data Lake and flags relevant CVEs.",
+    ),
+    "xpanse_alert_pull": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Xpanse alert data from Xpanse API",
+        max_concurrent_tasks=3,
+    ),
+    "xpanse_org_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Xpanse business units and link them to organizations",
     ),
 }

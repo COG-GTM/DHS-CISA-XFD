@@ -31,6 +31,7 @@ from xfd_mini_dl.models import (
     Cidr,
     Cve,
     Host,
+    HostSummary,
     Ip,
     Organization,
     OrganizationTag,
@@ -321,11 +322,57 @@ def build_fake_host(org):
     )
 
 
+def build_fake_host_summaries():
+    """Build a fake Ticket for a pssed org."""
+    all_orgs = Organization.objects.all()
+
+    for org in all_orgs:
+        try:
+            summary_date = timezone.now().date()
+            start_date = timezone.now() - timedelta(
+                days=random.randint(25, 60), seconds=random.randint(0, 86400)
+            )
+            end_date = timezone.now() - timedelta(
+                days=random.randint(1, 5), seconds=random.randint(0, 86400)
+            )
+            host_done_count = random.randint(3000, 5000)
+            host_waiting_count = random.randint(0, 50)
+            host_running_count = random.randint(0, 50)
+            host_ready_count = random.randint(0, 50)
+            total_count = (
+                host_done_count
+                + host_waiting_count
+                + host_running_count
+                + host_ready_count
+            )
+            up_host_count = total_count - random.randint(0, 1500)
+            down_host_count = total_count - up_host_count
+
+            HostSummary.objects.update_or_create(
+                organization=org,
+                summary_date=summary_date,
+                defaults={
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "host_done_count": host_done_count,
+                    "host_waiting_count": host_waiting_count,
+                    "host_running_count": host_running_count,
+                    "host_ready_count": host_ready_count,
+                    "up_host_count": up_host_count,
+                    "down_host_count": down_host_count,
+                },
+            )
+        except Exception as e:
+            print("\n❌ Error while creating host_summary for org %s: %s", org.name, e)
+            continue
+
+
 def build_fake_ticket(org):
     """Build a fake Ticket object."""
     ip_record, ip_string = create_ip_within_org_cidr(org)
     cve = Cve.objects.order_by("?").first()
     port = random.choice([21, 22, 80, 443])
+    severity = random.choice(["0.0", "1.0", "2.0", "3.0", "4.0"])
     protocol = random.choice(["tcp", "udp"])
     opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
     # 70% chance of ticket being open (closed_timestamp = None)
@@ -336,15 +383,35 @@ def build_fake_ticket(org):
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
-        ip_string=ip_string,
+        ip_string=ip_string
+        if ip_string
+        else random.choice(
+            [
+                "192.0.2.1",
+                "198.51.100.2",
+                "203.0.113.3",
+                "127.0.0.1",
+                "10.0.0.1",
+                "172.16.0.1",
+                "192.168.1.1",
+            ]
+        ),
         organization=org,
         cve=cve,
         cve_string=cve.name if cve else "CVE-2021-0001",
-        cvss_base_score=Decimal("7.5"),
+        cvss_base_score=round(random.uniform(0, 9), 1),
         cvss_version="3.1",
-        vuln_name="FTP Privileged Port Bounce Scan",
+        vuln_name=random.choice(
+            [
+                "Super Alarming Vuln",
+                "Super Hazardous Vuln",
+                "Super Risky Vuln",
+                "Super Menacing Vuln",
+                "Super Perilous Vuln",
+            ]
+        ),
         cvss_score_source="nvd",
-        cvss_severity=Decimal("3.0"),
+        cvss_severity=Decimal(severity),
         vpr_score=Decimal("6.9"),
         false_positive=False,
         updated_timestamp=timezone.now(),
@@ -355,7 +422,7 @@ def build_fake_ticket(org):
         port_protocol=protocol,
         snapshots_bool=False,
         vuln_source="nessus",
-        vuln_source_id=10081,
+        vuln_source_id=random.choice([10081, 12345, 34567, 89012]),
         closed_timestamp=closed_time,
         opened_timestamp=opened_time,
         is_kev=random.choice([True, False]),
@@ -462,8 +529,8 @@ def populate_sample_data():
                 PortScan.objects.bulk_create(portscans, batch_size=100)
 
                 # Hosts
-                hosts = [build_fake_host(org) for _ in range(FAKE_HOST_COUNT)]
-                Host.objects.bulk_create(hosts, batch_size=100)
+                # hosts = [build_fake_host(org) for _ in range(FAKE_HOST_COUNT)]
+                # Host.objects.bulk_create(hosts, batch_size=100)
 
                 # Tickets
                 tickets = [build_fake_ticket(org) for _ in range(FAKE_TICKET_COUNT)]
@@ -554,7 +621,11 @@ def create_api_key_for_user(user):
     )
 
     # Print the raw key for debugging or manual testing
-    print("Created API key for user {}: {}".format(user.email, key))
+    print(
+        "Created API key for user, keep this and enter at .env file CF_API_KEY {}: {}".format(
+            user.email, key
+        )
+    )
 
 
 def generate_random_name():
@@ -1262,7 +1333,6 @@ def create_domain_view(database):
     """Create vw_domain view."""
     with connections[database].cursor() as cursor:
         print("Creating domain view...")
-        cursor.execute("DROP VIEW IF EXISTS vw_service;")
         cursor.execute("DROP VIEW IF EXISTS vw_domain;")
 
         # Example materialized view
@@ -1348,12 +1418,15 @@ def create_service_view(database):
     """Create or replace the unified 'service' view (starting with Shodan data)."""
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
+        cursor.execute("DROP MATERIALIZED VIEW IF EXISTS vw_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_shodan_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_portscan_service CASCADE;")
 
         cursor.execute(
             """
-            CREATE OR REPLACE VIEW vw_service AS
+            CREATE OR REPLACE VIEW vw_shodan_service AS
             SELECT
-                s.shodan_asset_uid AS id,
+                s.shodan_asset_uid::text AS id,
                 s.created_at AS "created_at",
                 s.timestamp AS "updated_at",
                 'shodan' AS "service_source",
@@ -1396,4 +1469,73 @@ def create_service_view(database):
             (s.product IS NOT NULL OR s.server IS NOT NULL);
         """
         )
+
+        print("Creating 'service' view from PortScans...")
+
+        cursor.execute(
+            """
+            CREATE OR REPLACE VIEW vw_portscan_service AS
+            SELECT
+                ps.id AS id,
+                ps.time_scanned AS created_at,
+                ps.time_scanned AS updated_at,
+                'portscan' AS service_source,
+                ps.port,
+                ps.service_name AS service,
+                ps.service_product AS banner,
+                jsonb_build_array(
+                    jsonb_build_object(
+                        'name', ps.service_name,
+                        'cpe', ps.service_cpe,
+                        'tags', '[]'::jsonb,
+                        'vendor',
+                            CASE
+                                WHEN ps.service_name ILIKE 'apache%' THEN 'apache'
+                                WHEN ps.service_name ILIKE 'microsoft%' THEN 'microsoft'
+                                WHEN ps.service_name ILIKE 'nginx%' THEN 'nginx'
+                                WHEN ps.service_name ILIKE 'jquery%' THEN 'jquery'
+                                ELSE split_part(lower(ps.service_name), ' ', 1)
+                            END
+                    )
+                ) AS products,
+                NULL::jsonb AS censys_metadata,
+                NULL::jsonb AS censys_ipv4_results,
+                NULL::jsonb AS intrigue_ident_results,
+                NULL::jsonb AS shodan_results,
+                NULL::jsonb AS wappalyzer_results,
+                ps.time_scanned AS last_seen,
+                ps.ip_string AS ip_string,
+                COALESCE(sub_link.sub_domain_id, ps.ip_id) AS domain_id,
+                NULL::uuid AS discovered_by_id
+            FROM port_scan ps
+            LEFT JOIN LATERAL (
+                SELECT sub_domain_id
+                FROM ips_subs ipsubs
+                WHERE ipsubs.ip_id = ps.ip_id
+                ORDER BY sub_domain_id
+                LIMIT 1
+            ) sub_link ON TRUE
+            WHERE ps.latest = TRUE
+            AND ps.port IS NOT NULL
+            AND ps.service_name IS NOT NULL;
+        """
+        )
+
+        print("Creating materialized 'vw_service' from union...")
+        cursor.execute(
+            """
+            CREATE MATERIALIZED VIEW vw_service AS
+            SELECT * FROM vw_shodan_service
+            UNION ALL
+            SELECT * FROM vw_portscan_service;
+            """
+        )
+
+        print("Creating unique index for concurrent refresh...")
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX idx_vw_service_id ON vw_service (id);
+            """
+        )
+
         print("View 'vw_service' created.")
