@@ -5,7 +5,7 @@
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 from fastapi import HTTPException
-from xfd_mini_dl.models import Organization, ShodanAssets, ShodanVulns
+from xfd_mini_dl.models import Organization, ShodanAssets, ShodanVulns, SubDomains
 
 from ..auth import is_global_write_admin
 
@@ -122,4 +122,66 @@ def dmz_shodan_sync(shodan_data, current_user):
     except Exception as e:
         # TODO: CRASM-2568 - Create a unified logger in python backend
         print("Unexpected error in dmz_shodan_sync: {}".format(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# POST: /dmz_sync/censys_sync
+def dmz_censys_sync(censys_data, current_user):
+    """Return ASM asset data based on the passed org."""
+    try:
+        if not is_global_write_admin(current_user):
+            raise HTTPException(status_code=403, detail="Unauthorized access.")
+
+        data = censys_data.dict() if hasattr(censys_data, "dict") else censys_data
+        acronym = data.get("acronym")
+        page_size = data.get("page_size")
+        page_num = data.get("page")
+        since_date = data.get("since_date")
+
+        if not since_date:
+            raise HTTPException(status_code=400, detail="since_date is required.")
+
+        try:
+            org = Organization.objects.get(acronym=acronym)
+        except Organization.DoesNotExist:
+            raise HTTPException(status_code=404, detail="Organization not found")
+
+        queryset = SubDomains.objects.filter(
+            organization=org, subdomain_source="censys", last_seen__gte=since_date
+        ).order_by("sub_domain")
+        paginator = Paginator(queryset, page_size)
+
+        try:
+            page = paginator.page(page_num)
+        except PageNotAnInteger:
+            page = paginator.page(1)
+        except EmptyPage:
+            page = []
+
+        page_data = [
+            {
+                **{
+                    field.name: getattr(obj, field.name)
+                    for field in obj._meta.get_fields()
+                    if field.name not in ["organization", "data_source"]
+                },
+                "organization_acronym": obj.organization.acronym
+                if obj.organization
+                else None,
+                "data_source_name": obj.data_source.name if obj.data_source else None,
+            }
+            for obj in page
+        ]
+
+        return {
+            "total_pages": paginator.num_pages,
+            "current_page": page_num,
+            "data": {"censys_subdomains": page_data},
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # TODO: CRASM-2568 - Create a unified logger in python backend
+        print("Unexpected error in dmz_censys_sync: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))

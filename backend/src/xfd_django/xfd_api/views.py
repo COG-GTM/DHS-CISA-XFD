@@ -82,7 +82,7 @@ from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
 from .schema_models.cve import GetAllCvesResponse
-from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
+from .schema_models.dmz_sync import CensysSyncResponse, ShodanSyncResponse, SyncRequest
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1565,6 +1565,30 @@ async def shodan_sync(
 ):
     """Return Shodan Assets and Vulns for a provided org with checksum verification."""
     response_data = dmz_sync_methods.dmz_shodan_sync(shodan_data, current_user)
+
+    response_serializable = serialize_custom(response_data)
+
+    # Consistent JSON encoding: sort keys to ensure deterministic output
+    response_json_obj = {"status": "ok", "payload": response_serializable}
+    json_str = json.dumps(response_json_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    return JSONResponse(
+        content=response_json_obj, headers={"X-Salted-Checksum": checksum}
+    )
+
+
+@api_router.post(
+    "/dmz_sync/censys_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=CensysSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def censys_sync(
+    censys_data: SyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return Censys data for a provided org with checksum verification."""
+    response_data = dmz_sync_methods.dmz_censys_sync(censys_data, current_user)
 
     response_serializable = serialize_custom(response_data)
 

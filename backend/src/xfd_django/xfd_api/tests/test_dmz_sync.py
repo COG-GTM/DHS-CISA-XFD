@@ -14,6 +14,7 @@ from xfd_mini_dl.models import (
     Organization,
     ShodanAssets,
     ShodanVulns,
+    SubDomains,
     User,
     UserType,
 )
@@ -165,6 +166,147 @@ def test_shodan_sync_org_not_found():
 
     response = client.post(
         "/dmz_sync/shodan_sync",
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        json=payload,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Parent organization not found"
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_censys_sync_success():
+    """Test censys sync success."""
+    user = User.objects.create(
+        first_name="Test",
+        last_name="Admin",
+        email=f"{uuid.uuid4()}@example.com",
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    organization = Organization.objects.create(
+        name="SyncOrg",
+        acronym="SYNC_ORG",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    data_source = DataSource.objects.create(
+        name="Censys",
+        description="Censys data source",
+        last_run=datetime.now().date(),
+    )
+
+    SubDomains.objects.create(
+        organization=organization,
+        sub_domain="test.syncorg.gov",
+        last_seen=datetime.now(),
+        current=True,
+        from_root_domain="syncorg.gov",
+        subdomain_source="censys",
+        data_source=data_source,
+    )
+
+    payload = {
+        "acronym": "SYNC_ORG",
+        "page": 1,
+        "page_size": 10,
+        "since_date": (datetime.now() - timedelta(days=1)).isoformat(),
+    }
+
+    response = client.post(
+        "/dmz_sync/censys_sync",
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        json=payload,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert "censys_subdomains" in body["payload"]["data"]
+    assert "X-Salted-Checksum" in response.headers
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_censys_sync_missing_date():
+    """Test censys sync missing since_date."""
+    user = User.objects.create(
+        first_name="Test",
+        last_name="Admin",
+        email=f"{uuid.uuid4()}@example.com",
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    payload = {
+        "acronym": "SYNC_ORG",
+        "page": 1,
+        "page_size": 10,
+    }
+
+    response = client.post(
+        "/dmz_sync/censys_sync",
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        json=payload,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "since_date is required."
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_censys_sync_unauthorized_user():
+    """Test censys sync unauthorized header."""
+    user = User.objects.create(
+        first_name="Test",
+        last_name="Viewer",
+        email=f"{uuid.uuid4()}@example.com",
+        user_type=UserType.GLOBAL_VIEW,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    payload = {
+        "acronym": "SYNC_ORG",
+        "page": 1,
+        "page_size": 10,
+        "since_date": (datetime.now() - timedelta(days=1)).isoformat(),
+    }
+
+    response = client.post(
+        "/dmz_sync/censys_sync",
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        json=payload,
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Unauthorized access."
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_censys_sync_org_not_found():
+    """Test censys sync organization not found."""
+    user = User.objects.create(
+        first_name="Test",
+        last_name="Admin",
+        email=f"{uuid.uuid4()}@example.com",
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+    payload = {
+        "acronym": "NON_EXISTENT_ORG",
+        "page": 1,
+        "page_size": 10,
+        "since_date": (datetime.now() - timedelta(days=1)).isoformat(),
+    }
+
+    response = client.post(
+        "/dmz_sync/censys_sync",
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
         json=payload,
     )
