@@ -114,6 +114,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}",
           "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
+          "${data.aws_ssm_parameter.ssm_xpanse_org_sync_bucket_name.arn}"
         ]
     },
     {
@@ -384,7 +385,7 @@ resource "aws_ecs_task_definition" "worker" {
       },
       {
         "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
-        "valueFrom": "${var.crossfeed-xpanse-org-sync}"
+        "valueFrom": "${data.aws_ssm_parameter.ssm_xpanse_org_sync_bucket_name.arn}"
       },
       {
         "name": "QUALYS_USERNAME",
@@ -517,6 +518,7 @@ data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpo
 
 data "aws_ssm_parameter" "ssm_nist_api_key" { name = var.ssm_nist_api_key }
 
+data "aws_ssm_parameter" "ssm_xpanse_org_sync_bucket_name" { name = var.ssm_xpanse_org_sync_bucket_name }
 
 resource "aws_s3_bucket" "export_bucket" {
   bucket = var.export_bucket_name
