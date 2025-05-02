@@ -1419,6 +1419,7 @@ def create_service_view(database):
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
         cursor.execute("DROP MATERIALIZED VIEW IF EXISTS vw_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_shodan_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_portscan_service CASCADE;")
 
