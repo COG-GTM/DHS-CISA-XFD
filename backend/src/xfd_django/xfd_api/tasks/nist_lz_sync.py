@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 HEADERS = {
-    "X-API-KEY": os.getenv("CF_API_KEY"),
+    "X-API-KEY": os.getenv("CD_API_KEY"),
     "Content-Type": "application/json",
 }
 
