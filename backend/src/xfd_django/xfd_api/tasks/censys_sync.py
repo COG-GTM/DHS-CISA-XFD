@@ -1,9 +1,6 @@
 """Censys Sync scan hitting DMZ API endpoint."""
 
 # Standard Python Libraries
-import datetime
-import hashlib
-import json
 import logging
 import os
 from urllib.parse import urljoin
@@ -13,8 +10,8 @@ import django
 from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
-from xfd_mini_dl.models import DataSource, Ip, Organization, SubDomains
 from xfd_api.tasks.shodan_sync import validate_response_checksum
+from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
@@ -88,7 +85,12 @@ def handler(command_options):
             total_pages = result.get("total_pages", 1)
             subdomains = result.get("data", {}).get("censys_subdomains", [])
 
-            LOGGER.info("Syncing page %s of %s: %s subdomains", current_page, total_pages, len(subdomains))
+            LOGGER.info(
+                "Syncing page %s of %s: %s subdomains",
+                current_page,
+                total_pages,
+                len(subdomains),
+            )
 
             save_censys_subdomains_to_db(subdomains, org, data_source)
 
