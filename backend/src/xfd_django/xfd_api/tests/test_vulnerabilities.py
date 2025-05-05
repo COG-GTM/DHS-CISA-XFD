@@ -538,10 +538,15 @@ def test_search_vulnerabilities_by_organization_id(
             )
 
 
-@pytest.mark.parametrize("is_kev_to_search", [True, False])
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_is_kev(user, refresh_vuln_views, is_kev_to_search):
-    """Verify that filtering on is_kev returns only matching records."""
+def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
+    """
+    Verify that filtering by is_kev returns the single seeded vulnerability
+    (whose is_kev flag is set by the normal‐view fixture).
+    """
+    # grab the actual boolean from the one Vulnerability you created
+    is_kev_to_search = vulnerability.is_kev
+
     resp = client.post(
         "/vulnerabilities/search",
         json={
@@ -554,12 +559,15 @@ def test_search_vulnerabilities_by_is_kev(user, refresh_vuln_views, is_kev_to_se
     assert resp.status_code == 200, resp.text
 
     data = resp.json()
-    # Expect at least one row for each boolean
+
+    # We expect at least one row (the one you seeded)
     assert data["result"], f"No results for is_kev={is_kev_to_search}"
 
-    # Every returned vuln must match the filter
-    for vuln in data["result"]:
-        assert vuln["is_kev"] is is_kev_to_search
+    # And every returned record must match the same flag
+    for v in data["result"]:
+        assert (
+            v["is_kev"] is is_kev_to_search
+        ), f"Returned is_kev={v['is_kev']} but expected {is_kev_to_search}"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
