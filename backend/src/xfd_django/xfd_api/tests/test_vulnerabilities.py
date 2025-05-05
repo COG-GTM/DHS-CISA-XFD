@@ -2,6 +2,7 @@
 # Standard Python Libraries
 from datetime import datetime
 import secrets
+import uuid
 
 # Third-Party Libraries
 from django.db import transaction
@@ -153,11 +154,31 @@ def ensure_vuln_views_created(django_db_setup, django_db_blocker):
         create_service_view("mini_data_lake")
 
 
+# @pytest.fixture
+# def refresh_vuln_views(django_db_blocker):
+#     """Refresh the materialized vuln views after data is inserted."""
+#     with django_db_blocker.unblock():
+#         create_vuln_materialized_views("mini_data_lake")
+
+
 @pytest.fixture
-def refresh_vuln_views(django_db_blocker):
-    """Refresh the materialized vuln views after data is inserted."""
-    with django_db_blocker.unblock():
-        create_vuln_materialized_views("mini_data_lake")
+def refresh_vuln_views(db):
+    # Seed one KEV and one non-KEV record
+    Vulnerability.objects.using("mini_data_lake").create(
+        id=uuid.uuid4(),
+        name="KEV Vuln",
+        is_kev=True,
+        # …other required fields…
+    )
+    Vulnerability.objects.using("mini_data_lake").create(
+        id=uuid.uuid4(),
+        name="Non-KEV Vuln",
+        is_kev=False,
+        # …other required fields…
+    )
+    # Rebuild your materialized views so the API will see them:
+    create_vuln_materialized_views("mini_data_lake")
+    yield
 
 
 @pytest.fixture
@@ -538,33 +559,57 @@ def test_search_vulnerabilities_by_organization_id(
             )
 
 
+# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+# def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
+#     """Test vulnerability."""
+#     is_kev_to_search = search_fields["is_kev"]
+
+#     response = client.post(
+#         "/vulnerabilities/search",
+#         json={"page": 1, "filters": {"is_kev": is_kev_to_search}, "pageSize": 25},
+#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
+#     )
+
+#     assert response.status_code == 200
+
+#     data = response.json()
+
+#     assert data is not None, "Response is empty"
+#     assert "result" in data, "Response does not contain 'result' key"
+#     assert (
+#         len(data["result"]) > 0
+#     ), "No vulnerabilities found for the given is_kev value {}".format(is_kev_to_search)
+
+#     for vuln in data["result"]:
+#         assert (
+#             vuln["is_kev"] == is_kev_to_search
+#         ), "Vulnerability with ID {} does not have the expected 'is_kev' value {}".format(
+#             vuln["id"], is_kev_to_search
+#         )
+
+
+@pytest.mark.parametrize("is_kev_to_search", [True, False])
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
-    """Test vulnerability."""
-    is_kev_to_search = search_fields["is_kev"]
-
-    response = client.post(
+def test_search_vulnerabilities_by_is_kev(user, refresh_vuln_views, is_kev_to_search):
+    """Verify that filtering on is_kev returns only matching records."""
+    resp = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"is_kev": is_kev_to_search}, "pageSize": 25},
-        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+        json={
+            "page": 1,
+            "filters": {"is_kev": is_kev_to_search},
+            "pageSize": 25,
+        },
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
+    assert resp.status_code == 200, resp.text
 
-    assert response.status_code == 200
+    data = resp.json()
+    # Expect at least one row for each boolean
+    assert data["result"], f"No results for is_kev={is_kev_to_search}"
 
-    data = response.json()
-
-    assert data is not None, "Response is empty"
-    assert "result" in data, "Response does not contain 'result' key"
-    assert (
-        len(data["result"]) > 0
-    ), "No vulnerabilities found for the given is_kev value {}".format(is_kev_to_search)
-
+    # Every returned vuln must match the filter
     for vuln in data["result"]:
-        assert (
-            vuln["is_kev"] == is_kev_to_search
-        ), "Vulnerability with ID {} does not have the expected 'is_kev' value {}".format(
-            vuln["id"], is_kev_to_search
-        )
+        assert vuln["is_kev"] is is_kev_to_search
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
