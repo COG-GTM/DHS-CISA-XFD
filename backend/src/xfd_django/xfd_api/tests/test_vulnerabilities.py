@@ -163,6 +163,7 @@ def ensure_vuln_views_created(django_db_setup, django_db_blocker):
 
 @pytest.fixture
 def refresh_vuln_views(db):
+    """Refresh the materialized vuln views after data is inserted."""
     # Seed one KEV and one non-KEV record
     Vulnerability.objects.using("mini_data_lake").create(
         id=uuid.uuid4(),
