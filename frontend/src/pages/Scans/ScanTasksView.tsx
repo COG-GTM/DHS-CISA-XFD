@@ -268,6 +268,7 @@ export const ScanTasksView: React.FC = () => {
     'amass',
     'asm_sync',
     'credential_sync',
+    'cybersixgill',
     'findomain',
     'intel_x_identity',
     'portscanner',

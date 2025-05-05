@@ -414,4 +414,12 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Pull in Xpanse business units and link them to organizations",
     ),
+    "cybersixgill": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Collect alerts, mentions, credentials, and top CVEs from Cybersixgill dark web monitoring.",
+    ),
 }
