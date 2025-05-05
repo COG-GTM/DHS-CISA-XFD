@@ -39,7 +39,7 @@ search_fields = {
     "severity": "Low",
     "state": "open",
     "substate": "unconfirmed",
-    "is_kev": None,
+    "is_kev": True,
     "port": "80",
     "reverse_name": "local.crossfeed.quizzical-wing",
     "ip": "127.116.195.151",
