@@ -540,10 +540,7 @@ def test_search_vulnerabilities_by_organization_id(
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
-    """
-    Verify that filtering by is_kev returns the single seeded vulnerability
-    (whose is_kev flag is set by the normal‐view fixture).
-    """
+    """Verify that filtering by is_kev returns the single seeded vulnerability."""
     # grab the actual boolean from the one Vulnerability you created
     is_kev_to_search = vulnerability.is_kev
 
