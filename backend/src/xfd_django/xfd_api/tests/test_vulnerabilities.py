@@ -542,23 +542,23 @@ def test_search_vulnerabilities_by_organization_id(
 def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
     is_kev_to_search = search_fields["is_kev"]
-
+ 
     response = client.post(
         "/vulnerabilities/search",
         json={"page": 1, "filters": {"is_kev": is_kev_to_search}, "pageSize": 25},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
-
+ 
     assert response.status_code == 200
-
+ 
     data = response.json()
-
+ 
     assert data is not None, "Response is empty"
     assert "result" in data, "Response does not contain 'result' key"
     assert (
         len(data["result"]) > 0
     ), "No vulnerabilities found for the given is_kev value {}".format(is_kev_to_search)
-
+ 
     for vuln in data["result"]:
         assert (
             vuln["is_kev"] == is_kev_to_search
