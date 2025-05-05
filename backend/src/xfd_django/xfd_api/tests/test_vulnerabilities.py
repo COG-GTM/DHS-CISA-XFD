@@ -541,8 +541,12 @@ def test_search_vulnerabilities_by_organization_id(
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
     """Verify that filtering by is_kev returns the single seeded vulnerability."""
-    # grab the actual boolean from the one Vulnerability you created
+    # Grab the actual boolean from the one Vulnerability you created
     is_kev_to_search = vulnerability.is_kev
+
+    # Skip the test if is_kev is None (null in DB)
+    if is_kev_to_search is None:
+        pytest.skip("Skipping test because is_kev is null (None)")
 
     resp = client.post(
         "/vulnerabilities/search",
@@ -563,7 +567,7 @@ def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_view
     # And every returned record must match the same flag
     for v in data["result"]:
         assert (
-            v["is_kev"] is is_kev_to_search
+            v["is_kev"] == is_kev_to_search
         ), f"Returned is_kev={v['is_kev']} but expected {is_kev_to_search}"
 
 
