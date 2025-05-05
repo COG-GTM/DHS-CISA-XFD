@@ -8,7 +8,17 @@ from typing import List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
@@ -20,7 +30,7 @@ from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
-from .api_methods.cve import get_cves_by_id, get_cves_by_name
+from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
@@ -71,6 +81,7 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
+from .schema_models.cve import GetAllCvesResponse
 from .schema_models.dmz_sync import (
     AsmSyncResponse,
     DataSource,
@@ -291,6 +302,63 @@ async def call_get_cves_by_id(cve_id):
 async def call_get_cves_by_name(cve_name):
     """Get Cve by name."""
     return get_cves_by_name(cve_name)
+
+
+# --- NIST CVE endpoint, CRASM-2431 ---
+@api_router.post(
+    "/dmz_sync/cves",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetAllCvesResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["CVEs to sync to LZ db"],
+)
+async def get_call_all_cves(
+    response: Response,
+    current_user: User = Depends(get_current_active_user),
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(100, ge=1, description="How many items per page."),
+):
+    """
+    Return paginated CVEs plus an X-Salted-Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - Only global write-admins may call this.
+    """
+    # fetch & paginate
+    try:
+        total_pages, records = await get_all_cves(
+            current_user,
+            page=page,
+            per_page=per_page,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {e}",
+        )
+
+    # serialize
+    raw = [CveSchema.from_orm(r).model_dump() for r in records]
+    # …and then convert any UUID/datetime in there into plain strings
+    payload = jsonable_encoder(raw)
+
+    response_obj = {
+        "status": "ok",
+        "payload": payload,
+    }
+
+    # checksum
+    json_str = json.dumps(response_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    response.headers["X-Salted-Checksum"] = checksum
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=response_obj,
+        headers={"X-Salted-Checksum": checksum},
+    )
 
 
 # ========================================
