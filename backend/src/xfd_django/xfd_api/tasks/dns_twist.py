@@ -137,20 +137,21 @@ def is_not_excluded_fuzzer(fuzzer):
 
 
 def get_data_source(data_source_name: str) -> Optional[str]:
-    """Return the data source record for the given data source name."""
+    """Get or create a data source record."""
     try:
-        data_source_record, created = DataSource.objects.get_or_create(
+        data_source_record = DataSource.objects.filter(name=data_source_name).first()
+        if data_source_record:
+            return data_source_record
+        data_source_record = DataSource.objects.create(
             name=data_source_name,
-            defaults={
-                "data_source_uid": uuid4(),
-                "description": "Data source for DNSTwist",
-                "last_run": datetime.datetime.now(datetime.timezone.utc),
-            },
+            data_source_uid=uuid4(),
+            description="Data source for DNSTwist",
+            last_run=datetime.datetime.now(datetime.timezone.utc),
         )
-        if created:
-            LOGGER.info("Created data source: %s", data_source_name)
+        LOGGER.info("Created data source: %s", data_source_name)
         return data_source_record
-    except DataSource.DoesNotExist:
+    except Exception as e:
+        LOGGER.error("Error retrieving/creating data source: %s", str(e))
         return None
 
 
@@ -268,19 +269,22 @@ def process_org(org, orgs_list, data_source, failures):
                     )
                     if domain_dict is not None:
                         domain_list.append(domain_dict)
+            try:
+                for domain in domain_list:
+                    execute_dnstwist_data(domain)
+                    LOGGER.info(
+                        "Inserted %s into database", domain["domain_permutation"]
+                    )
+            except Exception:
+                # TODO: Create custom exceptions.
+                # Issue 265: https://github.com/cisagov/pe-reports/issues/265
+                LOGGER.info("Failure inserting data into database.")
+                failures.append(org_name)
+                LOGGER.info(traceback.format_exc())
         except Exception:
             # TODO: Create custom exceptions.
             # Issue 265: https://github.com/cisagov/pe-reports/issues/265
             LOGGER.info("Failed selecting DNSTwist data.")
-            failures.append(org_name)
-            LOGGER.info(traceback.format_exc())
-        try:
-            for domain in domain_list:
-                execute_dnstwist_data(domain)
-        except Exception:
-            # TODO: Create custom exceptions.
-            # Issue 265: https://github.com/cisagov/pe-reports/issues/265
-            LOGGER.info("Failure inserting data into database.")
             failures.append(org_name)
             LOGGER.info(traceback.format_exc())
 
