@@ -237,10 +237,11 @@ SCAN_SCHEMA = {
     "intel_x_identity": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Identify credential exposures via IntelX.",
+        max_concurrent_tasks=1,
     ),
     "intrigueIdent": ScanSchema(
         type="fargate",
@@ -314,11 +315,12 @@ SCAN_SCHEMA = {
     ),
     "sync_asm_sync": ScanSchema(
         type="fargate",
-        isPassive=True,
-        global_scan=True,
+        is_passive=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull synced assets from DMZ.",
+        maxConcurrentTasks=10,
     ),
     "test": ScanSchema(
         type="fargate",

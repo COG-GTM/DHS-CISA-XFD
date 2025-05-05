@@ -30,10 +30,11 @@ HEADERS = {
     "X-API-KEY": os.getenv("DMZ_API_KEY"),
     "Content-Type": "application/json",
 }
-# Assume DMZ_SYNC_ENDPOINT is something like 'https://api.staging-cd.crossfeed.cyber.dhs.gov/sync'
-BASE_URL = os.getenv("DMZ_SYNC_ENDPOINT", "").rstrip("/")
 
-unknown_data_source, uds_created = DataSource.objects.get_or_create(
+BASE_URL = os.getenv("DMZ_SYNC_ENDPOINT", "").rstrip("/")
+db_name = "mini_data_lake"
+
+unknown_data_source, uds_created = DataSource.objects.using(db_name).get_or_create(
     name="Unknown",
     defaults={
         "description": "Unable to link to one of our data sources.",
@@ -72,7 +73,7 @@ def main(command_options):
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
-        orgs_to_sync = Organization.objects.filter(id=organization_id)
+        orgs_to_sync = Organization.objects.using(db_name).filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
         organization = orgs_to_sync.first()
@@ -118,7 +119,7 @@ def get_data_sources():
         data_sources = response.json()
 
         for data_source in data_sources:
-            DataSource.objects.get_or_create(
+            DataSource.objects.using(db_name).get_or_create(
                 name=data_source.get("name"),
                 defaults={
                     "description": data_source.get("description"),
@@ -205,11 +206,11 @@ def process_response(response, org):
     data = response.json()
 
     for ip_sub in data.get("ip_data", []):
-        cidr = Cidr.objects.get(
+        cidr = Cidr.objects.using(db_name).get(
             network=ip_sub.get("origin_cidr_network"), cidrorgs__organization=org
         )
 
-        ip_obj, created = Ip.objects.get_or_create(
+        ip_obj, created = Ip.objects.using(db_name).get_or_create(
             ip=ip_sub.get("ip"),
             organization=org,
             defaults={
@@ -245,7 +246,7 @@ def process_response(response, org):
         for sub_dict in ip_sub.get("ip_sub_list", []):
             sub_obj = save_sub(sub_dict, org)
             if sub_obj:
-                IpsSubs.objects.update_or_create(
+                IpsSubs.objects.using(db_name).update_or_create(
                     ip=ip_obj,
                     sub_domain=sub_obj,
                     defaults={
@@ -264,12 +265,14 @@ def process_response(response, org):
 def save_sub(sub_dict, org):
     """Save and update sub_domain."""
     try:
-        data_source = DataSource.objects.get(name=sub_dict.get("subdomain_source"))
+        data_source = DataSource.objects.using(db_name).get(
+            name=sub_dict.get("subdomain_source")
+        )
     except DataSource.DoesNotExist:
         data_source = unknown_data_source
     try:
         if not sub_dict.get("is_root_domain"):
-            root_obj, rd_created = SubDomains.objects.get_or_create(
+            root_obj, rd_created = SubDomains.objects.using(db_name).get_or_create(
                 sub_domain=sub_dict.get("from_root_domain"),
                 organization=org,
                 defaults={
@@ -281,7 +284,7 @@ def save_sub(sub_dict, org):
             )
         else:
             root_obj = None
-        sub_obj, sd_created = SubDomains.objects.get_or_create(
+        sub_obj, sd_created = SubDomains.objects.using(db_name).get_or_create(
             sub_domain=sub_dict.get("sub_domain"),
             organization=org,
             defaults={
@@ -352,14 +355,18 @@ def flag_asset_changes(org):
         days=5
     )
 
-    SubDomains.objects.filter(last_seen__lt=cutoff_date, organization=org).exclude(
+    SubDomains.objects.using(db_name).filter(
+        last_seen__lt=cutoff_date, organization=org
+    ).exclude(
         Q(is_root_domain=True) & (Q(identified=False) | Q(identified__isnull=True))
+    ).update(
+        current=False
+    )
+
+    IpsSubs.objects.using(db_name).filter(
+        last_seen__lt=cutoff_date, ip__organization=org
     ).update(current=False)
 
-    IpsSubs.objects.filter(last_seen__lt=cutoff_date, ip__organization=org).update(
-        current=False
-    )
-
-    Ip.objects.filter(last_seen_timestamp__lt=cutoff_date, organization=org).update(
-        current=False
-    )
+    Ip.objects.using(db_name).filter(
+        last_seen_timestamp__lt=cutoff_date, organization=org
+    ).update(current=False)

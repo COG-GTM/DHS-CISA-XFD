@@ -25,7 +25,7 @@ from xfd_mini_dl.models import (
 
 client = TestClient(app)
 #######################################################
-#                ASM_syn Sync Tests
+#                ASM_sync Sync Tests
 #######################################################
 
 
@@ -33,12 +33,12 @@ client = TestClient(app)
 def admin_user():
     """Create user fixture."""
     admin_user = User.objects.create(
-        firstName="Admin",
-        lastName="User",
+        first_name="Admin",
+        last_name="User",
         email="{}@example.com".format(secrets.token_hex(4)),
-        userType=UserType.GLOBAL_ADMIN,
-        createdAt=datetime.now(),
-        updatedAt=datetime.now(),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
     yield admin_user
     admin_user.delete()

@@ -71,7 +71,12 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
-from .schema_models.dmz_sync import AsmSyncResponse, ShodanSyncResponse, SyncRequest
+from .schema_models.dmz_sync import (
+    AsmSyncResponse,
+    DataSource,
+    ShodanSyncResponse,
+    SyncRequest,
+)
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1470,6 +1475,15 @@ async def get_blocklist(
 # ========================================
 #   DMZ Sync Endpoints
 # ========================================
+@api_router.get(
+    "/dmz_sync/data_sources",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=List[DataSource],
+    tags=["Data Sources"],
+)
+async def list_data_sources(current_user: User = Depends(get_current_active_user)):
+    """Retrieve a list of all data sources."""
+    return dmz_sync_methods.list_data_sources(current_user)
 
 
 def serialize_custom(obj):
