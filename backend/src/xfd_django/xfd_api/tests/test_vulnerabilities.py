@@ -541,7 +541,6 @@ def test_search_vulnerabilities_by_organization_id(
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
     """Verify that filtering by is_kev returns the single seeded vulnerability."""
-    # Grab the actual boolean from the one Vulnerability you created
     is_kev_to_search = vulnerability.is_kev
 
     # Skip the test if is_kev is None (null in DB)
@@ -561,10 +560,8 @@ def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_view
 
     data = resp.json()
 
-    # We expect at least one row (the one you seeded)
     assert data["result"], f"No results for is_kev={is_kev_to_search}"
 
-    # And every returned record must match the same flag
     for v in data["result"]:
         assert (
             v["is_kev"] == is_kev_to_search
