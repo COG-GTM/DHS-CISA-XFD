@@ -541,7 +541,7 @@ def test_search_vulnerabilities_by_organization_id(
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
     """Test vulnerability."""
-    is_kev_to_search = vulnerability.is_kev
+    is_kev_to_search = search_fields["is_kev"]
 
     response = client.post(
         "/vulnerabilities/search",
