@@ -1,117 +1,116 @@
-type VulnScanSummary = {
-  summary_date: string;
+import {
+  StatsTrendsRawData,
+  vulnScanDataTransformed
+} from 'types/vuln-scan-stats';
 
-  asset_count: number;
-  scanned_asset_count: number;
+function getLatestSummary<T extends { summary_date?: string | null }>(
+  summaries: T[]
+): T | undefined {
+  if (!summaries || summaries.length === 0) return undefined;
 
-  none_kev_count: number;
-  low_kev_count: number;
-  medium_kev_count: number;
-  high_kev_count: number;
-  critical_kev_count: number;
+  return summaries.reduce((latest, current) => {
+    const latestDate = latest.summary_date
+      ? new Date(latest.summary_date)
+      : new Date(0);
+    const currentDate = current.summary_date
+      ? new Date(current.summary_date)
+      : new Date(0);
+    return currentDate > latestDate ? current : latest;
+  }, summaries[0]);
+}
 
-  none_severity_count: number;
-  low_severity_count: number;
-  medium_severity_count: number;
-  high_severity_count: number;
-  critical_severity_count: number;
-
-  unique_none_severity_count: number;
-  unique_low_severity_count: number;
-  unique_medium_severity_count: number;
-  unique_high_severity_count: number;
-  unique_critical_severity_count: number;
-
-  false_positive_count: number;
-};
-
-type vulnScanDataTransformedType = {
-  vulnScanSummary: {
-    hostScan: string;
-    vulnerabilityScan: string;
-    assetsOwned: number;
-    assetsScanned: number;
-  }[];
-  vulnScanKeyMetrics: { title: string; value: number }[];
-};
-
-export const transformVulnScanData = (data: {
-  vuln_scan_summaries: VulnScanSummary[];
-}): vulnScanDataTransformedType => {
-  if (!data.vuln_scan_summaries || data.vuln_scan_summaries.length === 0) {
-    return { vulnScanSummary: [], vulnScanKeyMetrics: [] }; // return empty arrays if no data
+export const transformVulnScanData = (
+  data: StatsTrendsRawData
+): vulnScanDataTransformed => {
+  if (
+    !data.vuln_scan_summaries ||
+    !Array.isArray(data.vuln_scan_summaries) ||
+    data.vuln_scan_summaries.length === 0
+  ) {
+    return {
+      vulnScanSummary: [],
+      vulnScanKeyMetrics: [],
+      detectedServicesKeyMetrics: [],
+      detectedHostsKeyMetrics: []
+    }; // return empty arrays if no data
   }
 
-  // Find the object with the latest summary_date
-  const latestSummary = data.vuln_scan_summaries.reduce(
-    (latest, current) =>
-      new Date(current.summary_date) > new Date(latest.summary_date)
-        ? current
-        : latest,
-    data.vuln_scan_summaries[0]
-  );
-
-  const {
-    asset_count,
-    scanned_asset_count,
-    none_kev_count,
-    low_kev_count,
-    medium_kev_count,
-    high_kev_count,
-    critical_kev_count,
-    none_severity_count,
-    low_severity_count,
-    medium_severity_count,
-    high_severity_count,
-    critical_severity_count,
-    unique_none_severity_count,
-    unique_low_severity_count,
-    unique_medium_severity_count,
-    unique_high_severity_count,
-    unique_critical_severity_count,
-    false_positive_count
-  } = latestSummary;
+  // Find the objects with the latest summary_date
+  const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
+  // const latestHostSummary = getLatestSummary(data.host_summaries);
+  // const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
+  // const latestPortServiceSummary = getLatestSummary(
+  //   data.port_scan_service_summaries
+  // );
 
   return {
     vulnScanSummary: [
       {
         hostScan: 'date - date',
         vulnerabilityScan: 'date - date',
-        assetsOwned: asset_count ?? 0,
-        assetsScanned: scanned_asset_count ?? 0
+        assetsOwned: latestVulnSummary?.asset_count ?? 0,
+        assetsScanned: latestVulnSummary?.scanned_asset_count ?? 0
       }
     ],
     vulnScanKeyMetrics: [
       {
         title: 'Detected Kevs',
         value:
-          (none_kev_count ?? 0) +
-          (low_kev_count ?? 0) +
-          (medium_kev_count ?? 0) +
-          (high_kev_count ?? 0) +
-          (critical_kev_count ?? 0)
+          (latestVulnSummary?.none_kev_count ?? 0) +
+          (latestVulnSummary?.low_kev_count ?? 0) +
+          (latestVulnSummary?.medium_kev_count ?? 0) +
+          (latestVulnSummary?.high_kev_count ?? 0) +
+          (latestVulnSummary?.critical_kev_count ?? 0)
       },
       {
         title: 'Detected Vulnerabilities',
         value:
-          (none_severity_count ?? 0) +
-          (low_severity_count ?? 0) +
-          (medium_severity_count ?? 0) +
-          (high_severity_count ?? 0) +
-          (critical_severity_count ?? 0)
+          (latestVulnSummary?.none_severity_count ?? 0) +
+          (latestVulnSummary?.low_severity_count ?? 0) +
+          (latestVulnSummary?.medium_severity_count ?? 0) +
+          (latestVulnSummary?.high_severity_count ?? 0) +
+          (latestVulnSummary?.critical_severity_count ?? 0)
       },
       {
         title: 'Distinct Vulnerabilities',
         value:
-          (unique_none_severity_count ?? 0) +
-          (unique_low_severity_count ?? 0) +
-          (unique_medium_severity_count ?? 0) +
-          (unique_high_severity_count ?? 0) +
-          (unique_critical_severity_count ?? 0)
+          (latestVulnSummary?.unique_none_severity_count ?? 0) +
+          (latestVulnSummary?.unique_low_severity_count ?? 0) +
+          (latestVulnSummary?.unique_medium_severity_count ?? 0) +
+          (latestVulnSummary?.unique_high_severity_count ?? 0) +
+          (latestVulnSummary?.unique_critical_severity_count ?? 0)
       },
       {
         title: 'False Positives',
-        value: false_positive_count ?? 0
+        value: latestVulnSummary?.false_positive_count ?? 0
+      }
+    ],
+    detectedServicesKeyMetrics: [
+      {
+        title: 'Detected Services',
+        value: 0 // placeholder value
+      },
+      {
+        title: 'Potentially Risky Services',
+        value: 0 // placeholder value
+      },
+      {
+        title: 'Potential NMI Service Count',
+        value: 0 // placeholder value
+      }
+    ],
+    detectedHostsKeyMetrics: [
+      {
+        title: 'Detected Hosts',
+        value: 0 // placeholder value
+      },
+      {
+        title: 'Vulnerable Hosts',
+        value: 0 // placeholder value
+      },
+      {
+        title: 'Hosts with Unsupported Software',
+        value: 0 // placeholder value
       }
     ]
   };
