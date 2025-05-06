@@ -1578,7 +1578,33 @@ async def asm_sync(
     asm_sync_data: SyncRequest,
     current_user: User = Depends(get_current_active_user),
 ):
-    """Return ASM_sync findings for a provided org."""
+    """
+    Return ASM_sync findings for a provided organization.
+
+    This endpoint retrieves findings from the ASM (Attack Surface Management) sync process
+    based on the input parameters provided. The response is serialized and includes a
+    SHA-256 checksum in the headers for integrity verification.
+
+    ### Request Body Parameters (SyncRequest):
+    - **page** (int, default=1):
+    Page number for pagination of the results.
+
+    - **page_size** (int, optional, default=25):
+    Number of records per page.
+
+    - **acronym** (str):
+    Organization acronym to filter the results.
+
+    - **since_date** (datetime):
+    Return results updated or found since this date.
+
+    ### Headers:
+    - **X-Salted-Checksum**:
+    A SHA-256 hash of the salted response body for response integrity verification.
+
+    ### Returns:
+    - JSON response containing ASM findings and a checksum header.
+    """
     response_data = dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
     # # response_json = json.dumps(response_data, sort_keys=True)
     # Convert response data to a JSON-serializable format
