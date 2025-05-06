@@ -13,6 +13,7 @@ from django.utils import timezone
 import numpy as np
 import pandas as pd
 import requests
+from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
@@ -166,6 +167,12 @@ class IntelX:
 
         # Retrieve credential leaks from IntelX
         LOGGER.info("Retrieving IntelX findings for %s", org.acronym)
+        since_timestamp = get_last_queried(org, "intel_x_pull")
+        if since_timestamp:
+            start = since_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            start = START_DATE
+        start_pulling_time = datetime.datetime.now(datetime.timezone.utc)
         count = 0
         for root in roots:
             LOGGER.info(
@@ -175,7 +182,7 @@ class IntelX:
                 len(roots),
             )
             count += 1
-            leaks_json = self.find_credential_leaks(root, START_DATE, END_DATE)
+            leaks_json = self.find_credential_leaks(root, start, END_DATE)
 
             # Process and format results
             if len(leaks_json) < 1:
@@ -205,7 +212,11 @@ class IntelX:
                 )
                 LOGGER.error(e)
                 continue
-
+        update_query_timestamp(
+            org,
+            "intel_x_pull",
+            start_pulling_time,
+        )
         return 0
 
     def query_identity_api(self, domain, start_date, end_date):

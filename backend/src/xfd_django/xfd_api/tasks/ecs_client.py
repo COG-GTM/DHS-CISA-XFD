@@ -78,7 +78,6 @@ class ECSClient:
                             "MDL_SECONDARY_NAME": os.getenv("MDL_SECONDARY_NAME"),
                             "MDL_USERNAME": os.getenv("MDL_USERNAME"),
                             "MDL_PASSWORD": os.getenv("MDL_PASSWORD"),
-                            "MDL_SECONDARY_NAME": os.getenv("MDL_SECONDARY_NAME"),
                             "NIST_API_KEY": os.getenv("NIST_API_KEY"),
                             "PE_DB_NAME": os.getenv("PE_DB_NAME"),
                             "PE_DB_USERNAME": os.getenv("PE_DB_USERNAME"),

@@ -19,7 +19,13 @@ from xfd_mini_dl.models import (
 )
 
 from ..auth import is_global_write_admin
-from ..schema_models.dmz_sync import CredentialBreach, CredentialExposure, IpInsert, IpsSub, LooseSub
+from ..schema_models.dmz_sync import (
+    CredentialBreach,
+    CredentialExposure,
+    IpInsert,
+    IpsSub,
+    LooseSub,
+)
 
 
 def list_data_sources(current_user):

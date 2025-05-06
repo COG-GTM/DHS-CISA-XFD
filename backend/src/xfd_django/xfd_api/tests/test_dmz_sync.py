@@ -504,6 +504,7 @@ def test_shodan_sync_org_not_found():
 #                Cred Sync Tests
 #######################################################
 
+
 @pytest.mark.django_db(databases=["default", "mini_data_lake"], transaction=True)
 def test_cred_sync_success(admin_user, organization):
     """Test successful credential synchronization."""

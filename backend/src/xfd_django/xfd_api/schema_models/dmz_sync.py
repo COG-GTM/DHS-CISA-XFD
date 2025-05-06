@@ -8,19 +8,6 @@ from uuid import UUID
 from pydantic import BaseModel, Json
 
 
-class DataSource(BaseModel):
-    """DataSourceGet schema."""
-
-    name: str
-    description: str
-    last_run: Optional[datetime]
-
-    class Config:
-        """Config."""
-
-        from_attributes = True
-
-
 class SyncRequest(BaseModel):
     """SyncRequest schema."""
 
