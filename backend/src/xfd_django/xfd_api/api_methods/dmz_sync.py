@@ -160,14 +160,16 @@ def dmz_censys_sync(censys_data, current_user):
 
         page_data = [
             {
-                **{
-                    field.name: getattr(obj, field.name)
-                    for field in obj._meta.get_fields()
-                    if field.name not in ["organization", "data_source"]
-                },
-                "organization_acronym": obj.organization.acronym
-                if obj.organization
-                else None,
+                "sub_domain_uid": obj.sub_domain_uid,
+                "created_at": obj.created_at,
+                "last_seen": obj.last_seen,
+                "sub_domain": obj.sub_domain,
+                "from_root_domain": obj.from_root_domain,
+                "current": obj.current,
+                "enumerate_subs": obj.enumerate_subs,
+                "identified": obj.identified,
+                "subdomain_source": obj.subdomain_source,
+                "organization_acronym": obj.organization.acronym if obj.organization else None,
                 "data_source_name": obj.data_source.name if obj.data_source else None,
             }
             for obj in page

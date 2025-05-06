@@ -479,36 +479,35 @@ def populate_sample_data():
     all_orgs = Organization.objects.all()
     total_orgs = len(all_orgs)
 
-    if len(all_orgs) == 0:
-        with transaction.atomic():
-            tag, _ = OrganizationTag.objects.get_or_create(name=SAMPLE_TAG_NAME)
-            for _ in range(NUM_SAMPLE_ORGS):
-                # Create organization
-                org = Organization.objects.create(
-                    acronym="".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=5)),
-                    name=generate_random_name(),
-                    root_domains=["crossfeed.local"],
-                    ip_blocks=[],
-                    is_passive=False,
-                    state=random.choice(SAMPLE_STATES),
-                    region_id=random.choice(SAMPLE_REGION_IDS),
-                )
-                org.tags.add(tag)
+    with transaction.atomic():
+        tag, _ = OrganizationTag.objects.get_or_create(name=SAMPLE_TAG_NAME)
+        for _ in range(NUM_SAMPLE_ORGS):
+            # Create organization
+            org = Organization.objects.create(
+                acronym="".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=5)),
+                name=generate_random_name(),
+                root_domains=["crossfeed.local"],
+                ip_blocks=[],
+                is_passive=False,
+                state=random.choice(SAMPLE_STATES),
+                region_id=random.choice(SAMPLE_REGION_IDS),
+            )
+            org.tags.add(tag)
 
-                # Create sample domains, services, and vulnerabilities
-                # for _ in range(NUM_SAMPLE_DOMAINS):
-                #     domain = create_sample_domain(org)
-                #     create_sample_services_and_vulnerabilities(domain)
+            # Create sample domains, services, and vulnerabilities
+            # for _ in range(NUM_SAMPLE_DOMAINS):
+            #     domain = create_sample_domain(org)
+            #     create_sample_services_and_vulnerabilities(domain)
 
-            # Create a user for the organization
-            user = create_sample_user(org)
+        # Create a user for the organization
+        user = create_sample_user(org)
 
-            # Create an API key for the user
-            create_api_key_for_user(user)
+        # Create an API key for the user
+        create_api_key_for_user(user)
 
-            # test_user = create_test_user(org)
+        # test_user = create_test_user(org)
 
-            # create_api_key_for_user(test_user)
+        # create_api_key_for_user(test_user)
 
     for idx, org in enumerate(all_orgs, start=1):
         try:
