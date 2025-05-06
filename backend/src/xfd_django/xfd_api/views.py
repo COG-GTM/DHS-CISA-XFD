@@ -31,6 +31,7 @@ from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
+from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
@@ -83,6 +84,7 @@ from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
 from .schema_models.cve import GetAllCvesResponse
 from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
+from .schema_models.dns_twist_sync import DnsTwistSyncBody, DnsTwistSyncResponse
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1030,6 +1032,27 @@ async def sync(
     try:
         return await sync_post(sync_body, request, current_user)
     except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@api_router.post(
+    "/dns_twist_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=DnsTwistSyncResponse,
+    tags=["Sync", "DnsTwist"],
+)
+async def dns_twist_sync(
+    sync_body: DnsTwistSyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post domain permnutations for DNSTwist sync."""
+    try:
+        return await dns_twist_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
