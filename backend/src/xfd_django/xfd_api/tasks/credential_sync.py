@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 # Constants
 MAX_RETRIES = 3  # Max retries for failed tasks
 TIMEOUT = 60  # Timeout in seconds for waiting on task completion
-db_name = "mini_data_lake_secondary"
+db_name = "mini_data_lake"
 headers = settings.DMZ_API_HEADER
 
 unknown_data_source, uds_created = DataSource.objects.using(db_name).get_or_create(
