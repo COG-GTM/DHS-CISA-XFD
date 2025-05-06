@@ -60,16 +60,6 @@ search_fields = {
 def sample_domain_ip_vuln(organization):
     """Create subdomain, IP, and their association."""
     # Create required DataSource
-    # data_source_domain = DataSource.objects.create(
-    #     name="Test Source",
-    #     description="Used in tests",
-    #     last_run=datetime.now().date(),
-    # )
-    # data_source_domain = DataSource.objects.get_or_create(
-    #     name="Test Source",
-    #     defaults={"description": "Used in tests", "last_run": datetime.utcnow()}
-    # )
-
     data_source_domain, _ = DataSource.objects.get_or_create(
         name="Test Source",
         defaults={"description": "Used in tests", "last_run": datetime.utcnow()},
