@@ -75,6 +75,7 @@ class ECSClient:
                             "DB_USERNAME": os.getenv("DB_USERNAME"),
                             "DB_PASSWORD": os.getenv("DB_PASSWORD"),
                             "MDL_NAME": os.getenv("MDL_NAME"),
+                            "MDL_SECONDARY_NAME": os.getenv("MDL_SECONDARY_NAME"),
                             "MDL_USERNAME": os.getenv("MDL_USERNAME"),
                             "MDL_PASSWORD": os.getenv("MDL_PASSWORD"),
                             "MDL_SECONDARY_NAME": os.getenv("MDL_SECONDARY_NAME"),

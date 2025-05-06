@@ -275,6 +275,7 @@ export const ScanTasksView: React.FC = () => {
     'wappalyzer',
     'censysIpv4',
     'censysCertificates',
+    'refresh_vs_summaries',
     'sslyze',
     'searchSync',
     'shodan_sync',
