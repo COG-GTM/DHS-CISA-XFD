@@ -1082,7 +1082,8 @@ def create_vuln_normal_views(database):
                 t.is_kev::bool as is_kev,
                 t.service_name as service_string,
                 t.is_risky::bool as is_risky_service,
-                null as os, --t.os as os --Not seeing this in the ticket
+                --null as os, --t.os as os --Not seeing this in the ticket
+                t.operating_system as os,
                 null as cwe,
                 vs.cpe as cpe,
                 null as references,
@@ -1154,7 +1155,7 @@ def create_vuln_normal_views(database):
                 null as structured_data,
                 null as kev_results,
                 --Additional Data requested
-                null AS ip_string,
+                sv.ip_string,
                 null AS cvss_vector,
                 null::int AS severity_int,
                 null as plugin_id,
