@@ -3,6 +3,21 @@ import {
   vulnScanDataTransformed
 } from 'types/vuln-scan-stats';
 
+export function formatShortDate(
+  dateInput: string | Date | null | undefined
+): string {
+  if (!dateInput) return 'N/A';
+
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return 'Invalid Date';
+
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
 function getLatestSummary<T extends { summary_date?: string | null }>(
   summaries: T[]
 ): T | undefined {
@@ -37,7 +52,7 @@ export const transformVulnScanData = (
 
   // Find the objects with the latest summary_date
   const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
-  // const latestHostSummary = getLatestSummary(data.host_summaries);
+  const latestHostSummary = getLatestSummary(data.host_summaries);
   // const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
   // const latestPortServiceSummary = getLatestSummary(
   //   data.port_scan_service_summaries
@@ -46,9 +61,15 @@ export const transformVulnScanData = (
   return {
     vulnScanSummary: [
       {
-        hostScan: 'date - date',
-        vulnerabilityScan: 'date - date',
-        assetsOwned: latestVulnSummary?.asset_count ?? 0,
+        hostScan:
+          formatShortDate(latestHostSummary?.start_date) +
+          ' - ' +
+          formatShortDate(latestHostSummary?.end_date),
+        vulnerabilityScan:
+          formatShortDate(latestVulnSummary?.start_date) +
+          ' - ' +
+          formatShortDate(latestVulnSummary?.end_date),
+        assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
         assetsScanned: latestVulnSummary?.scanned_asset_count ?? 0
       }
     ],

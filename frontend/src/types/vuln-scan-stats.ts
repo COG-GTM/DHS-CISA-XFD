@@ -14,6 +14,7 @@ export interface VulnScanSummary {
   organization?: string | null;
 
   asset_count?: number | null;
+  assets_owned_count?: number | null;
   false_positive_count?: number | null;
   vulnerable_host_count?: number | null;
   scanned_asset_count?: number | null;
