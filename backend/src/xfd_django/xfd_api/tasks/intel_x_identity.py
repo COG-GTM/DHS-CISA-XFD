@@ -23,7 +23,7 @@ from xfd_mini_dl.models import (
 
 # Calculate Datetimes for collection period
 TODAY = datetime.date.today()
-DAYS_BACK = datetime.timedelta(days=20)
+DAYS_BACK = datetime.timedelta(days=100)
 START_DATE = (TODAY - DAYS_BACK).strftime("%Y-%m-%d %H:%M:%S")
 END_DATE = TODAY.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -50,7 +50,7 @@ SOURCE_OBJ, created = DataSource.objects.get_or_create(
 )
 
 
-def handler(event):
+def handler(command_options):
     """Identify credential breaches associated with stakeholder's root domains."""
     try:
         is_dmz = os.getenv("IS_DMZ", "0") == "1"
@@ -61,7 +61,7 @@ def handler(event):
                 "status_code": 200,
                 "body": "IntelX Credential scan cannot run outside the DMZ.",
             }
-        main()
+        main(command_options)
         return {
             "status_code": 200,
             "body": "IntelX Credential scan completed successfully.",
@@ -70,14 +70,24 @@ def handler(event):
         return {"status_code": 500, "body": str(e)}
 
 
-def main():
+def main(command_options):
     """Identify credential breaches associated with stakeholder's root domains."""
     try:
-        # orgs_to_scan = Organization.objects.all()
-        orgs_to_scan = Organization.objects.filter(
-            acronym__in=["USAGM", "DHS"]
-        ).order_by("acronym")
-        intelx = IntelX(orgs_to_scan)
+        organization_name = command_options.get("organizationName")
+        organization_id = command_options.get("organizationId")
+        if not organization_name or not organization_id:
+            return {"statusCode": 400, "body": "Organization name or id not provided."}
+
+        orgs_to_sync = Organization.objects.filter(id=organization_id)
+        if not orgs_to_sync.exists():
+            return {"statusCode": 500, "body": "Organization not found."}
+        organization = orgs_to_sync.first()
+
+        # # orgs_to_scan = Organization.objects.all()
+        # orgs_to_scan = Organization.objects.filter(
+        #     acronym__in=["USAGM", "DHS"]
+        # ).order_by("acronym")
+        intelx = IntelX([organization])
         intelx.run_intelx()
 
     except Exception as e:
