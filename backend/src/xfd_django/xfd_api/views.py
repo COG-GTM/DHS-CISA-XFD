@@ -1,23 +1,36 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
 from datetime import datetime, timezone
+import hashlib
+import json
 import os
 from typing import List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 from xfd_mini_dl.models import User
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
+from .api_methods import dmz_sync as dmz_sync_methods
 from .api_methods import notification as notification_methods
 from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
-from .api_methods.cve import get_cves_by_id, get_cves_by_name
+from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
@@ -35,6 +48,8 @@ from .api_methods.stats import (
     get_stats,
     get_user_ports_count,
     get_user_services_count,
+    get_vs_condensed_trending_data,
+    get_vs_trending_data,
     stats_latest_vulns,
     stats_most_common_vulns,
 )
@@ -66,6 +81,8 @@ from .schema_models.api_key import ApiKey as ApiKeySchema
 from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
+from .schema_models.cve import GetAllCvesResponse
+from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -104,6 +121,8 @@ from .tools.user_logger_decorator import (
 
 # Define API router
 api_router = APIRouter()
+
+SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
 
 async def get_redis_client(request: Request):
@@ -274,6 +293,63 @@ async def call_get_cves_by_id(cve_id):
 async def call_get_cves_by_name(cve_name):
     """Get Cve by name."""
     return get_cves_by_name(cve_name)
+
+
+# --- NIST CVE endpoint, CRASM-2431 ---
+@api_router.post(
+    "/dmz_sync/cves",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetAllCvesResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["CVEs to sync to LZ db"],
+)
+async def get_call_all_cves(
+    response: Response,
+    current_user: User = Depends(get_current_active_user),
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(100, ge=1, description="How many items per page."),
+):
+    """
+    Return paginated CVEs plus an X-Salted-Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - Only global write-admins may call this.
+    """
+    # fetch & paginate
+    try:
+        total_pages, records = await get_all_cves(
+            current_user,
+            page=page,
+            per_page=per_page,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {e}",
+        )
+
+    # serialize
+    raw = [CveSchema.from_orm(r).model_dump() for r in records]
+    # …and then convert any UUID/datetime in there into plain strings
+    payload = jsonable_encoder(raw)
+
+    response_obj = {
+        "status": "ok",
+        "payload": payload,
+    }
+
+    # checksum
+    json_str = json.dumps(response_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    response.headers["X-Salted-Checksum"] = checksum
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=response_obj,
+        headers={"X-Salted-Checksum": checksum},
+    )
 
 
 # ========================================
@@ -948,7 +1024,7 @@ async def sync(
 ):
     """Post organizations for datalake sync."""
     try:
-        return await sync_post(sync_body, request)
+        return await sync_post(sync_body, request, current_user)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -990,6 +1066,32 @@ async def export_endpoint(
 # ========================================
 #   Stat Endpoints
 # ========================================
+@api_router.post(
+    "/stats/trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.VsTrendResponse,
+    tags=["Stats"],
+)
+async def get_vs_trending_stats(
+    filter_data: stat_schema.TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve VS Summary data filtered by the user."""
+    return get_vs_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/stats/condensed_trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.VsTrendCondensedResponse,
+    tags=["Stats"],
+)
+async def get_vs_condensed_trending_stats(
+    filter_data: stat_schema.TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve VS Summary data filtered by the user."""
+    return get_vs_condensed_trending_data(filter_data.filters, current_user)
 
 
 @api_router.post(
@@ -1421,7 +1523,51 @@ async def get_vulnerability_by_source_id_route(
     tags=["Blocklist"],
 )
 async def get_blocklist(
-    request: Request, ip_address: str = Query(..., description="IP address to check")
+    request: Request,
+    ip_address: str = Query(..., description="IP address to check"),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Determine if IP is on the blocklist."""
-    return await handle_check_ip(ip_address)
+    return await handle_check_ip(ip_address, current_user)
+
+
+# ========================================
+#   DMZ Sync Endpoints
+# ========================================
+
+
+def serialize_custom(obj):
+    """Recursively convert objects to JSON-serializable formats."""
+    if isinstance(obj, (datetime, UUID)):
+        return str(obj)  # Convert datetime and UUID to ISO 8601 string
+    elif isinstance(obj, list):
+        return [serialize_custom(item) for item in obj]  # Recursively process lists
+    elif isinstance(obj, dict):
+        return {
+            key: serialize_custom(value) for key, value in obj.items()
+        }  # Recursively process dicts
+    return obj
+
+
+@api_router.post(
+    "/dmz_sync/shodan_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ShodanSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def shodan_sync(
+    shodan_data: SyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return Shodan Assets and Vulns for a provided org with checksum verification."""
+    response_data = dmz_sync_methods.dmz_shodan_sync(shodan_data, current_user)
+
+    response_serializable = serialize_custom(response_data)
+
+    # Consistent JSON encoding: sort keys to ensure deterministic output
+    response_json_obj = {"status": "ok", "payload": response_serializable}
+    json_str = json.dumps(response_json_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    return JSONResponse(
+        content=response_json_obj, headers={"X-Salted-Checksum": checksum}
+    )

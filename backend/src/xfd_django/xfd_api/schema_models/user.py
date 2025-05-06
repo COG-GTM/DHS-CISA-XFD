@@ -161,7 +161,7 @@ class UpdateUserV2(BaseModel):
     email: Optional[str] = None
     state: Optional[str] = None
     user_type: Optional[str] = None
-    invite_pending: Optional[bool] = False
+    invite_pending: Optional[bool] = None
 
 
 class RegisterUserResponse(BaseModel):

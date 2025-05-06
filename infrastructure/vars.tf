@@ -340,6 +340,12 @@ variable "ssm_intelx_api_key" {
   default     = "/crossfeed/staging/INTELX_API_KEY"
 }
 
+variable "ssm_checksum_salt" {
+  description = "ssm_checksum_salt"
+  type        = string
+  default     = "/crossfeed/staging/CHECKSUM_SALT"
+}
+
 variable "ssm_xpanse_api_key" {
   description = "ssm_xpanse_api_key"
   type        = string
@@ -858,6 +864,12 @@ variable "crossfeed-lz-sync_name" {
   type        = string
   description = "The name of the S3 bucket for Crossfeed LZ sync"
   default     = "crossfeed-lz-sync"
+}
+
+variable "crossfeed-xpanse-org-sync" {
+  type        = string
+  description = "The name of the S3 bucket for Crossfeed Xpanse Org sync"
+  default     = "crossfeed-xpanse-org-sync"
 }
 
 variable "image_tag" {

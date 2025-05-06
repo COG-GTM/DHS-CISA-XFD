@@ -32,7 +32,11 @@ class AutoLengthCheckModel(models.Model):
         for field in self._meta.fields:
             if isinstance(field, models.CharField):
                 value = getattr(self, field.name)
-                if value and field.max_length and len(value) > field.max_length:
+                if (
+                    isinstance(value, str)
+                    and field.max_length
+                    and len(value) > field.max_length
+                ):
                     LOGGER.warning(
                         "[%s] Auto-truncating field '%s': %s → %s chars",
                         self.__class__.__name__,
@@ -1103,10 +1107,9 @@ class ScanTask(models.Model):
 class Service(models.Model):
     """The Service View."""
 
-    id = models.UUIDField(
+    id = models.TextField(
         primary_key=True,
-        default=uuid.uuid4,
-        help_text="Unique identifier for a web service running on a stakeholders attack surface.",
+        help_text="Unique identifier for the service object.",
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -1787,6 +1790,229 @@ class VulnScan(AutoLengthCheckModel):
         db_table = "vuln_scan"
 
 
+class VulnScanSummary(models.Model):
+    """The VulnScanSummary Model."""
+
+    summary_date = models.DateField(
+        help_text="Date this summary represents (usually the date it was generated)."
+    )
+    start_date = models.DateTimeField(
+        help_text="Timestamp of the earliest last_change in the collection",
+    )
+    end_date = models.DateTimeField(
+        help_text="Timestamp of the latest last_change in the collection",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        related_name="vuln_scan_summaries",
+        on_delete=models.CASCADE,
+        help_text="Foreign key relationship to the organization the summary is built for.",
+    )
+    assets_owned_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses found within an organizations reported CIDR blocks.",
+    )
+    false_positive_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of tickets marked as false positive.",
+    )
+    vulnerable_host_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have an open ticket associated with them.",
+    )
+    scanned_asset_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have been scanned",
+    )
+    unique_service_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have been scanned",
+    )
+    unique_none_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 0",
+    )
+    unique_low_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 1",
+    )
+    unique_medium_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 2",
+    )
+    unique_high_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 3",
+    )
+    unique_critical_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 4",
+    )
+    risky_services_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count risky services by port",
+    )
+    unsupported_software_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts with unsupported software",
+    )
+    unique_os_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of unique operating systems identified running on org assets.",
+    )
+    none_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 0",
+    )
+    low_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 1",
+    )
+    medium_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 2",
+    )
+    high_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 3",
+    )
+    critical_severity_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of vulnerabilities with a severity of 4",
+    )
+    critical_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open critical ticket.",
+    )
+    high_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open high ticket.",
+    )
+    # median age of current vulns by severity (requires 'firstDiscovered') <- age=enddate() - firstDiscovered(); where ticket.open=true by severity; sum(age)/count(by severity)
+    # none_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with no severity.",
+    # )
+    # low_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of low.",
+    # )
+    # medium_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of medium.",
+    # )
+    # high_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of high.",
+    # )
+    # critical_median_age = models.IntegerField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="Median age of vulns with severity of critical.",
+    # )
+    none_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Kevs with no severity.",
+    )
+    low_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of low.",
+    )
+    medium_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of medium.",
+    )
+    high_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of high.",
+    )
+    critical_kev_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of KEVs with a severity of critical.",
+    )
+    kev_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open KEV ticket.",
+    )
+    one_to_five_vulns_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts that have 1 to 5 vulns.",
+    )
+    six_to_nine_vulns_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts that have 6 to 9 vulns.",
+    )
+    ten_plus_vulns_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of hosts that have 10+ vulns.",
+    )
+    top_5_occurring_cves = models.JSONField(
+        blank=True,
+        null=True,
+        default=list,
+        help_text="Dictionary containing top 5 occuring CVEs vulns",
+    )
+    top_5_occurring_kevs = models.JSONField(
+        blank=True,
+        null=True,
+        default=list,
+        help_text="Dictionary containing top 5 KEV CVEs.",
+    )
+    included_tickets = models.JSONField(
+        blank=True,
+        null=True,
+        default=list,
+        help_text="List of ids for the tickets counted in this summary.",
+    )
+    top_5_risky_hosts = models.JSONField(
+        blank=True,
+        null=True,
+        default=dict,
+        help_text="Dictionary containing top 5 risky hosts based on severity and the count number of tickets at each severity level.",
+    )
+
+    class Meta:
+        """The Meta class for VulnScan."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "vuln_scan_summary"
+        unique_together = (("summary_date", "organization"),)
+
+
 class Cidr(models.Model):
     """The Cidr Model."""
 
@@ -2464,6 +2690,11 @@ class Ticket(models.Model):
         blank=True,
         help_text="Timestamp when this ticket was opened (vulnerability was first detected)",
     )
+    is_open = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Boolean field that flags if this ticket open or closed   ",
+    )
     is_kev = models.BooleanField(
         null=True,
         blank=True,
@@ -2491,6 +2722,12 @@ class Ticket(models.Model):
         null=True,
         blank=True,
     )
+    operating_system = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of operating system identified by port scan for the ip of the ticket.",
+    )
 
     class Meta:
         """The Meta class for Ticket."""
@@ -2499,6 +2736,66 @@ class Ticket(models.Model):
         managed = manage_db
         db_table = "ticket"
         unique_together = ["id"]
+
+
+class CisaKevCatalog(models.Model):
+    """Define CISA KEV Catalog model."""
+
+    cisa_kev_uid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        help_text="PK: Unique identifier for each KEV record.",
+    )
+    cve_id = models.CharField(
+        max_length=50,
+        db_index=True,
+        help_text="CVE ID of the known exploited vulnerability.",
+    )
+    vendor_project = models.CharField(
+        max_length=255,
+        help_text="Name of the vendor or project associated with the vulnerability.",
+    )
+    product = models.CharField(
+        max_length=255, help_text="Name of the affected product."
+    )
+    vulnerability_name = models.CharField(
+        max_length=255, help_text="Name or brief title of the vulnerability."
+    )
+    date_added = models.DateField(
+        help_text="Date the vulnerability was added to the KEV catalog."
+    )
+    short_description = models.TextField(
+        help_text="Brief description of the vulnerability."
+    )
+    required_action = models.TextField(
+        help_text="Recommended remediation or mitigation action."
+    )
+    due_date = models.DateField(
+        null=True, blank=True, help_text="Due date for action if provided."
+    )
+    notes = models.TextField(
+        null=True, blank=True, help_text="Additional notes or remarks."
+    )
+    cwe_id = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Common Weakness Enumeration (CWE) ID related to the CVE.",
+    )
+    known_ransomware_campaign_use = models.BooleanField(
+        default=False,
+        help_text="Flag indicating if the CVE is known to be used in ransomware campaigns.",
+    )
+    vulnerability_publish_date = models.DateField(
+        null=True, blank=True, help_text="Original publish date of the vulnerability."
+    )
+
+    class Meta:
+        """Set model metadata for Mini Data Lake."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "cisa_kev_catalog"
 
 
 class PortScan(AutoLengthCheckModel):
@@ -2738,9 +3035,6 @@ class PortScanServiceSummary(models.Model):
         unique_together = (
             ("organization", "summary_date", "service_name"),
         )  # datetime_pulled_from_redshift
-
-
-# #######  WAS Models  #########
 
 
 class WasTrackerCustomerdata(models.Model):
@@ -3927,7 +4221,7 @@ class DataSource(models.Model):
         default=uuid.uuid4,
         help_text="PK: Unique identifier for data_sources",
     )
-    name = models.TextField(help_text="Name of data source")
+    name = models.TextField(unique=True, help_text="Name of data source")
     description = models.TextField(help_text="Description of data source")
     last_run = models.DateField(help_text="Date that data source was last ran")
 
@@ -5113,12 +5407,12 @@ class SubDomains(AutoLengthCheckModel):
         auto_now_add=True,
         blank=True,
         null=True,
-        help_text="Date and time of the first time teh subdomain was seen.",
+        help_text="Date and time of the first time the subdomain was seen.",
     )
     last_seen = models.DateTimeField(
         blank=True,
         null=True,
-        auto_now=True,
+        auto_now_add=True,
         help_text="Date of the last time the subdomain was seen.",
     )
     created_at = models.DateTimeField(
@@ -5664,173 +5958,6 @@ class XpanseCvesMdl(models.Model):
         db_table = "xpanse_cves_mdl"
 
 
-class XpanseServicesMdl(models.Model):
-    """Define XpanseServicesMdl model."""
-
-    xpanse_service_uid = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        help_text="PK: Unique identifier for a Xpanse Service object.",
-    )
-    service_id = models.TextField(
-        unique=True,
-        blank=True,
-        null=True,
-        help_text="Xpanse Identifier for the service.",
-    )
-    service_name = models.TextField(
-        blank=True, null=True, help_text="Name of the service."
-    )
-    service_type = models.TextField(blank=True, null=True, help_text="Type of service")
-    ip_address = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="List of IP addresses where the service is hosted, if applicable.",
-    )
-    domain = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="List of domains where the service is hosted, if applicable.",
-    )
-    externally_detected_providers = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="List of externally detected providers.",
-    )
-    is_active = models.TextField(
-        blank=True, null=True, help_text="State of the service (Active, Inactive)."
-    )
-    first_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Datetime the service was first observed by Xpanse",
-    )
-    last_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Datetime the service was last observed by Xpanse",
-    )
-    port = models.IntegerField(
-        blank=True,
-        null=True,
-        help_text="Number of the port where the service is running.",
-    )
-    protocol = models.TextField(
-        blank=True, null=True, help_text="Protocol running on the port."
-    )
-    active_classifications = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="Current, actively detected and recognized software, technologies, or behaviors observed on a service based on the most recent data collected",
-    )
-    inactive_classifications = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="previously detected and recognized software, technologies, or behaviors observed on a service previously, but not on the most recent data collected",
-    )
-    discovery_type = models.TextField(
-        blank=True, null=True, help_text="How the service was detected."
-    )
-    externally_inferred_vulnerability_score = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="vulnerability score assigned to a service based on publicly available information about its product name and version, compared against known vulnerabilities in the National Vulnerability Database (NVD)",
-    )
-    externally_inferred_cves = ArrayField(
-        models.TextField(blank=True, null=False),
-        blank=True,
-        null=True,
-        help_text="potential vulnerabilities identified by comparing the publicly visible version information of a service discovered on an organization's external attack surface with known vulnerabilities listed in the National Vulnerability Database (NVD)",
-    )
-    service_key = models.TextField(
-        blank=True,
-        null=True,
-        help_text="identifier associated with a specific service that allows for access and interaction with that service within the Xpanse environment",
-    )
-    service_key_type = models.TextField(
-        blank=True, null=True, help_text="Type of service key."
-    )
-
-    cves = models.ManyToManyField(
-        XpanseCvesMdl,
-        through="XpanseCveServiceMdl",
-        help_text="Many to many linking table to the cve table.",
-    )
-
-    class Meta:
-        """Set XpanseServicesMdl metadata."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "xpanse_services_mdl"
-
-
-class XpanseCveServiceMdl(models.Model):
-    """Define XpanseCves-Service linking table model."""
-
-    xpanse_inferred_cve = models.ForeignKey(
-        XpanseCvesMdl,
-        on_delete=models.CASCADE,
-        help_text="FK: Foreign key to the CVE associated with the service.",
-    )
-    xpanse_service = models.ForeignKey(
-        XpanseServicesMdl,
-        on_delete=models.CASCADE,
-        help_text="FK: Foreign key to the service associated with the CVEs.",
-    )
-    inferred_cve_match_type = models.TextField(
-        blank=True,
-        null=True,
-        help_text="If the match between service and CVE is approximate or exact.",
-    )
-    product = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Vulnerable product on the service that triggered the finding.",
-    )
-    confidence = models.TextField(
-        blank=True,
-        null=True,
-        help_text="How confident Xpanse is the vulnerability is present.",
-    )
-    vendor = models.TextField(
-        blank=True, null=True, help_text="Vendor who makes the compromised product."
-    )
-    version_number = models.TextField(
-        blank=True, null=True, help_text="Version number of the compromised product."
-    )
-    activity_status = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Current activity status of the vulnerable product. (Inactive, Active)",
-    )
-    first_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="First time the vulnerable product was seen running on the service.",
-    )
-    last_observed = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Last time the vulnerable product was seen running on the service.",
-    )
-
-    class Meta:
-        """Set XpanseCveServiceMdl metadata."""
-
-        app_label = app_label_name
-        managed = manage_db
-        db_table = "xpanse_cve_services_mdl"
-        unique_together = (("xpanse_inferred_cve", "xpanse_service"),)
-
-
 class XpanseAlerts(models.Model):
     """Define XpanseAlerts model."""
 
@@ -5858,20 +5985,6 @@ class XpanseAlerts(models.Model):
     host_name = models.TextField(
         blank=True, null=True, help_text="IP or domain where the alert points."
     )
-    sub_domain = models.ForeignKey(
-        "SubDomains",
-        on_delete=models.CASCADE,
-        db_column="sub_domain_id",
-        blank=True,
-        null=True,
-        help_text="FK: Foreign Key to the linked subdomain",
-    )
-    # service = models.ForeignKey(
-    #     "Service",
-    #     on_delete=models.CASCADE,
-    #     db_column="service_id",
-    #     help_text="FK: Foreign Key to the linked service",
-    # )
     alert_action = models.TextField(
         blank=True,
         null=True,
@@ -6055,11 +6168,6 @@ class XpanseAlerts(models.Model):
         related_name="alerts",
         help_text="Many to many relationship to the related business units.",
     )
-    services = models.ManyToManyField(
-        XpanseServicesMdl,
-        related_name="alerts",
-        help_text="Many to many relationsthip to the services associated with the alert.",
-    )
     assets = models.ManyToManyField(
         XpanseAssetsMdl,
         related_name="alerts",
@@ -6072,6 +6180,180 @@ class XpanseAlerts(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "xpanse_alerts_mdl"
+
+
+class XpanseServicesMdl(models.Model):
+    """Define XpanseServicesMdl model."""
+
+    xpanse_service_uid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid1,
+        help_text="PK: Unique identifier for a Xpanse Service object.",
+    )
+    service_id = models.TextField(
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="Xpanse Identifier for the service.",
+    )
+    service_name = models.TextField(
+        blank=True, null=True, help_text="Name of the service."
+    )
+    service_type = models.TextField(blank=True, null=True, help_text="Type of service")
+    ip_address = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="List of IP addresses where the service is hosted, if applicable.",
+    )
+    domain = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="List of domains where the service is hosted, if applicable.",
+    )
+    externally_detected_providers = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="List of externally detected providers.",
+    )
+    is_active = models.TextField(
+        blank=True, null=True, help_text="State of the service (Active, Inactive)."
+    )
+    first_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Datetime the service was first observed by Xpanse",
+    )
+    last_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Datetime the service was last observed by Xpanse",
+    )
+    port = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="Number of the port where the service is running.",
+    )
+    protocol = models.TextField(
+        blank=True, null=True, help_text="Protocol running on the port."
+    )
+    active_classifications = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="Current, actively detected and recognized software, technologies, or behaviors observed on a service based on the most recent data collected",
+    )
+    inactive_classifications = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="previously detected and recognized software, technologies, or behaviors observed on a service previously, but not on the most recent data collected",
+    )
+    discovery_type = models.TextField(
+        blank=True, null=True, help_text="How the service was detected."
+    )
+    externally_inferred_vulnerability_score = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="vulnerability score assigned to a service based on publicly available information about its product name and version, compared against known vulnerabilities in the National Vulnerability Database (NVD)",
+    )
+    externally_inferred_cves = ArrayField(
+        models.TextField(blank=True, null=False),
+        blank=True,
+        null=True,
+        help_text="potential vulnerabilities identified by comparing the publicly visible version information of a service discovered on an organization's external attack surface with known vulnerabilities listed in the National Vulnerability Database (NVD)",
+    )
+    service_key = models.TextField(
+        blank=True,
+        null=True,
+        help_text="identifier associated with a specific service that allows for access and interaction with that service within the Xpanse environment",
+    )
+    service_key_type = models.TextField(
+        blank=True, null=True, help_text="Type of service key."
+    )
+    cves = models.ManyToManyField(
+        XpanseCvesMdl,
+        through="XpanseCveServiceMdl",
+        help_text="Many to many linking table to the cve table.",
+    )
+    sub_domains = models.ManyToManyField(
+        SubDomains,
+        related_name="XpanseServicesMdl",
+        help_text="Many to many linking to sub domains",
+    )
+    alert = models.ForeignKey(
+        XpanseAlerts, on_delete=models.CASCADE, db_column="xpanse_alert_uid", null=True
+    )
+
+    class Meta:
+        """Set XpanseServicesMdl metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "xpanse_services_mdl"
+
+
+class XpanseCveServiceMdl(models.Model):
+    """Define XpanseCves-Service linking table model."""
+
+    xpanse_inferred_cve = models.ForeignKey(
+        XpanseCvesMdl,
+        on_delete=models.CASCADE,
+        help_text="FK: Foreign key to the CVE associated with the service.",
+    )
+    xpanse_service = models.ForeignKey(
+        XpanseServicesMdl,
+        on_delete=models.CASCADE,
+        help_text="FK: Foreign key to the service associated with the CVEs.",
+    )
+    inferred_cve_match_type = models.TextField(
+        blank=True,
+        null=True,
+        help_text="If the match between service and CVE is approximate or exact.",
+    )
+    product = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Vulnerable product on the service that triggered the finding.",
+    )
+    confidence = models.TextField(
+        blank=True,
+        null=True,
+        help_text="How confident Xpanse is the vulnerability is present.",
+    )
+    vendor = models.TextField(
+        blank=True, null=True, help_text="Vendor who makes the compromised product."
+    )
+    version_number = models.TextField(
+        blank=True, null=True, help_text="Version number of the compromised product."
+    )
+    activity_status = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Current activity status of the vulnerable product. (Inactive, Active)",
+    )
+    first_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="First time the vulnerable product was seen running on the service.",
+    )
+    last_observed = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Last time the vulnerable product was seen running on the service.",
+    )
+
+    class Meta:
+        """Set XpanseCveServiceMdl metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "xpanse_cve_services_mdl"
+        unique_together = (("xpanse_inferred_cve", "xpanse_service"),)
 
 
 class CpeVender(models.Model):
