@@ -166,19 +166,19 @@ def apply_vuln_filters(
     if vulnerability_filters.is_kev is not None:
         q &= Q(is_kev=vulnerability_filters.is_kev)
 
-    # 🆕 Filter by earliest date (discovery window lower bound)
+    # Filter by earliest date (discovery window lower bound)
     if vulnerability_filters.earliest_date:
         q &= Q(created_at__gte=vulnerability_filters.earliest_date)
 
-    # 🆕 Filter by latest date (discovery window upper bound)
+    # Filter by latest date (discovery window upper bound)
     if vulnerability_filters.latest_date:
         q &= Q(created_at__lte=vulnerability_filters.latest_date)
 
-    # 🆕 Filter by OS
+    # Filter by OS
     if vulnerability_filters.os and vulnerability_filters.os.lower() != "any":
         q &= Q(os__icontains=vulnerability_filters.os)
 
-    # 🆕 Filter by public ID (CVE or CWE)
+    # Filter by public ID (CVE or CWE)
     if (
         vulnerability_filters.public_id
         and vulnerability_filters.public_id.lower() != "any"
@@ -188,14 +188,14 @@ def apply_vuln_filters(
             | Q(cwe__icontains=vulnerability_filters.public_id)
         )
 
-    # 🆕 Filter by scan type (scan_source with case-insensitive match)
+    # Filter by scan type (scan_source with case-insensitive match)
     if (
         vulnerability_filters.scan_type
         and vulnerability_filters.scan_type.lower() != "any"
     ):
         q &= Q(source__iexact=vulnerability_filters.scan_type)
 
-    # 🆕 Filter by IP or hostname
+    # Filter by IP or hostname
     if (
         vulnerability_filters.ip_or_host
         and vulnerability_filters.ip_or_host.lower() != "any"
@@ -205,7 +205,7 @@ def apply_vuln_filters(
             | Q(domain_string__icontains=vulnerability_filters.ip_or_host)
         )
 
-    # 🆕 Filter by port or service name
+    # Filter by port or service name
     if (
         vulnerability_filters.port_or_service
         and vulnerability_filters.port_or_service.lower() != "any"
