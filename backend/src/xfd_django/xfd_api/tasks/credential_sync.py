@@ -11,6 +11,13 @@ from django.utils import timezone
 from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
+
+# Django setup
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+django.setup()
+
+# Third-Party Libraries
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
@@ -22,18 +29,14 @@ from xfd_mini_dl.models import (
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
-# Django setup
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
-os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-django.setup()
 
 # Constants
 MAX_RETRIES = 3  # Max retries for failed tasks
 TIMEOUT = 60  # Timeout in seconds for waiting on task completion
-
+db_name = "mini_data_lake_secondary"
 headers = settings.DMZ_API_HEADER
 
-unknown_data_source, uds_created = DataSource.objects.get_or_create(
+unknown_data_source, uds_created = DataSource.objects.using(db_name).get_or_create(
     name="Unknown",
     defaults={
         "description": "Unable to link to one of our data sources.",
@@ -42,7 +45,7 @@ unknown_data_source, uds_created = DataSource.objects.get_or_create(
 )
 
 
-def handler(event):
+def handler(command_options):
     """Retrieve and save credential breaches and exposures from the DMZ."""
     try:
         is_lz = os.getenv("IS_DMZ", "0") == "0"
@@ -54,7 +57,7 @@ def handler(event):
                 "statusCode": 200,
                 "body": "ASM DMZ Sync pull cannot run outside the LZ.",
             }
-        main()
+        main(command_options)
         return {
             "status_code": 200,
             "body": "DMZ credential breaches and exposures sync completed successfully.",
@@ -63,22 +66,27 @@ def handler(event):
         return {"status_code": 500, "body": str(e)}
 
 
-def main():
+def main(command_options):
     """Fetch and save DMZ credential breaches and exposures."""
     try:
-        # all_orgs = Organization.objects.all()
-        # For testing
-        all_orgs = Organization.objects.filter(acronym__in=["USAGM", "DHS"])
+        organization_name = command_options.get("organizationName")
+        organization_id = command_options.get("organizationId")
+        if not organization_name or not organization_id:
+            return {"statusCode": 400, "body": "Organization name or id not provided."}
 
-        # since_timestamp_str = calculate_days_back(15)
+        orgs_to_sync = Organization.objects.using(db_name).filter(
+            name=organization_name
+        )
+        if not orgs_to_sync.exists():
+            return {"statusCode": 500, "body": "Organization not found."}
 
-        for org in all_orgs:
-            since_timestamp = get_last_queried(Organization, "credential_sync")
+        for org in orgs_to_sync:
+            since_timestamp = get_last_queried(org, "credential_sync")
 
             if since_timestamp:
                 since_timestamp_str = since_timestamp.isoformat()
             else:
-                since_timestamp_str = calculate_days_back(15)
+                since_timestamp_str = calculate_days_back(365)
             start_pulling_time = datetime.datetime.now(datetime.timezone.utc)
             print(
                 "Processing organization: {acronym}, {name}".format(
@@ -99,16 +107,21 @@ def main():
                     page_number,
                 )
                 if response:
+                    LOGGER.info(response.json())
                     total_pages = process_response(response, org)
                     # save_findings_to_db(cred_exposures_array, cred_breaches_array, org)
                 else:
                     LOGGER.error("Failed to query DMZ Cred Sync API for %s.", acronym)
                     continue
                 page_number += 1
-                if page_number <= total_pages:
+                if page_number >= total_pages:
                     done = True
 
-            update_query_timestamp(start_pulling_time)
+            update_query_timestamp(
+                org,
+                "credential_sync",
+                start_pulling_time,
+            )
 
     except Exception as e:
         print("Scan failed to complete: {error}".format(error=e))
@@ -119,6 +132,7 @@ def process_response(response, org):
     data = response.json()
 
     cred_breaches_array = data.get("credential_breaches", [])
+    total_pages = data.get("total_pages", 1)
 
     if cred_breaches_array:
         breach_dict = {}
@@ -131,7 +145,7 @@ def process_response(response, org):
                     (
                         data_source_dict[breach.get("data_source_name", "Unknown")],
                         created,
-                    ) = DataSource.objects.get_or_create(
+                    ) = DataSource.objects.using(db_name).get_or_create(
                         name=breach.get("data_source_name", "Unknown"),
                         defaults={
                             "description": "Credentials and Breaches identified by {source}".format(
@@ -145,7 +159,7 @@ def process_response(response, org):
                     (
                         breach_dict[breach.get("breach_name")],
                         created,
-                    ) = CredentialBreaches.objects.get_or_create(
+                    ) = CredentialBreaches.objects.using(db_name).get_or_create(
                         breach_name=breach.get("breach_name"),
                         defaults={
                             "description": breach.get("description"),
@@ -175,7 +189,9 @@ def process_response(response, org):
         for exposure in cred_exposures_array:
             try:
                 if exposure.get("root_domain") != exposure.get("sub_domain_string"):
-                    root_obj, rd_created = SubDomains.objects.get_or_create(
+                    root_obj, rd_created = SubDomains.objects.using(
+                        db_name
+                    ).get_or_create(
                         sub_domain=exposure.get("root_domain"),
                         organization=org,
                         defaults={
@@ -190,8 +206,8 @@ def process_response(response, org):
                     )
                 else:
                     root_obj = None
-                sub_obj, sd_created = SubDomains.objects.get_or_create(
-                    sub_domain=exposure.get("sub_domain"),
+                sub_obj, sd_created = SubDomains.objects.using(db_name).get_or_create(
+                    sub_domain=exposure.get("sub_domain_string"),
                     organization=org,
                     defaults={
                         "root_domain": root_obj,
@@ -212,7 +228,7 @@ def process_response(response, org):
                     sub_obj.current = True
                     sub_obj.last_seen = datetime.datetime.now(datetime.timezone.utc)
                     sub_obj.save()
-                CredentialExposures.objects.update_or_create(
+                CredentialExposures.objects.using(db_name).update_or_create(
                     breach_name=exposure.get("breach_name"),
                     email=exposure.get("email"),
                     defaults={
@@ -226,7 +242,7 @@ def process_response(response, org):
                         "hash_type": exposure.get("hash_type"),
                         "intelx_system_id": exposure.get("intelx_system_id"),
                         "organization": org,
-                        "credential_breaches": breach_dict[exposure.get("breach_name")],
+                        "credential_breach": breach_dict[exposure.get("breach_name")],
                         "data_source": data_source_dict[
                             exposure.get("data_source_name", "Unknown")
                         ],
@@ -235,3 +251,4 @@ def process_response(response, org):
                 )
             except Exception as e:
                 print("Error saving Credential Exposure: {error}".format(error=e))
+    return total_pages

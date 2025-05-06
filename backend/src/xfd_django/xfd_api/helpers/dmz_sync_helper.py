@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 def query_api(url_route, acronym, last_seen_after, page_size=50, page_number=1):
     """Pull dmz sync data from the DMZ."""
-    url = os.getenv("DMZ_URL") + url_route
+    url = os.getenv("DMZ_SYNC_ENDPOINT") + url_route
 
     payload = json.dumps(
         {

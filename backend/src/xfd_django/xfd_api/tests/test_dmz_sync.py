@@ -5,11 +5,13 @@ from datetime import datetime, timedelta
 import hashlib
 import json
 import os
+import secrets
 import uuid
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
 # Third-Party Libraries
+from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
@@ -26,6 +28,48 @@ from xfd_mini_dl.models import (
 )
 
 client = TestClient(app)
+
+
+@pytest.fixture
+def admin_user():
+    """Create user fixture."""
+    admin_user = User.objects.create(
+        first_name="Admin",
+        last_name="User",
+        email="{}@example.com".format(secrets.token_hex(4)),
+        user_type=UserType.GLOBAL_ADMIN,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+    yield admin_user
+    admin_user.delete()
+
+
+@pytest.fixture
+def data_source():
+    """Create data_source_fixture."""
+    data_source = DataSource.objects.create(
+        name="Test Source",
+        description="Test Description",
+        last_run=datetime.now(),
+    )
+    yield data_source
+    data_source.delete()
+
+
+@pytest.fixture
+def organization():
+    """Create org fixture."""
+    organization = Organization.objects.create(
+        name="Test_organization",
+        acronym="DHS",
+        root_domains=[],
+        ip_blocks=[],
+        is_passive=False,
+    )
+    transaction.commit()
+    assert organization.name == "Test_organization"
+    yield organization
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])

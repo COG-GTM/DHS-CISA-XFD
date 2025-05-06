@@ -13,7 +13,9 @@ def get_last_queried(org: Organization, data_source: str):
     Returns None if no record exists.
     """
     try:
-        tracker = DataPullTracker.objects.get(org=org, data_source=data_source)
+        tracker = DataPullTracker.objects.using("mini_data_lake").get(
+            org=org, data_source=data_source
+        )
         return tracker.last_queried_at
     except DataPullTracker.DoesNotExist:
         return None  # No previous successful record found
@@ -26,7 +28,7 @@ def update_query_timestamp(org: Organization, data_source: str, query_time=None)
             datetime.timezone.utc
         )  # Default to current timestamp
 
-    tracker, created = DataPullTracker.objects.update_or_create(
+    tracker, created = DataPullTracker.objects.using("mini_data_lake").update_or_create(
         org=org,
         data_source=data_source,
         defaults={"last_queried_at": query_time},  # Always save successful queries
