@@ -169,7 +169,9 @@ def dmz_censys_sync(censys_data, current_user):
                 "enumerate_subs": obj.enumerate_subs,
                 "identified": obj.identified,
                 "subdomain_source": obj.subdomain_source,
-                "organization_acronym": obj.organization.acronym if obj.organization else None,
+                "organization_acronym": obj.organization.acronym
+                if obj.organization
+                else None,
                 "data_source_name": obj.data_source.name if obj.data_source else None,
             }
             for obj in page
