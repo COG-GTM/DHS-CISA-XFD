@@ -1,11 +1,8 @@
 """ASMsync scan."""
 # Standard Python Libraries
 import datetime
-import hashlib
-import json
 import logging
 import os
-import time
 
 # Third-Party Libraries
 import django
@@ -13,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
+from xfd_api.helpers.dmz_sync_helper import query_api
 from xfd_mini_dl.models import Cidr, DataSource, Ip, IpsSubs, Organization, SubDomains
 
 # Django setup
@@ -67,7 +65,6 @@ def handler(command_options):
 def main(command_options):
     """Run ASM Sync API test owned by each stakeholder."""
     try:
-        # orgs_to_sync = Organization.objects.all()
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
         if not organization_name or not organization_id:
@@ -76,38 +73,49 @@ def main(command_options):
         orgs_to_sync = Organization.objects.using(db_name).filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
+
         organization = orgs_to_sync.first()
         get_data_sources()
 
         LOGGER.info("Pulling ASM data for %s", organization.acronym)
-        # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         acronym = organization.acronym
         page_size = 10
         page_number = 1
 
         last_seen_after = calculate_days_back(15)
-        response = query_api(acronym, last_seen_after, page_size, page_number)
+        response = query_api(
+            "/dmz_sync/asm_sync", acronym, last_seen_after, page_size, page_number
+        )
 
         if response:
             total_pages = process_response(response, organization)
         else:
             LOGGER.error("Failed to query DMZ ASM Sync API.")
             return {"statusCode": 500, "body": "Failed to query DMZ ASM Sync API."}
+
         page_number += 1
         while page_number <= total_pages:
-            response = query_api(acronym, last_seen_after, page_size, page_number)
-
+            response = query_api(
+                "/dmz_sync/asm_sync", acronym, last_seen_after, page_size, page_number
+            )
             if response:
                 total_pages = process_response(response, organization)
                 page_number += 1
             else:
                 LOGGER.error("Failed to query DMZ ASM Sync API.")
-                break
+                flag_asset_changes(organization)
+                return {
+                    "statusCode": 500,
+                    "body": "Failed during pagination of ASM Sync API.",
+                }
+
         flag_asset_changes(organization)
         LOGGER.info("Completed pulling ASM data for %s", organization.acronym)
+        return {"statusCode": 200, "body": "ASM sync completed successfully."}
 
     except Exception as e:
         LOGGER.error("Error Running Sync ASM Sync: %s", e)
+        return {"statusCode": 500, "body": "Internal server error during ASM sync."}
 
 
 def get_data_sources():
@@ -128,77 +136,6 @@ def get_data_sources():
                     ).date(),
                 },
             )
-
-
-def query_api(acronym, last_seen_after, page_size=50, page_number=1):
-    """Pull ASM sync data from the DMZ."""
-    url = BASE_URL + "/dmz_sync/asm_sync"
-
-    payload = json.dumps(
-        {
-            "page": page_number,
-            "page_size": page_size,
-            "acronym": acronym,
-            "since_date": last_seen_after,
-        }
-    )
-
-    response = requests.request("POST", url, headers=HEADERS, data=payload, timeout=29)
-    retry_count, max_retries, time_delay = 1, 10, 5
-    while response.status_code != 200 and retry_count <= max_retries:
-        if response.status_code:
-            LOGGER.info(
-                "Retrying MDL AMS_Sync endpoint (code %d), attempt %d of %d (url: %s)",
-                response.status_code,
-                retry_count,
-                max_retries,
-                url,
-            )
-        time.sleep(time_delay)
-        response = requests.request(
-            "POST", url, headers=HEADERS, data=payload, timeout=29
-        )
-        retry_count += 1
-        if retry_count > max_retries:
-            LOGGER.warning("Failed to retrieve page %s", page_number)
-            return None
-
-    # Validate checksum by passing the response object
-    is_valid = validate_response_checksum(response)
-
-    if is_valid:
-        LOGGER.info("✅ Checksum is valid!")
-        return response
-    else:
-        LOGGER.warning("❌ Checksum validation failed!")
-        return None
-
-    # print(response.text)
-
-
-def validate_response_checksum(response):
-    """Validate the checksum from an API response."""
-    try:
-        # Extract response JSON
-        response_data = response.json()
-
-        # Extract checksum from response headers
-        received_checksum = response.headers.get("X-Salted-Checksum")
-        if not received_checksum:
-            LOGGER.warning("❌ No checksum found in headers!")
-            return False
-
-        # Recompute the checksum
-        response_serialized = json.dumps(response_data, default=str, sort_keys=True)
-        calculated_checksum = hashlib.sha256(
-            (SALT + response_serialized).encode()
-        ).hexdigest()
-
-        return received_checksum == calculated_checksum
-
-    except Exception as e:
-        print(f"❌ Error validating checksum: {e}")
-        return False
 
 
 def process_response(response, org):

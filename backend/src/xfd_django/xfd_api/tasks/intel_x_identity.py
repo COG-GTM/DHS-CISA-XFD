@@ -13,6 +13,7 @@ from django.utils import timezone
 import numpy as np
 import pandas as pd
 import requests
+from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
@@ -22,7 +23,7 @@ from xfd_mini_dl.models import (
 )
 
 # Calculate Datetimes for collection period
-TODAY = datetime.date.today()
+TODAY = timezone.now()
 DAYS_BACK = datetime.timedelta(days=100)
 START_DATE = (TODAY - DAYS_BACK).strftime("%Y-%m-%d %H:%M:%S")
 END_DATE = TODAY.strftime("%Y-%m-%d %H:%M:%S")
@@ -81,17 +82,20 @@ def main(command_options):
         orgs_to_sync = Organization.objects.filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
+
         organization = orgs_to_sync.first()
 
-        # # orgs_to_scan = Organization.objects.all()
-        # orgs_to_scan = Organization.objects.filter(
-        #     acronym__in=["USAGM", "DHS"]
-        # ).order_by("acronym")
         intelx = IntelX([organization])
         intelx.run_intelx()
 
+        return {
+            "statusCode": 200,
+            "body": "Credential breach scan completed successfully.",
+        }
+
     except Exception as e:
         LOGGER.error("Error running IntelX Credential Scan %s", e)
+        return {"statusCode": 500, "body": "Internal server error."}
 
 
 class IntelX:
@@ -166,6 +170,12 @@ class IntelX:
 
         # Retrieve credential leaks from IntelX
         LOGGER.info("Retrieving IntelX findings for %s", org.acronym)
+        since_timestamp = get_last_queried(org, "intel_x_pull")
+        if since_timestamp:
+            start = since_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            start = START_DATE
+        start_pulling_time = datetime.datetime.now(datetime.timezone.utc)
         count = 0
         for root in roots:
             LOGGER.info(
@@ -175,7 +185,7 @@ class IntelX:
                 len(roots),
             )
             count += 1
-            leaks_json = self.find_credential_leaks(root, START_DATE, END_DATE)
+            leaks_json = self.find_credential_leaks(root, start, END_DATE)
 
             # Process and format results
             if len(leaks_json) < 1:
@@ -205,7 +215,11 @@ class IntelX:
                 )
                 LOGGER.error(e)
                 continue
-
+        update_query_timestamp(
+            org,
+            "intel_x_pull",
+            start_pulling_time,
+        )
         return 0
 
     def query_identity_api(self, domain, start_date, end_date):

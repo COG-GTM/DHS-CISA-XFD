@@ -860,6 +860,7 @@ def create_vuln_scan_summary(summary_date=None):
             tickets.values("ip_string")
             .annotate(
                 total=Count("id"),
+                none=Count("id", filter=Q(cvss_severity=0)),
                 low=Count("id", filter=Q(cvss_severity=1)),
                 medium=Count("id", filter=Q(cvss_severity=2)),
                 high=Count("id", filter=Q(cvss_severity=3)),
@@ -873,6 +874,7 @@ def create_vuln_scan_summary(summary_date=None):
         top_5_hosts = {
             item["ip_string"]: {
                 "total": item["total"],
+                "none": item["none"],
                 "low": item["low"],
                 "medium": item["medium"],
                 "high": item["high"],
