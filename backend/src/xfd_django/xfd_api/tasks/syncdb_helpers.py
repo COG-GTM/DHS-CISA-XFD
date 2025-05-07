@@ -589,7 +589,7 @@ def create_test_user(organization):
     if existing_user:
         return existing_user
 
-    if not email:
+    if not existing_user:
         user = User.objects.create(
             first_name="Test",
             last_name="User",
@@ -1419,6 +1419,7 @@ def create_service_view(database):
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
         cursor.execute("DROP MATERIALIZED VIEW IF EXISTS vw_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_shodan_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_portscan_service CASCADE;")
 
