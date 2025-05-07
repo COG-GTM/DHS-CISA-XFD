@@ -1671,6 +1671,7 @@ async def censys_sync(
         content=response_json_obj, headers={"X-Salted-Checksum": checksum}
     )
 
+
 # POST
 @api_router.post(
     "/dmz_sync/cred_sync",

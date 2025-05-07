@@ -338,6 +338,7 @@ def dmz_shodan_sync(shodan_data, current_user):
         print("Unexpected error in dmz_shodan_sync: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # POST: /dmz_sync/censys_sync
 def dmz_censys_sync(censys_data, current_user):
     """Return ASM asset data based on the passed org."""
@@ -402,7 +403,8 @@ def dmz_censys_sync(censys_data, current_user):
         # TODO: CRASM-2568 - Create a unified logger in python backend
         print("Unexpected error in dmz_censys_sync: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 def dmz_cred_sync(cred_sync_data, current_user):
     """Return ASM asset data based on the passed org."""
     try:

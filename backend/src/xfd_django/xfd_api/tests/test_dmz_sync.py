@@ -639,6 +639,8 @@ def test_censys_sync_org_not_found():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Organization not found"
+
+
 #######################################################
 #                Cred Sync Tests
 #######################################################
