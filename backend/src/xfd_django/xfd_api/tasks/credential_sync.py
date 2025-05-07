@@ -81,7 +81,9 @@ def main(command_options):
         for org in orgs_to_sync:
             since_timestamp = get_last_queried(org, "credential_sync")
             since_timestamp_str = (
-                since_timestamp.isoformat() if since_timestamp else calculate_days_back(365)
+                since_timestamp.isoformat()
+                if since_timestamp
+                else calculate_days_back(365)
             )
 
             start_pulling_time = datetime.datetime.now(datetime.timezone.utc)
@@ -107,7 +109,9 @@ def main(command_options):
                     LOGGER.error("Failed to query DMZ Cred Sync API for %s.", acronym)
                     return {
                         "statusCode": 500,
-                        "body": "Failed to query DMZ Cred Sync API for {acronym}.".format(acronym=acronym),
+                        "body": "Failed to query DMZ Cred Sync API for {acronym}.".format(
+                            acronym=acronym
+                        ),
                     }
 
                 page_number += 1
@@ -120,8 +124,10 @@ def main(command_options):
 
     except Exception as e:
         LOGGER.error("Scan failed to complete: %s", e)
-        return {"statusCode": 500, "body": "Internal server error during credential sync."}
-
+        return {
+            "statusCode": 500,
+            "body": "Internal server error during credential sync.",
+        }
 
 
 def process_response(response, org):

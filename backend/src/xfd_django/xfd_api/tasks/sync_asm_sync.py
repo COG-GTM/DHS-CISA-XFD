@@ -73,7 +73,7 @@ def main(command_options):
         orgs_to_sync = Organization.objects.using(db_name).filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
-        
+
         organization = orgs_to_sync.first()
         get_data_sources()
 
@@ -104,7 +104,10 @@ def main(command_options):
             else:
                 LOGGER.error("Failed to query DMZ ASM Sync API.")
                 flag_asset_changes(organization)
-                return {"statusCode": 500, "body": "Failed during pagination of ASM Sync API."}
+                return {
+                    "statusCode": 500,
+                    "body": "Failed during pagination of ASM Sync API.",
+                }
 
         flag_asset_changes(organization)
         LOGGER.info("Completed pulling ASM data for %s", organization.acronym)
@@ -113,7 +116,6 @@ def main(command_options):
     except Exception as e:
         LOGGER.error("Error Running Sync ASM Sync: %s", e)
         return {"statusCode": 500, "body": "Internal server error during ASM sync."}
-
 
 
 def get_data_sources():

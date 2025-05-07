@@ -88,7 +88,10 @@ def main(command_options):
         intelx = IntelX([organization])
         intelx.run_intelx()
 
-        return {"statusCode": 200, "body": "Credential breach scan completed successfully."}
+        return {
+            "statusCode": 200,
+            "body": "Credential breach scan completed successfully.",
+        }
 
     except Exception as e:
         LOGGER.error("Error running IntelX Credential Scan %s", e)
