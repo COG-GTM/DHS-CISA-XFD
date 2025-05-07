@@ -147,12 +147,13 @@ class CVEItem(BaseModel):
 class RiskyHostStats(BaseModel):
     """Risky Host Stats model."""
 
-    low: int
     rrs: float
-    high: int
-    total: int
+    none: int
+    low: int
     medium: int
+    high: int
     critical: int
+    total: int
 
 
 class VulnScanSummaryResponse(BaseModel):
