@@ -82,17 +82,17 @@ def main(command_options):
         orgs_to_sync = Organization.objects.filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
+
         organization = orgs_to_sync.first()
 
-        # # orgs_to_scan = Organization.objects.all()
-        # orgs_to_scan = Organization.objects.filter(
-        #     acronym__in=["USAGM", "DHS"]
-        # ).order_by("acronym")
         intelx = IntelX([organization])
         intelx.run_intelx()
 
+        return {"statusCode": 200, "body": "Credential breach scan completed successfully."}
+
     except Exception as e:
         LOGGER.error("Error running IntelX Credential Scan %s", e)
+        return {"statusCode": 500, "body": "Internal server error."}
 
 
 class IntelX:

@@ -65,7 +65,6 @@ def handler(command_options):
 def main(command_options):
     """Run ASM Sync API test owned by each stakeholder."""
     try:
-        # orgs_to_sync = Organization.objects.all()
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
         if not organization_name or not organization_id:
@@ -74,11 +73,11 @@ def main(command_options):
         orgs_to_sync = Organization.objects.using(db_name).filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
+        
         organization = orgs_to_sync.first()
         get_data_sources()
 
         LOGGER.info("Pulling ASM data for %s", organization.acronym)
-        # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
         acronym = organization.acronym
         page_size = 10
         page_number = 1
@@ -93,23 +92,28 @@ def main(command_options):
         else:
             LOGGER.error("Failed to query DMZ ASM Sync API.")
             return {"statusCode": 500, "body": "Failed to query DMZ ASM Sync API."}
+
         page_number += 1
         while page_number <= total_pages:
             response = query_api(
                 "/dmz_sync/asm_sync", acronym, last_seen_after, page_size, page_number
             )
-
             if response:
                 total_pages = process_response(response, organization)
                 page_number += 1
             else:
                 LOGGER.error("Failed to query DMZ ASM Sync API.")
-                break
+                flag_asset_changes(organization)
+                return {"statusCode": 500, "body": "Failed during pagination of ASM Sync API."}
+
         flag_asset_changes(organization)
         LOGGER.info("Completed pulling ASM data for %s", organization.acronym)
+        return {"statusCode": 200, "body": "ASM sync completed successfully."}
 
     except Exception as e:
         LOGGER.error("Error Running Sync ASM Sync: %s", e)
+        return {"statusCode": 500, "body": "Internal server error during ASM sync."}
+
 
 
 def get_data_sources():

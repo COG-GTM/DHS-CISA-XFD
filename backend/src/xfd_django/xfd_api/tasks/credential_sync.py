@@ -74,29 +74,23 @@ def main(command_options):
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
-        orgs_to_sync = Organization.objects.using(db_name).filter(
-            name=organization_name
-        )
+        orgs_to_sync = Organization.objects.using(db_name).filter(id=organization_id)
         if not orgs_to_sync.exists():
             return {"statusCode": 500, "body": "Organization not found."}
 
         for org in orgs_to_sync:
             since_timestamp = get_last_queried(org, "credential_sync")
-
-            if since_timestamp:
-                since_timestamp_str = since_timestamp.isoformat()
-            else:
-                since_timestamp_str = calculate_days_back(365)
-            start_pulling_time = datetime.datetime.now(datetime.timezone.utc)
-            print(
-                "Processing organization: {acronym}, {name}".format(
-                    acronym=org.acronym, name=org.name
-                )
+            since_timestamp_str = (
+                since_timestamp.isoformat() if since_timestamp else calculate_days_back(365)
             )
-            done = False
+
+            start_pulling_time = datetime.datetime.now(datetime.timezone.utc)
+
+            LOGGER.info("Processing organization: %s, %s", org.acronym, org.name)
             acronym = org.acronym
             page_size = 10
             page_number = 1
+            done = False
 
             while not done:
                 response = query_api(
@@ -109,22 +103,25 @@ def main(command_options):
                 if response:
                     LOGGER.info(response.json())
                     total_pages = process_response(response, org)
-                    # save_findings_to_db(cred_exposures_array, cred_breaches_array, org)
                 else:
                     LOGGER.error("Failed to query DMZ Cred Sync API for %s.", acronym)
-                    continue
+                    return {
+                        "statusCode": 500,
+                        "body": "Failed to query DMZ Cred Sync API for {acronym}.".format(acronym=acronym),
+                    }
+
                 page_number += 1
                 if page_number >= total_pages:
                     done = True
 
-            update_query_timestamp(
-                org,
-                "credential_sync",
-                start_pulling_time,
-            )
+            update_query_timestamp(org, "credential_sync", start_pulling_time)
+
+        return {"statusCode": 200, "body": "Credential sync completed successfully."}
 
     except Exception as e:
-        print("Scan failed to complete: {error}".format(error=e))
+        LOGGER.error("Scan failed to complete: %s", e)
+        return {"statusCode": 500, "body": "Internal server error during credential sync."}
+
 
 
 def process_response(response, org):
