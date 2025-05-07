@@ -82,7 +82,12 @@ from .schema_models.blocklist import BlocklistCheckResponse
 from .schema_models.cpe import Cpe as CpeSchema
 from .schema_models.cve import Cve as CveSchema
 from .schema_models.cve import GetAllCvesResponse
-from .schema_models.dmz_sync import ShodanSyncResponse, SyncRequest
+from .schema_models.dmz_sync import (
+    AsmSyncResponse,
+    DataSource,
+    ShodanSyncResponse,
+    SyncRequest,
+)
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1538,6 +1543,15 @@ async def get_blocklist(
 # ========================================
 #   DMZ Sync Endpoints
 # ========================================
+@api_router.get(
+    "/dmz_sync/data_sources",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=List[DataSource],
+    tags=["Data Sources"],
+)
+async def list_data_sources(current_user: User = Depends(get_current_active_user)):
+    """Retrieve a list of all data sources."""
+    return dmz_sync_methods.list_data_sources(current_user)
 
 
 def serialize_custom(obj):
@@ -1551,6 +1565,58 @@ def serialize_custom(obj):
             key: serialize_custom(value) for key, value in obj.items()
         }  # Recursively process dicts
     return obj
+
+
+# POST
+@api_router.post(
+    "/dmz_sync/asm_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=AsmSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def asm_sync(
+    asm_sync_data: SyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Return ASM_sync findings for a provided organization.
+
+    This endpoint retrieves findings from the ASM (Attack Surface Management) sync process
+    based on the input parameters provided. The response is serialized and includes a
+    SHA-256 checksum in the headers for integrity verification.
+
+    ### Request Body Parameters (SyncRequest):
+    - **page** (int, default=1):
+    Page number for pagination of the results.
+
+    - **page_size** (int, optional, default=25):
+    Number of records per page.
+
+    - **acronym** (str):
+    Organization acronym to filter the results.
+
+    - **since_date** (datetime):
+    Return results updated or found since this date.
+
+    ### Headers:
+    - **X-Salted-Checksum**:
+    A SHA-256 hash of the salted response body for response integrity verification.
+
+    ### Returns:
+    - JSON response containing ASM findings and a checksum header.
+    """
+    response_data = dmz_sync_methods.dmz_asm_sync(asm_sync_data, current_user)
+    # # response_json = json.dumps(response_data, sort_keys=True)
+    # Convert response data to a JSON-serializable format
+    response_serializable = serialize_custom(response_data)
+
+    response_json = json.dumps(response_serializable, default=str, sort_keys=True)
+
+    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
+
+    return JSONResponse(
+        content=response_serializable, headers={"X-Salted-Checksum": checksum}
+    )
 
 
 @api_router.post(

@@ -1,11 +1,11 @@
 """ASM sync schemas."""
 # Standard Python Libraries
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 # Third-Party Libraries
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
 
 
 class SyncRequest(BaseModel):
@@ -15,6 +15,142 @@ class SyncRequest(BaseModel):
     page_size: Optional[int] = 25
     acronym: str = "DHS"
     since_date: Optional[datetime] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class DataSource(BaseModel):
+    """DataSourceGet schema."""
+
+    name: str
+    description: str
+    last_run: Optional[datetime]
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class IpsSub(BaseModel):
+    """IpsSub schema."""
+
+    ips_subs_uid: str
+    link_first_seen: Optional[datetime] = None
+    link_last_seen: Optional[datetime] = None
+    link_current: Optional[bool] = None
+    sub_domain_uid: str
+    sub_domain: str
+    root_domain_id: Optional[str] = None
+    is_root_domain: Optional[bool] = None
+    data_source_id: Optional[str] = None
+    dns_record_id: Optional[str] = None
+    status: Optional[bool] = None
+    first_seen: Optional[datetime] = None
+    last_seen: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    current: Optional[bool] = True
+    identified: Optional[bool] = None
+    ip_address: Optional[str] = None
+    synced_at: Optional[datetime] = None
+    from_root_domain: Optional[str] = None
+    enumerate_subs: Optional[bool] = None
+    subdomain_source: Optional[str] = None
+    ip_only: Optional[bool] = None
+    reverse_name: Optional[str] = None
+    screenshot: Optional[str] = None
+    country: Optional[str] = None
+    asn: Optional[str] = None
+    cloud_hosted: Optional[bool] = None
+    ssl: Optional[Dict] = {}
+    censys_certificates_results: Optional[Dict] = {}
+    trustymail_results: Optional[Dict] = {}
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class IpInsert(BaseModel):
+    """Ip schema."""
+
+    id: str
+    ip_hash: str
+    organization_id: str
+    created_timestamp: Optional[datetime] = None
+    updated_timestamp: Optional[datetime] = None
+    last_seen_timestamp: Optional[datetime] = None
+    ip: str
+    ip_version: Optional[str] = None
+    live: Optional[bool] = None
+    false_positive: Optional[bool] = None
+    retired: Optional[bool] = None
+    last_reverse_lookup: Optional[datetime] = None
+    from_cidr: Optional[bool] = None
+    origin_cidr_network: Optional[str] = None
+    has_shodan_results: Optional[bool] = None
+    current: Optional[bool] = None
+    conflict_alerts: Optional[Json] = []
+    ip_sub_list: Optional[List[IpsSub]] = []
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class LooseSub(BaseModel):
+    """LooseSub schema."""
+
+    sub_domain_uid: str
+    sub_domain: str
+    root_domain_id: Optional[str] = None
+    is_root_domain: Optional[bool] = None
+    data_source_id: Optional[str] = None
+    dns_record_id: Optional[str] = None
+    status: Optional[bool] = None
+    first_seen: Optional[datetime] = None
+    last_seen: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    current: Optional[bool] = True
+    identified: Optional[bool] = None
+    ip_address: Optional[str] = None
+    synced_at: Optional[datetime] = None
+    from_root_domain: Optional[str] = None
+    enumerate_subs: Optional[bool] = None
+    subdomain_source: Optional[str] = None
+    ip_only: Optional[bool] = None
+    reverse_name: Optional[str] = None
+    screenshot: Optional[str] = None
+    country: Optional[str] = None
+    asn: Optional[str] = None
+    cloud_hosted: Optional[bool] = None
+    ssl: Optional[Dict] = {}
+    censys_certificates_results: Optional[Dict] = {}
+    trustymail_results: Optional[Dict] = {}
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class AsmSyncResponse(BaseModel):
+    """Cpe schema."""
+
+    total_pages: int
+    current_page: int
+    ip_data: Optional[List[IpInsert]] = None
+    loose_subs: Optional[List[LooseSub]] = None
 
     class Config:
         """Config."""
