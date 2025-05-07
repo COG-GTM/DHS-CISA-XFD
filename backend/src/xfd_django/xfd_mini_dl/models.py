@@ -1019,6 +1019,44 @@ class Scan(models.Model):
         db_table = "scan"
 
 
+class ScanResult(models.Model):
+    """Timestamp of latest result for each scan/organization pair."""
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        help_text="Unique identifier for a scan result object.",
+    )
+    latest_result_at = models.DateTimeField(
+        help_text="Timestamp of latest result.",
+    )
+    scan = models.ForeignKey(
+        Scan,
+        on_delete=models.CASCADE,
+        db_column="scan_id",
+        related_name="scan_results",
+        help_text="Foreign key to the scan that generated the scan result.",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        db_column="organization_id",
+        related_name="scan_results",
+        help_text="Foreign key to the organization that the scan result is for.",
+    )
+
+    class Meta:
+        """The Meta class for ScanResult."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "scan_result"
+        unique_together = (("scan", "organization"),)
+        indexes = [
+            models.Index(fields=["scan", "organization"], name="scan_org_idx"),
+        ]
+
+
 class ScanTask(models.Model):
     """The ScanTask model."""
 
