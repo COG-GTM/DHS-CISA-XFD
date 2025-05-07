@@ -170,9 +170,15 @@ def apply_vuln_filters(
     if vulnerability_filters.earliest_date:
         q &= Q(created_at__gte=vulnerability_filters.earliest_date)
 
-    # Filter by latest date (discovery window upper bound)
+    # TODO: Clarify not upper bound (uses ticket last_updated and closed_at values)
+    # # Filter by latest date (discovery window upper bound)
+    # if vulnerability_filters.latest_date:
+    #     q &= Q(last_seen__lte=vulnerability_filters.latest_date)
+
+    # TODO: Confirm this is also lower bound for last_updated/closed
+    # Filter by latest date (discovery window lower bound)
     if vulnerability_filters.latest_date:
-        q &= Q(created_at__lte=vulnerability_filters.latest_date)
+        q &= Q(last_seen__gte=vulnerability_filters.latest_date)
 
     # Filter by OS
     if vulnerability_filters.os and vulnerability_filters.os.lower() != "any":

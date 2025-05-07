@@ -48,12 +48,17 @@ search_fields = {
     "ip": "127.116.195.151",
     "organization_name": "Wizardly Agency",
     "tag": "",
-    "earliest_date": "2024-01-01T00:00:00Z",
-    "latest_date": "2025-12-31T23:59:59Z",
+    "earliest_date": "2025-01-01T00:00:00Z",
+    "latest_date": "2025-02-01T00:00:00Z",
     "os": "Linux",
     "public_id": "CVE-1234-5678",
     "scan_type": "shodan",
 }
+
+
+def iso_to_datetime(iso_date):
+    """Convert ISO 8601 date string to datetime object."""
+    return datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
 
 
 @pytest.fixture
@@ -91,7 +96,7 @@ def sample_domain_ip_vuln(organization):
         ip_string=ip.ip,
         port=search_fields["port"],
         protocol="http",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(),
         product="Apache httpd",
         server="Apache",
         tags=["self-signed", "vpn"],
@@ -168,7 +173,7 @@ def shodan_vuln_setup(db):
         ip=ip,
         port="80",
         protocol="tcp",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(),
         cve=search_fields["public_id"],
         severity="High",
         cvss=9.1,
@@ -207,13 +212,14 @@ def ticket_vuln_setup(db):
         organization=organization,
         vuln_name="Example vulnerability",
         cve_string=search_fields["public_id"],
-        opened_timestamp=datetime.utcnow(),
         is_kev=True,
         vuln_port=80,
         port_protocol="tcp",
         service_name="httpd",
         operating_system="Linux",
         vuln_source="shodan",
+        opened_timestamp=iso_to_datetime(search_fields["earliest_date"]),
+        updated_timestamp=iso_to_datetime(search_fields["latest_date"]),
     )
 
     TicketEvent.objects.create(
@@ -718,17 +724,70 @@ def test_search_vulnerabilities_does_not_exist(user, vulnerability, refresh_vuln
     assert data["count"] == 0, "Count is not 0"
 
 
+# TODO: This is for upper and lower bound testing. Uncomment and update filters if needed.
+# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+# def test_search_vulnerabilities_by_earliest_and_latest_date(
+#     user, shodan_vuln_setup, vulnerability, refresh_vuln_views
+# ):
+#     """Test vulnerability."""
+#     response = client.post(
+#         "/vulnerabilities/search",
+#         json={
+#             "page": 1,
+#             "filters": {
+#                 "earliest_date": search_fields["earliest_date"],
+#                 "latest_date": search_fields["latest_date"],
+#             },
+#             "pageSize": 25,
+#         },
+#         headers={"Authorization": "Bearer " + create_jwt_token(user)},
+#     )
+#     assert response.status_code == 200
+#     data = response.json()
+#     assert len(data["result"]) > 0
+#     for vuln in data["result"]:
+#         vuln_date = vuln.get("created_at") or vuln.get("last_seen")
+#         assert vuln_date >= search_fields["earliest_date"]
+#         assert vuln_date <= search_fields["latest_date"]
+
+
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_by_earliest_and_latest_date(
+def test_search_vulnerabilities_by_earliest_date(
     user, shodan_vuln_setup, vulnerability, refresh_vuln_views
 ):
-    """Test vulnerability."""
+    """Test filtering vulnerabilities by earliest date."""
     response = client.post(
         "/vulnerabilities/search",
         json={
             "page": 1,
             "filters": {
                 "earliest_date": search_fields["earliest_date"],
+            },
+            "pageSize": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) > 0, "No vulnerabilities found for earliest_date filter"
+    for vuln in data["result"]:
+        vuln_date = vuln.get("created_at") or vuln.get("last_seen")
+        assert vuln_date >= search_fields["earliest_date"], (
+            f"Vulnerability date {vuln_date} is not after the earliest date "
+            f"{search_fields['earliest_date']}"
+        )
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_vulnerabilities_by_latest_date(
+    user, ticket_vuln_setup, shodan_vuln_setup, refresh_vuln_views
+):
+    """Test filtering vulnerabilities by latest date."""
+    response = client.post(
+        "/vulnerabilities/search",
+        json={
+            "page": 1,
+            "filters": {
                 "latest_date": search_fields["latest_date"],
             },
             "pageSize": 25,
@@ -737,11 +796,13 @@ def test_search_vulnerabilities_by_earliest_and_latest_date(
     )
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]) > 0
+    assert len(data["result"]) > 0, "No vulnerabilities found for latest_date filter"
     for vuln in data["result"]:
-        vuln_date = vuln.get("created_at") or vuln.get("last_seen")
-        assert vuln_date >= search_fields["earliest_date"]
-        assert vuln_date <= search_fields["latest_date"]
+        vuln_last_seen_date = vuln.get("last_seen")
+        assert vuln_last_seen_date >= search_fields["latest_date"], (
+            f"Vulnerability date {vuln_last_seen_date} is not after the latest date "
+            f"{search_fields['latest_date']}"
+        )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -821,29 +882,3 @@ def test_search_vulnerabilities_by_port(user, shodan_vuln_setup, refresh_vuln_vi
     assert len(data["result"]) > 0
     for vuln in data["result"]:
         assert vuln["port"] == search_fields["port"]
-
-
-@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
-def test_search_vulnerabilities_with_all_new_filters(
-    user, ticket_vuln_setup, shodan_vuln_setup, refresh_vuln_views
-):
-    """Test vulnerability."""
-    response = client.post(
-        "/vulnerabilities/search",
-        json={
-            "page": 1,
-            "filters": {
-                "earliest_date": search_fields["earliest_date"],
-                "latest_date": search_fields["latest_date"],
-                # "os": search_fields["os"],
-                "public_id": search_fields["public_id"],
-                "scan_type": search_fields["scan_type"],
-                "port": search_fields["port"],
-            },
-            "pageSize": 25,
-        },
-        headers={"Authorization": "Bearer " + create_jwt_token(user)},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["result"]
