@@ -193,3 +193,4 @@ volumes:
 
 networks:
   backend:
+    name: backend
