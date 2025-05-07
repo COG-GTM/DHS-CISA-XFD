@@ -66,6 +66,7 @@ from .api_methods.user import (
 )
 from .api_methods.user_log_search import search_logs
 from .api_methods.vulnerability import (
+    enrich_kev_fields,
     export_vulnerabilities,
     get_vulnerability_by_id,
     get_vulnerability_by_scan_source_and_id,
@@ -1442,6 +1443,8 @@ async def call_search_vulnerabilities(
         return VulnerabilitySearchResponse(result=vulnerabilities, count=count)
 
     try:
+        enrich_kev_fields(vulnerabilities)
+
         # Convert each ORM instance to a Pydantic model
         result = [GetVulnerabilityResponse.model_validate(v) for v in vulnerabilities]
     except Exception as e:
