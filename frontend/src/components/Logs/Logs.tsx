@@ -188,7 +188,10 @@ export const Logs: FC<LogsProps> = () => {
             setFilters(model.items);
           }}
           initialState={{
-            pagination: { paginationModel: { pageSize: 15 } }
+            pagination: { paginationModel: { pageSize: 15 } },
+            sorting: {
+              sortModel: [{ field: 'created_at', sort: 'desc' }]
+            }
           }}
           pageSizeOptions={[15, 30, 50, 100]}
         />
