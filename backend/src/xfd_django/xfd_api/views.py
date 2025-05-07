@@ -85,6 +85,7 @@ from .schema_models.cve import Cve as CveSchema
 from .schema_models.cve import GetAllCvesResponse
 from .schema_models.dmz_sync import (
     AsmSyncResponse,
+    CredSyncResponse,
     DataSource,
     ShodanSyncResponse,
     SyncRequest,
@@ -1643,4 +1644,58 @@ async def shodan_sync(
     checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
     return JSONResponse(
         content=response_json_obj, headers={"X-Salted-Checksum": checksum}
+    )
+
+
+# POST
+@api_router.post(
+    "/dmz_sync/cred_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=CredSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def cred_sync(
+    cred_sync_data: SyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Return Credential Breach findings for a provided organization.
+
+    This endpoint retrieves credential breach findings from the DMZ
+    based on the input parameters provided. The response is serialized and includes a
+    SHA-256 checksum in the headers for integrity verification.
+
+    ### Request Body Parameters (SyncRequest):
+    - **page** (int, default=1):
+    Page number for pagination of the results.
+
+    - **page_size** (int, optional, default=25):
+    Number of records per page.
+
+    - **acronym** (str):
+    Organization acronym to filter the results.
+
+    - **since_date** (datetime):
+    Return results updated or found since this date.
+
+    ### Headers:
+    - **X-Salted-Checksum**:
+    A SHA-256 hash of the salted response body for response integrity verification.
+
+    ### Returns:
+    - JSON response containing credential breach findings and a checksum header.
+    """
+    response_data = dmz_sync_methods.dmz_cred_sync(cred_sync_data, current_user)
+    # # response_json = json.dumps(response_data, sort_keys=True)
+    # Convert response data to a JSON-serializable format
+
+    # return response_data
+    response_serializable = serialize_custom(response_data)
+
+    response_json = json.dumps(response_serializable, default=str, sort_keys=True)
+
+    checksum = hashlib.sha256((SALT + response_json).encode()).hexdigest()
+
+    return JSONResponse(
+        content=response_serializable, headers={"X-Salted-Checksum": checksum}
     )

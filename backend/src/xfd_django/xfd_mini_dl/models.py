@@ -6491,6 +6491,22 @@ class Log(models.Model):
         db_table = "log"
 
 
+class DataPullTracker(models.Model):
+    """Define DataPullTracker Model."""
+
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    data_source = models.CharField(max_length=255)  # Store data source as a string
+    last_queried_at = models.DateTimeField()  # Explicitly controlled timestamp
+
+    class Meta:
+        """Set DataPullTracker model metadata."""
+
+        unique_together = ("org", "data_source")  # Ensure unique org-data_source pairs
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "data_pull_tracker"
+
+
 # # THese are all views, so they shouldn't be generated via the ORM
 
 

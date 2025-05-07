@@ -185,10 +185,11 @@ SCAN_SCHEMA = {
     "credential_sync": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Credential breach and exposure data from commercial mdl",
+        max_concurrent_tasks=5,
     ),
     "vulnScanningSync": ScanSchema(
         type="fargate",
