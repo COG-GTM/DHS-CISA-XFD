@@ -348,7 +348,7 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
-    "updateBlocklist": ScanSchema(
+    "update_blocklist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,

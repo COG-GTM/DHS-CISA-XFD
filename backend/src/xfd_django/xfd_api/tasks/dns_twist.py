@@ -18,6 +18,8 @@ from xfd_mini_dl.models import DataSource, DomainPermutations, Organization, Sub
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
 LOGGER = logging.getLogger(__name__)
+BACKEND_DOMAIN = os.getenv("BACKEND_DOMAIN", "localhost")
+DMZ_API_KEY = os.getenv("DMZ_API_KEY", "local")
 
 
 # Update this function to use the new homebrew blocklist checking system
@@ -158,36 +160,54 @@ def get_data_source(data_source_name: str) -> Optional[str]:
 def check_domain_in_blocklist(
     dom, malicious, attacks, reports, dshield_attacks, dshield_count
 ):
-    """Cross reference the dnstwist results with DShield Blocklist."""
-    dns_key = "dns_aaaa" if dom.get("use_check_ipv6", None) else "dns_a"
-    response = requests.get(
-        "http://api.blocklist.de/api.php?ip=" + str(dom[dns_key][0]),
-        timeout=60,
-    ).content
+    """Cross reference the dnstwist results with internal and DShield blocklists."""
+    dns_key = "dns_aaaa" if dom.get("use_check_ipv6") else "dns_a"
 
-    if str(response) != "b'attacks: 0<br />reports: 0<br />'":
-        try:
-            malicious = True
-            attacks = int(str(response).split("attacks: ")[1].split("<")[0])
-            reports = int(str(response).split("reports: ")[1].split("<")[0])
-        except Exception:
-            malicious = False
-            dshield_attacks = 0
-            dshield_count = 0
-
-    # Check IP in DSheild API
     try:
-        results = dshield.ip(str(dom["dns_a"][0]), return_format=dshield.JSON)
-        results = json.loads(results)
-        threats = results["ip"]["threatfeeds"]
-        attacks = results["ip"]["attacks"]
-        attacks = int(0 if attacks is None else attacks)
-        malicious = True
-        dshield_attacks = attacks
-        dshield_count = len(threats)
-    except Exception:
+        ip_address = str(dom[dns_key][0])
+    except (KeyError, IndexError):
+        return malicious, attacks, reports, dshield_attacks, dshield_count
+
+    # Query internal blocklist API
+    try:
+        response = requests.get(
+            f"{BACKEND_DOMAIN}?ip_address={ip_address}",
+            timeout=60,
+            headers={"Authorization": DMZ_API_KEY},
+        )
+        response.raise_for_status()
+        data = response.json()
+        print("Blocklist API response:", data)
+        if isinstance(data, dict) and (
+            data.get("attacks", 0) > 0 or data.get("reports", 0) > 0
+        ):
+            malicious = True
+            attacks = int(data.get("attacks", 0))
+            reports = int(data.get("reports", 0))
+
+    except Exception as e:
+        # Optionally log the error
+        LOGGER.info("Error querying internal blocklist API: %s", str(e))
+        attacks = 0
+        reports = 0
+
+    # Query DShield API
+    try:
+        dshield_result = dshield.ip(ip_address, return_format=dshield.JSON)
+        parsed = json.loads(dshield_result)
+        ip_info = parsed.get("ip", {})
+
+        dshield_attacks = int(ip_info.get("attacks") or 0)
+        dshield_count = len(ip_info.get("threatfeeds", []))
+
+        if dshield_attacks > 0 or dshield_count > 0:
+            malicious = True
+
+    except Exception as e:
+        LOGGER.info("Error querying DShield API: %s", str(e))
         dshield_attacks = 0
         dshield_count = 0
+
     return malicious, attacks, reports, dshield_attacks, dshield_count
 
 
