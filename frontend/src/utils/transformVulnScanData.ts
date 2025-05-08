@@ -77,7 +77,6 @@ export const transformVulnScanData = (
       {
         title: 'Detected Kevs',
         value:
-          (latestVulnSummary?.none_kev_count ?? 0) +
           (latestVulnSummary?.low_kev_count ?? 0) +
           (latestVulnSummary?.medium_kev_count ?? 0) +
           (latestVulnSummary?.high_kev_count ?? 0) +
@@ -86,7 +85,6 @@ export const transformVulnScanData = (
       {
         title: 'Detected Vulnerabilities',
         value:
-          (latestVulnSummary?.none_severity_count ?? 0) +
           (latestVulnSummary?.low_severity_count ?? 0) +
           (latestVulnSummary?.medium_severity_count ?? 0) +
           (latestVulnSummary?.high_severity_count ?? 0) +
@@ -95,7 +93,6 @@ export const transformVulnScanData = (
       {
         title: 'Distinct Vulnerabilities',
         value:
-          (latestVulnSummary?.unique_none_severity_count ?? 0) +
           (latestVulnSummary?.unique_low_severity_count ?? 0) +
           (latestVulnSummary?.unique_medium_severity_count ?? 0) +
           (latestVulnSummary?.unique_high_severity_count ?? 0) +
@@ -116,7 +113,7 @@ export const transformVulnScanData = (
         value: 0 // placeholder value
       },
       {
-        title: 'Potential NMI Service Count',
+        title: 'Potential NMI Services',
         value: 0 // placeholder value
       }
     ],
