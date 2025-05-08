@@ -623,12 +623,14 @@ class Organization(AutoLengthCheckModel):
     )
     enrolled_in_vs_timestamp = models.DateTimeField(
         db_column="enrolled_in_vs_timestamp",
-        auto_now=True,
+        null=True,
+        blank=True,
         help_text="Date the stakeholder enrolled in VS.",
     )
     period_start_vs_timestamp = models.DateTimeField(
         db_column="period_start_vs_timestamp",
-        auto_now=True,
+        null=True,
+        blank=True,
         help_text="Period start for the last report period VS ran.?????",
     )
     report_types = models.JSONField(
@@ -5404,7 +5406,6 @@ class SubDomains(AutoLengthCheckModel):
         help_text="T/F: Boolean field flagging if the status is active.???",
     )
     first_seen = models.DateTimeField(
-        auto_now_add=True,
         blank=True,
         null=True,
         help_text="Date and time of the first time the subdomain was seen.",
@@ -5412,7 +5413,6 @@ class SubDomains(AutoLengthCheckModel):
     last_seen = models.DateTimeField(
         blank=True,
         null=True,
-        auto_now_add=True,
         help_text="Date of the last time the subdomain was seen.",
     )
     created_at = models.DateTimeField(
@@ -6492,6 +6492,22 @@ class Log(models.Model):
 
         managed = True
         db_table = "log"
+
+
+class DataPullTracker(models.Model):
+    """Define DataPullTracker Model."""
+
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    data_source = models.CharField(max_length=255)  # Store data source as a string
+    last_queried_at = models.DateTimeField()  # Explicitly controlled timestamp
+
+    class Meta:
+        """Set DataPullTracker model metadata."""
+
+        unique_together = ("org", "data_source")  # Ensure unique org-data_source pairs
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "data_pull_tracker"
 
 
 # # THese are all views, so they shouldn't be generated via the ORM
