@@ -36,27 +36,10 @@ OVERRIDES=$(
           { "name": "PW_XFD_PASSWORD", "value": $password },
           { "name": "PW_XFD_2FA_SECRET", "value": $otpsecret },
           { "name": "PW_XFD_LOGIN", "value": $login },
-          { "name": "GIT_BRANCH", "value": $git_branch }
+          { "name": "GIT_BRANCH", "value": $git_branch },
+          { "name": "S3_HTML_PATH", "value": $s3HtmlPath },
+          { "name": "S3_JSON_PATH", "value": $s3JsonPath }
         ],
-        "command": [
-          "sh",
-          "-c",
-          "echo \"Cloning Playwright tests from GitHub...\" &&
-          git clone -b CRASM-2286_Bug_fix_regression_yaml https://github.com/cisagov/xfd.git /app/xfd &&
-          cd /app/xfd/playwright &&
-          echo \"Installing Node dependencies...\" &&
-          npm install &&
-          echo \"Installing Playwright...\" &&
-          npx playwright install --with-deps &&
-          echo \"Running Playwright Tests\" &&
-          npx playwright test &&
-          echo \"📤 Uploading test results to S3...\" &&
-          echo \"Uploading HTML report to: ${s3HtmlPath}\" &&
-          aws s3 cp ./playwright-report/html ${s3HtmlPath} --recursive --region $region &&
-          echo \"Uploading JSON report to: ${s3JsonPath}\" &&
-          aws s3 cp ./playwright-report/results.json ${s3JsonPath} --region $region &&
-          echo \"✅ Test results uploaded successfully to S3 at $datetime\""
-        ]
       }
     ]
   }'

@@ -29,15 +29,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
       - name: Set environment variables for staging
         run: echo "ENVIRONMENT=github" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Run Playwright tests
         env:
@@ -48,7 +42,7 @@ jobs:
           PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
-          GIT_BRANCH: integration
+          GIT_BRANCH: develop
           AUTOMATED_TEST_REPORTS_BUCKET_NAME:
             ${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -99,15 +93,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/integration'
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
       - name: Set environment variables for staging
         run: echo "ENVIRONMENT=github" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Run Playwright tests
         env:
