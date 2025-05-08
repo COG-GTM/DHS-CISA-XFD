@@ -67,7 +67,7 @@ def main():
     blocklist = download_blocklist_as_dict()
     if len(blocklist) == 0:
         LOGGER.warning("No blocklist data downloaded.")
-        return {"statusCode": 500, "body": "Could not fetch blocklist"}
+        return
     LOGGER.info("Blocklist downloaded successfully with %d entries.", len(blocklist))
     blocklist_records = Blocklist.objects.all()
     # Prune blocklist records that are not in the downloaded blocklist data
@@ -83,11 +83,9 @@ def main():
                 ip_record.reports = reports
             ip_record.malicious = malicious
             ip_record.updated_at = timezone.now()
-            ip_record
             # Remove the IP from blocklist to improve performance
             del blocklist[ip_str]
         else:
-            pass
             ip_record.delete()
             LOGGER.info("Blocklist record deleted for IP: %s", ip_str)
     # Add new blocklist records based on the downloaded data
