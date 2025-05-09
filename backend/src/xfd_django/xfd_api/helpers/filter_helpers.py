@@ -1,4 +1,7 @@
 """Filter helpers."""
+# Standard Python Libraries
+from datetime import datetime
+
 # Third-Party Libraries
 from django.db.models.query import Q, QuerySet
 from fastapi import HTTPException
@@ -39,6 +42,18 @@ def sort_direction(sort, order):
     except ValueError as e:
         print(e)
         raise HTTPException(status_code=500, detail="Invalid sort direction supplied")
+
+
+def convert_to_naive(dt: datetime) -> datetime:
+    """
+    Convert a timezone-aware datetime to naive by removing timezone info.
+
+    Required for vulnerability materialized views created_at date being timestamp
+    vs. timestamptz.
+    """
+    if dt.tzinfo is not None:
+        return dt.replace(tzinfo=None)
+    return dt
 
 
 def apply_domain_filters(domains, filters):
@@ -168,19 +183,15 @@ def apply_vuln_filters(
 
     # Filter by earliest date (discovery window lower bound)
     if vulnerability_filters.earliest_date:
+        # naive_earliest = convert_to_naive(vulnerability_filters.earliest_date)
         q &= Q(created_at__gte=vulnerability_filters.earliest_date)
 
-    # TODO: Clarify not upper bound (uses ticket last_updated and closed_at values)
     # # Filter by latest date (discovery window upper bound)
-    # if vulnerability_filters.latest_date:
-    #     q &= Q(last_seen__lte=vulnerability_filters.latest_date)
-
-    # TODO: Confirm this is also lower bound for last_updated/closed
-    # Filter by latest date (discovery window lower bound)
     if vulnerability_filters.latest_date:
-        q &= Q(last_seen__gte=vulnerability_filters.latest_date)
+        # naive_latest = convert_to_naive(vulnerability_filters.latest_date)
+        q &= Q(created_at__lte=vulnerability_filters.latest_date)
 
-    # Filter by OS
+    # Filter  by OS
     if vulnerability_filters.os and vulnerability_filters.os.lower() != "any":
         q &= Q(os__icontains=vulnerability_filters.os)
 
