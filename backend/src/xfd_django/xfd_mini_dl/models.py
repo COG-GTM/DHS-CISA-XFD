@@ -2979,6 +2979,11 @@ class PortScanSummary(models.Model):
     unique_service_count = models.IntegerField(
         null=True, blank=True, help_text="Number of unique services."
     )
+    risky_service_group_counts = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Dictionary of risky_service_group values and their counts",
+    )
 
     class Meta:
         """The Meta class for PortScanSummary."""
