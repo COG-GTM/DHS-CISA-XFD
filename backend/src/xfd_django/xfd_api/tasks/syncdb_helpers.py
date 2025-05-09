@@ -372,7 +372,7 @@ def build_fake_ticket(org):
     ip_record, ip_string = create_ip_within_org_cidr(org)
     cve = Cve.objects.order_by("?").first()
     port = random.choice([21, 22, 80, 443])
-    severity = random.choice(["0.0", "1.0", "2.0", "3.0", "4.0"])
+    severity = random.choice(["1.0", "2.0", "3.0", "4.0"])
     protocol = random.choice(["tcp", "udp"])
     opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
     # 70% chance of ticket being open (closed_timestamp = None)
