@@ -30,7 +30,7 @@ const Main = styled('main', {
   flexGrow: 1,
   minHeight: '100vh',
   height: '100vh',
-  overflow: 'scroll',
+  overflowY: 'auto',
   transition: theme.transitions.create('margin', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen
