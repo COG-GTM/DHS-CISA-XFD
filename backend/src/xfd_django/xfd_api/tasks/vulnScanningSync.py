@@ -740,7 +740,7 @@ def create_vuln_scan_summary(summary_date=None):
         ]
 
         # Severity logic using cvss_severity
-        severity_map = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
+        severity_map = {1: "low", 2: "medium", 3: "high", 4: "critical"}
         severity_counts = {
             f"{name}_severity_count": included.filter(cvss_severity=level).count()
             for level, name in severity_map.items()
@@ -849,6 +849,8 @@ def create_vuln_scan_summary(summary_date=None):
             is_open=True,
             cvss_base_score__isnull=False,
             ip_string__isnull=False,
+            source="nessus",
+            false_positive__in=[False, None],
         )
 
         # Base RRS score expression: (cvss_base_score^7) / 1,000,000
@@ -860,7 +862,6 @@ def create_vuln_scan_summary(summary_date=None):
             tickets.values("ip_string")
             .annotate(
                 total=Count("id"),
-                none=Count("id", filter=Q(cvss_severity=0)),
                 low=Count("id", filter=Q(cvss_severity=1)),
                 medium=Count("id", filter=Q(cvss_severity=2)),
                 high=Count("id", filter=Q(cvss_severity=3)),
@@ -874,7 +875,6 @@ def create_vuln_scan_summary(summary_date=None):
         top_5_hosts = {
             item["ip_string"]: {
                 "total": item["total"],
-                "none": item["none"],
                 "low": item["low"],
                 "medium": item["medium"],
                 "high": item["high"],
