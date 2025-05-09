@@ -863,7 +863,7 @@ def create_vuln_scan_summary(summary_date=None):
             is_open=True,
             cvss_base_score__isnull=False,
             ip_string__isnull=False,
-            source="nessus",
+            vuln_source="nessus",
             false_positive__in=[False, None],
         )
 
