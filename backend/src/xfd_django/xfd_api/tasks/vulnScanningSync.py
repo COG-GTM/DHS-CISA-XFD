@@ -542,8 +542,7 @@ def create_port_scan_summary(summary_date=None):
             )
 
             risky_group_data = (
-                scans
-                .filter(risky_service_group__isnull=False)
+                scans.filter(risky_service_group__isnull=False)
                 .values("risky_service_group")
                 .annotate(count=Count("id"))
             )
@@ -564,7 +563,7 @@ def create_port_scan_summary(summary_date=None):
                     "nmi_service_count": aggregated["nmi_service_count"],
                     "unique_ip_count": aggregated["unique_ip_count"],
                     "unique_service_count": aggregated["unique_service_count"],
-                    "risky_service_group_counts": risky_service_group_counts, 
+                    "risky_service_group_counts": risky_service_group_counts,
                 },
             )
 

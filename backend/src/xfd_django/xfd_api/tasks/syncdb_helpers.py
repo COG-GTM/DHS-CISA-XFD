@@ -268,9 +268,25 @@ def build_fake_port_scan(org):
         "name": random.choice(["http", "ssh", "tcpwrapped", "ftp", "mysql"]),
     }
     risky_service_group = random.choice(
-        ["rdp", "telnet","smb","ldap","netbios","ftp","rpc","sql", "irc", "kerberos", None, None, None]
+        [
+            "rdp",
+            "telnet",
+            "smb",
+            "ldap",
+            "netbios",
+            "ftp",
+            "rpc",
+            "sql",
+            "irc",
+            "kerberos",
+            None,
+            None,
+            None,
+        ]
     )
-    nmi_group = risky_service_group if risky_service_group in ["smb", "telnet","rdp"] else None
+    nmi_group = (
+        risky_service_group if risky_service_group in ["smb", "telnet", "rdp"] else None
+    )
 
     return PortScan(
         id=str(uuid.uuid4()),
@@ -286,12 +302,14 @@ def build_fake_port_scan(org):
         service_confidence=int(service_info["conf"]),
         service_method=service_info["method"],
         source="nmap",
-        state=random.choice(["open", "open", "open", "open", "closed", "filtered", "silent"]),
+        state=random.choice(
+            ["open", "open", "open", "open", "closed", "filtered", "silent"]
+        ),
         time_scanned=timezone.make_aware(
             fake.date_time_between(start_date="-1y", end_date="now")
         ),
         nmi_service_group=nmi_group,
-        risky_service_group = risky_service_group
+        risky_service_group=risky_service_group,
     )
 
 
