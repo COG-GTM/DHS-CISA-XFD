@@ -46,7 +46,8 @@ export const transformVulnScanData = (
       vulnScanSummary: [],
       vulnScanKeyMetrics: [],
       detectedServicesKeyMetrics: [],
-      detectedHostsKeyMetrics: []
+      detectedHostsKeyMetrics: [],
+      topVulnerabilities: []
     }; // return empty arrays if no data
   }
 
@@ -130,6 +131,7 @@ export const transformVulnScanData = (
         title: 'Hosts with Unsupported Software',
         value: 0 // placeholder value
       }
-    ]
+    ],
+    topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? []
   };
 };
