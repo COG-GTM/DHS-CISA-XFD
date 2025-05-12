@@ -97,7 +97,7 @@ exports[`Layout component matches snapshot 1`] = `
                   class="MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-yfrx4k-MuiAccordionSummary-content"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1q0wzqe-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1rrbgg2-MuiTypography-root"
                   >
                     Region(s)
                   </p>
@@ -173,7 +173,7 @@ exports[`Layout component matches snapshot 1`] = `
                                 </svg>
                               </span>
                               <span
-                                class="MuiTypography-root MuiTypography-body1 MuiFormControlLabel-label Mui-disabled css-1q0wzqe-MuiTypography-root"
+                                class="MuiTypography-root MuiTypography-body1 MuiFormControlLabel-label Mui-disabled css-1rrbgg2-MuiTypography-root"
                               >
                                 Region 1234
                               </span>
@@ -204,7 +204,7 @@ exports[`Layout component matches snapshot 1`] = `
                   class="MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-yfrx4k-MuiAccordionSummary-content"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1q0wzqe-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1rrbgg2-MuiTypography-root"
                   >
                     Organization(s)
                   </p>
