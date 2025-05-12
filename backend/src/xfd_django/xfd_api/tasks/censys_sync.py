@@ -8,9 +8,8 @@ from urllib.parse import urljoin
 # Third-Party Libraries
 import django
 from django.utils import timezone
-import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
-from xfd_api.tasks.shodan_sync import validate_response_checksum
+from xfd_api.helpers.dmz_sync_helper import query_api
 from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Django setup
@@ -26,13 +25,6 @@ HEADERS = {
     "X-API-KEY": os.getenv("DMZ_API_KEY"),
     "Content-Type": "application/json",
 }
-
-base_url = os.getenv("DMZ_SYNC_ENDPOINT", "").rstrip("/")
-if base_url.endswith("/sync"):
-    api_url = base_url.rsplit("/", 1)[0] + "/dmz_sync/censys_sync"
-else:
-    api_url = urljoin(base_url + "/", "dmz_sync/censys_sync")
-API_URL = api_url
 
 
 def handler(command_options):
@@ -63,19 +55,9 @@ def handler(command_options):
         done = False
 
         while not done:
-            payload = {
-                "acronym": org.acronym,
-                "page": page,
-                "page_size": per_page,
-                "since_date": since_date,
-            }
-
-            response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=60)
-            response.raise_for_status()
-
-            if not validate_response_checksum(response):
-                return {"statusCode": 500, "body": "Checksum validation failed"}
-
+            response = query_api(
+                "/dmz_sync/censys_sync", org.acronym, since_date, per_page, page
+            )
             body = response.json()
             if body.get("status") != "ok":
                 raise Exception("Censys sync failed: {}".format(body))
