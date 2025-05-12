@@ -31,6 +31,7 @@ from xfd_mini_dl.models import (
     Cidr,
     Cve,
     Host,
+    HostSummary,
     Ip,
     Organization,
     OrganizationTag,
@@ -321,11 +322,57 @@ def build_fake_host(org):
     )
 
 
+def build_fake_host_summaries():
+    """Build a fake Ticket for a pssed org."""
+    all_orgs = Organization.objects.all()
+
+    for org in all_orgs:
+        try:
+            summary_date = timezone.now().date()
+            start_date = timezone.now() - timedelta(
+                days=random.randint(25, 60), seconds=random.randint(0, 86400)
+            )
+            end_date = timezone.now() - timedelta(
+                days=random.randint(1, 5), seconds=random.randint(0, 86400)
+            )
+            host_done_count = random.randint(3000, 5000)
+            host_waiting_count = random.randint(0, 50)
+            host_running_count = random.randint(0, 50)
+            host_ready_count = random.randint(0, 50)
+            total_count = (
+                host_done_count
+                + host_waiting_count
+                + host_running_count
+                + host_ready_count
+            )
+            up_host_count = total_count - random.randint(0, 1500)
+            down_host_count = total_count - up_host_count
+
+            HostSummary.objects.update_or_create(
+                organization=org,
+                summary_date=summary_date,
+                defaults={
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "host_done_count": host_done_count,
+                    "host_waiting_count": host_waiting_count,
+                    "host_running_count": host_running_count,
+                    "host_ready_count": host_ready_count,
+                    "up_host_count": up_host_count,
+                    "down_host_count": down_host_count,
+                },
+            )
+        except Exception as e:
+            print("\n❌ Error while creating host_summary for org %s: %s", org.name, e)
+            continue
+
+
 def build_fake_ticket(org):
     """Build a fake Ticket object."""
     ip_record, ip_string = create_ip_within_org_cidr(org)
     cve = Cve.objects.order_by("?").first()
     port = random.choice([21, 22, 80, 443])
+    severity = random.choice(["1.0", "2.0", "3.0", "4.0"])
     protocol = random.choice(["tcp", "udp"])
     opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
     # 70% chance of ticket being open (closed_timestamp = None)
@@ -336,15 +383,35 @@ def build_fake_ticket(org):
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
-        ip_string=ip_string,
+        ip_string=ip_string
+        if ip_string
+        else random.choice(
+            [
+                "192.0.2.1",
+                "198.51.100.2",
+                "203.0.113.3",
+                "127.0.0.1",
+                "10.0.0.1",
+                "172.16.0.1",
+                "192.168.1.1",
+            ]
+        ),
         organization=org,
         cve=cve,
         cve_string=cve.name if cve else "CVE-2021-0001",
-        cvss_base_score=Decimal("7.5"),
+        cvss_base_score=round(random.uniform(0, 9), 1),
         cvss_version="3.1",
-        vuln_name="FTP Privileged Port Bounce Scan",
+        vuln_name=random.choice(
+            [
+                "Super Alarming Vuln",
+                "Super Hazardous Vuln",
+                "Super Risky Vuln",
+                "Super Menacing Vuln",
+                "Super Perilous Vuln",
+            ]
+        ),
         cvss_score_source="nvd",
-        cvss_severity=Decimal("3.0"),
+        cvss_severity=Decimal(severity),
         vpr_score=Decimal("6.9"),
         false_positive=False,
         updated_timestamp=timezone.now(),
@@ -355,7 +422,7 @@ def build_fake_ticket(org):
         port_protocol=protocol,
         snapshots_bool=False,
         vuln_source="nessus",
-        vuln_source_id=10081,
+        vuln_source_id=random.choice([10081, 12345, 34567, 89012]),
         closed_timestamp=closed_time,
         opened_timestamp=opened_time,
         is_kev=random.choice([True, False]),
@@ -462,8 +529,8 @@ def populate_sample_data():
                 PortScan.objects.bulk_create(portscans, batch_size=100)
 
                 # Hosts
-                hosts = [build_fake_host(org) for _ in range(FAKE_HOST_COUNT)]
-                Host.objects.bulk_create(hosts, batch_size=100)
+                # hosts = [build_fake_host(org) for _ in range(FAKE_HOST_COUNT)]
+                # Host.objects.bulk_create(hosts, batch_size=100)
 
                 # Tickets
                 tickets = [build_fake_ticket(org) for _ in range(FAKE_TICKET_COUNT)]
@@ -522,7 +589,7 @@ def create_test_user(organization):
     if existing_user:
         return existing_user
 
-    if not email:
+    if not existing_user:
         user = User.objects.create(
             first_name="Test",
             last_name="User",
@@ -554,7 +621,11 @@ def create_api_key_for_user(user):
     )
 
     # Print the raw key for debugging or manual testing
-    print("Created API key for user {}: {}".format(user.email, key))
+    print(
+        "Created API key for user, keep this and enter at .env file CF_API_KEY {}: {}".format(
+            user.email, key
+        )
+    )
 
 
 def generate_random_name():
@@ -1348,6 +1419,7 @@ def create_service_view(database):
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
         cursor.execute("DROP MATERIALIZED VIEW IF EXISTS vw_service CASCADE;")
+        cursor.execute("DROP VIEW IF EXISTS vw_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_shodan_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_portscan_service CASCADE;")
 
