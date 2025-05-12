@@ -1391,6 +1391,7 @@ class Webpage(models.Model):
         db_column="domain_id",
         blank=True,
         null=True,
+        related_name="webpages",
         help_text="The domain associated with the webpage.",
     )
     discovered_by = models.ForeignKey(

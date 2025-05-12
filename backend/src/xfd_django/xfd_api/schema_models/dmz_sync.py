@@ -333,3 +333,60 @@ class CredSyncResponse(BaseModel):
         """Config."""
 
         from_attributes = True
+
+
+class CensysSubdomainItem(BaseModel):
+    """Schema for a single Censys subdomain."""
+
+    sub_domain_uid: UUID
+    created_at: Optional[datetime]
+    last_seen: Optional[datetime]
+    sub_domain: str
+    from_root_domain: Optional[str]
+    current: Optional[bool]
+    enumerate_subs: Optional[bool]
+    identified: Optional[bool]
+    subdomain_source: Optional[str]
+    organization_acronym: Optional[str]
+    data_source_name: Optional[str]
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysSubdomains(BaseModel):
+    """Wrapper for a list of Censys subdomains."""
+
+    censys_subdomains: Optional[List[CensysSubdomainItem]] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysAPIMethodResponse(BaseModel):
+    """Paginated response payload."""
+
+    total_pages: int
+    current_page: int
+    data: Optional[CensysSubdomains] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysSyncResponse(BaseModel):
+    """Top-level sync response format."""
+
+    status: str
+    payload: CensysAPIMethodResponse
+
+    class Config:
+        """Config."""
+
+        from_attributes = True

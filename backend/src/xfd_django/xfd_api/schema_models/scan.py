@@ -156,6 +156,15 @@ SCAN_SCHEMA = {
         description="Passive discovery of subdomains from public certificates",
         max_concurrent_tasks=5,
     ),
+    "censys_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Censys asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
+    ),
     "censysCertificates": ScanSchema(
         type="fargate",
         is_passive=True,
