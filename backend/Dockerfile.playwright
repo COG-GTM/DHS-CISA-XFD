@@ -16,8 +16,8 @@ RUN git clone -b CRASM-2286_Bug_fix_regression_yaml https://github.com/cisagov/x
 WORKDIR /app/xfd/playwright
 
 # Copy the test runner script
-COPY entrypoint.playwright.sh /entrypoint.playwright.sh
+COPY ../entrypoint.playwright.sh /entrypoint.playwright.sh
 RUN chmod +x /entrypoint.playwright.sh
 
 # Define entrypoint
-ENTRYPOINT ["/entrypoint.playwright.sh"]
+ENTRYPOINT ["worker/entrypoint.playwright.sh"]
