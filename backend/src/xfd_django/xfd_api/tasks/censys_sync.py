@@ -3,7 +3,6 @@
 # Standard Python Libraries
 import logging
 import os
-from urllib.parse import urljoin
 
 # Third-Party Libraries
 import django
