@@ -120,4 +120,5 @@ export type vulnScanDataTransformed = {
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];
   topVulnerabilities: CVEItem[];
+  topKevVulnerabilities: CVEItem[];
 };

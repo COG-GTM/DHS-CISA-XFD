@@ -47,7 +47,8 @@ export const transformVulnScanData = (
       vulnScanKeyMetrics: [],
       detectedServicesKeyMetrics: [],
       detectedHostsKeyMetrics: [],
-      topVulnerabilities: []
+      topVulnerabilities: [],
+      topKevVulnerabilities: []
     }; // return empty arrays if no data
   }
 
@@ -132,6 +133,7 @@ export const transformVulnScanData = (
         value: 0 // placeholder value
       }
     ],
-    topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? []
+    topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? [],
+    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? []
   };
 };
