@@ -44,7 +44,7 @@ jobs:
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
           GIT_BRANCH: develop
           AUTOMATED_TEST_REPORTS_BUCKET_NAME:
-            ${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
+            ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_SUBNET: ${{ secrets.AWS_SUBNET }}
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
@@ -52,7 +52,7 @@ jobs:
          chmod +x run_playwright_tests.sh
          CLUSTER_NAME=crossfeed-playwright-staging-cd-ecs-cluster \
          TASK_DEFINITION=crossfeed-staging-cd-playwright-worker \
-         AUTOMATED_TEST_RESULTS_BUCKET_NAME=$AUTOMATED_TEST_REPORT_BUCKET_NAME \
+         AUTOMATED_TEST_REPORTS_BUCKET_NAME=$AUTOMATED_TEST_REPORTS_BUCKET_NAME \
          AWS_SUBNET=$AWS_SUBNET \
          AWS_SECURITY_GROUP=$AWS_SECURITY_GROUP \
          PW_XFD_2FA_ISSUER=$PW_XFD_2FA_ISSUER \
@@ -66,11 +66,11 @@ jobs:
         run: |
           mkdir -p ./playwright-report/html
           aws s3 cp \
-            s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/html/ \
+            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/html/" \
             ./playwright-report/html/ --recursive
 
           aws s3 cp \
-            s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/results.json \
+            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/results.json" \
             ./playwright-report/results.json
 
       - name: Upload Playwright HTML report
@@ -108,7 +108,7 @@ jobs:
           PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
           GIT_BRANCH: integration
           AUTOMATED_TEST_REPORTS_BUCKET_NAME:
-            ${{ vars.AUTOMATED_TEST_REPORT_BUCKET_NAME }}
+            ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_SUBNET: ${{ secrets.AWS_SUBNET }}
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
@@ -116,7 +116,7 @@ jobs:
          chmod +x run_playwright_tests.sh
          CLUSTER_NAME=crossfeed-playwright-integration-ecs-cluster \
          TASK_DEFINITION=crossfeed-integration-playwright-worker \
-         AUTOMATED_TEST_RESULTS_BUCKET_NAME=$AUTOMATED_TEST_REPORT_BUCKET_NAME \
+         AUTOMATED_TEST_REPORTS_BUCKET_NAME=$AUTOMATED_TEST_REPORTS_BUCKET_NAME \
          AWS_SUBNET=$AWS_SUBNET \
          AWS_SECURITY_GROUP=$AWS_SECURITY_GROUP \
          ./run_playwright_tests.sh
@@ -128,11 +128,11 @@ jobs:
         run: |
           mkdir -p ./playwright-report/html
           aws s3 cp \
-            s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/html/ \
+            "s3://${AUTOMATED_TEST_REPORTS_BUCKET_NAME}/playwright-reports/html/" \
             ./playwright-report/html/ --recursive
 
           aws s3 cp \
-            s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/results.json \
+            "s3://${AUTOMATED_TEST_REPORTS_BUCKET_NAME}/playwright-reports/results.json"\
             ./playwright-report/results.json
 
       - name: Upload Playwright HTML report
