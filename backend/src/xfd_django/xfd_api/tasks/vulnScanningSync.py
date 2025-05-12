@@ -522,6 +522,7 @@ def create_port_scan_summary(summary_date=None):
                 organization=org,
                 latest=True,  # only latest scans
                 time_scanned__isnull=False,
+                state="open",
             )
 
             if not scans.exists():
@@ -530,7 +531,7 @@ def create_port_scan_summary(summary_date=None):
             aggregated = scans.aggregate(
                 start_date=Min("time_scanned"),
                 end_date=Max("time_scanned"),
-                open_port_count=Count("id", filter=Q(state="open")),
+                open_port_count=Count("id"),
                 risky_port_count=Count(
                     "id", filter=Q(risky_service_group__isnull=False)
                 ),
@@ -801,7 +802,7 @@ def create_vuln_scan_summary(summary_date=None):
             included.filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
             .values("cve_string")
             .annotate(
-                count=Count("id"),
+                count=Count("ip_string"),
                 cvss_base_score=Max(
                     "cvss_base_score"
                 ),  # or Avg if you want to average across tickets
@@ -834,7 +835,7 @@ def create_vuln_scan_summary(summary_date=None):
             .filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
             .values("cve_string")
             .annotate(
-                count=Count("id"),
+                count=Count("ip_string"),
                 cvss_base_score=Max("cvss_base_score"),
                 severity=Max("cvss_severity"),
                 vuln_name=Max("vuln_name"),

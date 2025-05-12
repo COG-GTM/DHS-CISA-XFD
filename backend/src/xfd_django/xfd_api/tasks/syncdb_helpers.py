@@ -302,9 +302,7 @@ def build_fake_port_scan(org):
         service_confidence=int(service_info["conf"]),
         service_method=service_info["method"],
         source="nmap",
-        state=random.choice(
-            ["open", "open", "open", "open", "closed", "filtered", "silent"]
-        ),
+        state=random.choice(["open", "open", "open", "open", "silent"]),
         time_scanned=timezone.make_aware(
             fake.date_time_between(start_date="-1y", end_date="now")
         ),
