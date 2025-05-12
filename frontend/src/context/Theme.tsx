@@ -147,6 +147,7 @@ const theme = createTheme({
     MuiLink: {
       styleOverrides: {
         root: ({ theme }) => ({
+          ...theme.typography.link,
           color: theme.palette.primary.dark,
           '&:hover': {
             color: theme.palette.primary.darker
@@ -197,7 +198,7 @@ const theme = createTheme({
     //     root: {
     //       borderRadius: '4px',
     //       fontSize: '1.167rem',
-    //       fontWeight: 'medium',
+    //       fontWeight: 500,
     //       height: '24px',
     //       padding: '2px 14px 2px 14px',
     //       '&:hover': {
@@ -246,7 +247,7 @@ const theme = createTheme({
     fontFamily: 'source sans pro, sans-serif',
     body1: {
       fontSize: '14px',
-      fontWeight: 'regular',
+      fontWeight: 500,
       textTransform: 'none'
     },
     boldBody: {
@@ -256,14 +257,14 @@ const theme = createTheme({
     },
     largeBody: {
       fontSize: '16px',
-      fontWeight: 'regular',
+      fontWeight: 400,
       textTransform: 'none',
       letterSpacing: '0%',
       lineHeight: '22px'
     },
     button: {
       fontSize: '14px',
-      fontWeight: 'medium',
+      fontWeight: 'bold',
       textTransform: 'uppercase'
     },
     globalNav: {
@@ -278,22 +279,22 @@ const theme = createTheme({
     },
     h2: {
       fontSize: '24px',
-      fontWeight: 'medium',
+      fontWeight: 500,
       textTransform: 'none'
     },
     h3: {
       fontSize: '18px',
-      fontWeight: 'medium',
+      fontWeight: 500,
       textTransform: 'none'
     },
     link: {
       fontSize: '14px',
-      fontWeight: 'medium',
+      fontWeight: 500,
       textDecoration: 'underline'
     },
     miniStatCallout: {
       fontSize: '20px',
-      fontWeight: 'medium',
+      fontWeight: 500,
       textTransform: 'uppercase'
     },
     statCallout: {
@@ -303,17 +304,17 @@ const theme = createTheme({
     },
     uiElementsI: {
       fontSize: '10px',
-      fontWeight: 'regular',
+      fontWeight: 400,
       textTransform: 'none'
     },
     uiElementsII: {
       fontSize: '12px',
-      fontWeight: 'medium',
+      fontWeight: 500,
       textTransform: 'none'
     },
     uiElementsIII: {
       fontSize: '12px',
-      fontWeight: 'medium',
+      fontWeight: 500,
       fontStyle: 'italic',
       textTransform: 'none'
     }
