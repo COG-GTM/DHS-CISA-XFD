@@ -270,6 +270,7 @@ def get_sixgill_organizations():
     while orgs.status_code != 200 and retry_count < max_retries:
         endpoint_name = url.split("/")[-1]
         LOGGER.warning(
+
             f"Retrying Cybersixgill /{endpoint_name} endpoint (code {orgs.status_code}), attempt {retry_count + 1} of {max_retries}"
         )
         time.sleep(time_delay)

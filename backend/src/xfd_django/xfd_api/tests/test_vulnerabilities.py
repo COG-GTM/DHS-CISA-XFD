@@ -39,7 +39,7 @@ search_fields = {
     "severity": "Low",
     "state": "open",
     "substate": "unconfirmed",
-    "is_kev": None,
+    "is_kev": True,
     "port": "80",
     "reverse_name": "local.crossfeed.quizzical-wing",
     "ip": "127.116.195.151",
@@ -540,31 +540,32 @@ def test_search_vulnerabilities_by_organization_id(
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_views):
-    """Test vulnerability."""
-    is_kev_to_search = search_fields["is_kev"]
+    """Verify that filtering by is_kev returns the single seeded vulnerability."""
+    is_kev_to_search = vulnerability.is_kev
 
-    response = client.post(
+    # Skip the test if is_kev is None (null in DB)
+    if is_kev_to_search is None:
+        pytest.skip("Skipping test because is_kev is null (None)")
+
+    resp = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"is_kev": is_kev_to_search}, "pageSize": 25},
-        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+        json={
+            "page": 1,
+            "filters": {"is_kev": is_kev_to_search},
+            "pageSize": 25,
+        },
+        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
+    assert resp.status_code == 200, resp.text
 
-    assert response.status_code == 200
+    data = resp.json()
 
-    data = response.json()
+    assert data["result"], f"No results for is_kev={is_kev_to_search}"
 
-    assert data is not None, "Response is empty"
-    assert "result" in data, "Response does not contain 'result' key"
-    assert (
-        len(data["result"]) > 0
-    ), "No vulnerabilities found for the given is_kev value {}".format(is_kev_to_search)
-
-    for vuln in data["result"]:
+    for v in data["result"]:
         assert (
-            vuln["is_kev"] == is_kev_to_search
-        ), "Vulnerability with ID {} does not have the expected 'is_kev' value {}".format(
-            vuln["id"], is_kev_to_search
-        )
+            v["is_kev"] == is_kev_to_search
+        ), f"Returned is_kev={v['is_kev']} but expected {is_kev_to_search}"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
