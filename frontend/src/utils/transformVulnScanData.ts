@@ -37,11 +37,13 @@ function getLatestSummary<T extends { summary_date?: string | null }>(
 export const transformVulnScanData = (
   data: StatsTrendsRawData
 ): vulnScanDataTransformed => {
-  if (
-    !data.vuln_scan_summaries ||
-    !Array.isArray(data.vuln_scan_summaries) ||
-    data.vuln_scan_summaries.length === 0
-  ) {
+  const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
+  const latestHostSummary = getLatestSummary(data.host_summaries);
+  // const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
+  // const latestPortServiceSummary = getLatestSummary(
+  //   data.port_scan_service_summaries
+  // );
+  if (!latestVulnSummary && !latestHostSummary) {
     return {
       vulnScanSummary: [],
       vulnScanKeyMetrics: [],
@@ -51,14 +53,6 @@ export const transformVulnScanData = (
       topKevVulnerabilities: []
     }; // return empty arrays if no data
   }
-
-  // Find the objects with the latest summary_date
-  const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
-  const latestHostSummary = getLatestSummary(data.host_summaries);
-  // const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
-  // const latestPortServiceSummary = getLatestSummary(
-  //   data.port_scan_service_summaries
-  // );
 
   return {
     vulnScanSummary: [
