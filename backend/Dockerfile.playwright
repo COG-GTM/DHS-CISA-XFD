@@ -4,6 +4,7 @@ FROM mcr.microsoft.com/playwright:v1.50.1-jammy
 WORKDIR /app
 
 # Install needed tools
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y git awscli
 
 # Clone Playwright test repo and install dependencies
