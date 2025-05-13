@@ -121,7 +121,7 @@ export const transformVulnScanData = (
     detectedHostsKeyMetrics: [
       {
         title: 'Detected Hosts',
-        value: 0 // placeholder value
+        value: latestHostSummary?.up_host_count ?? 0
       },
       {
         title: 'Vulnerable Hosts',
