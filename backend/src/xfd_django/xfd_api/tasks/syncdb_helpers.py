@@ -55,7 +55,7 @@ SAMPLE_STATES = ["Virginia", "California", "Colorado"]
 SAMPLE_REGION_IDS = ["1", "2", "3"]
 ORGANIZATION_CHUNK_SIZE = 50
 FAKE_VULN_SCAN_COUNT = 2
-FAKE_PORT_SCAN_COUNT = 2
+FAKE_PORT_SCAN_COUNT = 20
 FAKE_HOST_COUNT = 2
 FAKE_TICKET_COUNT = 2
 # Load sample data files
@@ -267,13 +267,33 @@ def build_fake_port_scan(org):
         "method": random.choice(["probed", "banner", "snmp", "ssl-cert"]),
         "name": random.choice(["http", "ssh", "tcpwrapped", "ftp", "mysql"]),
     }
+    risky_service_group = random.choice(
+        [
+            "rdp",
+            "telnet",
+            "smb",
+            "ldap",
+            "netbios",
+            "ftp",
+            "rpc",
+            "sql",
+            "irc",
+            "kerberos",
+            None,
+            None,
+            None,
+        ]
+    )
+    nmi_group = (
+        risky_service_group if risky_service_group in ["smb", "telnet", "rdp"] else None
+    )
 
     return PortScan(
         id=str(uuid.uuid4()),
         ip=ip_record,
         ip_string=ip_string,
         organization=org,
-        latest=random.choice([True, False]),
+        latest=random.choice([True, True, True, True, False]),
         port=random.choice([22, 80, 443, 8080, 33542]),
         protocol=random.choice(["tcp", "udp"]),
         reason=random.choice(["syn-ack", "response", "reset", "none"]),
@@ -282,14 +302,12 @@ def build_fake_port_scan(org):
         service_confidence=int(service_info["conf"]),
         service_method=service_info["method"],
         source="nmap",
-        state=random.choice(["open", "closed", "filtered", "silent"]),
+        state=random.choice(["open", "open", "open", "open", "silent"]),
         time_scanned=timezone.make_aware(
             fake.date_time_between(start_date="-1y", end_date="now")
         ),
-        nmi_service_group="NMI",
-        risky_service_group=random.choice(
-            ["Potentially Risky Service", "Known Exploited Service"]
-        ),
+        nmi_service_group=nmi_group,
+        risky_service_group=risky_service_group,
     )
 
 
