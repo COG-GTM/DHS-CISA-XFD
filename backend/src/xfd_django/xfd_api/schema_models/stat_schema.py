@@ -147,12 +147,12 @@ class CVEItem(BaseModel):
 class RiskyHostStats(BaseModel):
     """Risky Host Stats model."""
 
-    low: int
     rrs: float
-    high: int
-    total: int
+    low: int
     medium: int
+    high: int
     critical: int
+    total: int
 
 
 class VulnScanSummaryResponse(BaseModel):
@@ -163,12 +163,11 @@ class VulnScanSummaryResponse(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     organization: Optional[UUID] = None
-    asset_count: Optional[int] = None
+    assets_owned_count: Optional[int] = None
     false_positive_count: Optional[int] = None
     vulnerable_host_count: Optional[int] = None
     scanned_asset_count: Optional[int] = None
     unique_service_count: Optional[int] = None
-    unique_none_severity_count: Optional[int] = None
     unique_low_severity_count: Optional[int] = None
     unique_medium_severity_count: Optional[int] = None
     unique_high_severity_count: Optional[int] = None
@@ -176,14 +175,12 @@ class VulnScanSummaryResponse(BaseModel):
     risky_services_count: Optional[int] = None
     unsupported_software_count: Optional[int] = None
     unique_os_count: Optional[int] = None
-    none_severity_count: Optional[int] = None
     low_severity_count: Optional[int] = None
     medium_severity_count: Optional[int] = None
     high_severity_count: Optional[int] = None
     critical_severity_count: Optional[int] = None
     critical_max_age: Optional[int] = None
     high_max_age: Optional[int] = None
-    none_kev_count: Optional[int] = None
     low_kev_count: Optional[int] = None
     medium_kev_count: Optional[int] = None
     high_kev_count: Optional[int] = None
@@ -229,6 +226,7 @@ class PortScanSummaryResponse(BaseModel):
     nmi_service_count: Optional[int] = 0
     unique_ip_count: Optional[int] = 0
     unique_service_count: Optional[int] = 0
+    risky_service_group_counts: Optional[dict] = {}
 
 
 class PortScanServiceSummaryResponse(BaseModel):

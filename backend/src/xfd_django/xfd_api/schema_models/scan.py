@@ -140,12 +140,30 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Open source tool that integrates passive APIs and active subdomain enumeration in order to discover target subdomains",
     ),
+    "asm_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Enumerate and sync org assets.",
+        max_concurrent_tasks=1,
+    ),
     "censys": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=False,
         description="Passive discovery of subdomains from public certificates",
         max_concurrent_tasks=5,
+    ),
+    "censys_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Censys asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
     ),
     "censysCertificates": ScanSchema(
         type="fargate",
@@ -176,10 +194,11 @@ SCAN_SCHEMA = {
     "credential_sync": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Credential breach and exposure data from commercial mdl",
+        max_concurrent_tasks=5,
     ),
     "vulnScanningSync": ScanSchema(
         type="fargate",
@@ -228,10 +247,11 @@ SCAN_SCHEMA = {
     "intel_x_identity": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Identify credential exposures via IntelX.",
+        max_concurrent_tasks=1,
     ),
     "intrigueIdent": ScanSchema(
         type="fargate",
@@ -311,6 +331,15 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="SSL certificate inspection",
     ),
+    "sync_asm_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull synced assets from DMZ.",
+        maxConcurrentTasks=10,
+    ),
     "test": ScanSchema(
         type="fargate",
         is_passive=False,
@@ -371,15 +400,6 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Xpanse alert data from commercial mdl",
-    ),
-    "asm_sync": ScanSchema(
-        type="fargate",
-        is_passive=True,
-        global_scan=False,
-        cpu="1024",
-        memory="8192",
-        description="Enumerate and sync org assets.",
-        max_concurrent_tasks=1,
     ),
     "refresh_vs_summaries": ScanSchema(
         type="fargate",
