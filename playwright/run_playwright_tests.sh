@@ -21,8 +21,9 @@ OVERRIDES=$(
     --arg otpsecret "$PW_XFD_2FA_SECRET" \
     --arg login "$PW_XFD_LOGIN" \
     --arg git_branch "$GIT_BRANCH" \
-    --arg s3HtmlPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/html/" \
-    --arg s3JsonPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/results.json" \
+    --arg environment "$ENVIRONMENT" \
+    --arg s3HtmlPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/$ENVIRONMENT/playwright-reports/$DATETIME/html/" \
+    --arg s3JsonPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/$ENVIRONMENT/playwright-reports/$DATETIME/results.json" \
     '{
     "containerOverrides": [
       {
@@ -37,6 +38,7 @@ OVERRIDES=$(
           { "name": "PW_XFD_2FA_SECRET", "value": $otpsecret },
           { "name": "PW_XFD_LOGIN", "value": $login },
           { "name": "GIT_BRANCH", "value": $git_branch },
+          { "name": "ENVIRONMENT", "value": $environment },
           { "name": "S3_HTML_PATH", "value": $s3HtmlPath },
           { "name": "S3_JSON_PATH", "value": $s3JsonPath }
         ],
