@@ -108,7 +108,7 @@ export const ScanTasksView: React.FC = () => {
     } catch (e: any) {
       setErrors({
         global:
-          e.status === 422 ? 'Unable to kill scan' : e.message ?? e.toString()
+          e.status === 422 ? 'Unable to kill scan' : (e.message ?? e.toString())
       });
       console.log(e);
     }
@@ -275,9 +275,11 @@ export const ScanTasksView: React.FC = () => {
     'wappalyzer',
     'censysIpv4',
     'censysCertificates',
+    'refresh_vs_summaries',
     'sslyze',
     'searchSync',
     'shodan_sync',
+    'sync_asm_sync',
     'cve',
     'cisakev',
     'nist',
@@ -397,7 +399,7 @@ export const ScanTasksView: React.FC = () => {
                     (child, index) => <Box key={index}>{child}</Box>
                   ),
                   exportTitle: 'Scans'
-                }
+                } as any
               }}
               paginationMode="server"
               paginationModel={paginationModel}
