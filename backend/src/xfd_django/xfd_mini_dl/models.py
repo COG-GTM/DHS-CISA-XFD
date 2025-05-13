@@ -6424,10 +6424,16 @@ class Blocklist(models.Model):
     """Define Blocklist Model."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    ip = InetAddressField(
-        null=False, blank=False, unique=True
-    )  # <-- Removed trailing comma
-    created_at = models.DateTimeField(auto_now=False)  # <-- Removed trailing comma
+    ip = InetAddressField(null=False, blank=False, unique=True)
+    created_at = models.DateTimeField(auto_now=False)
+    updated_at = models.DateTimeField(auto_now=True)
+    malicious = models.BooleanField(default=False)
+    attacks = models.IntegerField(
+        help_text="Number of attacks recorded for this IP.", null=True
+    )
+    reports = models.IntegerField(
+        help_text="Number of reports recorded for this IP.", null=True
+    )
 
     class Meta:
         """Set Blocklist model metadata."""

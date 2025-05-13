@@ -216,13 +216,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Matches detected software versions to CVEs from NIST NVD and CISA's Known Exploited Vulnerabilities Catalog.",
     ),
-    "dnstwist": ScanSchema(
+    "dns_twist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=False,
         cpu="2048",
         memory="16384",
         description="Domain name permutation engine for detecting similar registered domains.",
+        max_concurrent_tasks=10000,
     ),
     "dotgov": ScanSchema(
         type="fargate",
@@ -376,7 +377,7 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
-    "updateBlocklist": ScanSchema(
+    "update_blocklist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,
