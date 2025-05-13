@@ -492,9 +492,12 @@ def get_stats_org_ids(current_user, filters):
     # Case 3: Analytics view
     elif is_analytics_user(current_user):
         # Get organizations by region
+        print("Analytics user")
+
         if regions_filter:
+            print("Regions filter: {}".format(regions_filter))
             organizations_by_region = Organization.objects.filter(
-                regionId__in=regions_filter
+                region_id__in=regions_filter
             ).values_list("id", flat=True)
             organization_ids.update(organizations_by_region)
         # Get organizations by tag
