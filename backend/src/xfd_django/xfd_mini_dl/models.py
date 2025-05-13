@@ -1391,6 +1391,7 @@ class Webpage(models.Model):
         db_column="domain_id",
         blank=True,
         null=True,
+        related_name="webpages",
         help_text="The domain associated with the webpage.",
     )
     discovered_by = models.ForeignKey(
@@ -2978,6 +2979,11 @@ class PortScanSummary(models.Model):
     )
     unique_service_count = models.IntegerField(
         null=True, blank=True, help_text="Number of unique services."
+    )
+    risky_service_group_counts = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Dictionary of risky_service_group values and their counts",
     )
 
     class Meta:
