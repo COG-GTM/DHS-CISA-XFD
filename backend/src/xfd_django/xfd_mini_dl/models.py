@@ -1826,11 +1826,6 @@ class VulnScanSummary(models.Model):
         blank=True,
         help_text="Count of Ip addresses that have an open ticket associated with them.",
     )
-    scanned_asset_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of Ip addresses that have been scanned",
-    )
     unique_service_count = models.IntegerField(
         null=True,
         blank=True,
@@ -2376,6 +2371,11 @@ class HostSummary(models.Model):
         null=True,
         blank=True,
         help_text="Number of the hosts that were down in the last scan.",
+    )
+    scanned_asset_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have been scanned",
     )
 
     class Meta:
