@@ -18,7 +18,7 @@ WORKDIR /app/xfd/playwright
 
 # Copy the test runner script
 COPY ../worker/entrypoint.playwright.sh /entrypoint.playwright.sh
-RUN chmod +x worker/entrypoint.playwright.sh
+RUN chmod +x /entrypoint.playwright.sh
 
 # Define entrypoint
 ENTRYPOINT ["/entrypoint.playwright.sh"]
