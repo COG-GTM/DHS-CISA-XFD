@@ -69,20 +69,20 @@ export const Header: React.FC = () => {
       menuItemTitle: 'Overview',
       path: '/',
       users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'Vulnerability Scanning',
-      path: '/VSDashboard',
-      users: STANDARD_USER
     }
+    // {
+    //   menuItemTitle: 'Vulnerability Scanning',
+    //   path: '/VSDashboard',
+    //   users: STANDARD_USER
+    // }
   ].filter(({ users }) => users <= userLevel);
 
   const supportMenuItems: MenuItemType[] = [
-    {
-      menuItemTitle: 'Report Bug',
-      path: '#',
-      users: STANDARD_USER
-    },
+    // {
+    //   menuItemTitle: 'Report Bug',
+    //   path: '#',
+    //   users: STANDARD_USER
+    // },
     {
       menuItemTitle: 'Send Feedback',
       path: 'mailto:vulnerability@mail.cisa.dhs.gov',
@@ -91,16 +91,16 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   const learningCenterMenuItems: MenuItemType[] = [
-    {
-      menuItemTitle: 'Glossary',
-      path: '#',
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'FAQ',
-      path: '#',
-      users: STANDARD_USER
-    },
+    // {
+    //   menuItemTitle: 'Glossary',
+    //   path: '#',
+    //   users: STANDARD_USER
+    // },
+    // {
+    //   menuItemTitle: 'FAQ',
+    //   path: '#',
+    //   users: STANDARD_USER
+    // },
     {
       menuItemTitle: 'CISA Resources',
       path: 'https://www.cisa.gov',

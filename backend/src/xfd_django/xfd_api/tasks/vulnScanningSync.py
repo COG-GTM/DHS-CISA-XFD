@@ -522,6 +522,7 @@ def create_port_scan_summary(summary_date=None):
                 organization=org,
                 latest=True,  # only latest scans
                 time_scanned__isnull=False,
+                state="open",
             )
 
             if not scans.exists():
@@ -530,7 +531,7 @@ def create_port_scan_summary(summary_date=None):
             aggregated = scans.aggregate(
                 start_date=Min("time_scanned"),
                 end_date=Max("time_scanned"),
-                open_port_count=Count("id", filter=Q(state="open")),
+                open_port_count=Count("id"),
                 risky_port_count=Count(
                     "id", filter=Q(risky_service_group__isnull=False)
                 ),
@@ -540,6 +541,17 @@ def create_port_scan_summary(summary_date=None):
                 unique_ip_count=Count("ip_string", distinct=True),
                 unique_service_count=Count("service_name", distinct=True),
             )
+
+            risky_group_data = (
+                scans.filter(risky_service_group__isnull=False)
+                .values("risky_service_group")
+                .annotate(count=Count("id"))
+            )
+
+            # Convert to dict: {group: count}
+            risky_service_group_counts = {
+                item["risky_service_group"]: item["count"] for item in risky_group_data
+            }
 
             PortScanSummary.objects.update_or_create(
                 organization=org,
@@ -552,8 +564,10 @@ def create_port_scan_summary(summary_date=None):
                     "nmi_service_count": aggregated["nmi_service_count"],
                     "unique_ip_count": aggregated["unique_ip_count"],
                     "unique_service_count": aggregated["unique_service_count"],
+                    "risky_service_group_counts": risky_service_group_counts,
                 },
             )
+
     except Exception as e:
         print("Error creating port scan summary: {}".format(e))
 
@@ -788,7 +802,7 @@ def create_vuln_scan_summary(summary_date=None):
             included.filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
             .values("cve_string")
             .annotate(
-                count=Count("id"),
+                count=Count("ip_string"),
                 cvss_base_score=Max(
                     "cvss_base_score"
                 ),  # or Avg if you want to average across tickets
@@ -821,7 +835,7 @@ def create_vuln_scan_summary(summary_date=None):
             .filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
             .values("cve_string")
             .annotate(
-                count=Count("id"),
+                count=Count("ip_string"),
                 cvss_base_score=Max("cvss_base_score"),
                 severity=Max("cvss_severity"),
                 vuln_name=Max("vuln_name"),
@@ -849,7 +863,7 @@ def create_vuln_scan_summary(summary_date=None):
             is_open=True,
             cvss_base_score__isnull=False,
             ip_string__isnull=False,
-            source="nessus",
+            vuln_source="nessus",
             false_positive__in=[False, None],
         )
 
