@@ -125,11 +125,11 @@ export const transformVulnScanData = (
       },
       {
         title: 'Vulnerable Hosts',
-        value: 0 // placeholder value
+        value: latestVulnSummary?.vulnerable_host_count ?? 0
       },
       {
         title: 'Hosts with Unsupported Software',
-        value: 0 // placeholder value
+        value: latestVulnSummary?.unsupported_software_count ?? 0
       }
     ],
     detectedHostsTop5VulnerableHosts: Object.entries(
