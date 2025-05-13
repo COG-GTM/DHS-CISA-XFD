@@ -226,6 +226,7 @@ class PortScanSummaryResponse(BaseModel):
     nmi_service_count: Optional[int] = 0
     unique_ip_count: Optional[int] = 0
     unique_service_count: Optional[int] = 0
+    risky_service_group_counts: Optional[dict] = {}
 
 
 class PortScanServiceSummaryResponse(BaseModel):
