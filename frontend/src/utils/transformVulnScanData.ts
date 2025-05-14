@@ -37,27 +37,23 @@ function getLatestSummary<T extends { summary_date?: string | null }>(
 export const transformVulnScanData = (
   data: StatsTrendsRawData
 ): vulnScanDataTransformed => {
-  if (
-    !data.vuln_scan_summaries ||
-    !Array.isArray(data.vuln_scan_summaries) ||
-    data.vuln_scan_summaries.length === 0
-  ) {
-    return {
-      vulnScanSummary: [],
-      vulnScanKeyMetrics: [],
-      detectedServicesKeyMetrics: [],
-      detectedHostsKeyMetrics: [],
-      detectedHostsTop5VulnerableHosts: []
-    }; // return empty arrays if no data
-  }
-
-  // Find the objects with the latest summary_date
   const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
   const latestHostSummary = getLatestSummary(data.host_summaries);
   // const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
   // const latestPortServiceSummary = getLatestSummary(
   //   data.port_scan_service_summaries
   // );
+  if (!latestVulnSummary && !latestHostSummary) {
+    return {
+      vulnScanSummary: [],
+      vulnScanKeyMetrics: [],
+      detectedServicesKeyMetrics: [],
+      detectedHostsKeyMetrics: [],
+      detectedHostsTop5VulnerableHosts: [],
+      topVulnerabilities: [],
+      topKevVulnerabilities: []
+    }; // return empty arrays if no data
+  }
 
   return {
     vulnScanSummary: [
@@ -142,6 +138,8 @@ export const transformVulnScanData = (
       criticalSeverity: hostData.critical ?? 0,
       all: hostData.total ?? 0,
       rrs: hostData.rrs ?? 0
-    }))
+    })),
+    topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? [],
+    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? []
   };
 };
