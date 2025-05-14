@@ -151,10 +151,9 @@ const theme = createTheme({
             backgroundColor: theme.palette.neutrals.white,
             color: theme.palette.primary.dark,
             border: `1px solid ${theme.palette.primary.dark}`,
-            // fontSize: '14pt',
+
             fontWeight: 'medium',
-            // height: '24px',
-            // padding: '1px 8px 1px 8px',
+
             '&:hover': {
               backgroundColor: theme.palette.primary.light
             }
@@ -167,11 +166,9 @@ const theme = createTheme({
           style: ({ theme }) => ({
             backgroundColor: theme.palette.primary.dark,
             color: theme.palette.neutrals.white,
-            // border: `1px solid ${theme.palette.primary.dark}`,
-            // fontSize: '14pt',
+
             fontWeight: 'medium',
-            // height: '24px',
-            // padding: '1px 8px 1px 8px',
+
             '&:hover': {
               opacity: 0.8
             }
