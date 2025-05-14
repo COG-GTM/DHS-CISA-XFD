@@ -154,7 +154,7 @@ const theme = createTheme({
             // fontSize: '14pt',
             fontWeight: 'medium',
             // height: '24px',
-            padding: '2px 10px 2px 10px',
+            // padding: '1px 8px 1px 8px',
             '&:hover': {
               backgroundColor: theme.palette.primary.light
             }
@@ -171,7 +171,7 @@ const theme = createTheme({
             // fontSize: '14pt',
             fontWeight: 'medium',
             // height: '24px',
-            padding: '2px 10px 2px 10px',
+            // padding: '1px 8px 1px 8px',
             '&:hover': {
               opacity: 0.8
             }
