@@ -6642,6 +6642,13 @@ class Vulnerability(models.Model):
         null=True,
         help_text="The CISA provided KEV information assocaited with KEV vulnerabilities.",
     )
+    ip_string = models.CharField(max_length=255, blank=True, null=True)
+    cvss_vector = models.TextField(blank=True, null=True)
+    severity_int = models.IntegerField(blank=True, null=True)
+    plugin_id = models.TextField(blank=True, null=True)
+    solution = models.TextField(blank=True, null=True)
+    synopsis = models.TextField(blank=True, null=True)
+    results = models.TextField(blank=True, null=True)
 
     class Meta:
         """Set Vulnerability model metadata."""
