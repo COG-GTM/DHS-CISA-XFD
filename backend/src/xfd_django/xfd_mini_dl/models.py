@@ -1496,8 +1496,7 @@ class VulnScan(AutoLengthCheckModel):
         null=True,
         help_text="Id to look up a vulnerability int the CERT Vulnerability Notes Database. https://www.kb.cert.org/vuls/",
     )
-    cpe = models.CharField(
-        max_length=255,
+    cpe = models.TextField(
         blank=True,
         null=True,
         help_text="Common Platform Enumeration (CPE) id for the product the vulnerability was found on.",
