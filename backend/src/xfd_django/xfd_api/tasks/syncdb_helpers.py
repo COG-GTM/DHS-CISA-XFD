@@ -379,9 +379,7 @@ def build_fake_ticket(org):
     if random.random() < 0.7:
         closed_time = None
     else:
-        closed_time = opened_time = timezone.now() - timedelta(
-            days=random.randint(0, 30)
-        )
+        closed_time = timezone.now() - timedelta(days=random.randint(0, 30))
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
