@@ -39,11 +39,11 @@ export const transformVulnScanData = (
 ): vulnScanDataTransformed => {
   const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
   const latestHostSummary = getLatestSummary(data.host_summaries);
-  // const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
+  const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
   // const latestPortServiceSummary = getLatestSummary(
   //   data.port_scan_service_summaries
   // );
-  if (!latestVulnSummary && !latestHostSummary) {
+  if (!latestVulnSummary && !latestHostSummary && !latestPortScanSummary) {
     return {
       vulnScanSummary: [],
       vulnScanKeyMetrics: [],
@@ -51,7 +51,8 @@ export const transformVulnScanData = (
       detectedHostsKeyMetrics: [],
       detectedHostsTop5VulnerableHosts: [],
       topVulnerabilities: [],
-      topKevVulnerabilities: []
+      topKevVulnerabilities: [],
+      riskyServices: []
     }; // return empty arrays if no data
   }
 
@@ -103,15 +104,15 @@ export const transformVulnScanData = (
     detectedServicesKeyMetrics: [
       {
         title: 'Detected Services',
-        value: 0 // placeholder value
+        value: latestPortScanSummary?.open_port_count ?? 0
       },
       {
         title: 'Potentially Risky Services',
-        value: 0 // placeholder value
+        value: latestPortScanSummary?.risky_port_count ?? 0
       },
       {
         title: 'Potential NMI Services',
-        value: 0 // placeholder value
+        value: latestPortScanSummary?.nmi_service_count ?? 0
       }
     ],
     detectedHostsKeyMetrics: [
@@ -140,6 +141,48 @@ export const transformVulnScanData = (
       rrs: hostData.rrs ?? 0
     })),
     topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? [],
-    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? []
+    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? [],
+    riskyServices: [
+      {
+        serviceName: 'FTP',
+        count: latestPortScanSummary?.risky_service_group_counts?.ftp ?? 0
+      },
+      {
+        serviceName: 'SQL',
+        count: latestPortScanSummary?.risky_service_group_counts?.sql ?? 0
+      },
+      {
+        serviceName: 'NETBIOS',
+        count: latestPortScanSummary?.risky_service_group_counts?.netbios ?? 0
+      },
+      {
+        serviceName: 'LDAP',
+        count: latestPortScanSummary?.risky_service_group_counts?.ldap ?? 0
+      },
+      {
+        serviceName: 'RPC',
+        count: latestPortScanSummary?.risky_service_group_counts?.rpc ?? 0
+      },
+      {
+        serviceName: 'IRC',
+        count: latestPortScanSummary?.risky_service_group_counts?.irc ?? 0
+      },
+      {
+        serviceName: 'KERBEROS',
+        count: latestPortScanSummary?.risky_service_group_counts?.kerberos ?? 0
+      },
+      {
+        serviceName: 'RDP',
+        count: latestPortScanSummary?.risky_service_group_counts?.rdp ?? 0
+      },
+      {
+        serviceName: 'TELNET',
+        count: latestPortScanSummary?.risky_service_group_counts?.telnet ?? 0
+      },
+      {
+        serviceName: 'SMB',
+        count: latestPortScanSummary?.risky_service_group_counts?.smb ?? 0
+      }
+    ]
   };
 };

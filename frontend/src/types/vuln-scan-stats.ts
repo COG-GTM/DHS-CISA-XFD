@@ -83,6 +83,18 @@ export interface PortScanSummaries {
   nmi_service_count?: number | null;
   unique_ip_count?: number | null;
   unique_service_count?: number | null;
+  risky_service_group_counts?: {
+    ftp?: number;
+    sql?: number;
+    netbios?: number;
+    ldap?: number;
+    rpc?: number;
+    irc?: number;
+    kerberos?: number;
+    rdp?: number;
+    telnet?: number;
+    smb?: number;
+  } | null;
 }
 
 export interface PortScanServiceSummaries {
@@ -102,6 +114,11 @@ export interface StatsTrendsRawData {
   port_scan_summaries: PortScanSummaries[];
   port_scan_service_summaries: PortScanServiceSummaries[];
   vuln_scan_summaries: VulnScanSummary[];
+}
+
+export interface ServiceData {
+  serviceName: string;
+  count: number;
 }
 
 export interface KeyMetrics {
@@ -129,4 +146,5 @@ export type vulnScanDataTransformed = {
   detectedHostsTop5VulnerableHosts: GraphData[];
   topVulnerabilities: CVEItem[];
   topKevVulnerabilities: CVEItem[];
+  riskyServices: ServiceData[];
 };
