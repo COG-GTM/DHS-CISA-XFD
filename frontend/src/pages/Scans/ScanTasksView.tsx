@@ -108,7 +108,7 @@ export const ScanTasksView: React.FC = () => {
     } catch (e: any) {
       setErrors({
         global:
-          e.status === 422 ? 'Unable to kill scan' : e.message ?? e.toString()
+          e.status === 422 ? 'Unable to kill scan' : (e.message ?? e.toString())
       });
       console.log(e);
     }
@@ -399,7 +399,7 @@ export const ScanTasksView: React.FC = () => {
                     (child, index) => <Box key={index}>{child}</Box>
                   ),
                   exportTitle: 'Scans'
-                }
+                } as any
               }}
               paginationMode="server"
               paginationModel={paginationModel}
