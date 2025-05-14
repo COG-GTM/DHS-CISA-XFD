@@ -374,12 +374,12 @@ def build_fake_ticket(org):
     port = random.choice([21, 22, 80, 443])
     severity = random.choice(["0.0", "1.0", "2.0", "3.0", "4.0"])
     protocol = random.choice(["tcp", "udp"])
-    opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
+    opened_time = timezone.now() - timedelta(days=random.randint(0, 30))
     # 70% chance of ticket being open (closed_timestamp = None)
     if random.random() < 0.7:
         closed_time = None
     else:
-        closed_time = timezone.now() - timedelta(days=random.randint(0, 30))
+        closed_time = opened_time + timedelta(days=random.randint(30, 600))
     return Ticket(
         id=str(uuid.uuid4()),
         ip=ip_record,
