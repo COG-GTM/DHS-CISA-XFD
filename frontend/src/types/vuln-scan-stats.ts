@@ -108,7 +108,14 @@ export interface KeyMetrics {
   title: string;
   value: number;
 }
-
+export interface GraphData {
+  hostName: string;
+  lowSeverity: number;
+  mediumSeverity: number;
+  highSeverity: number;
+  criticalSeverity: number;
+  all: number;
+}
 export type vulnScanDataTransformed = {
   vulnScanSummary: {
     hostScan: string;
@@ -119,4 +126,5 @@ export type vulnScanDataTransformed = {
   vulnScanKeyMetrics: KeyMetrics[];
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];
+  detectedHostsTop5VulnerableHosts: GraphData[];
 };

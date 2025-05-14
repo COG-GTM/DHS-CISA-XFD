@@ -46,7 +46,8 @@ export const transformVulnScanData = (
       vulnScanSummary: [],
       vulnScanKeyMetrics: [],
       detectedServicesKeyMetrics: [],
-      detectedHostsKeyMetrics: []
+      detectedHostsKeyMetrics: [],
+      detectedHostsTop5VulnerableHosts: []
     }; // return empty arrays if no data
   }
 
@@ -120,16 +121,27 @@ export const transformVulnScanData = (
     detectedHostsKeyMetrics: [
       {
         title: 'Detected Hosts',
-        value: 0 // placeholder value
+        value: latestHostSummary?.up_host_count ?? 0
       },
       {
         title: 'Vulnerable Hosts',
-        value: 0 // placeholder value
+        value: latestVulnSummary?.vulnerable_host_count ?? 0
       },
       {
         title: 'Hosts with Unsupported Software',
-        value: 0 // placeholder value
+        value: latestVulnSummary?.unsupported_software_count ?? 0
       }
-    ]
+    ],
+    detectedHostsTop5VulnerableHosts: Object.entries(
+      latestVulnSummary?.top_5_risky_hosts ?? {}
+    ).map(([hostName, hostData]: [string, any]) => ({
+      hostName,
+      lowSeverity: hostData.low ?? 0,
+      mediumSeverity: hostData.medium ?? 0,
+      highSeverity: hostData.high ?? 0,
+      criticalSeverity: hostData.critical ?? 0,
+      all: hostData.total ?? 0,
+      rrs: hostData.rrs ?? 0
+    }))
   };
 };
