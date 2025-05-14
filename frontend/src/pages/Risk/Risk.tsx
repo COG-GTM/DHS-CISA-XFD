@@ -66,7 +66,15 @@ const Risk: React.FC<ContextType> = ({
   search_term,
   setSearchTerm
 }) => {
-  const { showMaps, user, apiPost, apiGet, logout } = useAuthContext();
+  const {
+    showMaps,
+    user,
+    apiPost,
+    apiGet,
+    logout,
+    userMustSign,
+    isLoggingOut
+  } = useAuthContext();
 
   const [stats, setStats] = useState<Stats | undefined>(undefined);
   const [isUpdateStateFormOpen, setIsUpdateStateFormOpen] = useState(false);
@@ -148,7 +156,6 @@ const Risk: React.FC<ContextType> = ({
     [riskFilters]
   );
 
-  const { userMustSign } = useAuthContext();
   const [isLoginBlockedDialogOpen, setIsLoginBlockedDialogOpen] =
     useState(false);
   const [maintenanceNotification, setMaintenanceNotification] =
@@ -159,12 +166,12 @@ const Risk: React.FC<ContextType> = ({
   }, [fetchStats, riskFilters]);
 
   useEffect(() => {
-    if (user) {
+    if (!isLoggingOut && user) {
       if (!user.state || user.state === '') {
         setIsUpdateStateFormOpen(true);
       }
     }
-  }, [user]);
+  }, [user, isLoggingOut]);
 
   useEffect(() => {
     const fetchAndCheckMaintenance = async () => {
