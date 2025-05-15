@@ -114,8 +114,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
         "${data.aws_ssm_parameter.worker_signature_private_key.arn}",
         "${data.aws_ssm_parameter.worker_signature_public_key.arn}",
         "${data.aws_ssm_parameter.xpanse_api_key.arn}",
-        "${data.aws_ssm_parameter.xpanse_auth_id.arn}",
-        "${data.aws_ssm_parameter.xpanse_org_sync_bucket_name.arn}"
+        "${data.aws_ssm_parameter.xpanse_auth_id.arn}"
       ]
     },
     {
@@ -419,10 +418,6 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "WORKER_SIGNATURE_PUBLIC_KEY",
         "valueFrom": "${data.aws_ssm_parameter.worker_signature_public_key.arn}"
-      },
-      {
-        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
-        "valueFrom": "${data.aws_ssm_parameter.xpanse_org_sync_bucket_name.arn}"
       }
     ]
   }

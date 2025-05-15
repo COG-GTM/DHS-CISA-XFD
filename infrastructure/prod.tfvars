@@ -134,3 +134,4 @@ automated_test_reports_bucket_name = "cisa-crossfeed-prod-automated-test-reports
 ssm_qualys_username                = "/crossfeed/staging/QUALYS_USERNAME"
 ssm_qualys_password                = "/crossfeed/staging/QUALYS_PASSWORD"
 ssm_nist_api_key                   = "/crossfeed/staging/NIST_API_KEY"
+crossfeed-xpanse-org-sync          = "crossfeed-xpanse-org-sync-prod"
