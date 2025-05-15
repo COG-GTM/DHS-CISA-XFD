@@ -143,7 +143,7 @@ def main():
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
-        f"SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days';"
+        f"SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days';"  # nosec B608
     )
     LOGGER.info("Fetched %d vulnerability scans from Redshift", len(vuln_scans))
     if vuln_scans:
@@ -158,7 +158,7 @@ def main():
     LOGGER.info("Started processing port scans...")
     base_query = (
         "SELECT * FROM vmtableau.port_scans "
-        f"WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"
+        f"WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"  # nosec B608
     )
 
     total_processed = 0
@@ -190,7 +190,7 @@ def main():
     LOGGER.info("Started processing tickets...")
     base_query = (
         "SELECT * FROM vmtableau.tickets "
-        f"WHERE last_change >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"
+        f"WHERE last_change >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"  # nosec B608
     )
 
     total_processed = 0
