@@ -108,6 +108,7 @@ ssm_redshift_password                = "/crossfeed/integration/REDSHIFT_PASSWORD
 ssm_qualys_username                  = "/crossfeed/staging/QUALYS_USERNAME"
 ssm_qualys_password                  = "/crossfeed/staging/QUALYS_PASSWORD"
 ssm_nist_api_key                     = "/crossfeed/staging/NIST_API_KEY"
+ssm_vs_pull_date_range               = "/crossfeed/staging/VS_PULL_DATE_RANGE"
 create_elasticache_cluster           = true
 matomo_availability_zone             = "us-east-1a"
 create_email_sender_instance         = false
