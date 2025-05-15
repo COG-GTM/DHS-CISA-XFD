@@ -125,13 +125,20 @@ export interface KeyMetrics {
   title: string;
   value: number;
 }
-export interface GraphData {
+export interface Top5VulnerableHostsGraphData {
   hostName: string;
   lowSeverity: number;
   mediumSeverity: number;
   highSeverity: number;
   criticalSeverity: number;
   all: number;
+}
+export interface SeverityByProminenceGraphData {
+  vulnType: string;
+  lowSeverity: number;
+  mediumSeverity: number;
+  highSeverity: number;
+  criticalSeverity: number;
 }
 export type vulnScanDataTransformed = {
   vulnScanSummary: {
@@ -143,8 +150,9 @@ export type vulnScanDataTransformed = {
   vulnScanKeyMetrics: KeyMetrics[];
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];
-  detectedHostsTop5VulnerableHosts: GraphData[];
+  detectedHostsTop5VulnerableHosts: Top5VulnerableHostsGraphData[];
   topVulnerabilities: CVEItem[];
   topKevVulnerabilities: CVEItem[];
   riskyServices: ServiceData[];
+  severityByProminence: SeverityByProminenceGraphData[];
 };

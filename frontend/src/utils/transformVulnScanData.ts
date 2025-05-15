@@ -52,7 +52,8 @@ export const transformVulnScanData = (
       detectedHostsTop5VulnerableHosts: [],
       topVulnerabilities: [],
       topKevVulnerabilities: [],
-      riskyServices: []
+      riskyServices: [],
+      severityByProminence: []
     }; // return empty arrays if no data
   }
 
@@ -141,48 +142,6 @@ export const transformVulnScanData = (
       rrs: hostData.rrs ?? 0
     })),
     topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? [],
-    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? [],
-    riskyServices: [
-      {
-        serviceName: 'FTP',
-        count: latestPortScanSummary?.risky_service_group_counts?.ftp ?? 0
-      },
-      {
-        serviceName: 'SQL',
-        count: latestPortScanSummary?.risky_service_group_counts?.sql ?? 0
-      },
-      {
-        serviceName: 'NETBIOS',
-        count: latestPortScanSummary?.risky_service_group_counts?.netbios ?? 0
-      },
-      {
-        serviceName: 'LDAP',
-        count: latestPortScanSummary?.risky_service_group_counts?.ldap ?? 0
-      },
-      {
-        serviceName: 'RPC',
-        count: latestPortScanSummary?.risky_service_group_counts?.rpc ?? 0
-      },
-      {
-        serviceName: 'IRC',
-        count: latestPortScanSummary?.risky_service_group_counts?.irc ?? 0
-      },
-      {
-        serviceName: 'KERBEROS',
-        count: latestPortScanSummary?.risky_service_group_counts?.kerberos ?? 0
-      },
-      {
-        serviceName: 'RDP',
-        count: latestPortScanSummary?.risky_service_group_counts?.rdp ?? 0
-      },
-      {
-        serviceName: 'TELNET',
-        count: latestPortScanSummary?.risky_service_group_counts?.telnet ?? 0
-      },
-      {
-        serviceName: 'SMB',
-        count: latestPortScanSummary?.risky_service_group_counts?.smb ?? 0
-      }
-    ]
+    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? []
   };
 };
