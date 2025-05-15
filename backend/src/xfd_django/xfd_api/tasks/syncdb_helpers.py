@@ -378,6 +378,7 @@ def build_fake_host_summaries():
                     "host_ready_count": host_ready_count,
                     "up_host_count": up_host_count,
                     "down_host_count": down_host_count,
+                    "scanned_asset_count": total_count,
                 },
             )
         except Exception as e:
