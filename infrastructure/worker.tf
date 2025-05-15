@@ -419,6 +419,7 @@ resource "aws_ecs_task_definition" "worker" {
         "name": "VS_PULL_DATE_RANGE",
         "valueFrom": "${data.aws_ssm_parameter.ssm_vs_pull_date_range.arn}"
       },
+      {
         "name": "WORKER_SIGNATURE_PUBLIC_KEY",
         "valueFrom": "${data.aws_ssm_parameter.worker_signature_public_key.arn}"
       }
