@@ -67,6 +67,8 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 IS_LOCAL = os.getenv("IS_LOCAL")
 
+VS_PULL_DATE_RANGE = os.getenv("VS_PULL_DATE_RANGE", "2")
+
 
 def handler(event):
     """Handle execution of the vulnerability scanning sync task.
@@ -81,6 +83,7 @@ def handler(event):
     Returns:
         dict: Response containing the status code and message.
     """
+    print("VS_PULL_DATE_RANGE: ", VS_PULL_DATE_RANGE)
     try:
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
@@ -140,7 +143,7 @@ def main():
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '90 days';"
+        f"SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days';"
     )
     LOGGER.info("Fetched %d vulnerability scans from Redshift", len(vuln_scans))
     if vuln_scans:
@@ -155,7 +158,7 @@ def main():
     LOGGER.info("Started processing port scans...")
     base_query = (
         "SELECT * FROM vmtableau.port_scans "
-        "WHERE time >= GETDATE() - INTERVAL '90 days'"
+        f"WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"
     )
 
     total_processed = 0
@@ -169,7 +172,9 @@ def main():
         chunk_number += 1
 
     if total_processed == 0:
-        LOGGER.warning("No port scans found in Redshift for the last 90 days.")
+        LOGGER.warning(
+            f"No port scans found in Redshift for the last {VS_PULL_DATE_RANGE} days."
+        )
     else:
         LOGGER.info(
             "Processed %d total port scans across %d chunks",
@@ -185,7 +190,7 @@ def main():
     LOGGER.info("Started processing tickets...")
     base_query = (
         "SELECT * FROM vmtableau.tickets "
-        "WHERE last_change >= GETDATE() - INTERVAL '90 days'"
+        f"WHERE last_change >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"
     )
 
     total_processed = 0
@@ -199,7 +204,9 @@ def main():
         chunk_number += 1
 
     if total_processed == 0:
-        LOGGER.warning("No tickets found in Redshift for the last 90 days.")
+        LOGGER.warning(
+            f"No tickets found in Redshift for the last {VS_PULL_DATE_RANGE} days."
+        )
     else:
         LOGGER.info(
             "Processed %d total tickets across %d chunks",

@@ -114,6 +114,7 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
           "${data.aws_ssm_parameter.ssm_dmz_api_key.arn}",
           "${data.aws_ssm_parameter.ssm_dmz_sync_endpoint.arn}",
           "${data.aws_ssm_parameter.ssm_nist_api_key.arn}"
+          "${data.aws_ssm_parameter.ssm_vs_pull_date_range.arn}"
         ]
     },
     {
@@ -414,7 +415,11 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "CHECKSUM_SALT",
         "valueFrom": "${data.aws_ssm_parameter.checksum_salt.arn}"
-      }
+      },
+      {
+        "name": "VS_PULL_DATE_RANGE",
+        "valueFrom": "${data.aws_ssm_parameter.ssm_vs_pull_date_range.arn}"
+      },
     ]
   }
 ]
@@ -512,6 +517,8 @@ data "aws_ssm_parameter" "ssm_redshift_user" { name = var.ssm_redshift_user }
 data "aws_ssm_parameter" "ssm_redshift_password" { name = var.ssm_redshift_password }
 
 data "aws_ssm_parameter" "ssm_dmz_api_key" { name = var.ssm_dmz_api_key }
+
+data "aws_ssm_parameter" "ssm_vs_pull_date_range" { name = var.vs_pull_date_range }
 
 data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpoint }
 
