@@ -848,6 +848,12 @@ variable "ssm_dmz_api_key" {
   default     = "/crossfeed/staging/DMZ_API_KEY"
 }
 
+variable "ssm_vs_pull_date_range" {
+  description = "ssm_vs_pull_date_range"
+  type        = string
+  default     = "/crossfeed/staging/VS_PULL_DATE_RANGE"
+}
+
 variable "ssm_dmz_sync_endpoint" {
   description = "ssm_dmz_sync_endpoint"
   type        = string

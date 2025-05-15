@@ -55,7 +55,7 @@ SAMPLE_STATES = ["Virginia", "California", "Colorado"]
 SAMPLE_REGION_IDS = ["1", "2", "3"]
 ORGANIZATION_CHUNK_SIZE = 50
 FAKE_VULN_SCAN_COUNT = 2
-FAKE_PORT_SCAN_COUNT = 2
+FAKE_PORT_SCAN_COUNT = 20
 FAKE_HOST_COUNT = 2
 FAKE_TICKET_COUNT = 2
 # Load sample data files
@@ -267,13 +267,33 @@ def build_fake_port_scan(org):
         "method": random.choice(["probed", "banner", "snmp", "ssl-cert"]),
         "name": random.choice(["http", "ssh", "tcpwrapped", "ftp", "mysql"]),
     }
+    risky_service_group = random.choice(
+        [
+            "rdp",
+            "telnet",
+            "smb",
+            "ldap",
+            "netbios",
+            "ftp",
+            "rpc",
+            "sql",
+            "irc",
+            "kerberos",
+            None,
+            None,
+            None,
+        ]
+    )
+    nmi_group = (
+        risky_service_group if risky_service_group in ["smb", "telnet", "rdp"] else None
+    )
 
     return PortScan(
         id=str(uuid.uuid4()),
         ip=ip_record,
         ip_string=ip_string,
         organization=org,
-        latest=random.choice([True, False]),
+        latest=random.choice([True, True, True, True, False]),
         port=random.choice([22, 80, 443, 8080, 33542]),
         protocol=random.choice(["tcp", "udp"]),
         reason=random.choice(["syn-ack", "response", "reset", "none"]),
@@ -282,14 +302,12 @@ def build_fake_port_scan(org):
         service_confidence=int(service_info["conf"]),
         service_method=service_info["method"],
         source="nmap",
-        state=random.choice(["open", "closed", "filtered", "silent"]),
+        state=random.choice(["open", "open", "open", "open", "silent"]),
         time_scanned=timezone.make_aware(
             fake.date_time_between(start_date="-1y", end_date="now")
         ),
-        nmi_service_group="NMI",
-        risky_service_group=random.choice(
-            ["Potentially Risky Service", "Known Exploited Service"]
-        ),
+        nmi_service_group=nmi_group,
+        risky_service_group=risky_service_group,
     )
 
 
@@ -360,6 +378,7 @@ def build_fake_host_summaries():
                     "host_ready_count": host_ready_count,
                     "up_host_count": up_host_count,
                     "down_host_count": down_host_count,
+                    "scanned_asset_count": total_count,
                 },
             )
         except Exception as e:
@@ -372,9 +391,9 @@ def build_fake_ticket(org):
     ip_record, ip_string = create_ip_within_org_cidr(org)
     cve = Cve.objects.order_by("?").first()
     port = random.choice([21, 22, 80, 443])
-    severity = random.choice(["0.0", "1.0", "2.0", "3.0", "4.0"])
+    severity = random.choice(["1.0", "2.0", "3.0", "4.0"])
     protocol = random.choice(["tcp", "udp"])
-    opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
+    opened_time = timezone.now() - timedelta(days=random.randint(0, 30))
     # 70% chance of ticket being open (closed_timestamp = None)
     if random.random() < 0.7:
         closed_time = None
@@ -1153,7 +1172,8 @@ def create_vuln_normal_views(database):
                 t.is_kev::bool as is_kev,
                 t.service_name as service_string,
                 t.is_risky::bool as is_risky_service,
-                null as os, --t.os as os --Not seeing this in the ticket
+                --null as os, --t.os as os --Not seeing this in the ticket
+                t.operating_system as os,
                 null as cwe,
                 vs.cpe as cpe,
                 null as references,
@@ -1161,7 +1181,15 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
+                null as kev_results,
+                --Additional fields requested:
+                t.ip_string,
+                vs.cvss_vector,
+                t.cvss_severity as severity_int,
+                vs.plugin_id,
+                vs.solution,
+                vs.synopsis,
+                vs.plugin_output as results
             FROM ticket t
             LEFT JOIN LATERAL (
                 SELECT te.*
@@ -1215,7 +1243,15 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
+                null as kev_results,
+                --Additional Data requested
+                sv.ip_string,
+                null AS cvss_vector,
+                null::int AS severity_int,
+                null as plugin_id,
+                null AS solution,
+                null AS synopsis,
+                null AS results
             FROM shodan_vulns as sv
             LEFT JOIN LATERAL (
                 SELECT sub_domain_id
@@ -1260,8 +1296,16 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
-            FROM (
+                null as kev_results,
+                --Additional Data requested
+                null AS ip_string,
+                null AS cvss_vector,
+                null::int AS severity_int,
+                null as plugin_id,
+                null AS solution,
+                null AS synopsis,
+                null AS results
+                FROM (
                 SELECT
                     ce.credential_exposures_uid::text AS vuln_id,
                     'credential_breach' AS scan_source,

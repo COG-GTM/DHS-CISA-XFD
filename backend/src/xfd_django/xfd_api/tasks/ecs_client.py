@@ -113,6 +113,7 @@ class ECSClient:
                             ),
                             "XPANSE_API_KEY": os.getenv("XPANSE_API_KEY"),
                             "XPANSE_AUTH_ID": os.getenv("XPANSE_AUTH_ID"),
+                            "VS_PULL_DATE_RANGE": os.getenv("VS_PULL_DATE_RANGE", "90"),
                         },
                         detach=True,
                     )
