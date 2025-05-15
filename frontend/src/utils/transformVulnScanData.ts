@@ -142,6 +142,71 @@ export const transformVulnScanData = (
       rrs: hostData.rrs ?? 0
     })),
     topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? [],
-    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? []
+    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? [],
+    riskyServices: [
+      {
+        serviceName: 'FTP',
+        count: latestPortScanSummary?.risky_service_group_counts?.ftp ?? 0
+      },
+      {
+        serviceName: 'SQL',
+        count: latestPortScanSummary?.risky_service_group_counts?.sql ?? 0
+      },
+      {
+        serviceName: 'NETBIOS',
+        count: latestPortScanSummary?.risky_service_group_counts?.netbios ?? 0
+      },
+      {
+        serviceName: 'LDAP',
+        count: latestPortScanSummary?.risky_service_group_counts?.ldap ?? 0
+      },
+      {
+        serviceName: 'RPC',
+        count: latestPortScanSummary?.risky_service_group_counts?.rpc ?? 0
+      },
+      {
+        serviceName: 'IRC',
+        count: latestPortScanSummary?.risky_service_group_counts?.irc ?? 0
+      },
+      {
+        serviceName: 'KERBEROS',
+        count: latestPortScanSummary?.risky_service_group_counts?.kerberos ?? 0
+      },
+      {
+        serviceName: 'RDP',
+        count: latestPortScanSummary?.risky_service_group_counts?.rdp ?? 0
+      },
+      {
+        serviceName: 'TELNET',
+        count: latestPortScanSummary?.risky_service_group_counts?.telnet ?? 0
+      },
+      {
+        serviceName: 'SMB',
+        count: latestPortScanSummary?.risky_service_group_counts?.smb ?? 0
+      }
+    ],
+    severityByProminence: [
+      {
+        vulnType: 'KEV',
+        lowSeverity: latestVulnSummary?.low_kev_count ?? 0,
+        mediumSeverity: latestVulnSummary?.medium_kev_count ?? 0,
+        highSeverity: latestVulnSummary?.high_kev_count ?? 0,
+        criticalSeverity: latestVulnSummary?.critical_kev_count ?? 0
+      },
+      {
+        vulnType: 'Distinct',
+        lowSeverity: latestVulnSummary?.unique_low_severity_count ?? 0,
+        mediumSeverity: latestVulnSummary?.unique_medium_severity_count ?? 0,
+        highSeverity: latestVulnSummary?.unique_high_severity_count ?? 0,
+        criticalSeverity: latestVulnSummary?.unique_critical_severity_count ?? 0
+      },
+      {
+        vulnType: 'All',
+        lowSeverity: latestVulnSummary?.low_severity_count ?? 0,
+        mediumSeverity: latestVulnSummary?.medium_severity_count ?? 0,
+        highSeverity: latestVulnSummary?.high_severity_count ?? 0,
+        criticalSeverity: latestVulnSummary?.critical_severity_count ?? 0
+      }
+    ]
   };
 };
