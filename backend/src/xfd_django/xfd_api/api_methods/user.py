@@ -192,17 +192,6 @@ def get_users(current_user):
             | is_regional_admin(current_user)
             | is_analytics_user(current_user)
         ):
-            print(
-                "Unauthorized access attempt by user in /users: {}".format(
-                    (
-                        not is_regional_admin(current_user),
-                        (
-                            not is_global_view_admin(current_user),
-                            (not is_analytics_user(current_user)),
-                        ),
-                    )
-                )(not is_analytics_user(current_user))
-            )
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         users = User.objects.all().prefetch_related("roles__organization")
@@ -371,17 +360,6 @@ def get_users_v2(state, region_id, invite_pending, current_user):
             | is_global_view_admin(current_user)
             | is_analytics_user(current_user)
         ):
-            print(
-                "Unauthorized access attempt by user in /v2/users: {}".format(
-                    (
-                        not is_regional_admin(current_user),
-                        (
-                            not is_global_view_admin(current_user),
-                            (not is_analytics_user(current_user)),
-                        ),
-                    )
-                )(not is_analytics_user(current_user))
-            )
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         filters = {}

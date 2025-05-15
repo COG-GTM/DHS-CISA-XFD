@@ -40,7 +40,6 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
 
     # Ensure organization_ids is not empty
     if not filtered_org_ids:
-        print("Filtered organization IDs are empty.")
         raise HTTPException(
             status_code=404,
             detail="No organizations found for the user with the specified filters.",
@@ -110,7 +109,6 @@ async def get_stats(filter_data, current_user, redis_client, request: Request):
         }
     except Exception as e:
         raise HTTPException(
-            print("Error in get_stats: {}".format(e)),
             status_code=500,
             detail="An unexpected error occurred: {}".format(e),
         )
