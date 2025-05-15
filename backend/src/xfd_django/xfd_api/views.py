@@ -85,6 +85,7 @@ from .schema_models.cve import Cve as CveSchema
 from .schema_models.cve import GetAllCvesResponse
 from .schema_models.dmz_sync import (
     AsmSyncResponse,
+    CensysSyncResponse,
     CredSyncResponse,
     DataSource,
     ShodanSyncResponse,
@@ -1643,6 +1644,30 @@ async def shodan_sync(
     )
 
 
+@api_router.post(
+    "/dmz_sync/censys_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=CensysSyncResponse,
+    tags=["DMZ Sync"],
+)
+async def censys_sync(
+    censys_data: SyncRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return Censys data for a provided org with checksum verification."""
+    response_data = dmz_sync_methods.dmz_censys_sync(censys_data, current_user)
+
+    response_serializable = serialize_custom(response_data)
+
+    # Consistent JSON encoding: sort keys to ensure deterministic output
+    response_json_obj = {"status": "ok", "payload": response_serializable}
+    json_str = json.dumps(response_json_obj, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_str).encode()).hexdigest()
+    return JSONResponse(
+        content=response_json_obj, headers={"X-Salted-Checksum": checksum}
+    )
+
+
 # POST
 @api_router.post(
     "/dmz_sync/cred_sync",
@@ -1682,10 +1707,8 @@ async def cred_sync(
     - JSON response containing credential breach findings and a checksum header.
     """
     response_data = dmz_sync_methods.dmz_cred_sync(cred_sync_data, current_user)
-    # # response_json = json.dumps(response_data, sort_keys=True)
-    # Convert response data to a JSON-serializable format
 
-    # return response_data
+    # Convert response data to a JSON-serializable format
     response_serializable = serialize_custom(response_data)
 
     response_json = json.dumps(response_serializable, default=str, sort_keys=True)

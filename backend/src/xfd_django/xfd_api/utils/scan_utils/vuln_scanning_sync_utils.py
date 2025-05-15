@@ -660,6 +660,7 @@ def enforce_latest_flag_port_scan():
                 id
             FROM port_scan
             WHERE time_scanned IS NOT NULL
+            AND time_scanned > NOW() - INTERVAL '90 days'
             ORDER BY organization_id, ip_string, port, time_scanned DESC
         )
         UPDATE port_scan

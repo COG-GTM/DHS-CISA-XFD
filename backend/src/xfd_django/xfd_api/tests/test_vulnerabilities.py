@@ -1,6 +1,6 @@
 """Test Vulnerability API."""
 # Standard Python Libraries
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 
 # Third-Party Libraries
@@ -24,13 +24,18 @@ from xfd_mini_dl.models import (
     ShodanAssets,
     ShodanVulns,
     SubDomains,
+    Ticket,
+    TicketEvent,
     User,
     UserType,
     Vulnerability,
+    VulnScan,
 )
 
 client = TestClient(app)
 
+created_at_date = datetime.now() - timedelta(days=10)
+updated_at_date = created_at_date + timedelta(days=2)
 
 bad_id = "c0effe93-3647-475a-a0c5-0b629c348590"
 search_fields = {
@@ -45,21 +50,28 @@ search_fields = {
     "ip": "127.116.195.151",
     "organization_name": "Wizardly Agency",
     "tag": "",
+    "earliest_date": created_at_date,
+    "latest_date": created_at_date + timedelta(days=10),
+    "created_at": created_at_date,
+    "updated_at": updated_at_date,
+    "os": "Linux",
+    "public_id": "CVE-1234-5678",
+    "scan_type": "shodan",
 }
+
+
+def iso_to_datetime(iso_date):
+    """Convert ISO 8601 date string to datetime object."""
+    return datetime.fromisoformat(iso_date.replace("Z", "+00:00"))
 
 
 @pytest.fixture
 def sample_domain_ip_vuln(organization):
     """Create subdomain, IP, and their association."""
     # Create required DataSource
-    data_source_domain = DataSource.objects.create(
+    data_source_domain, _ = DataSource.objects.get_or_create(
         name="Test Source",
-        description="Used in tests",
-        last_run=datetime.now().date(),
-    )
-
-    data_source_shodan = DataSource.objects.create(
-        name="shodan", description="Test shodan source", last_run=datetime.now().date()
+        defaults={"description": "Used in tests", "last_run": datetime.now()},
     )
 
     # Create the IP
@@ -88,11 +100,11 @@ def sample_domain_ip_vuln(organization):
         ip_string=ip.ip,
         port=search_fields["port"],
         protocol="http",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(),
         product="Apache httpd",
         server="Apache",
         tags=["self-signed", "vpn"],
-        data_source=data_source_shodan,
+        data_source=data_source_domain,
     )
 
     ShodanVulns.objects.create(
@@ -101,13 +113,14 @@ def sample_domain_ip_vuln(organization):
         ip_string=ip.ip,
         port=search_fields["port"],
         protocol="http",
+        # timestamp=datetime.now().date(),
         timestamp=datetime.now().date(),
-        cve="CVE-1234-5678",
+        cve=search_fields["public_id"],
         severity=search_fields["severity"],
         cvss=8.7,
         summary="Sample vuln",
         name=search_fields["title"],
-        data_source=data_source_shodan,
+        data_source=data_source_domain,
         cpe=[search_fields["cpe"]],
     )
 
@@ -143,6 +156,88 @@ def organization():
     yield organization
 
 
+@pytest.fixture
+def shodan_vuln_setup(db):
+    """Create Shodan vuln for testing."""
+    organization = Organization.objects.create(
+        name="Shodan Org", root_domains=[], ip_blocks=[]
+    )
+
+    ip = Ip.objects.create(
+        ip="192.0.2.5", organization=organization, ip_hash="efgh5678", from_cidr=True
+    )
+
+    datasource, _ = DataSource.objects.get_or_create(
+        name="shodan",
+        defaults={"description": "Used in tests", "last_run": datetime.now()},
+    )
+
+    ShodanVulns.objects.create(
+        organization=organization,
+        organization_name=organization.name,
+        ip=ip,
+        port="80",
+        protocol="tcp",
+        timestamp=datetime.now(),
+        cve=search_fields["public_id"],
+        severity="High",
+        cvss=9.1,
+        summary="SSL-related issue",
+        product="nginx",
+        tags=["shodan", "vpn"],
+        data_source=datasource,
+    )
+
+
+@pytest.fixture
+def ticket_vuln_setup(db):
+    """Create ticket for testing."""
+    organization = Organization.objects.create(
+        name="Test Org", root_domains=[], ip_blocks=[]
+    )
+
+    ip = Ip.objects.create(
+        ip="192.0.2.1", organization=organization, ip_hash="abcd1234", from_cidr=True
+    )
+
+    scan = VulnScan.objects.create(
+        ip=ip,
+        ip_string=ip.ip,
+        cve_string=search_fields["public_id"],
+        organization=organization,
+        cvss_base_score="7.5",
+        cvss_vector="AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        description="Example vulnerability",
+    )
+
+    ticket = Ticket.objects.create(
+        # id="ticket1",
+        ip=ip,
+        ip_string=ip.ip,
+        organization=organization,
+        vuln_name="Example vulnerability",
+        cve_string=search_fields["public_id"],
+        is_kev=True,
+        is_open=True,
+        vuln_port=80,
+        port_protocol="tcp",
+        service_name="httpd",
+        operating_system="Linux",
+        vuln_source="shodan",
+        opened_timestamp=search_fields["earliest_date"],
+        updated_timestamp=search_fields["latest_date"],
+    )
+
+    TicketEvent.objects.create(
+        ticket=ticket,
+        vuln_scan=scan,
+        action="OPENED",
+        event_timestamp=datetime.now(),
+    )
+    transaction.commit()
+    return ticket
+
+
 # Create the views
 @pytest.fixture(autouse=True, scope="session")
 def ensure_vuln_views_created(django_db_setup, django_db_blocker):
@@ -157,6 +252,7 @@ def ensure_vuln_views_created(django_db_setup, django_db_blocker):
 def refresh_vuln_views(django_db_blocker):
     """Refresh the materialized vuln views after data is inserted."""
     with django_db_blocker.unblock():
+        create_vuln_normal_views("mini_data_lake")
         create_vuln_materialized_views("mini_data_lake")
 
 
@@ -633,3 +729,107 @@ def test_search_vulnerabilities_does_not_exist(user, vulnerability, refresh_vuln
     assert len(data["result"]) == 0, "Result is not an empty array"
     assert "count" in data, "Response does not contain 'count' key"
     assert data["count"] == 0, "Count is not 0"
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_vulnerabilities_by_earliest_and_latest_date(
+    user, ticket_vuln_setup, shodan_vuln_setup, refresh_vuln_views
+):
+    """Test vulnerability."""
+    response = client.post(
+        "/vulnerabilities/search",
+        json={
+            "page": 1,
+            "filters": {
+                "earliest_date": search_fields["earliest_date"].isoformat(),
+                "latest_date": search_fields["latest_date"].isoformat(),
+            },
+            "pageSize": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) > 0
+    for vuln in data["result"]:
+        vuln_date = vuln.get("created_at")
+        assert vuln_date >= search_fields["earliest_date"].isoformat()
+        assert vuln_date <= search_fields["latest_date"].isoformat()
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_vulnerabilities_by_os(user, ticket_vuln_setup, refresh_vuln_views):
+    """Test vulnerability."""
+    response = client.post(
+        "/vulnerabilities/search",
+        json={
+            "page": 1,
+            "filters": {"os": search_fields["os"]},
+            "pageSize": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) > 0
+    for vuln in data["result"]:
+        assert vuln["os"].lower() == search_fields["os"].lower()
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_vulnerabilities_by_public_id(
+    user, ticket_vuln_setup, shodan_vuln_setup, refresh_vuln_views
+):
+    """Test vulnerability."""
+    response = client.post(
+        "/vulnerabilities/search",
+        json={
+            "page": 1,
+            "filters": {"public_id": search_fields["public_id"]},
+            "pageSize": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) > 0
+    for vuln in data["result"]:
+        assert search_fields["public_id"] in (vuln.get("cve") or "") or search_fields[
+            "public_id"
+        ] in (vuln.get("cwe") or "")
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_vulnerabilities_by_scan_type(
+    user, shodan_vuln_setup, refresh_vuln_views
+):
+    """Test vulnerability."""
+    response = client.post(
+        "/vulnerabilities/search",
+        json={
+            "page": 1,
+            "filters": {"scan_type": search_fields["scan_type"]},
+            "pageSize": 25,
+        },
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) > 0
+    for vuln in data["result"]:
+        assert search_fields["scan_type"].lower() in vuln["source"].lower()
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_search_vulnerabilities_by_port(user, shodan_vuln_setup, refresh_vuln_views):
+    """Test vulnerability."""
+    response = client.post(
+        "/vulnerabilities/search",
+        json={"page": 1, "filters": {"port": search_fields["port"]}, "pageSize": 25},
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["result"]) > 0
+    for vuln in data["result"]:
+        assert vuln["port"] == search_fields["port"]

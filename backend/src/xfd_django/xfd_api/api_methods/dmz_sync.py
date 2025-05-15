@@ -339,6 +339,72 @@ def dmz_shodan_sync(shodan_data, current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# POST: /dmz_sync/censys_sync
+def dmz_censys_sync(censys_data, current_user):
+    """Return ASM asset data based on the passed org."""
+    try:
+        if not is_global_write_admin(current_user):
+            raise HTTPException(status_code=403, detail="Unauthorized access.")
+
+        data = censys_data.dict() if hasattr(censys_data, "dict") else censys_data
+        acronym = data.get("acronym")
+        page_size = data.get("page_size")
+        page_num = data.get("page")
+        since_date = data.get("since_date")
+
+        if not since_date:
+            raise HTTPException(status_code=400, detail="since_date is required.")
+
+        try:
+            org = Organization.objects.get(acronym=acronym)
+        except Organization.DoesNotExist:
+            raise HTTPException(status_code=404, detail="Organization not found")
+
+        queryset = SubDomains.objects.filter(
+            organization=org, subdomain_source="censys", last_seen__gte=since_date
+        ).order_by("sub_domain")
+        paginator = Paginator(queryset, page_size)
+
+        try:
+            page = paginator.page(page_num)
+        except PageNotAnInteger:
+            page = paginator.page(1)
+        except EmptyPage:
+            page = []
+
+        page_data = [
+            {
+                "sub_domain_uid": obj.sub_domain_uid,
+                "created_at": obj.created_at,
+                "last_seen": obj.last_seen,
+                "sub_domain": obj.sub_domain,
+                "from_root_domain": obj.from_root_domain,
+                "current": obj.current,
+                "enumerate_subs": obj.enumerate_subs,
+                "identified": obj.identified,
+                "subdomain_source": obj.subdomain_source,
+                "organization_acronym": obj.organization.acronym
+                if obj.organization
+                else None,
+                "data_source_name": obj.data_source.name if obj.data_source else None,
+            }
+            for obj in page
+        ]
+
+        return {
+            "total_pages": paginator.num_pages,
+            "current_page": page_num,
+            "data": {"censys_subdomains": page_data},
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # TODO: CRASM-2568 - Create a unified logger in python backend
+        print("Unexpected error in dmz_censys_sync: {}".format(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def dmz_cred_sync(cred_sync_data, current_user):
     """Return ASM asset data based on the passed org."""
     try:
@@ -489,5 +555,3 @@ def dmz_cred_sync(cred_sync_data, current_user):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
-
-    # Calculate the max total pages between both datasets
