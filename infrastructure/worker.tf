@@ -256,6 +256,10 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "DB_PORT",
         "value": "${var.db_port}"
+      },
+      {
+        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
+        "value": "${var.xpanse_org_sync_bucket_name}"
       }
     ],
     "secrets": [
@@ -414,10 +418,6 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "WORKER_SIGNATURE_PUBLIC_KEY",
         "valueFrom": "${data.aws_ssm_parameter.worker_signature_public_key.arn}"
-      },
-      {
-        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
-        "valueFrom": "${var.xpanse_org_sync_bucket_name}"
       }
     ]
   }
@@ -522,8 +522,6 @@ data "aws_ssm_parameter" "ssm_vs_pull_date_range" { name = var.ssm_vs_pull_date_
 data "aws_ssm_parameter" "ssm_dmz_sync_endpoint" { name = var.ssm_dmz_sync_endpoint }
 
 data "aws_ssm_parameter" "ssm_nist_api_key" { name = var.ssm_nist_api_key }
-
-data "aws_ssm_parameter" "xpanse_org_sync_bucket_name" { name = var.xpanse_org_sync_bucket_name }
 
 resource "aws_s3_bucket" "export_bucket" {
   bucket = var.export_bucket_name
