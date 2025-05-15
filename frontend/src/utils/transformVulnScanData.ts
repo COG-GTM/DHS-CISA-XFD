@@ -51,7 +51,8 @@ export const transformVulnScanData = (
       detectedHostsKeyMetrics: [],
       detectedHostsTop5VulnerableHosts: [],
       topVulnerabilities: [],
-      topKevVulnerabilities: []
+      topKevVulnerabilities: [],
+      severityByProminence: []
     }; // return empty arrays if no data
   }
 
@@ -140,6 +141,29 @@ export const transformVulnScanData = (
       rrs: hostData.rrs ?? 0
     })),
     topVulnerabilities: latestVulnSummary?.top_5_occurring_cves ?? [],
-    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? []
+    topKevVulnerabilities: latestVulnSummary?.top_5_occurring_kevs ?? [],
+    severityByProminence: [
+      {
+        vulnType: 'KEV',
+        lowSeverity: latestVulnSummary?.low_kev_count ?? 0,
+        mediumSeverity: latestVulnSummary?.medium_kev_count ?? 0,
+        highSeverity: latestVulnSummary?.high_kev_count ?? 0,
+        criticalSeverity: latestVulnSummary?.critical_kev_count ?? 0
+      },
+      {
+        vulnType: 'Distinct',
+        lowSeverity: latestVulnSummary?.unique_low_severity_count ?? 0,
+        mediumSeverity: latestVulnSummary?.unique_medium_severity_count ?? 0,
+        highSeverity: latestVulnSummary?.unique_high_severity_count ?? 0,
+        criticalSeverity: latestVulnSummary?.unique_critical_severity_count ?? 0
+      },
+      {
+        vulnType: 'All',
+        lowSeverity: latestVulnSummary?.low_severity_count ?? 0,
+        mediumSeverity: latestVulnSummary?.medium_severity_count ?? 0,
+        highSeverity: latestVulnSummary?.high_severity_count ?? 0,
+        criticalSeverity: latestVulnSummary?.critical_severity_count ?? 0
+      }
+    ]
   };
 };
