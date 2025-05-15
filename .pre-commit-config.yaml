@@ -61,7 +61,7 @@ repos:
       - id: validate_manifest
 
   # Shell script hooks
-  - repo: https://github.com/cisagov/pre-commit-shfmt
+  - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.11.0-1   
     hooks:
       - id: shfmt
