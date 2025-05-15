@@ -378,6 +378,7 @@ def build_fake_host_summaries():
                     "host_ready_count": host_ready_count,
                     "up_host_count": up_host_count,
                     "down_host_count": down_host_count,
+                    "scanned_asset_count": total_count,
                 },
             )
         except Exception as e:
@@ -392,7 +393,7 @@ def build_fake_ticket(org):
     port = random.choice([21, 22, 80, 443])
     severity = random.choice(["1.0", "2.0", "3.0", "4.0"])
     protocol = random.choice(["tcp", "udp"])
-    opened_time = timezone.now() - timedelta(days=random.randint(300, 1000))
+    opened_time = timezone.now() - timedelta(days=random.randint(0, 30))
     # 70% chance of ticket being open (closed_timestamp = None)
     if random.random() < 0.7:
         closed_time = None
@@ -1171,7 +1172,8 @@ def create_vuln_normal_views(database):
                 t.is_kev::bool as is_kev,
                 t.service_name as service_string,
                 t.is_risky::bool as is_risky_service,
-                null as os, --t.os as os --Not seeing this in the ticket
+                --null as os, --t.os as os --Not seeing this in the ticket
+                t.operating_system as os,
                 null as cwe,
                 vs.cpe as cpe,
                 null as references,
@@ -1179,7 +1181,15 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
+                null as kev_results,
+                --Additional fields requested:
+                t.ip_string,
+                vs.cvss_vector,
+                t.cvss_severity as severity_int,
+                vs.plugin_id,
+                vs.solution,
+                vs.synopsis,
+                vs.plugin_output as results
             FROM ticket t
             LEFT JOIN LATERAL (
                 SELECT te.*
@@ -1233,7 +1243,15 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
+                null as kev_results,
+                --Additional Data requested
+                sv.ip_string,
+                null AS cvss_vector,
+                null::int AS severity_int,
+                null as plugin_id,
+                null AS solution,
+                null AS synopsis,
+                null AS results
             FROM shodan_vulns as sv
             LEFT JOIN LATERAL (
                 SELECT sub_domain_id
@@ -1278,8 +1296,16 @@ def create_vuln_normal_views(database):
                 null as needs_population,
                 null as actions,
                 null as structured_data,
-                null as kev_results
-            FROM (
+                null as kev_results,
+                --Additional Data requested
+                null AS ip_string,
+                null AS cvss_vector,
+                null::int AS severity_int,
+                null as plugin_id,
+                null AS solution,
+                null AS synopsis,
+                null AS results
+                FROM (
                 SELECT
                     ce.credential_exposures_uid::text AS vuln_id,
                     'credential_breach' AS scan_source,
