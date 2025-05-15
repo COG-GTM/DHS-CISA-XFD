@@ -256,6 +256,10 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "DB_PORT",
         "value": "${var.db_port}"
+      },
+      {
+        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
+        "value": "${var.crossfeed-xpanse-org-sync}"
       }
     ],
     "secrets": [
@@ -417,11 +421,7 @@ resource "aws_ecs_task_definition" "worker" {
       },
         "name": "WORKER_SIGNATURE_PUBLIC_KEY",
         "valueFrom": "${data.aws_ssm_parameter.worker_signature_public_key.arn}"
-      },
-      {
-        "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
-        "value": "${var.crossfeed-xpanse-org-sync}"
-      },
+      }
     ]
   }
 ]
