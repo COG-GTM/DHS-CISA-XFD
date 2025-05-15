@@ -417,7 +417,7 @@ resource "aws_ecs_task_definition" "worker" {
       },
       {
         "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
-        "valueFrom": "${var.crossfeed-xpanse_org_sync_bucket_name-org-sync}"
+        "valueFrom": "${var.xpanse_org_sync_bucket_name}"
       }
     ]
   }
