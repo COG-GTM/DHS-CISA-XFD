@@ -894,8 +894,8 @@ variable "playwright_worker_ecs_task_definition_family" {
   default     = "crossfeed-playwright-worker-staging-cd"
 }
 
-variable "xpanse_org_sync_bucket_name" {
-  description = "The name of the S3 bucket for Xpanse org sync"
+variable "crossfeed-xpanse-org-sync" {
   type        = string
+  description = "The name of the S3 bucket for Crossfeed Xpanse Org sync"
   default     = "crossfeed-xpanse-org-sync"
 }
