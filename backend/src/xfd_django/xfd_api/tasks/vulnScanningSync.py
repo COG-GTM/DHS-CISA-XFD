@@ -46,7 +46,6 @@ from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
 )
 from xfd_mini_dl.models import (
     Cidr,
-    Host,
     HostSummary,
     NMIServiceGroup,
     Organization,
@@ -56,6 +55,7 @@ from xfd_mini_dl.models import (
     RiskyServiceGroup,
     Sector,
     Ticket,
+    Vulnerability,
     VulnScanSummary,
 )
 
@@ -462,7 +462,8 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
             SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
             SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END) AS host_ready_count,
             SUM(CASE WHEN json_extract_path_text(state, 'up') = 'true' THEN 1 ELSE 0 END) AS up_host_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'false' THEN 1 ELSE 0 END) AS down_host_count
+            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'false' THEN 1 ELSE 0 END) AS down_host_count,
+            COUNT(ip) AS scanned_asset_count,
         FROM vmtableau.hosts
         WHERE last_change >= GETDATE() - INTERVAL '100 days'
         GROUP BY owner;
@@ -529,6 +530,7 @@ def create_port_scan_summary(summary_date=None):
                 organization=org,
                 latest=True,  # only latest scans
                 time_scanned__isnull=False,
+                state="open",
             )
 
             if not scans.exists():
@@ -537,7 +539,7 @@ def create_port_scan_summary(summary_date=None):
             aggregated = scans.aggregate(
                 start_date=Min("time_scanned"),
                 end_date=Max("time_scanned"),
-                open_port_count=Count("id", filter=Q(state="open")),
+                open_port_count=Count("id"),
                 risky_port_count=Count(
                     "id", filter=Q(risky_service_group__isnull=False)
                 ),
@@ -547,6 +549,17 @@ def create_port_scan_summary(summary_date=None):
                 unique_ip_count=Count("ip_string", distinct=True),
                 unique_service_count=Count("service_name", distinct=True),
             )
+
+            risky_group_data = (
+                scans.filter(risky_service_group__isnull=False)
+                .values("risky_service_group")
+                .annotate(count=Count("id"))
+            )
+
+            # Convert to dict: {group: count}
+            risky_service_group_counts = {
+                item["risky_service_group"]: item["count"] for item in risky_group_data
+            }
 
             PortScanSummary.objects.update_or_create(
                 organization=org,
@@ -559,8 +572,10 @@ def create_port_scan_summary(summary_date=None):
                     "nmi_service_count": aggregated["nmi_service_count"],
                     "unique_ip_count": aggregated["unique_ip_count"],
                     "unique_service_count": aggregated["unique_service_count"],
+                    "risky_service_group_counts": risky_service_group_counts,
                 },
             )
+
     except Exception as e:
         print("Error creating port scan summary: {}".format(e))
 
@@ -747,7 +762,7 @@ def create_vuln_scan_summary(summary_date=None):
         ]
 
         # Severity logic using cvss_severity
-        severity_map = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
+        severity_map = {1: "low", 2: "medium", 3: "high", 4: "critical"}
         severity_counts = {
             f"{name}_severity_count": included.filter(cvss_severity=level).count()
             for level, name in severity_map.items()
@@ -795,7 +810,7 @@ def create_vuln_scan_summary(summary_date=None):
             included.filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
             .values("cve_string")
             .annotate(
-                count=Count("id"),
+                count=Count("ip_string"),
                 cvss_base_score=Max(
                     "cvss_base_score"
                 ),  # or Avg if you want to average across tickets
@@ -828,7 +843,7 @@ def create_vuln_scan_summary(summary_date=None):
             .filter(~Q(cve_string__isnull=True), ~Q(cve_string=""))
             .values("cve_string")
             .annotate(
-                count=Count("id"),
+                count=Count("ip_string"),
                 cvss_base_score=Max("cvss_base_score"),
                 severity=Max("cvss_severity"),
                 vuln_name=Max("vuln_name"),
@@ -856,6 +871,8 @@ def create_vuln_scan_summary(summary_date=None):
             is_open=True,
             cvss_base_score__isnull=False,
             ip_string__isnull=False,
+            vuln_source="nessus",
+            false_positive__in=[False, None],
         )
 
         # Base RRS score expression: (cvss_base_score^7) / 1,000,000
@@ -867,21 +884,29 @@ def create_vuln_scan_summary(summary_date=None):
             tickets.values("ip_string")
             .annotate(
                 total=Count("id"),
-                none=Count("id", filter=Q(cvss_severity=0)),
                 low=Count("id", filter=Q(cvss_severity=1)),
                 medium=Count("id", filter=Q(cvss_severity=2)),
                 high=Count("id", filter=Q(cvss_severity=3)),
                 critical=Count("id", filter=Q(cvss_severity=4)),
                 weighted=Sum(weighted_expr),
+                sample_ticket_id=Min("id"),
             )
             .order_by("-weighted")[:5]
         )
 
+        ticket_ids = [str(item["sample_ticket_id"]) for item in risky_host_qs]
+
+        # Build a mapping from ticket_id → domain_id
+        vuln_domain_map = {
+            str(v.id): str(v.domain_id)
+            for v in Vulnerability.objects.filter(id__in=ticket_ids).only(
+                "id", "domain_id"
+            )
+        }
         # Convert to dictionary for JSONField
         top_5_hosts = {
             item["ip_string"]: {
                 "total": item["total"],
-                "none": item["none"],
                 "low": item["low"],
                 "medium": item["medium"],
                 "high": item["high"],
@@ -889,6 +914,7 @@ def create_vuln_scan_summary(summary_date=None):
                 "rrs": round(item["weighted"], 2)
                 if item["weighted"] is not None
                 else 0,
+                "domain_id": vuln_domain_map.get(str(item["sample_ticket_id"])),
             }
             for item in risky_host_qs
         }
@@ -906,12 +932,6 @@ def create_vuln_scan_summary(summary_date=None):
                     vuln_source="nessus",
                 ).count(),
                 "vulnerable_host_count": included.values("ip_string")
-                .distinct()
-                .count(),
-                "scanned_asset_count": Host.objects.filter(
-                    organization=org, latest_vulnscan_timestamp__isnull=False
-                )
-                .values("ip_string")
                 .distinct()
                 .count(),
                 "unique_service_count": open_tickets.filter(vuln_source="nmap")

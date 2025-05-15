@@ -301,7 +301,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const formContents = (
     <DialogContent>
       <Grid container spacing={1}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography>First Name</Typography>
           <TextField
             sx={textFieldStyling}
@@ -323,7 +323,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             disabled={user?.user_type !== 'globalAdmin'}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography>Last Name</Typography>
           <TextField
             sx={textFieldStyling}
@@ -345,7 +345,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             disabled={user?.user_type !== 'globalAdmin'}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Typography>Email</Typography>
           <TextField
             sx={textFieldStyling}
@@ -367,7 +367,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             disabled={editUserDialogOpen}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Typography>State</Typography>
           <Select
             displayEmpty
@@ -397,7 +397,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </Typography>
           )}
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Typography>Organization</Typography>
           {newUserDialogOpen ? (
             <Alert severity="info">
@@ -458,7 +458,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </>
           )}
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Typography mt={1}>User Type</Typography>
           <RadioGroup
             aria-label="User Type"
@@ -497,7 +497,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </Typography>
           )}
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           {apiErrorStates.getAddUserError && (
             <Alert severity="error">
               Error adding user to the database:{' '}
