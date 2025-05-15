@@ -8,7 +8,6 @@ frontend_domain                      = "integration.crossfeed.cyber.dhs.gov"
 frontend_lambda_function             = "crossfeed-security-headers-integration"
 frontend_bucket                      = "integration.crossfeed.cyber.dhs.gov"
 api_domain                           = "api.integration.crossfeed.cyber.dhs.gov"
-frontend_cert_arn                    = "arn:aws:acm:us-east-1:957221700844:certificate/6c26ea05-4806-460a-a639-ee204ebde894"
 db_name                              = "crossfeed-integration-db2"
 db_port                              = 5432
 db_table_name                        = "cfintegrationdb"

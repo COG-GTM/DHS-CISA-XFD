@@ -3,7 +3,7 @@ import { initializeUser, User, Organization as OrganizationType } from 'types';
 import ConfirmDialog from 'components/Dialog/ConfirmDialog';
 import InfoDialog from 'components/Dialog/InfoDialog';
 import { useAuthContext } from 'context';
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Paper, Stack, Typography } from '@mui/material';
 import {
   DataGrid,
   GridColDef,
@@ -395,8 +395,7 @@ export const RegionUsers: React.FC = () => {
       <Box
         sx={{
           maxWidth: '1700px',
-          m: 'auto',
-          backgroundColor: 'white'
+          m: 'auto'
         }}
       >
         <Box sx={{ m: 'auto', maxWidth: '1500px', px: 2, py: 5 }}>
@@ -412,7 +411,7 @@ export const RegionUsers: React.FC = () => {
           >
             Pending Requests
           </Typography>
-          <Box sx={{ height: '387px', pb: 2 }}>
+          <Paper sx={{ height: '387px' }}>
             <DataGrid
               apiRef={apiRefPendingUsers}
               columns={pendingCols}
@@ -420,7 +419,7 @@ export const RegionUsers: React.FC = () => {
               disableRowSelectionOnClick
               autoPageSize
             />
-          </Box>
+          </Paper>
           {errorStates.getUsersError && (
             <Alert severity="error">
               Error retrieving users from the database:{' '}
@@ -431,14 +430,14 @@ export const RegionUsers: React.FC = () => {
             variant="h2"
             style={{ fontSize: '1.25rem' }}
             pb={2}
-            pt={3}
+            pt={5}
           >
             Members of
             {user?.user_type === 'regionalAdmin'
               ? ` Region ${regionalAdminId}`
               : ' all regions'}
           </Typography>
-          <Box sx={{ height: '667px' }}>
+          <Paper sx={{ height: '667px' }}>
             <DataGrid
               apiRef={apiRefCurrentUsers}
               columns={memberCols}
@@ -447,7 +446,7 @@ export const RegionUsers: React.FC = () => {
               slots={{ toolbar: GridToolbar }}
               autoPageSize
             />
-          </Box>
+          </Paper>
         </Box>
       </Box>
       <ConfirmDialog
@@ -462,7 +461,7 @@ export const RegionUsers: React.FC = () => {
               To complete the approval process, select one organization for this
               user to join.
             </Typography>
-            <Box sx={{ height: 600, margin: 'auto', pb: 2 }}>
+            <Paper sx={{ height: 600, margin: 'auto' }}>
               <DataGrid
                 checkboxSelection
                 onRowSelectionModelChange={onRowSelectionModelChange}
@@ -482,7 +481,7 @@ export const RegionUsers: React.FC = () => {
                     }
                 }}
               />
-            </Box>
+            </Paper>
             {errorStates.getOrgsError && (
               <Alert severity="error">
                 Error retrieving organizations: {errorStates.getOrgsError}
