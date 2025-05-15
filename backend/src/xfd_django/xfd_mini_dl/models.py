@@ -1429,6 +1429,7 @@ class Webpage(models.Model):
         db_column="domain_id",
         blank=True,
         null=True,
+        related_name="webpages",
         help_text="The domain associated with the webpage.",
     )
     discovered_by = models.ForeignKey(
@@ -1862,11 +1863,6 @@ class VulnScanSummary(models.Model):
         null=True,
         blank=True,
         help_text="Count of Ip addresses that have an open ticket associated with them.",
-    )
-    scanned_asset_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of Ip addresses that have been scanned",
     )
     unique_service_count = models.IntegerField(
         null=True,
@@ -2413,6 +2409,11 @@ class HostSummary(models.Model):
         null=True,
         blank=True,
         help_text="Number of the hosts that were down in the last scan.",
+    )
+    scanned_asset_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Count of Ip addresses that have been scanned",
     )
 
     class Meta:
@@ -3016,6 +3017,11 @@ class PortScanSummary(models.Model):
     )
     unique_service_count = models.IntegerField(
         null=True, blank=True, help_text="Number of unique services."
+    )
+    risky_service_group_counts = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Dictionary of risky_service_group values and their counts",
     )
 
     class Meta:
@@ -6456,10 +6462,16 @@ class Blocklist(models.Model):
     """Define Blocklist Model."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    ip = InetAddressField(
-        null=False, blank=False, unique=True
-    )  # <-- Removed trailing comma
-    created_at = models.DateTimeField(auto_now=False)  # <-- Removed trailing comma
+    ip = InetAddressField(null=False, blank=False, unique=True)
+    created_at = models.DateTimeField(auto_now=False)
+    updated_at = models.DateTimeField(auto_now=True)
+    malicious = models.BooleanField(default=False)
+    attacks = models.IntegerField(
+        help_text="Number of attacks recorded for this IP.", null=True
+    )
+    reports = models.IntegerField(
+        help_text="Number of reports recorded for this IP.", null=True
+    )
 
     class Meta:
         """Set Blocklist model metadata."""
@@ -6668,6 +6680,13 @@ class Vulnerability(models.Model):
         null=True,
         help_text="The CISA provided KEV information assocaited with KEV vulnerabilities.",
     )
+    ip_string = models.CharField(max_length=255, blank=True, null=True)
+    cvss_vector = models.TextField(blank=True, null=True)
+    severity_int = models.IntegerField(blank=True, null=True)
+    plugin_id = models.TextField(blank=True, null=True)
+    solution = models.TextField(blank=True, null=True)
+    synopsis = models.TextField(blank=True, null=True)
+    results = models.TextField(blank=True, null=True)
 
     class Meta:
         """Set Vulnerability model metadata."""
