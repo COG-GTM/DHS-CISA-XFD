@@ -140,7 +140,7 @@ def main():
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '2 days';"
+        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '90 days';"
     )
     LOGGER.info("Fetched %d vulnerability scans from Redshift", len(vuln_scans))
     if vuln_scans:
@@ -155,7 +155,7 @@ def main():
     LOGGER.info("Started processing port scans...")
     base_query = (
         "SELECT * FROM vmtableau.port_scans "
-        "WHERE time >= GETDATE() - INTERVAL '2 days'"
+        "WHERE time >= GETDATE() - INTERVAL '90 days'"
     )
 
     total_processed = 0
@@ -169,7 +169,7 @@ def main():
         chunk_number += 1
 
     if total_processed == 0:
-        LOGGER.warning("No port scans found in Redshift for the last 2 days.")
+        LOGGER.warning("No port scans found in Redshift for the last 90 days.")
     else:
         LOGGER.info(
             "Processed %d total port scans across %d chunks",
@@ -185,7 +185,7 @@ def main():
     LOGGER.info("Started processing tickets...")
     base_query = (
         "SELECT * FROM vmtableau.tickets "
-        "WHERE last_change >= GETDATE() - INTERVAL '2 days'"
+        "WHERE last_change >= GETDATE() - INTERVAL '90 days'"
     )
 
     total_processed = 0
@@ -199,7 +199,7 @@ def main():
         chunk_number += 1
 
     if total_processed == 0:
-        LOGGER.warning("No tickets found in Redshift for the last 2 days.")
+        LOGGER.warning("No tickets found in Redshift for the last 90 days.")
     else:
         LOGGER.info(
             "Processed %d total tickets across %d chunks",
