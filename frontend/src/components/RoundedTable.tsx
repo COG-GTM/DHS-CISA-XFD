@@ -1,11 +1,15 @@
 import React from 'react';
 import {
   Alert,
+  Box,
+  Card,
+  Divider,
   Table,
   TableBody,
   TableCell,
   TableHead,
-  TableRow
+  TableRow,
+  Typography
 } from '@mui/material';
 import { SxProps } from '@mui/system';
 
@@ -32,7 +36,8 @@ const tableSx: SxProps = {
   borderCollapse: 'separate',
   borderSpacing: '0 16px',
   width: '100%',
-  tableLayout: 'auto'
+  tableLayout: 'auto',
+  display: { xs: 'none', sm: 'table' }
 };
 
 const rowHeadSx: SxProps = {
@@ -88,38 +93,67 @@ export default function RoundedTable<T extends Record<string, any>>({
   }
 
   return (
-    <Table sx={tableStyles}>
-      <TableHead>
-        <TableRow sx={rowHeadStyles}>
-          {columns.map((col, colIndex) => (
-            <TableCell
-              key={colIndex}
-              sx={{
-                minWidth: col.minWidth || '65px',
-                p: col.headerPadding || 0
-              }}
-              align={col.textAlign || 'left'}
-            >
-              {col.header}
-            </TableCell>
-          ))}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {data.map((row, rowIndex) => (
-          <TableRow key={rowIndex} sx={rowBodyStyles}>
+    <>
+      <Table sx={tableStyles}>
+        <TableHead>
+          <TableRow sx={rowHeadStyles}>
             {columns.map((col, colIndex) => (
               <TableCell
                 key={colIndex}
-                sx={cellBodyStyles}
+                sx={{
+                  minWidth: col.minWidth || '65px',
+                  p: col.headerPadding || 0
+                }}
                 align={col.textAlign || 'left'}
               >
-                {col.render ? col.render(row[col.key], row) : row[col.key]}
+                {col.header}
               </TableCell>
             ))}
           </TableRow>
+        </TableHead>
+        <TableBody>
+          {data.map((row, rowIndex) => (
+            <TableRow key={rowIndex} sx={rowBodyStyles}>
+              {columns.map((col, colIndex) => (
+                <TableCell
+                  key={colIndex}
+                  sx={cellBodyStyles}
+                  align={col.textAlign || 'left'}
+                >
+                  {col.render ? col.render(row[col.key], row) : row[col.key]}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Box sx={{ display: { xs: 'block', sm: 'none' }, textAlign: 'center' }}>
+        {data.map((row, rowIndex) => (
+          <Card
+            key={rowIndex}
+            sx={{ mb: 2, pt: 1, px: 0, borderColor: 'neutrals.light' }}
+            variant="outlined"
+          >
+            {columns.map((col, colIndex) => (
+              <Box key={colIndex}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  align="center"
+                >
+                  {col.header}
+                </Typography>
+                <Typography variant="body2" align="center" sx={{ py: 2 }}>
+                  {col.render ? col.render(row[col.key], row) : row[col.key]}
+                </Typography>
+                {colIndex < columns.length - 1 && (
+                  <Divider sx={{ my: 1, borderColor: 'neutrals.light' }} />
+                )}
+              </Box>
+            ))}
+          </Card>
         ))}
-      </TableBody>
-    </Table>
+      </Box>
+    </>
   );
 }
