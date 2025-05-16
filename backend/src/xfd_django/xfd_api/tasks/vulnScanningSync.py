@@ -17,6 +17,7 @@ import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
+from django.core.management import call_command
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
 from django.db.models.functions import Power
 from django.utils import timezone
@@ -130,6 +131,8 @@ def fetch_in_chunks(base_query: str, chunk_size: int = 5000):
 def main():
     """Execute the vulnerability scanning synchronization task."""
     LOGGER.info("Started VulnScanningSync scan...")
+
+    call_command("syncmdl", dangerouslyforce=False)
 
     # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
@@ -1153,7 +1156,6 @@ def parse_request_data(request):
             try:
                 request[field] = json.loads(val)
             except Exception as e:
-                LOGGER.warning("Failed to parse %s: %s", field, e)
                 request[field] = {}
         elif not isinstance(val, (dict, list)):  # corrupt or malformed
             request[field] = {} if field == "agency" else []
