@@ -165,7 +165,12 @@ class ECSClient:
             overrides={
                 "cpu": cpu,
                 "memory": memory,
-                "containerOverrides": container_env,
+                "containerOverrides": [
+                    {
+                        "name": "main",
+                        "environment": container_env,
+                    }
+                ],
             },
         )
         return response
