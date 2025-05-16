@@ -131,7 +131,13 @@ export default function RoundedTable<T extends Record<string, any>>({
         {data.map((row, rowIndex) => (
           <Card
             key={rowIndex}
-            sx={{ mb: 2, pt: 1, px: 0, borderColor: 'neutrals.light' }}
+            sx={{
+              mb: 2,
+              pt: 1,
+              px: 0,
+              borderColor: 'neutrals.light',
+              borderRadius: 2
+            }}
             variant="outlined"
           >
             {columns.map((col, colIndex) => (
