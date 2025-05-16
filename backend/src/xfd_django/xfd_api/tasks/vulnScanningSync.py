@@ -1155,7 +1155,7 @@ def parse_request_data(request):
         if isinstance(val, str):
             try:
                 request[field] = json.loads(val)
-            except Exception as e:
+            except Exception:
                 request[field] = {}
         elif not isinstance(val, (dict, list)):  # corrupt or malformed
             request[field] = {} if field == "agency" else []
