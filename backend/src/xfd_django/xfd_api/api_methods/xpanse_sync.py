@@ -149,14 +149,8 @@ def create_xpanse_service(service_dict, data_source, org_record):
         LOGGER.warning("Error creating/updating service: %s", e)
     for sub_domain in sub_domains:
         try:
-            sub_domain_record = create_sub_domain(sub_domain, data_source, org_record)
+            create_sub_domain(sub_domain, data_source, org_record)
             LOGGER.info("Sub Domain %s created: %s", sub_domain["sub_domain"], created)
-            xpanse_service.sub_domains.add(sub_domain_record)
-            LOGGER.info(
-                "Linked Sub Domain %s to Service %s",
-                sub_domain["sub_domain"],
-                service_dict["service_id"],
-            )
         except Exception as e:
             LOGGER.warning("Error creating or linking sub domain to service: %s", e)
     for cve in cves:

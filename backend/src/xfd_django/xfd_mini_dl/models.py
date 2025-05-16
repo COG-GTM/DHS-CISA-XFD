@@ -5501,6 +5501,7 @@ class SubDomains(AutoLengthCheckModel):
     cloud_hosted = models.BooleanField(
         db_column="cloud_hosted",
         default=False,
+        null=True,
         help_text="T/F is this subdomain cloud hosted",
     )  # XFD column
     ssl = models.JSONField(
