@@ -69,12 +69,12 @@ export const Header: React.FC = () => {
       menuItemTitle: 'Overview',
       path: '/',
       users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Vulnerability Scanning',
+      path: '/VSDashboard',
+      users: STANDARD_USER
     }
-    // {
-    //   menuItemTitle: 'Vulnerability Scanning',
-    //   path: '/VSDashboard',
-    //   users: STANDARD_USER
-    // }
   ].filter(({ users }) => users <= userLevel);
 
   const supportMenuItems: MenuItemType[] = [
