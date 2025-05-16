@@ -55,8 +55,8 @@ resource "aws_instance" "email_sender" {
   depends_on = [
     aws_iam_role.email_sender,
     aws_iam_instance_profile.email_sender,
-    aws_iam_policy_attachment.email_sender_ec2_policy_1,
-    aws_iam_policy_attachment.email_sender_ec2_policy_2,
+    aws_iam_role_policy_attachment.email_sender_ssm_core,
+    aws_iam_role_policy_attachment.email_sender_ssm_service,
     aws_security_group.allow_internal,
     aws_subnet.backend
   ]
