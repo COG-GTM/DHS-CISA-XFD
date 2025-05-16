@@ -1,9 +1,12 @@
 """API methods to support Scan endpoints."""
 
 # Standard Python Libraries
+from datetime import timedelta
 import os
 
 # Third-Party Libraries
+from django.db.models import Count, Q
+from django.utils import timezone
 from fastapi import HTTPException
 from xfd_mini_dl.models import Organization, OrganizationTag, Scan
 
@@ -12,47 +15,63 @@ from ..schema_models.scan import SCAN_SCHEMA, NewScan
 from ..tasks.lambda_client import LambdaClient
 
 
-# GET: /scans
-def list_scans(current_user):
-    """List scans."""
+# GET: /scans  (now with metrics baked in)
+def list_scans(current_user, window_days: int = 7):
+    """List scans, their schema/orgs, plus total_orgs and orgs_with_results in the last `window_days`."""
     try:
         # Check if the user is a GlobalViewAdmin
         if not is_global_view_admin(current_user):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
 
-        # Fetch scans and prefetch related tags
-        scans = Scan.objects.prefetch_related("tags").all()
+        cutoff = timezone.now() - timedelta(days=window_days)
+
+        # Fetch scans, prefetch related tags, and annotate with metrics
+        scans_qs = (
+            Scan.objects.prefetch_related("tags")
+            .annotate(
+                total_orgs=Count("organizations", distinct=True),
+                orgs_with_results=Count(
+                    "scan_results__organization",
+                    filter=Q(scan_results__latest_result_at__gte=cutoff),
+                    distinct=True,
+                ),
+            )
+            .all()
+        )
 
         # Fetch all organizations
         organizations = Organization.objects.values("id", "name")
 
         # Convert to list of dicts with related tags
         scan_list = []
-        for scan in scans:
-            scan_data = {
-                "id": scan.id,
-                "created_at": scan.created_at,
-                "updated_at": scan.updated_at,
-                "name": scan.name,
-                "arguments": scan.arguments,
-                "frequency": scan.frequency,
-                "last_run": scan.last_run,
-                "is_granular": scan.is_granular,
-                "is_user_modifiable": scan.is_user_modifiable,
-                "is_single_scan": scan.is_single_scan,
-                "manual_run_pending": scan.manual_run_pending,
-                "concurrent_tasks": scan.concurrent_tasks,
-                "tags": [
-                    {
-                        "id": tag.id,
-                        "created_at": tag.created_at,
-                        "updated_at": tag.updated_at,
-                        "name": tag.name,
-                    }
-                    for tag in scan.tags.all()
-                ],
-            }
-            scan_list.append(scan_data)
+        for scan in scans_qs:
+            scan_list.append(
+                {
+                    "id": scan.id,
+                    "created_at": scan.created_at,
+                    "updated_at": scan.updated_at,
+                    "name": scan.name,
+                    "arguments": scan.arguments,
+                    "frequency": scan.frequency,
+                    "last_run": scan.last_run,
+                    "is_granular": scan.is_granular,
+                    "is_user_modifiable": scan.is_user_modifiable,
+                    "is_single_scan": scan.is_single_scan,
+                    "manual_run_pending": scan.manual_run_pending,
+                    "concurrent_tasks": scan.concurrent_tasks,
+                    "tags": [
+                        {
+                            "id": tag.id,
+                            "created_at": tag.created_at,
+                            "updated_at": tag.updated_at,
+                            "name": tag.name,
+                        }
+                        for tag in scan.tags.all()
+                    ],
+                    "total_orgs": scan.total_orgs,
+                    "orgs_with_results": scan.orgs_with_results,
+                }
+            )
 
         # Return response with scans, schema, and organizations
         response = {
@@ -67,6 +86,7 @@ def list_scans(current_user):
         raise http_exc
 
     except Exception as e:
+        print("Error fetching scans: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

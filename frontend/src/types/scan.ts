@@ -12,6 +12,8 @@ export interface Scan {
   organizations: [];
   tags: OrganizationTag[];
   concurrent_tasks: number;
+  total_orgs: number;
+  orgs_with_results: number;
 }
 
 // ScanSchema. TODO: synchronize this with the ScanSchema type in the backend.

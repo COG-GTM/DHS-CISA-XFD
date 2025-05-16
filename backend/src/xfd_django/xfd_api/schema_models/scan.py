@@ -29,6 +29,8 @@ class Scan(BaseModel):
     concurrent_tasks: Optional[int]
     tags: Optional[List[OrganizationalTags]] = []
     organizations: Optional[List[Organization]] = []
+    total_orgs: int
+    orgs_with_results: int
 
 
 class ScanSchema(BaseModel):

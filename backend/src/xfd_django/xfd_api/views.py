@@ -887,9 +887,16 @@ async def call_delete_saved_search(
     response_model=scanSchema.GetScansResponseModel,
     tags=["Scans"],
 )
-async def list_scans(current_user: User = Depends(get_current_active_user)):
-    """Retrieve a list of all scans."""
-    return scan.list_scans(current_user)
+async def list_scans(
+    current_user: User = Depends(get_current_active_user),
+    window_days: int = Query(
+        7,
+        ge=1,
+        description="How many days back to look for scan results",
+    ),
+):
+    """List all scans and annotate with metrics."""
+    return scan.list_scans(current_user, window_days)
 
 
 @api_router.get(

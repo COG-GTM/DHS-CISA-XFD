@@ -58,6 +58,8 @@ export interface ScansRow {
   last_run: string;
   description: string;
   concurrent_tasks: number;
+  total_orgs: number;
+  orgs_with_results: number;
 }
 
 const ScansView: React.FC = () => {
@@ -93,7 +95,7 @@ const ScansView: React.FC = () => {
         scans: Scan[];
         organizations: Organization[];
         schema: ScanSchema;
-      }>('/scans/');
+      }>(`/scans?window_days=7`);
       const tags = await apiGet<OrganizationTag[]>(`/organizations/tags`);
       setScans(scans);
       setScanSchema(schema);
@@ -221,7 +223,9 @@ const ScansView: React.FC = () => {
           : `${formatDistanceToNow(parseISO(scan.last_run))} ago`,
       description: scanSchema[scan.name]?.description,
       concurrent_tasks: scan.concurrent_tasks,
-      is_single_scan: scan.is_single_scan
+      is_single_scan: scan.is_single_scan,
+      total_orgs: scan.total_orgs,
+      orgs_with_results: scan.orgs_with_results
     };
   });
 
