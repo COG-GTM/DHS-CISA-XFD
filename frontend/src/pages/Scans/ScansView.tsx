@@ -33,7 +33,8 @@ import {
   DialogContentText,
   IconButton,
   Paper,
-  DialogTitle
+  DialogTitle,
+  Tooltip
 } from '@mui/material';
 //Needed for the CustomToolbar:
 // import CustomToolbar from 'components/DataGrid/CustomToolbar';
@@ -64,6 +65,7 @@ export interface ScansRow {
 
 const ScansView: React.FC = () => {
   const { apiGet, apiPost, apiDelete } = useAuthContext();
+  const [windowDays] = useState<number>(7); // Number of days to look back for results when computing success rate
   const [selectedId, setSelectedId] = useState<string>('');
   const [selectedName, setSelectedName] = useState<string>('');
   const [scans, setScans] = useState<Scan[]>([]);
@@ -95,7 +97,7 @@ const ScansView: React.FC = () => {
         scans: Scan[];
         organizations: Organization[];
         schema: ScanSchema;
-      }>(`/scans?window_days=7`);
+      }>(`/scans?window_days=${windowDays}`);
       const tags = await apiGet<OrganizationTag[]>(`/organizations/tags`);
       setScans(scans);
       setScanSchema(schema);
@@ -106,7 +108,7 @@ const ScansView: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
-  }, [apiGet]);
+  }, [apiGet, windowDays]);
 
   const deleteRow = async (id: string) => {
     try {
@@ -300,7 +302,36 @@ const ScansView: React.FC = () => {
         );
       }
     },
-    { field: 'description', headerName: 'Description', minWidth: 250, flex: 5 }
+    { field: 'description', headerName: 'Description', minWidth: 250, flex: 5 },
+    {
+      field: 'success_rate',
+      headerName: 'Success Rate',
+      minWidth: 140,
+      flex: 1,
+      align: 'right',
+      headerAlign: 'right',
+      renderCell: (params: GridRenderCellParams) => {
+        const total = params.row.total_orgs as number;
+        const succeeded = params.row.orgs_with_results as number;
+        const pct = total
+          ? `${((succeeded / total) * 100).toFixed(1)}%`
+          : 'N/A';
+        return (
+          <Tooltip
+            title={
+              <>
+                <div>Organizations Scanned: {total}</div>
+                <div>Organizations with Results: {succeeded}</div>
+                <div>Result Window: {windowDays} days</div>
+              </>
+            }
+            placement="top"
+          >
+            <span>{pct}</span>
+          </Tooltip>
+        );
+      }
+    }
   ];
 
   //To-do: Add a button to toolbar to import scans

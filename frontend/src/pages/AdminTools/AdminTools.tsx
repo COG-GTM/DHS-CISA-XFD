@@ -14,7 +14,7 @@ export const AdminTools: React.FC = () => {
     setValue(new_value);
   };
   return (
-    <Container maxWidth="lg" sx={{ py: '10px' }}>
+    <Container maxWidth="xl" sx={{ py: 1 }}>
       <Box sx={{ width: '100%', typography: 'body1' }}>
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

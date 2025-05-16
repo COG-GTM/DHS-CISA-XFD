@@ -15,7 +15,7 @@ from ..schema_models.scan import SCAN_SCHEMA, NewScan
 from ..tasks.lambda_client import LambdaClient
 
 
-# GET: /scans  (now with metrics baked in)
+# GET: /scans
 def list_scans(current_user, window_days: int = 7):
     """List scans, their schema/orgs, plus total_orgs and orgs_with_results in the last `window_days`."""
     try:
