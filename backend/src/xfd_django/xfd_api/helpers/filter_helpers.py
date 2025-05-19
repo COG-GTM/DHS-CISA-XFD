@@ -205,17 +205,6 @@ def apply_vuln_filters(
             | Q(cwe__icontains=vulnerability_filters.public_id)
         )
 
-    # # Filter by scan type (source with case-insensitive match)
-    # if (
-    #     vulnerability_filters.scan_type
-    #     and vulnerability_filters.scan_type.lower() != "any"
-    # ):
-    #     q &= Q(source__iexact=vulnerability_filters.scan_type)
-
-    # # Filter by scan source (scan_source with case-insensitive match)
-    # if getattr(vulnerability_filters, "scan_source", "").lower() != "any":
-    #     q &= Q(scan_source__iexact=vulnerability_filters.scan_source)
-
     # Filter by scan type (source with case-insensitive match)
     if (
         vulnerability_filters.scan_type is not None
