@@ -432,6 +432,7 @@ def build_fake_ticket(org):
         cvss_base_score=cvss_base_score,
         cvss_version="3.1",
         vuln_name=cve.name
+        + " "
         + random.choice(
             [
                 "Super Alarming Vuln",
