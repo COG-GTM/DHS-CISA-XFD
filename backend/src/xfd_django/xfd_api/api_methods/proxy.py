@@ -16,13 +16,8 @@ async def proxy_request(
     path: Optional[str] = None,
     cookie_name: Optional[str] = None,
 ):
-    """
-    Proxy requests to the specified URL.
-
-    Includes optional cookie handling.
-    """
-    print("Proxying request to target URL: {}".format(target_url))
     """Proxy requests to the specified target URL with optional cookie handling."""
+    print("Proxying request to target URL: {}".format(target_url))
     headers = dict(request.headers)
 
     # Include specified cookie in the headers if present
@@ -32,7 +27,6 @@ async def proxy_request(
         if cookies:
             headers["Cookie"] = "{}={}".format(cookie_name, cookies)
 
-    print("This is the path: ", path)
     # Send the request to the target
     async with httpx.AsyncClient(timeout=httpx.Timeout(90.0)) as client:
         proxy_response = await client.request(
