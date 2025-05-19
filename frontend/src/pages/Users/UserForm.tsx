@@ -494,7 +494,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               value="analytics"
               control={<Radio color="primary" />}
               label="Analytics"
-              disabled={user?.userType !== 'globalAdmin'}
+              disabled={user?.user_type !== 'globalAdmin'}
             />
           </RadioGroup>
           {formErrors.user_type && (

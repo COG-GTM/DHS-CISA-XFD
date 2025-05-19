@@ -2037,8 +2037,8 @@ if (typeof window.Matomo !== 'object') {
             var dP = X.XMLHttpRequest
               ? new X.XMLHttpRequest()
               : X.ActiveXObject
-              ? new ActiveXObject('Microsoft.XMLHTTP')
-              : null;
+                ? new ActiveXObject('Microsoft.XMLHTTP')
+                : null;
             dP.open('POST', aM, true);
             dP.onreadystatechange = function () {
               if (
