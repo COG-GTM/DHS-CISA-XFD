@@ -101,7 +101,7 @@ export default function RoundedTable<T extends Record<string, any>>({
               <TableCell
                 key={colIndex}
                 sx={{
-                  minWidth: col.minWidth || '65px',
+                  minWidth: col.minWidth || '66px',
                   p: col.headerPadding || 0
                 }}
                 align={col.textAlign || 'left'}
