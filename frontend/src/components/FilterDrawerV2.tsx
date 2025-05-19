@@ -37,15 +37,6 @@ export const FilterDrawer: FC<
 
   const DrawerList = (
     <Box sx={{ width: drawerWidth }} role="presentation">
-      {/* <Box
-        sx={{
-          height: '4rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#f0f0f0'
-        }}
-      /> */}
       <Toolbar />
       <Toolbar />
       <Toolbar sx={{ justifyContent: 'center' }}>
@@ -86,28 +77,23 @@ export const FilterDrawer: FC<
     <Drawer
       open={isFilterDrawerOpen}
       variant={isMobile ? 'temporary' : 'persistent'}
-      // variant="temporary"
-      // ModalProps={{ keepMounted: isMobile }}
-      ModalProps={{ keepMounted: true }}
+      ModalProps={{ keepMounted: isMobile }}
       onClose={() => setIsFilterDrawerOpen(false)}
       sx={{
         width: drawerWidth,
-        overflow: 'scroll',
-        '&::-webkit-scrollbar': {
-          display: 'none'
-        },
         '& .MuiDrawer-paper': {
           width: drawerWidth,
-          height: '100vh',
-          overflow: 'hidden',
+          overflow: 'auto',
           backgroundColor: 'neutrals.white',
-          borderRight: '1px solid',
-          borderColor: 'neutrals.light'
+          overscrollBehavior: 'contain',
+          // Hide scrollbar for Firefox, IE/Edge, and Chrome/Safari/Opera
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
         }
-        // height: isMobile ? 'unset' : 'calc(100vh - 24px)'
-        // height: 'unset'
       }}
-      // PaperProps={{ style: { position: 'unset' } }}
     >
       {DrawerList}
     </Drawer>

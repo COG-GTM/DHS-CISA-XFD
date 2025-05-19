@@ -134,16 +134,13 @@ export const RiskRoot = styled('div')(() => ({
     display: 'flex',
     flexFlow: 'row nowrap',
     alignItems: 'stretch',
-    margin: '0',
-    overflowY: 'hidden'
+    margin: '0'
   },
   [`& .${classesRisk.contentWrapper}`]: {
     position: 'relative',
     flex: '1 1 auto',
-    height: '100vh',
     display: 'flex',
     flexFlow: 'column nowrap',
-    overflowY: 'hidden',
     marginTop: '1rem'
   },
   [`& .${classesRisk.content}`]: {
