@@ -930,10 +930,10 @@ def synchronize(target_app_label=None, using=None):
         process_m2m_tables(schema_editor, ordered_models, database)
 
         if target_app_label == "xfd_mini_dl":
-            create_vuln_normal_views(database)
-            create_vuln_materialized_views(database)
             create_domain_view(database)
             create_service_view(database)
+            create_vuln_normal_views(database)
+            create_vuln_materialized_views(database)
 
         cleanup_stale_tables(ordered_models, database)
 
