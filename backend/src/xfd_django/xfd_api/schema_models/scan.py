@@ -156,6 +156,15 @@ SCAN_SCHEMA = {
         description="Passive discovery of subdomains from public certificates",
         max_concurrent_tasks=5,
     ),
+    "censys_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Censys asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
+    ),
     "censysCertificates": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -185,10 +194,11 @@ SCAN_SCHEMA = {
     "credential_sync": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Credential breach and exposure data from commercial mdl",
+        max_concurrent_tasks=5,
     ),
     "vulnScanningSync": ScanSchema(
         type="fargate",
@@ -206,13 +216,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Matches detected software versions to CVEs from NIST NVD and CISA's Known Exploited Vulnerabilities Catalog.",
     ),
-    "dnstwist": ScanSchema(
+    "dns_twist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=False,
         cpu="2048",
         memory="16384",
         description="Domain name permutation engine for detecting similar registered domains.",
+        max_concurrent_tasks=10000,
     ),
     "dotgov": ScanSchema(
         type="fargate",
@@ -366,7 +377,7 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
-    "updateBlocklist": ScanSchema(
+    "update_blocklist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,

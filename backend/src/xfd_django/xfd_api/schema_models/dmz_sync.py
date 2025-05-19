@@ -13,7 +13,7 @@ class SyncRequest(BaseModel):
 
     page: int = 1
     page_size: Optional[int] = 25
-    acronym: str = "DHS"
+    acronym: str
     since_date: Optional[datetime] = None
 
     class Config:
@@ -264,6 +264,127 @@ class ShodanSyncResponse(BaseModel):
 
     status: str
     payload: ShodanAPIMethodResponse
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CredentialExposure(BaseModel):
+    """CredentialExposure schema."""
+
+    credential_exposures_uid: str
+    email: str
+    root_domain: str
+    sub_domain_string: str
+    breach_name: str
+    modified_date: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    name: Optional[str] = None
+    login_id: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    hash_type: Optional[str] = None
+    intelx_system_id: Optional[str] = None
+    organization_acronym: Optional[str] = None
+    data_source_name: Optional[str] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CredentialBreach(BaseModel):
+    """CredentialBreach schema."""
+
+    credential_breaches_uid: str
+    breach_name: str
+    description: str
+    exposed_cred_count: Optional[int] = None
+    breach_date: Optional[datetime] = None
+    added_date: Optional[datetime] = None
+    modified_date: Optional[datetime] = None
+    data_classes: Optional[list[str]] = None
+    password_included: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    is_fabricated: Optional[bool] = None
+    is_sensitive: Optional[bool] = None
+    is_retired: Optional[bool] = None
+    is_spam_list: Optional[bool] = None
+    data_source_name: Optional[str] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CredSyncResponse(BaseModel):
+    """Cpe schema."""
+
+    total_pages: int
+    current_page: int
+    credential_exposures: Optional[List[CredentialExposure]] = None
+    credential_breaches: Optional[List[CredentialBreach]] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysSubdomainItem(BaseModel):
+    """Schema for a single Censys subdomain."""
+
+    sub_domain_uid: UUID
+    created_at: Optional[datetime]
+    last_seen: Optional[datetime]
+    sub_domain: str
+    from_root_domain: Optional[str]
+    current: Optional[bool]
+    enumerate_subs: Optional[bool]
+    identified: Optional[bool]
+    subdomain_source: Optional[str]
+    organization_acronym: Optional[str]
+    data_source_name: Optional[str]
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysSubdomains(BaseModel):
+    """Wrapper for a list of Censys subdomains."""
+
+    censys_subdomains: Optional[List[CensysSubdomainItem]] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysAPIMethodResponse(BaseModel):
+    """Paginated response payload."""
+
+    total_pages: int
+    current_page: int
+    data: Optional[CensysSubdomains] = None
+
+    class Config:
+        """Config."""
+
+        from_attributes = True
+
+
+class CensysSyncResponse(BaseModel):
+    """Top-level sync response format."""
+
+    status: str
+    payload: CensysAPIMethodResponse
 
     class Config:
         """Config."""
