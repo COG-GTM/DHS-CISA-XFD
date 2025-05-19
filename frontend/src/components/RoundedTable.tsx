@@ -146,10 +146,16 @@ export default function RoundedTable<T extends Record<string, any>>({
                   variant="caption"
                   color="text.secondary"
                   align="center"
+                  component="div"
                 >
                   {col.header}
                 </Typography>
-                <Typography variant="body2" align="center" sx={{ py: 2 }}>
+                <Typography
+                  component="div"
+                  variant="body2"
+                  align="center"
+                  sx={{ py: 2 }}
+                >
                   {col.render ? col.render(row[col.key], row) : row[col.key]}
                 </Typography>
                 {colIndex < columns.length - 1 && (
