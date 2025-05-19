@@ -17,6 +17,7 @@ import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
+from django.core.management import call_command
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
 from django.db.models.functions import Power
 from django.utils import timezone
@@ -67,6 +68,8 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 IS_LOCAL = os.getenv("IS_LOCAL")
 
+VS_PULL_DATE_RANGE = os.getenv("VS_PULL_DATE_RANGE", "2")
+
 
 def handler(event):
     """Handle execution of the vulnerability scanning sync task.
@@ -81,6 +84,7 @@ def handler(event):
     Returns:
         dict: Response containing the status code and message.
     """
+    print("VS_PULL_DATE_RANGE: ", VS_PULL_DATE_RANGE)
     try:
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
@@ -128,6 +132,8 @@ def main():
     """Execute the vulnerability scanning synchronization task."""
     LOGGER.info("Started VulnScanningSync scan...")
 
+    call_command("syncmdl", dangerouslyforce=False)
+
     # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
     LOGGER.info("Fetched %d requests from Redshift", len(request_list))
@@ -140,7 +146,7 @@ def main():
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
-        "SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '2 days';"
+        f"SELECT * FROM vmtableau.vuln_scans WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days';"  # nosec B608
     )
     LOGGER.info("Fetched %d vulnerability scans from Redshift", len(vuln_scans))
     if vuln_scans:
@@ -155,7 +161,7 @@ def main():
     LOGGER.info("Started processing port scans...")
     base_query = (
         "SELECT * FROM vmtableau.port_scans "
-        "WHERE time >= GETDATE() - INTERVAL '2 days'"
+        f"WHERE time >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"  # nosec B608
     )
 
     total_processed = 0
@@ -169,7 +175,9 @@ def main():
         chunk_number += 1
 
     if total_processed == 0:
-        LOGGER.warning("No port scans found in Redshift for the last 2 days.")
+        LOGGER.warning(
+            f"No port scans found in Redshift for the last {VS_PULL_DATE_RANGE} days."
+        )
     else:
         LOGGER.info(
             "Processed %d total port scans across %d chunks",
@@ -185,7 +193,7 @@ def main():
     LOGGER.info("Started processing tickets...")
     base_query = (
         "SELECT * FROM vmtableau.tickets "
-        "WHERE last_change >= GETDATE() - INTERVAL '2 days'"
+        f"WHERE last_change >= GETDATE() - INTERVAL '{VS_PULL_DATE_RANGE} days'"  # nosec B608
     )
 
     total_processed = 0
@@ -199,7 +207,9 @@ def main():
         chunk_number += 1
 
     if total_processed == 0:
-        LOGGER.warning("No tickets found in Redshift for the last 2 days.")
+        LOGGER.warning(
+            f"No tickets found in Redshift for the last {VS_PULL_DATE_RANGE} days."
+        )
     else:
         LOGGER.info(
             "Processed %d total tickets across %d chunks",
@@ -1145,8 +1155,7 @@ def parse_request_data(request):
         if isinstance(val, str):
             try:
                 request[field] = json.loads(val)
-            except Exception as e:
-                LOGGER.warning("Failed to parse %s: %s", field, e)
+            except Exception:
                 request[field] = {}
         elif not isinstance(val, (dict, list)):  # corrupt or malformed
             request[field] = {} if field == "agency" else []
