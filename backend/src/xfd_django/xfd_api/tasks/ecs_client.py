@@ -113,6 +113,7 @@ class ECSClient:
                             "SERVICE_QUEUE_URL": os.getenv("QUEUE_URL", ""),
                             "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
                             "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
+                            "VS_PULL_DATE_RANGE": os.getenv("VS_PULL_DATE_RANGE", "90"),
                         },
                         detach=True,
                     )
@@ -124,6 +125,30 @@ class ECSClient:
             return {"tasks": tasks, "failures": []}
 
         # Run the command on ECS (non-local)
+        container_env = [
+            {
+                "name": "CROSSFEED_COMMAND_OPTIONS",
+                "value": json.dumps(command_options),
+            },
+            {"name": "SERVICE_TYPE", "value": scan_name},
+            {
+                "name": "SERVICE_QUEUE_URL",
+                "value": command_options.get("SERVICE_QUEUE_URL"),
+            },
+            {
+                "name": "NODE_OPTIONS",
+                "value": "--max_old_space_size={}".format(memory) if memory else "",
+            },
+            {
+                "name": "SHODAN_API_KEY",
+                "value": command_options.get("SHODAN_API_KEY") or "",
+            },
+        ]
+
+        # Conditionally add NO_PROXY
+        if os.getenv("IS_DMZ"):
+            container_env.append({"name": "NO_PROXY", "value": "*"})
+
         response = self.ecs.run_task(
             cluster=os.getenv("FARGATE_CLUSTER_NAME"),
             taskDefinition=os.getenv("FARGATE_TASK_DEFINITION_NAME"),
@@ -143,27 +168,7 @@ class ECSClient:
                 "containerOverrides": [
                     {
                         "name": "main",
-                        "environment": [
-                            {
-                                "name": "CROSSFEED_COMMAND_OPTIONS",
-                                "value": json.dumps(command_options),
-                            },
-                            {"name": "SERVICE_TYPE", "value": scan_name},
-                            {
-                                "name": "SERVICE_QUEUE_URL",
-                                "value": command_options.get("SERVICE_QUEUE_URL"),
-                            },
-                            {
-                                "name": "NODE_OPTIONS",
-                                "value": "--max_old_space_size={}".format(memory)
-                                if memory
-                                else "",
-                            },
-                            {
-                                "name": "SHODAN_API_KEY",
-                                "value": command_options.get("SHODAN_API_KEY") or "",
-                            },
-                        ],
+                        "environment": container_env,
                     }
                 ],
             },
