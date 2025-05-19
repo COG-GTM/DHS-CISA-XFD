@@ -396,10 +396,10 @@ def build_fake_ticket(org):
     cve = Cve.objects.order_by("?").first()
     port = random.choice([21, 22, 80, 443])
     severity_ranges = {
-        "1.0": (0.1, 3.9),   # Low
-        "2.0": (4.0, 6.9),   # Medium
-        "3.0": (7.0, 8.9),   # High
-        "4.0": (9.0, 10.0)   # Critical
+        "1.0": (0.1, 3.9),  # Low
+        "2.0": (4.0, 6.9),  # Medium
+        "3.0": (7.0, 8.9),  # High
+        "4.0": (9.0, 10.0),  # Critical
     }
     severity = random.choice(list(severity_ranges.keys()))
     cvss_base_score = round(random.uniform(*severity_ranges[severity]), 1)
@@ -431,7 +431,8 @@ def build_fake_ticket(org):
         cve_string=cve.name if cve else "CVE-2021-0001",
         cvss_base_score=cvss_base_score,
         cvss_version="3.1",
-        vuln_name= cve.name + random.choice(
+        vuln_name=cve.name
+        + random.choice(
             [
                 "Super Alarming Vuln",
                 "Super Hazardous Vuln",
@@ -439,7 +440,9 @@ def build_fake_ticket(org):
                 "Super Menacing Vuln",
                 "Super unsupported Vuln",
             ]
-        ) if cve else "CVE-2021-0001",
+        )
+        if cve
+        else "CVE-2021-0001",
         cvss_score_source="nvd",
         cvss_severity=Decimal(severity),
         vpr_score=Decimal("6.9"),
@@ -452,7 +455,21 @@ def build_fake_ticket(org):
         port_protocol=protocol,
         snapshots_bool=False,
         vuln_source="nessus",
-        operating_system=random.choice([None, None, None, None, None, None, "Windows 10","Linux (Ubuntu 22.04)","macOS (macOS Ventura)","FreeBSD","Cisco IOS"]),
+        operating_system=random.choice(
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                "Windows 10",
+                "Linux (Ubuntu 22.04)",
+                "macOS (macOS Ventura)",
+                "FreeBSD",
+                "Cisco IOS",
+            ]
+        ),
         vuln_source_id=random.choice([10081, 12345, 34567, 89012]),
         closed_timestamp=closed_time,
         opened_timestamp=opened_time,
@@ -628,7 +645,9 @@ def create_cidrs_for_org(org, cidr_list, data_source=None, ips_per_cidr=4):
             )
 
             # Link CIDR to Org
-            CidrOrgs.objects.get_or_create(organization=org, cidr=cidr_obj, defaults={"current":True})
+            CidrOrgs.objects.get_or_create(
+                organization=org, cidr=cidr_obj, defaults={"current": True}
+            )
 
             # Generate IPs from this CIDR
             usable_ips = list(net.hosts())
