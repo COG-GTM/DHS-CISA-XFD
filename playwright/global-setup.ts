@@ -18,7 +18,7 @@ let totp = new OTPAuth.TOTP({
 
 const axios = require('axios');
 
-const waitForFrontend = async (url, timeout = 60000, checkInterval = 5000) => {
+const waitForFrontend = async (url, timeout = 600000, checkInterval = 5000) => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     try {
