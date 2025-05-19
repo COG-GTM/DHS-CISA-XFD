@@ -18,6 +18,8 @@ import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useFilterDrawerContext } from 'context/FilterDrawerContext';
 import { useUserLevel } from 'hooks/useUserLevel';
+import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/system';
 
 const Main = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'user'
@@ -29,7 +31,8 @@ const Main = styled('main', {
   flexGrow: 1,
   minHeight: '100vh',
   height: '100vh',
-  overflowY: 'auto'
+  overflowY: 'auto',
+  overscrollBehavior: 'contain'
   // transition: theme.transitions.create('margin', {
   //   easing: theme.transitions.easing.sharp,
   //   duration: theme.transitions.duration.leavingScreen
@@ -119,7 +122,8 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regions, user]);
 
-  // const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   return (
     <>
@@ -128,32 +132,32 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         onCountdownEnd={handleCountdownEnd}
         countdown={60} // 60 second timer for user inactivity timeout
       />
-      <div style={{ display: 'flex' }}>
-        <GovBanner />
-      </div>
-      <>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            height: '100vh'
-          }}
-        >
-          {userLevel > 0 && (
-            <FilterDrawerV2
-              setIsFilterDrawerOpen={setIsFilterDrawerOpen}
-              isFilterDrawerOpen={isFilterDrawerOpen}
-              // isMobile={isMobile}
-              initialFilters={initialFilters}
-            />
-          )}
-          <Main open={isFilterDrawerOpen} user={!!user}>
-            <Header />
-            <div className="main-content" id="main-content" tabIndex={-1} />
-            {children}
-          </Main>
+      {/* <> */}
+      <Main open={isFilterDrawerOpen} user={!!user}>
+        <div style={{ display: 'flex' }}>
+          <GovBanner />
         </div>
-      </>
+        {/* <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          height: '100vh'
+        }}
+        > */}
+        <Header />
+        {userLevel > 0 && (
+          <FilterDrawerV2
+            setIsFilterDrawerOpen={setIsFilterDrawerOpen}
+            isFilterDrawerOpen={isFilterDrawerOpen}
+            isMobile={isMobile}
+            initialFilters={initialFilters}
+          />
+        )}
+        <div className="main-content" id="main-content" tabIndex={-1} />
+        {children}
+      </Main>
+      {/* </div> */}
+      {/* </> */}
     </>
   );
 };

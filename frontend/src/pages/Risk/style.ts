@@ -131,7 +131,6 @@ export const RiskRoot = styled('div')(() => ({
     position: 'relative',
     flex: '1',
     width: '100%',
-    height: '100%',
     display: 'flex',
     flexFlow: 'row nowrap',
     alignItems: 'stretch',
@@ -141,7 +140,7 @@ export const RiskRoot = styled('div')(() => ({
   [`& .${classesRisk.contentWrapper}`]: {
     position: 'relative',
     flex: '1 1 auto',
-    height: '100%',
+    height: '100vh',
     display: 'flex',
     flexFlow: 'column nowrap',
     overflowY: 'hidden',

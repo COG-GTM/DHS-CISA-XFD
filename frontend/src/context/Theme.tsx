@@ -66,6 +66,26 @@ declare module '@mui/material/styles' {
   }
 }
 
+declare module '@mui/material/Button' {
+  interface ButtonPropsVariantOverrides {
+    globalNav: true;
+    primaryContained: true;
+  }
+}
+
+declare module '@mui/material/Chip' {
+  interface ChipPropsVariantOverrides {
+    graphOutlinedInactive: true;
+    graphOutlinedActive: true;
+  }
+}
+
+declare module '@mui/material/styles' {
+  interface ZIndex {
+    FilterDrawerV2: number;
+  }
+}
+
 declare module '@mui/material/Typography' {
   interface TypographyPropsVariantOverrides {
     boldBody: true;
@@ -80,20 +100,6 @@ declare module '@mui/material/Typography' {
   }
   interface TypographyPropsColorOverrides {
     disabled: true;
-  }
-}
-
-declare module '@mui/material/Button' {
-  interface ButtonPropsVariantOverrides {
-    globalNav: true;
-    primaryContained: true;
-  }
-}
-
-declare module '@mui/material/Chip' {
-  interface ChipPropsVariantOverrides {
-    graphOutlinedInactive: true;
-    graphOutlinedActive: true;
   }
 }
 
@@ -375,6 +381,9 @@ const theme = createTheme({
       fontStyle: 'italic',
       textTransform: 'none'
     }
+  },
+  zIndex: {
+    FilterDrawerV2: 1201
   }
 });
 

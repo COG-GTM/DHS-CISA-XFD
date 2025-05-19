@@ -6,7 +6,14 @@ import {
   REGIONAL_ADMIN,
   STANDARD_USER
 } from 'hooks/useUserLevel';
-import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
+import {
+  AppBar,
+  Box,
+  IconButton,
+  Toolbar,
+  Typography,
+  useTheme
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import cisaLogo from 'assets/cisaSeal.svg';
 import { NavMenuButton } from './NavMenuButton';
@@ -21,6 +28,7 @@ interface MenuItemType {
 
 export const Header: React.FC = () => {
   const { logout } = useAuthContext();
+  const theme = useTheme();
   const { userLevel } = useUserLevel();
   const [openDrawer, setOpenDrawer] = React.useState(false);
   const toggleDrawer = (newOpen: boolean) => () => {
@@ -156,7 +164,8 @@ export const Header: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '84px'
+        height: '84px',
+        zIndex: theme.zIndex.FilterDrawerV2 + 1
       }}
     >
       <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
