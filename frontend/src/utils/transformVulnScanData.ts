@@ -74,7 +74,7 @@ export const transformVulnScanData = (
     ],
     vulnScanKeyMetrics: [
       {
-        title: 'Detected Kevs',
+        title: 'Detected KEVs',
         value:
           (latestVulnSummary?.low_kev_count ?? 0) +
           (latestVulnSummary?.medium_kev_count ?? 0) +
