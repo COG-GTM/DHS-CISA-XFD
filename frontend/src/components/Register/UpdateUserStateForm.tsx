@@ -72,6 +72,7 @@ export const UpdateStateForm: React.FC<{
       }
 
       setIsLoading(false);
+      localStorage.setItem('user_state', values.state); // ✅ Save it
       onClose(); // Only close after handling
     } catch (error) {
       setErrorRequestMessage(
