@@ -52,6 +52,9 @@ interface RegionAndOrganizationFiltersProps {
   filters: any[];
   setSearchTerm: (s: string, opts?: any) => void;
   search_term: string;
+  autocompletedResults: any[];
+  autocompletedSuggestions: any;
+  results: any[];
 }
 
 export const RegionAndOrganizationFilters: React.FC<
@@ -61,7 +64,10 @@ export const RegionAndOrganizationFilters: React.FC<
   removeFilter,
   filters,
   search_term: domainSearchTerm,
-  setSearchTerm: setDomainSearchTerm
+  setSearchTerm: setDomainSearchTerm,
+  autocompletedResults,
+  autocompletedSuggestions,
+  results
 }) => {
   const { setShowMaps, user, apiPost } = useAuthContext();
   const { regions } = useStaticsContext();
@@ -185,6 +191,7 @@ export const RegionAndOrganizationFilters: React.FC<
     }
   }, [filters]);
 
+  const userOrg = user?.roles?.map((role) => role.organization.name);
   // const showUsersRegionDisabled = useMemo(() => {
   //   return (
   //     (userLevel === STANDARD_USER ||
@@ -200,7 +207,7 @@ export const RegionAndOrganizationFilters: React.FC<
     },
     [regionFilterValues]
   );
-  const history = useHistory();
+  // const history = useHistory();
   const location = useLocation();
 
   const handleAddOrganization = (org: OrganizationShallow) => {
@@ -222,6 +229,11 @@ export const RegionAndOrganizationFilters: React.FC<
     }
   };
 
+  console.log('user', user);
+  console.log('autocompletedResults', autocompletedResults);
+  console.log('autocompletedSuggestions', autocompletedSuggestions);
+  console.log('results', results);
+
   return (
     <>
       <Divider />
@@ -231,17 +243,18 @@ export const RegionAndOrganizationFilters: React.FC<
             initialValue={domainSearchTerm}
             value={domainSearchTerm}
             onChange={(value) => {
-              if (location.pathname !== '/inventory') {
-                history.push(`/inventory?q=${value}`);
-                setDomainSearchTerm(value, {
-                  shouldClearFilters: false,
-                  refresh: true
-                });
-              }
+              // if (location.pathname !== '/inventory') {
+              //   history.push(`/inventory?q=${value}`);
+              //   setDomainSearchTerm(value, {
+              //     shouldClearFilters: false,
+              //     refresh: true
+              //   });
+              // }
               setDomainSearchTerm(value, {
                 shouldClearFilters: false
               });
             }}
+            autocompletedResults={autocompletedResults}
           />
         </Box>
       ) : (
@@ -406,7 +419,11 @@ export const RegionAndOrganizationFilters: React.FC<
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Search Organizations"
+              label={
+                userLevel !== STANDARD_USER
+                  ? 'Search Organizations'
+                  : `${userOrg}`
+              }
               onBlur={() => setIsOrgOpen(false)}
               helperText={
                 userLevel === REGIONAL_ADMIN || GLOBAL_ADMIN

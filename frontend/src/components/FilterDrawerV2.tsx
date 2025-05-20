@@ -19,6 +19,9 @@ export const FilterDrawer: FC<
     isMobile: boolean;
     setIsFilterDrawerOpen: (isOpen: boolean) => void;
     initialFilters: any[];
+    autocompletedResults: any[];
+    results: any[];
+    autocompletedSuggestions: any;
   }
 > = (props) => {
   const {
@@ -31,7 +34,10 @@ export const FilterDrawer: FC<
     search_term,
     setSearchTerm,
     filters,
-    initialFilters
+    initialFilters,
+    autocompletedResults,
+    autocompletedSuggestions,
+    results
   } = props;
   const { pathname } = useLocation();
 
@@ -67,6 +73,9 @@ export const FilterDrawer: FC<
         filters={filters}
         setSearchTerm={setSearchTerm}
         search_term={search_term}
+        autocompletedResults={autocompletedResults}
+        autocompletedSuggestions={autocompletedSuggestions}
+        results={results}
       />
       {matchPath(
         ['/inventory', '/inventory/domains', '/inventory/vulnerabilities'],
@@ -121,13 +130,19 @@ export const FilterDrawerV2 = withSearch(
     filters,
     facets,
     search_term,
-    setSearchTerm
+    setSearchTerm,
+    autocompletedResults,
+    autocompletedSuggestions,
+    results
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
     search_term,
-    setSearchTerm
+    setSearchTerm,
+    autocompletedResults,
+    autocompletedSuggestions,
+    results
   })
 )(FilterDrawer);

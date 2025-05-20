@@ -119,7 +119,9 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         <Header />
         {userLevel > 0 && (
           <>
-            <FilterDrawerToggle />
+            {matchPath(['/', '/inventory', '/VSDashboard'], pathname) && (
+              <FilterDrawerToggle />
+            )}
             <FilterDrawerV2
               setIsFilterDrawerOpen={setIsFilterDrawerOpen}
               isFilterDrawerOpen={isFilterDrawerOpen}
