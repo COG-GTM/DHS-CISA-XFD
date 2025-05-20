@@ -379,7 +379,7 @@ const Risk: React.FC<ContextType> = ({
                 new Date(n.start_datetime) <= new Date() &&
                 new Date(n.end_datetime) >= new Date()
             );
-            if (active) {
+            if (active && user && user.user_type !== 'globalAdmin') {
               setMaintenanceNotification(active);
               setIsLoginBlockedDialogOpen(true);
             }
