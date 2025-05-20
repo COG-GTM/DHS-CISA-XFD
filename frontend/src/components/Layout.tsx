@@ -20,39 +20,19 @@ import { useFilterDrawerContext } from 'context/FilterDrawerContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/system';
+import FilterDrawerToggle from './FilterDrawerToggle';
 
 const Main = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'user'
 })<{
   open?: boolean;
   user?: boolean;
-  // }>(({ theme, open, user }) => ({
 }>(() => ({
   flexGrow: 1,
   minHeight: '100vh',
   height: '100vh',
   overflowY: 'auto',
   overscrollBehavior: 'contain'
-  // transition: theme.transitions.create('margin', {
-  //   easing: theme.transitions.easing.sharp,
-  //   duration: theme.transitions.duration.leavingScreen
-  // }),
-  // [theme.breakpoints.up('lg')]: {
-  //   marginLeft: `-${drawerWidth}px`
-  // },
-  // [theme.breakpoints.down('lg')]: {
-  //   marginLeft: user ? 0 : `-${drawerWidth}px`
-  // },
-  // marginLeft: `-${drawerWidth}px`
-  // ...(open && {
-  //   transition: theme.transitions.create('margin', {
-  //     easing: theme.transitions.easing.easeOut,
-  //     duration: theme.transitions.duration.enteringScreen
-  //   }),
-  //   [theme.breakpoints.up('lg')]: {
-  //     marginLeft: 0
-  //   }
-  // })
 }));
 
 export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
@@ -132,32 +112,24 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         onCountdownEnd={handleCountdownEnd}
         countdown={60} // 60 second timer for user inactivity timeout
       />
-      {/* <> */}
       <Main open={isFilterDrawerOpen} user={!!user}>
         <div style={{ display: 'flex' }}>
           <GovBanner />
         </div>
-        {/* <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          height: '100vh'
-        }}
-        > */}
         <Header />
         {userLevel > 0 && (
-          <FilterDrawerV2
-            setIsFilterDrawerOpen={setIsFilterDrawerOpen}
-            isFilterDrawerOpen={isFilterDrawerOpen}
-            isMobile={isMobile}
-            initialFilters={initialFilters}
-          />
+          <>
+            <FilterDrawerToggle />
+            <FilterDrawerV2
+              setIsFilterDrawerOpen={setIsFilterDrawerOpen}
+              isFilterDrawerOpen={isFilterDrawerOpen}
+              isMobile={isMobile}
+              initialFilters={initialFilters}
+            />
+          </>
         )}
-        <div className="main-content" id="main-content" tabIndex={-1} />
         {children}
       </Main>
-      {/* </div> */}
-      {/* </> */}
     </>
   );
 };

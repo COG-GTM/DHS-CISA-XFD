@@ -5,11 +5,11 @@ import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import { DrawerInterior } from './DrawerInterior';
 import { RegionAndOrganizationFilters } from './RegionAndOrganizationFilters';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { matchPath } from 'utils/matchPath';
 import { useLocation } from 'react-router-dom';
 import { Stack } from '@mui/system';
-import { Toolbar, Typography } from '@mui/material';
+import { IconButton, Toolbar, Typography } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 export const drawerWidth = 300;
 
@@ -39,14 +39,28 @@ export const FilterDrawer: FC<
     <Box sx={{ width: drawerWidth }} role="presentation">
       <Toolbar />
       <Toolbar />
-      <Toolbar sx={{ justifyContent: 'center' }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Typography variant="h6" component="h3">
-            Filters
-          </Typography>
-          <FilterAltIcon />
-        </Stack>
-      </Toolbar>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        px={2}
+      >
+        <Typography variant="h6" component="h3">
+          Filter
+        </Typography>
+        <IconButton
+          onClick={() => setIsFilterDrawerOpen(false)}
+          sx={{
+            color: 'neutrals.black',
+            '&:hover': {
+              backgroundColor: 'neutrals.lightGray'
+            }
+          }}
+          aria-label="close-filter-drawer"
+        >
+          <CloseIcon />
+        </IconButton>
+      </Stack>
       <RegionAndOrganizationFilters
         addFilter={addFilter}
         removeFilter={removeFilter}
