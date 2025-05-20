@@ -68,11 +68,11 @@ jobs:
         run: |
           mkdir -p ./playwright-report/html
           aws s3 cp \
-            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/html/" \
+            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/latest/html/" \
             ./playwright-report/html/ --recursive
 
           aws s3 cp \
-            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/results.json \
+            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/latest/results.json \
             ./playwright-report/results.json
 
       - name: Upload Playwright HTML report
