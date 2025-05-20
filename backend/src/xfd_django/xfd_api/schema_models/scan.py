@@ -46,8 +46,8 @@ class ScanSchema(BaseModel):
 
     # CPU and memory for the scan. See this page for more information:
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-    cpu: Optional[str] = None
-    memory: Optional[str] = None
+    cpu: Optional[str] = "1024"
+    memory: Optional[str] = "8192"
 
     # A scan is "chunked" if its work is divided and run in parallel by multiple workers.
     # To make a scan chunked, make sure it is a global scan and specify the "numChunks" variable,
@@ -156,6 +156,15 @@ SCAN_SCHEMA = {
         description="Passive discovery of subdomains from public certificates",
         max_concurrent_tasks=5,
     ),
+    "censys_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull in Censys asset and vulnerability data from commercial mdl",
+        maxConcurrentTasks=10,
+    ),
     "censysCertificates": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -185,10 +194,11 @@ SCAN_SCHEMA = {
     "credential_sync": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=True,
+        global_scan=False,
         cpu="1024",
         memory="8192",
         description="Pull in Credential breach and exposure data from commercial mdl",
+        max_concurrent_tasks=5,
     ),
     "vulnScanningSync": ScanSchema(
         type="fargate",
@@ -206,13 +216,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Matches detected software versions to CVEs from NIST NVD and CISA's Known Exploited Vulnerabilities Catalog.",
     ),
-    "dnstwist": ScanSchema(
+    "dns_twist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=False,
         cpu="2048",
         memory="16384",
         description="Domain name permutation engine for detecting similar registered domains.",
+        max_concurrent_tasks=10000,
     ),
     "dotgov": ScanSchema(
         type="fargate",
@@ -261,6 +272,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
+        cpu="1024",
+        memory="8192",
         description="Update CVE data using the NIST API",
     ),
     "nist_lz_sync": ScanSchema(
@@ -366,7 +379,7 @@ SCAN_SCHEMA = {
         memory="16384",
         description="Loops through all domains and determines if their associated IP can be found in a report Cidr block.",
     ),
-    "updateBlocklist": ScanSchema(
+    "update_blocklist": ScanSchema(
         type="fargate",
         is_passive=True,
         global_scan=True,
