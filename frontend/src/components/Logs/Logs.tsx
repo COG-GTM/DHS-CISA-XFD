@@ -36,6 +36,8 @@ interface LogDetails {
   };
 }
 
+const PAGE_SIZE = 15;
+
 export const Logs: FC<LogsProps> = () => {
   const { apiPost } = useAuthContext();
   const [filters, setFilters] = useState<Array<GridFilterItem>>([]);
@@ -64,12 +66,35 @@ export const Logs: FC<LogsProps> = () => {
       },
       {}
     );
-    const results = await apiPost('/logs/search', {
-      body: {
-        ...tableFilters
+    const endpoint =
+      Object.keys(tableFilters).length > 0
+        ? '/logs/filtered-search'
+        : '/logs/search';
+    try {
+      const body =
+        endpoint === '/logs/filtered-search'
+          ? {
+              page: 1,
+              page_size: PAGE_SIZE,
+              filters: tableFilters
+            }
+          : {};
+      const results = await apiPost(endpoint, { body });
+      console.log(`API response from ${endpoint}:`, results);
+      if (
+        !results ||
+        !Array.isArray(results.result) ||
+        typeof results.count !== 'number'
+      ) {
+        console.error('Invalid response format:', results);
+        setLogs({ count: 0, result: [] });
+        return;
       }
-    });
-    setLogs(results);
+      setLogs(results);
+    } catch (e) {
+      console.error(`Fetch logs error from ${endpoint}:`, e);
+      setLogs({ count: 0, result: [] });
+    }
   }, [apiPost, filters]);
 
   useEffect(() => {
@@ -111,11 +136,7 @@ export const Logs: FC<LogsProps> = () => {
       minWidth: 100,
       flex: 1.5,
       valueFormatter: (e) => {
-        // return `${differenceInCalendarDays(
         return format(parseISO(e.value), 'MM/dd/yyyy hh:mm a');
-        //   Date.now(),
-        //   parseISO(e.value)
-        // )} days ago`;
       }
     },
     {

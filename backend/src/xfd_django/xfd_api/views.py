@@ -49,7 +49,7 @@ from .api_methods.user import (
     get_users_v2,
     update_user_v2,
 )
-from .api_methods.user_log_search import search_logs
+from .api_methods.user_log_search import search_logs, search_logs_filtered
 from .api_methods.vulnerability import (
     export_vulnerabilities,
     get_vulnerability_by_id,
@@ -86,7 +86,13 @@ from .schema_models.user import (
 )
 from .schema_models.user import User as UserSchema
 from .schema_models.user import UserResponseV2, VersionModel
-from .schema_models.user_log_schema import LogSearch, LogSearchResponse
+from .schema_models.user_log_schema import (
+    GetLogResponse,
+    LogSearch,
+    LogSearchFilter,
+    LogSearchResponse,
+    LogSearchResponseFilters,
+)
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
     GetVulnerabilityResponse,
@@ -342,6 +348,27 @@ async def call_search_logs(
     """Search log table."""
     log_data, count = search_logs(log_search, current_user)
     return LogSearchResponse(result=log_data, count=count)
+
+
+@api_router.post(
+    "/logs/filtered-search",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=LogSearchResponse,
+    tags=["Logs"],
+)
+async def call_search_logs_filtered(
+    log_search: LogSearchFilter,
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Search logs with filtering capabilities."""
+    logs, count = search_logs_filtered(log_search, current_user)
+    try:
+        result = [GetLogResponse.model_validate(log) for log in logs]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Serialization error: {}".format(str(e))
+        )
+    return LogSearchResponseFilters(result=result, count=count)
 
 
 # ========================================

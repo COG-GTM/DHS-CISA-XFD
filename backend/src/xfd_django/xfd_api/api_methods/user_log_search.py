@@ -13,6 +13,7 @@ from fastapi import HTTPException
 from xfd_mini_dl.models import Log
 
 from ..auth import is_global_view_admin
+from ..schema_models.user_log_schema import LogSearch, LogSearchFilter
 
 
 def parse_query_string(query):
@@ -135,6 +136,175 @@ def search_logs(search_data, current_user):
             )
 
         return logs_serialized, count
+
+    except ValueError as ve:
+        raise HTTPException(status_code=500, detail=str(ve))
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Third-Party Libraries
+from dateutil.parser import parse  # type: ignore
+
+
+def search_logs_filtered(search_data: LogSearchFilter, current_user):
+    """Filter logs based on advanced criteria."""
+    try:
+        if not is_global_view_admin(current_user):
+            raise HTTPException(status_code=403, detail="Unauthorized access.")
+
+        # Fetch all logs using search_logs
+        base_search = LogSearch()
+        all_logs, total_count = search_logs(base_search, current_user)
+
+        # Apply filters in memory
+        filtered_logs = []
+        for log in all_logs:
+            matches = True
+            for field, condition in search_data.filters.items():
+                value = condition.value
+                operator = condition.operator.lower()
+
+                if field == "event_type":
+                    log_value = log["event_type"] or ""
+                    if (
+                        operator == "contains"
+                        and value is not None
+                        and value.lower() not in log_value.lower()
+                    ):
+                        matches = False
+                    elif operator == "equals" and log_value != value:
+                        matches = False
+                    elif (
+                        operator == "starts with"
+                        and value is not None
+                        and not log_value.lower().startswith(value.lower())
+                    ):
+                        matches = False
+                    elif (
+                        operator == "ends with"
+                        and value is not None
+                        and not log_value.lower().endswith(value.lower())
+                    ):
+                        matches = False
+                    elif operator == "is empty" and log_value:
+                        matches = False
+                    elif operator == "is not empty" and not log_value:
+                        matches = False
+                elif field == "result":
+                    log_value = log["result"] or ""
+                    if (
+                        operator == "contains"
+                        and value is not None
+                        and value.lower() not in log_value.lower()
+                    ):
+                        matches = False
+                    elif operator == "equals" and log_value != value:
+                        matches = False
+                    elif (
+                        operator == "starts with"
+                        and value is not None
+                        and not log_value.lower().startswith(value.lower())
+                    ):
+                        matches = False
+                    elif (
+                        operator == "ends with"
+                        and value is not None
+                        and not log_value.lower().endswith(value.lower())
+                    ):
+                        matches = False
+                    elif operator == "is empty" and log_value:
+                        matches = False
+                    elif operator == "is not empty" and not log_value:
+                        matches = False
+                elif field == "timestamp":
+                    log_value = log["created_at"]
+                    if operator in ["equals", "lessThan", "greaterThan"]:
+                        try:
+                            log_date = parse(log_value)
+                            filter_date = parse(value)
+                            if operator == "equals" and log_date != filter_date:
+                                matches = False
+                            elif operator == "lessThan" and log_date >= filter_date:
+                                matches = False
+                            elif operator == "greaterThan" and log_date <= filter_date:
+                                matches = False
+                        except ValueError:
+                            matches = False
+                    elif operator == "is empty" and log_value:
+                        matches = False
+                    elif operator == "is not empty" and not log_value:
+                        matches = False
+                    log_value = log["payload"].get("user", {}).get("email", "") or ""
+                    if (
+                        operator == "contains"
+                        and value is not None
+                        and value.lower() not in log_value.lower()
+                    ):
+                        matches = False
+                    elif operator == "equals" and log_value != value:
+                        matches = False
+                    elif (
+                        operator == "starts with"
+                        and value is not None
+                        and not log_value.lower().startswith(value.lower())
+                    ):
+                        matches = False
+                    elif (
+                        operator == "ends with"
+                        and value is not None
+                        and not log_value.lower().endswith(value.lower())
+                    ):
+                        matches = False
+                        matches = False
+                    elif operator == "is empty" and log_value:
+                        matches = False
+                    elif operator == "is not empty" and not log_value:
+                        matches = False
+                    log_value = (
+                        log["payload"]
+                        .get("user_performed_assignment", {})
+                        .get("email", "")
+                        or ""
+                    )
+                    if (
+                        operator == "contains"
+                        and value is not None
+                        and value.lower() not in log_value.lower()
+                    ):
+                        matches = False
+                    elif operator == "equals" and log_value != value:
+                        matches = False
+                    elif (
+                        operator == "starts with"
+                        and value is not None
+                        and not log_value.lower().startswith(value.lower())
+                    ):
+                        matches = False
+                    elif (
+                        operator == "ends with"
+                        and value is not None
+                        and not log_value.lower().endswith(value.lower())
+                    ):
+                        matches = False
+                    elif operator == "is empty" and log_value:
+                        matches = False
+                    elif operator == "is not empty" and not log_value:
+                        matches = False
+
+            if matches:
+                filtered_logs.append(log)
+
+        # Apply pagination
+        page = search_data.page
+        page_size = search_data.page_size
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_logs = filtered_logs[start:end]
+
+        return paginated_logs, len(filtered_logs)
 
     except ValueError as ve:
         raise HTTPException(status_code=500, detail=str(ve))
