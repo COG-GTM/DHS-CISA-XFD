@@ -104,7 +104,7 @@ class Cpe(AutoLengthCheckModel):
         default=uuid.uuid4,
         help_text="PK: Unique identifier for a CPE Product object.",
     )
-    name = models.CharField(max_length=255, help_text="Name of the product.")
+    name = models.TextField(help_text="Name of the product.")
     version = models.CharField(max_length=255, help_text="Version of the product.")
     vendor = models.CharField(
         max_length=255, help_text="Vendor who created the product."
@@ -1534,8 +1534,7 @@ class VulnScan(AutoLengthCheckModel):
         null=True,
         help_text="Id to look up a vulnerability int the CERT Vulnerability Notes Database. https://www.kb.cert.org/vuls/",
     )
-    cpe = models.CharField(
-        max_length=255,
+    cpe = models.TextField(
         blank=True,
         null=True,
         help_text="Common Platform Enumeration (CPE) id for the product the vulnerability was found on.",
@@ -2897,8 +2896,7 @@ class PortScan(AutoLengthCheckModel):
         blank=True,
         help_text="The method that was used to identify the service on the port.",
     )
-    service_cpe = models.CharField(
-        max_length=255,
+    service_cpe = models.TextField(
         null=True,
         blank=True,
         help_text="The cpe of the product associated with the service on the port.",

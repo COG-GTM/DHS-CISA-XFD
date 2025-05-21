@@ -153,7 +153,7 @@ class RiskyHostStats(BaseModel):
     high: int
     critical: int
     total: int
-    domain_id: str
+    domain_id: Optional[str] = None
 
 
 class VulnScanSummaryResponse(BaseModel):
