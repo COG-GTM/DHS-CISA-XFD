@@ -7,7 +7,6 @@ import uuid
 # Third-Party Libraries
 # from django.contrib.auth.models import User as AuthUser
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.indexes import GistIndex
 from django.db import models
 from netfields import InetAddressField
 
@@ -2955,7 +2954,10 @@ class PortScan(AutoLengthCheckModel):
         indexes = [
             models.Index(fields=["state"]),
             models.Index(fields=["time_scanned"]),
-            models.Index(fields=["organization", "ip_string", "port", "-time_scanned"], name="portscan_latest_lookup_idx"),
+            models.Index(
+                fields=["organization", "ip_string", "port", "-time_scanned"],
+                name="portscan_latest_lookup_idx",
+            ),
         ]
         db_table = "port_scan"
 

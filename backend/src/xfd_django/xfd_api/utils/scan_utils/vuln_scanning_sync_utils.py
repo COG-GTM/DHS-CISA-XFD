@@ -731,6 +731,7 @@ def fill_cidr_live_ips():
 
 
 def fill_cidr_live_ips_bulk_update():
+    """Fill live ips field in the cidr table based on recent port scans."""
     time_threshold = timezone.now() - datetime.timedelta(days=90)
 
     with transaction.atomic(using="mini_data_lake"):

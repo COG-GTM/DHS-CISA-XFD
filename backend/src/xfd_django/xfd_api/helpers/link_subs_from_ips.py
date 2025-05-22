@@ -84,6 +84,7 @@ def split_into_balanced_chunks(items, num_chunks):
         start = end
     return chunks
 
+
 def process_cidr(cidr, org):
     """Process a given CIDR using stored live IPs."""
     if not cidr.live_ips:
@@ -99,7 +100,9 @@ def process_cidr(cidr, org):
     threads = []
     for i, chunk in enumerate(chunks):
         if chunk:  # Only create a thread if the chunk has work
-            thread = threading.Thread(target=process_ips, args=(i + 1, org, cidr, chunk))
+            thread = threading.Thread(
+                target=process_ips, args=(i + 1, org, cidr, chunk)
+            )
             threads.append(thread)
             thread.start()
 

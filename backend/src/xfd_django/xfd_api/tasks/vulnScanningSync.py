@@ -33,10 +33,9 @@ from xfd_api.tasks.syncdb_helpers import (
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
     enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
-    fill_cidr_live_ips,
     fill_cidr_live_ips_bulk_update,
     get_latest_os_type,
     load_test_data,

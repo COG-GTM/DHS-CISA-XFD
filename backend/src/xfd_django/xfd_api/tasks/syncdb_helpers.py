@@ -28,7 +28,9 @@ from psycopg2.errors import WrongObjectType
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
 from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.tasks.es_client import ESClient
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import fill_cidr_live_ips, fill_cidr_live_ips_bulk_update
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
+    fill_cidr_live_ips_bulk_update,
+)
 from xfd_mini_dl.models import (
     ApiKey,
     Cidr,
@@ -965,7 +967,8 @@ def synchronize(target_app_label=None, using=None):
         if target_app_label == "xfd_mini_dl":
             print("Ensuring GiST index exists on ip.ip...")
             with connections[database].cursor() as cursor:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DO $$
                     BEGIN
                         IF NOT EXISTS (
@@ -976,7 +979,8 @@ def synchronize(target_app_label=None, using=None):
                         END IF;
                     END
                     $$;
-                """)
+                """
+                )
             create_domain_view(database)
             create_service_view(database)
             create_vuln_normal_views(database)
@@ -1062,7 +1066,6 @@ def process_model(
             # for index in model._meta.indexes:
             #     print(f"Creating index: {index.name} on {model.__name__}")
             #     schema_editor.add_index(model, index)
-                
 
         except Exception as e:
             print("Error processing model {}: {}".format(model.__name__, e))
