@@ -10,15 +10,18 @@ exports[`Header component matches snapshot 1`] = `
       class="MuiToolbar-root MuiToolbar-regular css-78voab-MuiToolbar-root"
     >
       <div
-        class="MuiBox-root css-1g2h0gh"
+        aria-label="Navigate to VS Dashboard"
+        class="MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-colorPrimary MuiBox-root css-ica2rq-MuiButtonBase-root-MuiButton-root"
+        role="link"
+        tabindex="0"
       >
         <img
-          alt="C Logo"
+          alt="CISA Logo"
           class="MuiBox-root css-1gapyfo"
           src="cisaSeal.svg"
         />
         <h1
-          class="MuiTypography-root MuiTypography-h1 css-165lrkh-MuiTypography-root"
+          class="MuiTypography-root MuiTypography-h1 css-17hzhq5-MuiTypography-root"
         >
           CyHy Dashboard
         </h1>
