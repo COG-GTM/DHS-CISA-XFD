@@ -10,6 +10,7 @@ import { useLocation } from 'react-router-dom';
 import { Stack } from '@mui/system';
 import { IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
 
 export const drawerWidth = 300;
 
@@ -67,16 +68,29 @@ export const FilterDrawer: FC<
           <CloseIcon />
         </IconButton>
       </Stack>
-      <RegionAndOrganizationFilters
-        addFilter={addFilter}
-        removeFilter={removeFilter}
-        filters={filters}
-        setSearchTerm={setSearchTerm}
-        search_term={search_term}
-        autocompletedResults={autocompletedResults}
-        autocompletedSuggestions={autocompletedSuggestions}
-        results={results}
-      />
+      {matchPath(['/', '/inventory'], pathname) ? (
+        <RegionAndOrganizationFilters
+          addFilter={addFilter}
+          removeFilter={removeFilter}
+          filters={filters}
+          setSearchTerm={setSearchTerm}
+          search_term={search_term}
+          autocompletedResults={autocompletedResults}
+          autocompletedSuggestions={autocompletedSuggestions}
+          results={results}
+        />
+      ) : (
+        <></>
+      )}
+      {matchPath(['/VSDashboard'], pathname) ? (
+        <VSDashRegionAndOrgFilters
+          addFilter={addFilter}
+          removeFilter={removeFilter}
+          filters={filters}
+        />
+      ) : (
+        <></>
+      )}
       {matchPath(
         ['/inventory', '/inventory/domains', '/inventory/vulnerabilities'],
         pathname
