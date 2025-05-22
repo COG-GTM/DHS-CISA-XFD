@@ -67,7 +67,7 @@ export const Header: React.FC = () => {
   const scanningResults: MenuItemType[] = [
     {
       menuItemTitle: 'Overview',
-      path: '/',
+      path: '/overview',
       users: STANDARD_USER
     },
     {
