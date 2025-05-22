@@ -6,6 +6,8 @@ import {
   Paper
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Box } from '@mui/system';
 import {
   DataGrid,
@@ -21,19 +23,11 @@ import CustomToolbar from 'components/DataGrid/CustomToolbar';
 interface LogsProps {}
 
 interface LogDetails {
+  id?: number;
   created_at: string;
   event_type: string;
   result: string;
-  // payload: string;
-  payload: {
-    user?: {
-      email: string;
-    };
-    user_performed_assignment: {
-      email: string;
-      [key: string]: any;
-    };
-  };
+  payload: any;
 }
 
 const PAGE_SIZE = 15;
@@ -42,55 +36,59 @@ export const Logs: FC<LogsProps> = () => {
   const { apiPost } = useAuthContext();
   const [filters, setFilters] = useState<Array<GridFilterItem>>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogDetails, setDialogDetails] = useState<
-    (LogDetails & { id: number }) | null
-  >(null);
+  const [dialogDetails, setDialogDetails] = useState<LogDetails | null>(null);
   const [logs, setLogs] = useState<{
-    count: Number;
-    result: Array<LogDetails>;
+    count: number;
+    result: LogDetails[];
   }>({
     count: 0,
     result: []
   });
 
   const fetchLogs = useCallback(async () => {
+    const fieldMap: Record<string, string> = {
+      acting_user: 'payload.user_performed_assignment.email',
+      acted_on_user: 'payload.user.email',
+      region: 'payload.user_performed_assignment.region_id',
+      organization: 'payload.organization.name',
+      created_at: 'timestamp'
+    };
+
     const tableFilters = filters.reduce(
-      (acc: { [key: string]: { value: any; operator: any } }, cur) => {
-        return {
-          ...acc,
-          [cur.field]: {
-            value: cur.value,
-            operator: cur.operator
-          }
-        };
+      (acc, cur) => {
+        const field = fieldMap[cur.field] || cur.field;
+        acc[field] = { value: cur.value, operator: cur.operator };
+        return acc;
       },
-      {}
+      {} as { [key: string]: { value: any; operator: any } }
     );
+
     const endpoint =
       Object.keys(tableFilters).length > 0
         ? '/logs/filtered-search'
         : '/logs/search';
+
     try {
       const body =
         endpoint === '/logs/filtered-search'
-          ? {
-              page: 1,
-              page_size: PAGE_SIZE,
-              filters: tableFilters
-            }
+          ? { page: 1, page_size: PAGE_SIZE, filters: tableFilters }
           : {};
       const results = await apiPost(endpoint, { body });
-      console.log(`API response from ${endpoint}:`, results);
-      if (
-        !results ||
-        !Array.isArray(results.result) ||
-        typeof results.count !== 'number'
-      ) {
+
+      if (!results || !Array.isArray(results.result)) {
         console.error('Invalid response format:', results);
         setLogs({ count: 0, result: [] });
         return;
       }
-      setLogs(results);
+
+      const rowsWithId = results.result.map(
+        (log: LogDetails, index: number) => ({
+          ...log,
+          id: index
+        })
+      );
+
+      setLogs({ count: results.count, result: rowsWithId });
     } catch (e) {
       console.error(`Fetch logs error from ${endpoint}:`, e);
       setLogs({ count: 0, result: [] });
@@ -105,94 +103,103 @@ export const Logs: FC<LogsProps> = () => {
     {
       field: 'event_type',
       headerName: 'Event',
-      minWidth: 100,
+      minWidth: 120,
       flex: 1.25
     },
     {
-      field: 'payload.user.email',
-      headerName: 'User Assigned',
-      minWidth: 100,
+      field: 'acting_user',
+      headerName: 'Acting User',
+      minWidth: 180,
       flex: 1.5,
-      valueGetter: (params) => params.row.payload?.user?.email || 'N/A'
+      valueGetter: (params) => {
+        const p =
+          params.row.payload?.user_performed_assignment ||
+          params.row.payload?.user_performed_removal;
+        return p?.email || 'N/A';
+      }
     },
     {
-      field: 'payload.user_performed_assignment.email',
-      headerName: 'Assigned By',
-      minWidth: 100,
+      field: 'acted_on_user',
+      headerName: 'Acted-on User',
+      minWidth: 180,
       flex: 1.5,
+      valueGetter: (params) => {
+        const u =
+          params.row.payload?.user ||
+          params.row.payload?.removal_result?.role_deleted?.user;
+        return u?.email || 'N/A';
+      }
+    },
+    {
+      field: 'organization',
+      headerName: 'Organization',
+      minWidth: 100,
+      flex: 1,
+      valueGetter: (params) => {
+        return (
+          params.row.payload?.organization?.name ||
+          params.row.payload?.from_organization?.name ||
+          'N/A'
+        );
+      }
+    },
+    {
+      field: 'region',
+      headerName: 'Region',
+      minWidth: 80,
+      flex: 0.75,
       valueGetter: (params) =>
-        params.row.payload?.user_performed_assignment?.email || 'N/A'
-    },
-    {
-      field: 'result',
-      headerName: 'Result',
-      minWidth: 100,
-      flex: 1
+        params.row.payload?.user_performed_assignment?.region_id ||
+        params.row.payload?.user_performed_removal?.region_id ||
+        'N/A'
     },
     {
       field: 'created_at',
       headerName: 'Timestamp',
       type: 'dateTime',
-      minWidth: 100,
-      flex: 1.5,
-      valueFormatter: (e) => {
-        return format(parseISO(e.value), 'MM/dd/yyyy hh:mm a');
-      }
+      minWidth: 140,
+      flex: 1.25,
+      valueFormatter: (e) => format(parseISO(e.value), 'MM/dd/yyyy hh:mm a')
     },
     {
-      field: 'payload',
-      headerName: 'Payload',
-      description: 'Click any payload cell to expand.',
-      sortable: false,
-      minWidth: 300,
-      flex: 2,
-      renderCell: (cellValues) => {
+      field: 'result',
+      headerName: 'Result',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (params) => {
+        const isSuccess = params.row.result === 'success';
         return (
-          <Box
-            sx={{
-              fontSize: '12px',
-              padding: 0,
-              margin: 0,
-              backgroundColor: 'black',
-              color: 'white',
-              width: '100%'
-            }}
-          >
-            <pre>{JSON.stringify(cellValues.row.payload, null, 2)}</pre>
-          </Box>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {isSuccess ? (
+              <CheckCircleIcon sx={{ color: '#6c757d' }} />
+            ) : (
+              <CancelIcon sx={{ color: '#6c757d' }} />
+            )}
+            {params.row.result}
+          </span>
         );
-      },
-      valueFormatter: (e) => {
-        return JSON.stringify(e.value, null, 2);
       }
     },
     {
       field: 'details',
-      headerName: 'Details',
+      headerName: 'Payload',
       maxWidth: 70,
-      flex: 1,
-      renderCell: (cellValues: GridRenderEditCellParams) => {
-        return (
-          <IconButton
-            aria-label={`Details for scan task ${cellValues.row.id}`}
-            tabIndex={cellValues.tabIndex}
-            color="primary"
-            onClick={() => {
-              setOpenDialog(true);
-              setDialogDetails(cellValues.row);
-            }}
-          >
-            <OpenInNewIcon />
-          </IconButton>
-        );
-      }
+      flex: 0.5,
+      renderCell: (cellValues: GridRenderEditCellParams) => (
+        <IconButton
+          aria-label={`Details for log ${cellValues.row.id}`}
+          tabIndex={cellValues.tabIndex}
+          color="primary"
+          onClick={() => {
+            setOpenDialog(true);
+            setDialogDetails(cellValues.row);
+          }}
+        >
+          <OpenInNewIcon />
+        </IconButton>
+      )
     }
   ];
-
-  useEffect(() => {
-    fetchLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
 
   return (
     <Box display="flex">
@@ -209,7 +216,7 @@ export const Logs: FC<LogsProps> = () => {
             setFilters(model.items);
           }}
           initialState={{
-            pagination: { paginationModel: { pageSize: 15 } },
+            pagination: { paginationModel: { pageSize: PAGE_SIZE } },
             sorting: {
               sortModel: [{ field: 'created_at', sort: 'desc' }]
             }
@@ -230,10 +237,10 @@ export const Logs: FC<LogsProps> = () => {
             sx={{
               fontSize: '12px',
               padding: 2,
-              margin: 0,
               backgroundColor: 'black',
               color: 'white',
-              width: '100%'
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
             }}
           >
             <pre>{JSON.stringify(dialogDetails?.payload, null, 2)}</pre>

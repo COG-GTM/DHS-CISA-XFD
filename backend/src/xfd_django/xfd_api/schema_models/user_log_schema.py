@@ -15,7 +15,7 @@ class Filter(BaseModel):
 
     @validator("operator")
     def validate_operator(cls, v):
-        """Validate that the operator is one of the allowed values."""
+        """Validate the operator for string-based filters."""
         allowed = [
             "is",
             "not",
@@ -39,7 +39,7 @@ class DateFilter(BaseModel):
 
     @validator("operator")
     def validate_operator(cls, v):
-        """Validate that the operator is one of the allowed date operators."""
+        """Validate the date operator value."""
         allowed = [
             "is",
             "not",
@@ -56,7 +56,7 @@ class DateFilter(BaseModel):
 
 
 class LogSearch(BaseModel):
-    """Log search schema for basic log search queries."""
+    """Schema for basic log search queries."""
 
     event_type: Optional[Filter] = None
     result: Optional[Filter] = None
@@ -65,47 +65,46 @@ class LogSearch(BaseModel):
 
     @validator("payload")
     def validate_payload(cls, v):
-        """Validate that payload, if provided, is a string."""
-        if v:
-            if not isinstance(v, str):
-                raise ValueError("Payload must be a string")
+        """Validate the payload value."""
+        if v and not isinstance(v, str):
+            raise ValueError("Payload must be a string")
         return v
 
 
 class LogSearchResponse(BaseModel):
-    """Log search response model containing results and count."""
+    """Response model for log search results."""
 
     result: List[Any]
     count: int
 
 
 class LogFilters(BaseModel):
-    """Schema for specifying optional filters on log fields such as event type, result, created_at, and payload emails."""
+    """Schema for available log filter options."""
 
     event_type: Optional[Dict[str, Any]] = None
     result: Optional[Dict[str, Any]] = None
     created_at: Optional[Dict[str, Any]] = None
-    payload_user_email: Optional[Dict[str, Any]] = None  # For payload.user.email
-    payload_user_performed_assignment_email: Optional[
-        Dict[str, Any]
-    ] = None  # For payload.user_performed_assignment.email
+    payload_user_email: Optional[Dict[str, Any]] = None
+    payload_user_performed_assignment_email: Optional[Dict[str, Any]] = None
+    payload_organization_name: Optional[Dict[str, Any]] = None
+    payload_user_performed_assignment_region_id: Optional[Dict[str, Any]] = None
 
     class Config:
-        """Pydantic configuration for LogFilters."""
+        """Pydantic config for LogFilters."""
 
         from_attributes = True
         arbitrary_types_allowed = True
 
 
 class FilterCondition(BaseModel):
-    """Filter condition with optional value for advanced filtering."""
+    """Represents a filter condition for log search."""
 
     operator: str
     value: Optional[Any] = None
 
     @validator("value", always=True)
     def validate_value(cls, v, values):
-        """Validate value based on the operator."""
+        """Validate the filter value based on operator."""
         operator = values.get("operator", "").lower()
         if operator in ["is empty", "is not empty"] and v is not None:
             raise ValueError(f"Value must be null for operator '{operator}'")
@@ -115,7 +114,7 @@ class FilterCondition(BaseModel):
 
 
 class LogSearchFilter(BaseModel):
-    """Log search filter schema for advanced filtering and pagination."""
+    """Advanced log search filter with pagination."""
 
     page: int = 1
     page_size: int = 15
@@ -123,13 +122,15 @@ class LogSearchFilter(BaseModel):
 
     @validator("filters")
     def validate_filters(cls, v):
-        """Validate that filters use allowed fields and operators."""
+        """Validate allowed fields and operators in filters."""
         allowed_fields = [
             "event_type",
             "result",
             "timestamp",
             "payload.user.email",
             "payload.user_performed_assignment.email",
+            "payload.user_performed_assignment.region_id",
+            "payload.organization.name",
         ]
         allowed_operators = [
             "contains",
@@ -167,13 +168,13 @@ class GetLogResponse(BaseModel):
     payload: Dict[str, Any]
 
     class Config:
-        """Pydantic configuration for GetLogResponse."""
+        """Pydantic config for GetLogResponse."""
 
         from_attributes = True
 
 
 class LogSearchResponseFilters(BaseModel):
-    """Response model for filtered log search, including results and count."""
+    """Response model for filtered log search results."""
 
     result: List[GetLogResponse]
     count: int
