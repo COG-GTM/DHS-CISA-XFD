@@ -1,7 +1,6 @@
 """Stats methods."""
 # Standard Python Libraries
 import json
-import uuid
 
 # Third-Party Libraries
 from django.forms.models import model_to_dict
@@ -13,6 +12,7 @@ from xfd_api.helpers.stats_helpers import (
     get_total_count,
     safe_redis_mget,
 )
+from xfd_api.helpers.uuid_helpers import is_valid_uuid
 from xfd_mini_dl.models import (
     HostSummary,
     Organization,
@@ -427,17 +427,6 @@ async def get_by_org_stats(
             status_code=500,
             detail="An unexpected error occurred: {}".format(e),
         )
-
-
-def is_valid_uuid(val: str) -> bool:
-    """Check if the given string is a valid UUID."""
-    try:
-        uuid_obj = uuid.UUID(val)
-        # TODO: Uncomment to re-enable v4 uuid checks
-        # uuid_obj = uuid.UUID(val, version=4)
-    except ValueError:
-        return False
-    return str(uuid_obj) == val
 
 
 def get_vs_condensed_trending_data(filters, current_user):

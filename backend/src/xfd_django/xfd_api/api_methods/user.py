@@ -2,7 +2,6 @@
 # Standard Python Libraries
 from datetime import datetime
 import os
-import uuid
 
 # Third-Party Libraries
 from django.core.exceptions import ObjectDoesNotExist
@@ -25,18 +24,8 @@ from ..helpers.email import (
     send_registration_denied_email,
 )
 from ..helpers.regionStateMap import REGION_STATE_MAP
+from ..helpers.uuid_helpers import is_valid_uuid
 from ..tools.serializers import serialize_user
-
-
-def is_valid_uuid(val: str) -> bool:
-    """Check if the given string is a valid UUID."""
-    try:
-        uuid_obj = uuid.UUID(val)
-        # TODO: Uncomment to re-enable v4 uuid checks
-        # uuid_obj = uuid.UUID(val, version=4)
-    except ValueError:
-        return False
-    return str(uuid_obj) == val
 
 
 # GET: /users/me

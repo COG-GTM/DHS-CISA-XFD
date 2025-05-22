@@ -6191,7 +6191,7 @@ class XpanseServicesMdl(models.Model):
 
     xpanse_service_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a Xpanse Service object.",
     )
     service_id = models.TextField(
