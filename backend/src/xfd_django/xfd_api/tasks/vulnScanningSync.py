@@ -36,6 +36,8 @@ from xfd_api.utils.hash import hash_ip
 from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
     enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
+    fill_cidr_live_ips,
+    fill_cidr_live_ips_bulk_update,
     get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
@@ -189,6 +191,11 @@ def main():
         create_port_scan_service_summaries()
         LOGGER.info("Finished processing port scans")
 
+    # fill_cidr_live_ips()
+    fill_cidr_live_ips_bulk_update()
+    # Process Organizations & Relations
+    send_organizations_to_dmz()
+
     # Process Tickets (Chunked)
     LOGGER.info("Started processing tickets...")
     base_query = (
@@ -311,7 +318,10 @@ def send_csv_to_sync(csv_data, bounds):
 
     try:
         response = requests.post(
-            os.getenv("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
+            os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
+            json=body,
+            headers=headers,
+            timeout=60,
         )
         response.raise_for_status()
         LOGGER.info("Successfully sent chunk to sync API")

@@ -7,6 +7,7 @@ import uuid
 # Third-Party Libraries
 # from django.contrib.auth.models import User as AuthUser
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import GistIndex
 from django.db import models
 from netfields import InetAddressField
 
@@ -2045,6 +2046,12 @@ class Cidr(models.Model):
         null=True,
         help_text="An alert message specifying any conflicts when inserting the cidr into the database.",
     )
+    live_ips = models.JSONField(
+        default=list,
+        blank=True,
+        null=True,
+        help_text="A list of live IP addresses associated with this CIDR block.",
+    )
     data_source = models.ForeignKey(
         "DataSource",
         on_delete=models.CASCADE,
@@ -2507,7 +2514,10 @@ class Ip(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "ip"
-        indexes = [models.Index(fields=["ip", "organization"])]
+        indexes = [
+            models.Index(fields=["ip", "organization"])
+            # GistIndex(fields=["ip"]),  # GiST index for efficient CIDR queries
+        ]
         unique_together = ["ip", "organization"]
 
 
@@ -2942,6 +2952,11 @@ class PortScan(AutoLengthCheckModel):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            models.Index(fields=["state"]),
+            models.Index(fields=["time_scanned"]),
+            models.Index(fields=["organization", "ip_string", "port", "-time_scanned"], name="portscan_latest_lookup_idx"),
+        ]
         db_table = "port_scan"
 
 
