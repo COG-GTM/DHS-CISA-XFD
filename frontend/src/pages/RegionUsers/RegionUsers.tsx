@@ -52,6 +52,7 @@ export const RegionUsers: React.FC = () => {
   const { formattedUserType } = useUserLevel();
   const getOrgsURL = `/organizations/region_id/`;
   const getUsersURL = `/v2/users?invite_pending=`;
+
   const pendingCols: GridColDef[] = [
     { field: 'full_name', headerName: 'Name', minWidth: 100, flex: 1 },
     { field: 'email', headerName: 'Email', minWidth: 100, flex: 2 },
@@ -86,6 +87,12 @@ export const RegionUsers: React.FC = () => {
           </Stack>
         );
       }
+    },
+    {
+      field: 'cognito_use_case_description',
+      headerName: 'Use Case',
+      minWidth: 100,
+      flex: 1.5
     }
   ];
   const memberCols: GridColDef[] = [
