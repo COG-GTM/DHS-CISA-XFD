@@ -207,7 +207,28 @@ export const Header: React.FC = () => {
       }}
     >
       <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
-        {headerLogo}
+        {userLevel > 0 ? (
+          headerLogo
+        ) : (
+          <>
+            <Box
+              component="img"
+              src={cisaLogo}
+              sx={{ height: 60 }}
+              alt="CISA Logo"
+            />
+            <Typography
+              variant="h1"
+              sx={{
+                fontSize: '22px',
+                color: 'primary.darker',
+                ml: 1
+              }}
+            >
+              CyHy Dashboard
+            </Typography>
+          </>
+        )}
         {userLevel > 0 && (
           <>
             {allMenuItems.map((sectionObj, index) => {
