@@ -139,7 +139,7 @@ def fetch_in_chunks(base_query: str, chunk_size: int = 5000):
         offset += chunk_size
 
 
-def main(): # pylint: disable=R0915
+def main():  # pylint: disable=R0915
     """Execute the vulnerability scanning synchronization task."""
     LOGGER.info("Started VulnScanningSync scan...")
 
