@@ -1,4 +1,5 @@
 import React from 'react';
+import { useHistory } from 'react-router-dom';
 import { useAuthContext } from 'context';
 import {
   useUserLevel,
@@ -6,7 +7,14 @@ import {
   REGIONAL_ADMIN,
   STANDARD_USER
 } from 'hooks/useUserLevel';
-import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
+import {
+  AppBar,
+  Box,
+  Button,
+  IconButton,
+  Toolbar,
+  Typography
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import cisaLogo from 'assets/cisaSeal.svg';
 import { NavMenuButton } from './NavMenuButton';
@@ -20,6 +28,7 @@ interface MenuItemType {
 }
 
 export const Header: React.FC = () => {
+  const history = useHistory();
   const { logout } = useAuthContext();
   const { userLevel } = useUserLevel();
   const [openDrawer, setOpenDrawer] = React.useState(false);
@@ -67,46 +76,46 @@ export const Header: React.FC = () => {
   const scanningResults: MenuItemType[] = [
     {
       menuItemTitle: 'Overview',
-      path: '/',
+      path: '/overview',
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Vulnerability Scanning',
+      path: '/VSDashboard',
       users: STANDARD_USER
     }
-    // {
-    //   menuItemTitle: 'Vulnerability Scanning',
-    //   path: '/VSDashboard',
-    //   users: STANDARD_USER
-    // }
   ].filter(({ users }) => users <= userLevel);
 
-  // const supportMenuItems: MenuItemType[] = [
-  //   // {
-  //   //   menuItemTitle: 'Report Bug',
-  //   //   path: '#',
-  //   //   users: STANDARD_USER
-  //   // },
-  //   {
-  //     menuItemTitle: 'Send Feedback',
-  //     path: 'mailto:vulnerability@mail.cisa.dhs.gov',
-  //     users: STANDARD_USER
-  //   }
-  // ].filter(({ users }) => users <= userLevel);
+  const supportMenuItems: MenuItemType[] = [
+    // {
+    //   menuItemTitle: 'Report Bug',
+    //   path: '#',
+    //   users: STANDARD_USER
+    // },
+    {
+      menuItemTitle: 'Send Feedback',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov',
+      users: STANDARD_USER
+    }
+  ].filter(({ users }) => users <= userLevel);
 
-  // const learningCenterMenuItems: MenuItemType[] = [
-  //   // {
-  //   //   menuItemTitle: 'Glossary',
-  //   //   path: '#',
-  //   //   users: STANDARD_USER
-  //   // },
-  //   // {
-  //   //   menuItemTitle: 'FAQ',
-  //   //   path: '#',
-  //   //   users: STANDARD_USER
-  //   // },
-  //   {
-  //     menuItemTitle: 'CISA Resources',
-  //     path: 'https://www.cisa.gov',
-  //     users: STANDARD_USER
-  //   }
-  // ].filter(({ users }) => users <= userLevel);
+  const learningCenterMenuItems: MenuItemType[] = [
+    // {
+    //   menuItemTitle: 'Glossary',
+    //   path: '#',
+    //   users: STANDARD_USER
+    // },
+    // {
+    //   menuItemTitle: 'FAQ',
+    //   path: '#',
+    //   users: STANDARD_USER
+    // },
+    {
+      menuItemTitle: 'CISA Resources',
+      path: 'https://www.cisa.gov',
+      users: STANDARD_USER
+    }
+  ].filter(({ users }) => users <= userLevel);
 
   const inventoryMenuItems: MenuItemType[] = [
     {
@@ -117,33 +126,75 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
-    // { 'Scanning Results': scanningResults }, Change back after hot-fix
-    { Overview: scanningResults },
+    { 'Scanning Results': scanningResults },
     { Inventory: inventoryMenuItems },
-    // { 'Learning Center': learningCenterMenuItems },
-    // { Support: supportMenuItems },
+    { 'Learning Center': learningCenterMenuItems },
+    { Support: supportMenuItems },
     userLevel > 1 ? { 'Admin Hub': adminHubMenuItems } : {},
     { 'My Account': userMenuItems }
   ];
 
+  const handleLogoClick = () => {
+    history.push('/VSDashboard');
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleLogoClick();
+    }
+  };
+
   const headerLogo = (
-    <Box
+    <>
+      <Box component="img" src={cisaLogo} sx={{ height: 60 }} alt="CISA Logo" />
+      <Typography
+        variant="h1"
+        sx={{
+          fontSize: '22px',
+          color: 'primary.darker',
+          ml: 1
+        }}
+      >
+        CyHy Dashboard
+      </Typography>
+    </>
+  );
+  const headerLogoWrapper = (
+    <Button
+      component={Box}
+      onClick={handleLogoClick}
+      onKeyDown={handleKeyDown}
+      aria-label="Navigate to VS Dashboard"
+      role="link"
+      tabIndex={0}
       sx={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'left',
         width: '100%',
-        transition: 'margin-left 0.3s ease-in-out'
+        transition: 'margin-left 0.3s ease-in-out',
+        backgroundColor: 'transparent',
+        padding: 0,
+        minWidth: 0,
+        '&:hover': {
+          backgroundColor: 'transparent',
+          textDecoration: 'none',
+          '.MuiTypography-root': {
+            color: 'primary.main'
+          }
+        },
+        '&:active': {
+          backgroundColor: 'transparent'
+        },
+        '&:focus-visible': {
+          outline: `2px solid`,
+          outlineOffset: '2px'
+        }
       }}
     >
-      <Box component="img" src={cisaLogo} sx={{ height: 60 }} alt="C Logo" />
-      <Typography
-        variant="h1"
-        sx={{ fontSize: '22px', color: 'primary.darker' }}
-      >
-        CyHy Dashboard
-      </Typography>
-    </Box>
+      {headerLogo}
+    </Button>
   );
 
   return (
@@ -160,9 +211,8 @@ export const Header: React.FC = () => {
         height: '84px'
       }}
     >
-      {/* <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}> CHANGE BACK AFTER HOT-FIX */}
-      <Toolbar disableGutters sx={{ maxWidth: '1225px', width: '100%', pr: 2 }}>
-        {headerLogo}
+      <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
+        {userLevel > 0 ? headerLogoWrapper : headerLogo}
         {userLevel > 0 && (
           <>
             {allMenuItems.map((sectionObj, index) => {
