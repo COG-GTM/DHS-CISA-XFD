@@ -726,8 +726,8 @@ def fill_cidr_live_ips():
         # Add the new IPs from the scans to the existing set (no duplicates)
         current_live_ips.update(scans)
 
-        # Save the result back as a list (to store in the database)
-        cidr.live_ips = list(current_live_ips)
+        # Convert all IP objects to strings for JSON serialization
+        cidr.live_ips = [str(ip.ip) for ip in current_live_ips]
         cidr.save()
 
     duration = time.time() - start_time

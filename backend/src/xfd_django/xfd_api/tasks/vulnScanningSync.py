@@ -39,10 +39,10 @@ from xfd_api.utils.scan_utils.alerting import (
     ScanExecutionError,
     SyncError,
 )
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips_bulk_update,
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
     enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
-    fill_cidr_live_ips,
+    fill_cidr_live_ips_bulk_update,
     get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
@@ -197,8 +197,8 @@ def main():
         create_port_scan_service_summaries()
         LOGGER.info("Finished processing port scans")
 
-    fill_cidr_live_ips()
-    # fill_cidr_live_ips_bulk_update()
+    # fill_cidr_live_ips()
+    fill_cidr_live_ips_bulk_update()
 
     # Process Organizations & Relations
     send_organizations_to_dmz()

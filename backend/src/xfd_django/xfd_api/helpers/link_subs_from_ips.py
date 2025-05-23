@@ -40,7 +40,6 @@ def process_ips(thread_id, org, cidr, ip_list):
     count = 0
     failed_ips = []
     chunk_start = time.time()
-    LOGGER.info("Thread %d: ip_list: %s", thread_id, ip_list)
     for ip in ip_list:
         count += 1
         try:

@@ -28,8 +28,8 @@ from psycopg2.errors import WrongObjectType
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
 from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.tasks.es_client import ESClient
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips_bulk_update,
-    fill_cidr_live_ips,
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
+    fill_cidr_live_ips_bulk_update,
 )
 from xfd_mini_dl.models import (
     ApiKey,
@@ -744,8 +744,8 @@ def populate_sample_data():
         )
         sys.stdout.flush()
 
-    fill_cidr_live_ips()
-    # fill_cidr_live_ips_bulk_update()
+    # fill_cidr_live_ips()
+    fill_cidr_live_ips_bulk_update()
 
     print("\n✅ Done populating all data.")
 
