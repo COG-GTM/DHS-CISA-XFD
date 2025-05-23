@@ -10,6 +10,7 @@ import datetime
 import json
 import logging
 import os
+import time
 from typing import Dict
 from uuid import uuid1
 
@@ -697,6 +698,8 @@ def map_severity(severity):
 
 def fill_cidr_live_ips():
     """Update live_ips field for all current CIDRs based on recent open PortScans."""
+    start_time = time.time()
+
     # Define the 90-day threshold
     time_threshold = timezone.now() - datetime.timedelta(days=90)
 
@@ -704,11 +707,9 @@ def fill_cidr_live_ips():
     current_cidrs = Cidr.objects.filter(cidrorgs__current=True).distinct()
 
     for cidr in current_cidrs:
-        # Skip if network is not defined
         if not cidr.network:
             continue
 
-        # Query open PortScans within this CIDR block
         scans = (
             PortScan.objects.filter(
                 state="open",
@@ -729,10 +730,13 @@ def fill_cidr_live_ips():
         cidr.live_ips = list(current_live_ips)
         cidr.save()
 
+    duration = time.time() - start_time
+    LOGGER.info("fill_cidr_live_ips completed in %.2f seconds", duration)
+
 
 def fill_cidr_live_ips_bulk_update():
-    """Fill live ips field in the cidr table based on recent port scans."""
-    time_threshold = timezone.now() - datetime.timedelta(days=90)
+    """Fill live_ips field in the cidr table based on recent port scans."""
+    start_time = time.time()
 
     with transaction.atomic(using="mini_data_lake"):
         with connections["mini_data_lake"].cursor() as cursor:
@@ -745,7 +749,7 @@ def fill_cidr_live_ips_bulk_update():
                     FROM cidr
                     JOIN cidr_orgs ON cidr_orgs.cidr_id = cidr.id
                     JOIN port_scan ON port_scan.state = 'open'
-                        AND port_scan.time_scanned >= %s
+                        AND port_scan.time_scanned >= NOW() - INTERVAL '90 days'
                     JOIN ip ON port_scan.ip_id = ip.id
                     WHERE cidr_orgs.current = TRUE
                       AND cidr.network IS NOT NULL
@@ -768,6 +772,8 @@ def fill_cidr_live_ips_bulk_update():
                 SET live_ips = to_jsonb(merged_ips.updated_ips)
                 FROM merged_ips
                 WHERE cidr.id = merged_ips.id;
-                """,
-                [time_threshold],
+                """
             )
+
+    duration = time.time() - start_time
+    LOGGER.info("fill_cidr_live_ips_bulk_update completed in %.2f seconds", duration)

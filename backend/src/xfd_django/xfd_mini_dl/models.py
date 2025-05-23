@@ -2513,10 +2513,7 @@ class Ip(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "ip"
-        indexes = [
-            models.Index(fields=["ip", "organization"])
-            # GistIndex(fields=["ip"]),  # GiST index for efficient CIDR queries
-        ]
+        indexes = [models.Index(fields=["ip", "organization"])]
         unique_together = ["ip", "organization"]
 
 

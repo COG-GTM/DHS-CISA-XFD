@@ -33,10 +33,10 @@ from xfd_api.tasks.syncdb_helpers import (
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips_bulk_update,
     enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
-    fill_cidr_live_ips_bulk_update,
+    fill_cidr_live_ips,
     get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
@@ -141,9 +141,6 @@ def main():
     org_id_dict = process_orgs(request_list)
     LOGGER.info("Completed saving organizations to the LZ MDL.")
 
-    # Process Organizations & Relations
-    send_organizations_to_dmz()
-
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
     vuln_scans = fetch_from_redshift(
@@ -190,8 +187,9 @@ def main():
         create_port_scan_service_summaries()
         LOGGER.info("Finished processing port scans")
 
-    # fill_cidr_live_ips()
-    fill_cidr_live_ips_bulk_update()
+    fill_cidr_live_ips()
+    # fill_cidr_live_ips_bulk_update()
+
     # Process Organizations & Relations
     send_organizations_to_dmz()
 
