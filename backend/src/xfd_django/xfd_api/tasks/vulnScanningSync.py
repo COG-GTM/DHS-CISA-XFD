@@ -39,7 +39,7 @@ from xfd_api.utils.scan_utils.alerting import (
     ScanExecutionError,
     SyncError,
 )
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import ( # fill_cidr_live_ips_bulk_update,
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips_bulk_update,
     enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
     fill_cidr_live_ips,
