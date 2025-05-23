@@ -45,7 +45,6 @@ export interface ApiResponse {
 interface ApprovedBy {
   id: string;
   full_name: string;
-
   first_name: string;
   last_name: string;
   email: string;
@@ -134,22 +133,22 @@ export const Users: React.FC = () => {
       headerName: 'Approval Date',
       minWidth: 100,
       flex: 1,
-      sortComparator: (v1, v2) => {
-        if (v1 === 'None') return -1;
-        if (v2 === 'None') return 1;
-
-        const date1 = new Date(v1);
-        const date2 = new Date(v2);
-        return date1.getTime() - date2.getTime();
+      renderCell: (params: GridRenderCellParams) => {
+        const dateApproved = params.row?.date_approved;
+        return dateApproved
+          ? format(new Date(dateApproved), 'MM-dd-yyyy hh:mm a')
+          : 'None';
       }
     },
     {
       field: 'approved_by',
       headerName: 'Approved By',
       minWidth: 100,
-      flex: 0.75
-      //  valueGetter: (params) =>
-      //    params.row.approved_by ? params.row.approved_by.full_name : 'None'
+      flex: 0.75,
+      renderCell: (params: GridRenderCellParams) => {
+        const approvedBy = params.row?.approved_by;
+        return approvedBy ? approvedBy.full_name : 'None';
+      }
     },
     {
       field: 'dateToUSigned',
