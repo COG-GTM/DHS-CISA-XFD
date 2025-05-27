@@ -1,6 +1,15 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import classes from './Risk.module.scss';
-import { Box, Card, CardContent, Grid, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Paper,
+  Typography,
+  Button
+} from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import VulnerabilityCard from './VulnerabilityCard';
 import TopVulnerablePorts from './TopVulnerablePorts';
 import TopVulnerableDomains from './TopVulnerableDomains';
@@ -406,21 +415,44 @@ const Risk: React.FC<ContextType> = ({
     return (
       <div
         style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.4)',
+          zIndex: 1300,
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh'
+          alignItems: 'center'
         }}
       >
         <Card style={{ maxWidth: 400, textAlign: 'center' }}>
           <CardContent>
-            <Typography variant="h5" component="h2">
-              REQUEST SENT
+            <CheckCircleOutlineIcon
+              sx={{
+                fontSize: 48,
+                color: (theme) => theme.palette.primary.dark,
+                mb: 1
+              }}
+            />
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Request sent! We will notify you by email once your account is
+              approved
             </Typography>
-            <Typography variant="body1">
-              Thank you for requesting a CyHy Dashboard account, you will
-              receive notification once this request is approved.
-            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: (theme) => theme.palette.primary.dark,
+                color: '#fff',
+                '&:hover': {
+                  backgroundColor: (theme) => theme.palette.primary.main
+                }
+              }}
+              onClick={logout}
+            >
+              Logout
+            </Button>
           </CardContent>
         </Card>
       </div>
