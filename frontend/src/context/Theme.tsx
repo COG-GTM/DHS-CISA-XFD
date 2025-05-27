@@ -90,6 +90,13 @@ declare module '@mui/material/Button' {
   }
 }
 
+declare module '@mui/material/Chip' {
+  interface ChipPropsVariantOverrides {
+    graphOutlinedInactive: true;
+    graphOutlinedActive: true;
+  }
+}
+
 const theme = createTheme({
   breakpoints: {
     values: {
@@ -134,6 +141,56 @@ const theme = createTheme({
         }
       ]
     },
+    MuiChip: {
+      variants: [
+        {
+          props: {
+            variant: 'graphOutlinedInactive'
+          },
+          style: ({ theme }) => ({
+            backgroundColor: theme.palette.neutrals.white,
+            color: theme.palette.primary.dark,
+            border: `1px solid ${theme.palette.primary.dark}`,
+
+            fontWeight: 'medium',
+
+            '&:hover': {
+              backgroundColor: theme.palette.primary.light
+            }
+          })
+        },
+        {
+          props: {
+            variant: 'graphOutlinedActive'
+          },
+          style: ({ theme }) => ({
+            backgroundColor: theme.palette.primary.dark,
+            color: theme.palette.neutrals.white,
+
+            fontWeight: 'medium',
+
+            '&:hover': {
+              opacity: 0.8
+            }
+          })
+        }
+      ]
+    },
+    // To-do: Re-enable this after clarification with Design Team
+    // MuiChip: {
+    //   styleOverrides: {
+    //     root: {
+    //       borderRadius: '4px',
+    //       fontSize: '1.167rem',
+    //       fontWeight: 'medium',
+    //       height: '24px',
+    //       padding: '2px 14px 2px 14px',
+    //       '&:hover': {
+    //         backgroundColor: '#ECF7FF'
+    //       }
+    //     }
+    //   }
+    // }
     MuiIconButton: {
       styleOverrides: {
         root: ({ theme }) => ({
