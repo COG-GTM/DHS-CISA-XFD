@@ -242,11 +242,11 @@ const Risk: React.FC<ContextType> = ({
       });
     }
   }, [
-    pathname,
+    // pathname,
     removeFilter,
     filters,
     addFilter,
-    riskFilters,
+    // riskFilters,
     initialFiltersForUser
   ]);
 

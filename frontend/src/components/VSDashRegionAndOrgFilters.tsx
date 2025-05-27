@@ -166,6 +166,8 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
     }
   }, [filters]);
 
+  console.log('organizationsInFilters', organizationsInFilters);
+
   //   const regionExistsInFilters = useCallback(
   //     (region_id: string) => {
   //       return regionFilterValues?.includes(region_id);
@@ -223,9 +225,21 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
     setIsOrgOpen(false);
   };
 
-  const userOrg = user?.roles?.map((role) => role.organization.name);
-  const userRegion = user?.region_id;
+  // const userOrg = user?.roles?.map((role) => role.organization.name);
+  const userOrg = filters.find(
+    (filter) => filter.field === ORGANIZATION_FILTER_KEY
+  )?.values as OrganizationShallow[];
+  const userRegion = filters.find(
+    (filter) => filter.field === REGION_FILTER_KEY
+  )?.values as string[];
+  console.log('userOrg', userOrg);
   console.log('userRegion', userRegion);
+  const userOrgId = userOrg?.map((org) => org.id);
+  console.log('userOrgId', userOrgId);
+  const userOrgName = userOrg?.map((org) => org.name);
+  console.log('userOrgName', userOrgName);
+  // const userRegion = user?.region_id;
+  // console.log('userRegion', userRegion);
   return (
     <>
       <Box padding={2}>
@@ -301,11 +315,12 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
           renderInput={(params) => (
             <TextField
               {...params}
-              label={
-                selectedRegion
-                  ? `Region ${selectedRegion}`
-                  : `Region ${userRegion}`
-              }
+              // label={
+              //   selectedRegion
+              //     ? `Region ${selectedRegion}`
+              //     : `Region ${userRegion}`
+              // }
+              label={`Region ${userRegion?.length ? userRegion[0] : ''}`}
               value={search_term}
               defaultValue={user?.region_id}
               onBlur={() => setIsRegOpen(false)}
@@ -355,12 +370,8 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
                 style={{
                   pointerEvents: 'none',
                   padding: 0
-                  //   overscrollBehavior: 'contain',
-                  //   overflow: 'auto'
-                  //   maxHeight: '100vh'
                 }}
                 key={option.id}
-                // height="100vh"
               >
                 <Button
                   sx={{
@@ -373,9 +384,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
                     fontWeight: 400,
                     color: 'black',
                     textTransform: 'none'
-                    // overflow: 'hidden',
-                    // textOverflow: 'ellipsis',
-                    // overscrollBehavior: 'contain'
                   }}
                   id="search-org-button"
                   onClick={() =>
@@ -394,11 +402,12 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
           renderInput={(params) => (
             <TextField
               {...params}
-              label={selectedOrg?.name ? selectedOrg.name : userOrg}
+              // label={selectedOrg?.name ? selectedOrg.name : 'Organization'}
+              label={userOrgName?.length ? userOrgName[0] : 'Organization'}
               onBlur={() => setIsOrgOpen(false)}
               helperText={
                 userLevel === REGIONAL_ADMIN || GLOBAL_ADMIN
-                  ? 'This filter, by default, displays data for all organinzations in your region. Use this filter to select one or multiple organizations.'
+                  ? 'This filter, by default, displays data for all organizations in your region. Use this filter to select one or multiple organizations.'
                   : ''
               }
             />
