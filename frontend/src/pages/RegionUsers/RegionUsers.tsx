@@ -59,6 +59,12 @@ export const RegionUsers: React.FC = () => {
     { field: 'state', headerName: 'State', minWidth: 100, flex: 1 },
     { field: 'created_at', headerName: 'Created At', minWidth: 100, flex: 1.5 },
     {
+      field: 'cognito_use_case_description',
+      headerName: 'Use Case',
+      minWidth: 100,
+      flex: 1.5
+    },
+    {
       field: 'status',
       headerName: 'Registration Status',
       minWidth: 250,
@@ -87,12 +93,6 @@ export const RegionUsers: React.FC = () => {
           </Stack>
         );
       }
-    },
-    {
-      field: 'cognito_use_case_description',
-      headerName: 'Use Case',
-      minWidth: 100,
-      flex: 1.5
     }
   ];
   const memberCols: GridColDef[] = [
