@@ -6,7 +6,8 @@ import {
   Paper,
   Typography,
   Stack,
-  Button
+  Button,
+  Tooltip
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -131,23 +132,48 @@ export const Users: React.FC = () => {
     {
       field: 'date_approved',
       headerName: 'Approval Date',
-      minWidth: 100,
+      minWidth: 255,
       flex: 1,
       renderCell: (params: GridRenderCellParams) => {
         const dateApproved = params.row?.date_approved;
-        return dateApproved
-          ? format(new Date(dateApproved), 'MM-dd-yyyy hh:mm a')
-          : 'None';
+        return (
+          <Tooltip
+            title={
+              dateApproved
+                ? format(new Date(dateApproved), 'MM-dd-yyyy hh:mm a')
+                : 'None'
+            }
+          >
+            <span>
+              {dateApproved
+                ? format(new Date(dateApproved), 'MM-dd-yyyy hh:mm a')
+                : 'None'}
+            </span>
+          </Tooltip>
+        );
       }
     },
     {
       field: 'approved_by',
       headerName: 'Approved By',
-      minWidth: 100,
+      minWidth: 255,
       flex: 0.75,
       renderCell: (params: GridRenderCellParams) => {
         const approvedBy = params.row?.approved_by;
-        return approvedBy ? approvedBy.full_name : 'None';
+        const fullName = approvedBy ? approvedBy.full_name : 'None';
+
+        const fullUserInfo = params.row?.approved_by;
+        return (
+          <Tooltip
+            title={
+              fullUserInfo
+                ? `${fullUserInfo.full_name} ${fullUserInfo.email}`
+                : 'None'
+            }
+          >
+            <span>{fullName}</span>
+          </Tooltip>
+        );
       }
     },
     {
