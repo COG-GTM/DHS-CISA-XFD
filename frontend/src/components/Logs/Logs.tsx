@@ -47,11 +47,16 @@ export const Logs: FC<LogsProps> = () => {
 
   const fetchLogs = useCallback(async () => {
     const fieldMap: Record<string, string> = {
-      acting_user: 'payload.user_performed_assignment.email',
-      acted_on_user: 'payload.user.email',
-      region: 'payload.user_performed_assignment.region_id',
+      event_type: 'event_type',
+      acting_user: 'payload.user_performed_assignment.full_name',
+      acted_on_user: 'payload.user.full_name',
       organization: 'payload.organization.name',
-      created_at: 'timestamp'
+      region: 'payload.user_performed_assignment.region_id',
+      role: 'payload.role',
+      state: 'payload.state',
+      user: 'payload.user.full_name',
+      created_at: 'created_at',
+      result: 'result'
     };
 
     const tableFilters = filters.reduce(
@@ -103,31 +108,31 @@ export const Logs: FC<LogsProps> = () => {
     {
       field: 'event_type',
       headerName: 'Event',
-      minWidth: 120,
+      minWidth: 100,
       flex: 1.25
     },
     {
       field: 'acting_user',
       headerName: 'Acting User',
-      minWidth: 180,
+      minWidth: 100,
       flex: 1.5,
       valueGetter: (params) => {
         const p =
           params.row.payload?.user_performed_assignment ||
           params.row.payload?.user_performed_removal;
-        return p?.email || 'N/A';
+        return p?.full_name || 'N/A';
       }
     },
     {
       field: 'acted_on_user',
       headerName: 'Acted-on User',
-      minWidth: 180,
+      minWidth: 100,
       flex: 1.5,
       valueGetter: (params) => {
         const u =
           params.row.payload?.user ||
           params.row.payload?.removal_result?.role_deleted?.user;
-        return u?.email || 'N/A';
+        return u?.full_name || 'N/A';
       }
     },
     {
@@ -146,7 +151,7 @@ export const Logs: FC<LogsProps> = () => {
     {
       field: 'region',
       headerName: 'Region',
-      minWidth: 80,
+      minWidth: 100,
       flex: 0.75,
       valueGetter: (params) =>
         params.row.payload?.user_performed_assignment?.region_id ||
@@ -154,10 +159,40 @@ export const Logs: FC<LogsProps> = () => {
         'N/A'
     },
     {
+      field: 'role',
+      headerName: 'Role',
+      minWidth: 100,
+      flex: 0.75,
+      valueGetter: (params) => params.row.payload?.role || 'N/A'
+    },
+    {
+      field: 'state',
+      headerName: 'State',
+      minWidth: 100,
+      flex: 1,
+      valueGetter: (params) => {
+        return (
+          params.row.payload?.state ||
+          params.row.payload?.user_performed_assignment?.state ||
+          params.row.payload?.user?.state ||
+          'N/A'
+        );
+      }
+    },
+    {
+      field: 'user',
+      headerName: 'User',
+      minWidth: 100,
+      flex: 1.5,
+      valueGetter: (params) => {
+        return params.row.payload?.user?.full_name || 'N/A';
+      }
+    },
+    {
       field: 'created_at',
       headerName: 'Timestamp',
       type: 'dateTime',
-      minWidth: 140,
+      minWidth: 100,
       flex: 1.25,
       valueFormatter: (e) => format(parseISO(e.value), 'MM/dd/yyyy hh:mm a')
     },
@@ -220,6 +255,12 @@ export const Logs: FC<LogsProps> = () => {
             sorting: {
               sortModel: [{ field: 'created_at', sort: 'desc' }]
             }
+            // columns: {
+            //   columnVisibilityModel: {
+            //     // event_type: false,
+            //     created_at: false
+            //   }
+            // }
           }}
           pageSizeOptions={[15, 30, 50, 100]}
         />
