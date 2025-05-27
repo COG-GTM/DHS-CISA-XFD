@@ -61,7 +61,7 @@ export const RegionUsers: React.FC = () => {
     {
       field: 'cognito_use_case_description',
       headerName: 'Use Case',
-      minWidth: 100,
+      minWidth: 255,
       flex: 1.5
     },
     {

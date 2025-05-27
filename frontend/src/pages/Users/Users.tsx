@@ -132,7 +132,7 @@ export const Users: React.FC = () => {
     {
       field: 'date_approved',
       headerName: 'Approval Date',
-      minWidth: 255,
+      minWidth: 100,
       flex: 1,
       renderCell: (params: GridRenderCellParams) => {
         const dateApproved = params.row?.date_approved;
@@ -156,7 +156,7 @@ export const Users: React.FC = () => {
     {
       field: 'approved_by',
       headerName: 'Approved By',
-      minWidth: 255,
+      minWidth: 100,
       flex: 0.75,
       renderCell: (params: GridRenderCellParams) => {
         const approvedBy = params.row?.approved_by;
