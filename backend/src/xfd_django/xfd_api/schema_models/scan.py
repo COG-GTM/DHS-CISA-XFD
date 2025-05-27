@@ -46,8 +46,8 @@ class ScanSchema(BaseModel):
 
     # CPU and memory for the scan. See this page for more information:
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-    cpu: Optional[str] = None
-    memory: Optional[str] = None
+    cpu: Optional[str] = "1024"
+    memory: Optional[str] = "8192"
 
     # A scan is "chunked" if its work is divided and run in parallel by multiple workers.
     # To make a scan chunked, make sure it is a global scan and specify the "numChunks" variable,
@@ -147,7 +147,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Enumerate and sync org assets.",
-        max_concurrent_tasks=1,
+        max_concurrent_tasks=3,
     ),
     "censys": ScanSchema(
         type="fargate",
@@ -272,6 +272,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
+        cpu="1024",
+        memory="8192",
         description="Update CVE data using the NIST API",
     ),
     "nist_lz_sync": ScanSchema(

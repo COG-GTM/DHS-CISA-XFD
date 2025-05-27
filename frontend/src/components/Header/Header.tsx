@@ -1,4 +1,5 @@
 import React from 'react';
+import { useHistory } from 'react-router-dom';
 import { useAuthContext } from 'context';
 import {
   useUserLevel,
@@ -9,6 +10,7 @@ import {
 import {
   AppBar,
   Box,
+  Button,
   IconButton,
   Toolbar,
   Typography,
@@ -27,6 +29,7 @@ interface MenuItemType {
 }
 
 export const Header: React.FC = () => {
+  const history = useHistory();
   const { logout } = useAuthContext();
   const theme = useTheme();
   const { userLevel } = useUserLevel();
@@ -75,7 +78,7 @@ export const Header: React.FC = () => {
   const scanningResults: MenuItemType[] = [
     {
       menuItemTitle: 'Overview',
-      path: '/',
+      path: '/overview',
       users: STANDARD_USER
     },
     {
@@ -133,24 +136,67 @@ export const Header: React.FC = () => {
     { 'My Account': userMenuItems }
   ];
 
+  const handleLogoClick = () => {
+    history.push('/VSDashboard');
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleLogoClick();
+    }
+  };
+
   const headerLogo = (
-    <Box
+    <>
+      <Box component="img" src={cisaLogo} sx={{ height: 60 }} alt="CISA Logo" />
+      <Typography
+        variant="h1"
+        sx={{
+          fontSize: '22px',
+          color: 'primary.darker',
+          ml: 1
+        }}
+      >
+        CyHy Dashboard
+      </Typography>
+    </>
+  );
+  const headerLogoWrapper = (
+    <Button
+      component={Box}
+      onClick={handleLogoClick}
+      onKeyDown={handleKeyDown}
+      aria-label="Navigate to VS Dashboard"
+      role="link"
+      tabIndex={0}
       sx={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'left',
         width: '100%',
-        transition: 'margin-left 0.3s ease-in-out'
+        transition: 'margin-left 0.3s ease-in-out',
+        backgroundColor: 'transparent',
+        padding: 0,
+        minWidth: 0,
+        '&:hover': {
+          backgroundColor: 'transparent',
+          textDecoration: 'none',
+          '.MuiTypography-root': {
+            color: 'primary.main'
+          }
+        },
+        '&:active': {
+          backgroundColor: 'transparent'
+        },
+        '&:focus-visible': {
+          outline: `2px solid`,
+          outlineOffset: '2px'
+        }
       }}
     >
-      <Box component="img" src={cisaLogo} sx={{ height: 60 }} alt="C Logo" />
-      <Typography
-        variant="h1"
-        sx={{ fontSize: '22px', color: 'primary.darker' }}
-      >
-        CyHy Dashboard
-      </Typography>
-    </Box>
+      {headerLogo}
+    </Button>
   );
 
   return (
@@ -169,7 +215,7 @@ export const Header: React.FC = () => {
       }}
     >
       <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
-        {headerLogo}
+        {userLevel > 0 ? headerLogoWrapper : headerLogo}
         {userLevel > 0 && (
           <>
             {allMenuItems.map((sectionObj, index) => {

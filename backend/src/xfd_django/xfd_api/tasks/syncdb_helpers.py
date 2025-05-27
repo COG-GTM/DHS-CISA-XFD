@@ -28,6 +28,9 @@ from psycopg2.errors import WrongObjectType
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
 from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.tasks.es_client import ESClient
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
+    fill_cidr_live_ips_bulk_update,
+)
 from xfd_mini_dl.models import (
     ApiKey,
     Cidr,
@@ -57,10 +60,11 @@ PROB_SAMPLE_VULNERABILITIES = 0.5
 SAMPLE_STATES = ["Virginia", "California", "Colorado"]
 SAMPLE_REGION_IDS = ["1", "2", "3"]
 ORGANIZATION_CHUNK_SIZE = 50
-FAKE_VULN_SCAN_COUNT = 2
-FAKE_PORT_SCAN_COUNT = 20
+FAKE_ORG_COUNT = 20
+FAKE_VULN_SCAN_COUNT = 200
+FAKE_PORT_SCAN_COUNT = 200
 FAKE_HOST_COUNT = 2
-FAKE_TICKET_COUNT = 2
+FAKE_TICKET_COUNT = 100
 # Load sample data files
 SAMPLE_DATA_DIR = os.path.join(settings.BASE_DIR, "xfd_api", "tasks", "sample_data")
 services = json.load(open(os.path.join(SAMPLE_DATA_DIR, "services.json")))
@@ -394,11 +398,18 @@ def build_fake_ticket(org):
     ip_record, ip_string = create_ip_within_org_cidr(org)
     cve = Cve.objects.order_by("?").first()
     port = random.choice([21, 22, 80, 443])
-    severity = random.choice(["1.0", "2.0", "3.0", "4.0"])
+    severity_ranges = {
+        "1.0": (0.1, 3.9),  # Low
+        "2.0": (4.0, 6.9),  # Medium
+        "3.0": (7.0, 8.9),  # High
+        "4.0": (9.0, 10.0),  # Critical
+    }
+    severity = random.choice(list(severity_ranges.keys()))
+    cvss_base_score = round(random.uniform(*severity_ranges[severity]), 1)
     protocol = random.choice(["tcp", "udp"])
     opened_time = timezone.now() - timedelta(days=random.randint(0, 30))
-    # 70% chance of ticket being open (closed_timestamp = None)
-    if random.random() < 0.7:
+    # 80% chance of ticket being open (closed_timestamp = None)
+    if random.random() < 0.8:
         closed_time = None
     else:
         closed_time = opened_time + timedelta(days=random.randint(30, 600))
@@ -421,17 +432,21 @@ def build_fake_ticket(org):
         organization=org,
         cve=cve,
         cve_string=cve.name if cve else "CVE-2021-0001",
-        cvss_base_score=round(random.uniform(0, 9), 1),
+        cvss_base_score=cvss_base_score,
         cvss_version="3.1",
-        vuln_name=random.choice(
+        vuln_name=cve.name
+        + " "
+        + random.choice(
             [
                 "Super Alarming Vuln",
                 "Super Hazardous Vuln",
                 "Super Risky Vuln",
                 "Super Menacing Vuln",
-                "Super Perilous Vuln",
+                "Super unsupported Vuln",
             ]
-        ),
+        )
+        if cve
+        else "CVE-2021-0001",
         cvss_score_source="nvd",
         cvss_severity=Decimal(severity),
         vpr_score=Decimal("6.9"),
@@ -444,10 +459,25 @@ def build_fake_ticket(org):
         port_protocol=protocol,
         snapshots_bool=False,
         vuln_source="nessus",
+        operating_system=random.choice(
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                "Windows 10",
+                "Linux (Ubuntu 22.04)",
+                "macOS (macOS Ventura)",
+                "FreeBSD",
+                "Cisco IOS",
+            ]
+        ),
         vuln_source_id=random.choice([10081, 12345, 34567, 89012]),
         closed_timestamp=closed_time,
         opened_timestamp=opened_time,
-        is_kev=random.choice([True, False]),
+        is_kev=random.choice([True, True, False]),
         is_risky=random.choice([True, False]),
         is_open=not closed_time,
         service_name="ftp",
@@ -502,7 +532,7 @@ def generate_cidr_blocks(n=5):
     for _ in range(n):
         # Generate random private IP ranges
         net = ipaddress.IPv4Network(
-            f"{random.randint(10, 172)}.{random.randint(0, 255)}.{random.randint(0, 255)}.0/{random.choice([24, 25, 26])}",
+            f"{random.randint(10, 172)}.{random.randint(0, 255)}.{random.randint(0, 255)}.0/{random.choice([26, 27, 28])}",
             strict=False,
         )
         cidrs.append(str(net))
@@ -619,7 +649,9 @@ def create_cidrs_for_org(org, cidr_list, data_source=None, ips_per_cidr=4):
             )
 
             # Link CIDR to Org
-            CidrOrgs.objects.get_or_create(organization=org, cidr=cidr_obj)
+            CidrOrgs.objects.get_or_create(
+                organization=org, cidr=cidr_obj, defaults={"current": True}
+            )
 
             # Generate IPs from this CIDR
             usable_ips = list(net.hosts())
@@ -639,7 +671,7 @@ def create_cidrs_for_org(org, cidr_list, data_source=None, ips_per_cidr=4):
                     last_seen_timestamp=timezone.now(),
                     last_reverse_lookup=timezone.now(),
                     has_shodan_results=random.choice([True, False]),
-                    current=random.choice([True, False]),
+                    current=random.choice([True, True, True, False]),
                     conflict_alerts=[],
                     synced_at=timezone.now(),
                 )
@@ -653,14 +685,14 @@ def populate_sample_data():
     orgs = Organization.objects.all()
 
     if len(orgs) == 0:
-        gen_orgs(200)
+        gen_orgs(FAKE_ORG_COUNT)
         orgs = Organization.objects.all()
 
     for org in orgs:
         cidrs = generate_cidr_blocks()
         create_cidrs_for_org(org, cidrs)
 
-    print("Populating vuln_scans, port_ccans, tickets, and ticket_events...")
+    print("Populating vuln_scans, port_scans, tickets, and ticket_events...")
     for idx, org in enumerate(orgs, start=1):
         try:
             with transaction.atomic():
@@ -711,6 +743,9 @@ def populate_sample_data():
             f"\rProgress: |{bar_template}| {percent:.1f}% ({idx}/{len(orgs)})"
         )
         sys.stdout.flush()
+
+    # fill_cidr_live_ips()
+    fill_cidr_live_ips_bulk_update()
 
     print("\n✅ Done populating all data.")
 
@@ -930,6 +965,22 @@ def synchronize(target_app_label=None, using=None):
         process_m2m_tables(schema_editor, ordered_models, database)
 
         if target_app_label == "xfd_mini_dl":
+            print("Ensuring GiST index exists on ip.ip...")
+            with connections[database].cursor() as cursor:
+                cursor.execute(
+                    """
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_indexes
+                            WHERE tablename = 'ip' AND indexname = 'ip_ip_gist_idx'
+                        ) THEN
+                            EXECUTE 'CREATE INDEX ip_ip_gist_idx ON ip USING gist (ip inet_ops)';
+                        END IF;
+                    END
+                    $$;
+                """
+                )
             create_domain_view(database)
             create_service_view(database)
             create_vuln_normal_views(database)
@@ -1010,6 +1061,7 @@ def process_model(
             else:
                 print("Creating table for model: {}".format(model.__name__))
                 schema_editor.create_model(model)
+
         except Exception as e:
             print("Error processing model {}: {}".format(model.__name__, e))
 
