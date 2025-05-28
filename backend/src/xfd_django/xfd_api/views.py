@@ -1035,12 +1035,10 @@ async def sync(
     current_user: User = Depends(get_current_active_user),
 ):
     """Post organizations for datalake sync."""
-    try:
-        return await sync_post(sync_body, request, current_user)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+    response = await sync_post(sync_body, request, current_user)
+    if not isinstance(response, SyncResponse):
+        raise HTTPException(status_code=500, detail="Invalid response from sync_post.")
+    return response
 
 
 @api_router.post(
