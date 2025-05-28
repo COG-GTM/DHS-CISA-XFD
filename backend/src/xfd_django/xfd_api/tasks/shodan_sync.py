@@ -12,6 +12,7 @@ import django
 from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
+from xfd_api.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import DataSource, Ip, Organization, ShodanAssets, ShodanVulns
 
 # Django setup
@@ -43,6 +44,7 @@ def handler(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
+        scan_id = command_options.get("scanId")
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -104,14 +106,27 @@ def handler(command_options):
                 len(assets),
                 len(vulns),
             )
-            save_findings_to_db(assets, vulns, organization, shodan_datasource)
+            if assets or vulns:
+                save_findings_to_db(assets, vulns, organization, shodan_datasource)
+            else:
+                return {
+                    "statusCode": 200,
+                    "body": "Shodan sync completed successfully, but found no assets or vulnerabilities for {} ({}).".format(
+                        organization_name, organization.acronym
+                    ),
+                }
 
             if current_page >= total_pages:
                 done = True
             else:
                 page += 1
-
-        return {"statusCode": 200, "body": "Shodan sync completed successfully."}
+        upsert_scan_result(scan_id, organization_id)
+        return {
+            "statusCode": 200,
+            "body": "Shodan sync completed successfully for {} ({}).".format(
+                organization_name, organization.acronym
+            ),
+        }
 
     except Exception as e:
         LOGGER.error(e)

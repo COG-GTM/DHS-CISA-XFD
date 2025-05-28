@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 import requests
 import shodan
+from xfd_api.helpers.upsert_scan_result import upsert_scan_result
 from xfd_api.tasks.helpers.get_ips import get_ips_by_cidr
 from xfd_mini_dl.models import DataSource, Ip, Organization, ShodanAssets, ShodanVulns
 
@@ -23,6 +24,7 @@ def handler(command_options):
     failed = []
     organization_name = command_options.get("organizationName")
     organization_id = command_options.get("organizationId")
+    scan_id = command_options.get("scanId")
     if not organization_name:
         return {"status_code": 400, "body": "Organization name not provided."}
 
@@ -78,7 +80,7 @@ def handler(command_options):
             "status_code": 500,
             "body": failed,
         }
-
+    upsert_scan_result(scan_id, organization_id)
     return {"status_code": 200, "body": "Success running Shodan."}
 
 

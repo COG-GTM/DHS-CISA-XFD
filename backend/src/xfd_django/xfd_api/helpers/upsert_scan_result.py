@@ -5,8 +5,8 @@ from django.utils import timezone
 from xfd_mini_dl.models import ScanResult
 
 
-def update_scan_result(scan_id, organization_id):
-    """Ensure the scan result is updated or inserted without violating the unique constraint."""
+def upsert_scan_result(scan_id, organization_id):
+    """Upsert timestamp of latest result saved for each organization per scan."""
     try:
         scan_result = ScanResult.objects.filter(
             scan_id=scan_id, organization_id=organization_id
@@ -16,7 +16,7 @@ def update_scan_result(scan_id, organization_id):
             scan_result.latest_result_at = timezone.now()
             scan_result.save()
             print(
-                "Updated timestamp for scan_id {} and organization_id {}.".format(
+                "Updated timestamp for scan_id: {} and organization_id: {}.".format(
                     scan_id, organization_id
                 )
             )
@@ -27,14 +27,14 @@ def update_scan_result(scan_id, organization_id):
                 latest_result_at=timezone.now(),
             )
             print(
-                "Inserted new scan result for scan_id {} and organization_id {}.".format(
+                "Inserted new scan result for scan_id: {} and organization_id: {}.".format(
                     scan_id, organization_id
                 )
             )
 
     except Exception as e:
         print(
-            "Error updating or inserting scan result for scan_id {} and organization_id {}: {}".format(
+            "Error upserting scan result for scan_id: {} and organization_id: {}: {}".format(
                 scan_id, organization_id, str(e)
             )
         )

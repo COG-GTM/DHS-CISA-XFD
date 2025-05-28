@@ -9,6 +9,7 @@ import django
 from django.utils import timezone
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
+from xfd_api.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Django setup
@@ -31,6 +32,7 @@ def handler(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
+        scan_id = command_options.get("scanId")
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -73,14 +75,32 @@ def handler(command_options):
                 len(subdomains),
             )
 
-            save_censys_subdomains_to_db(subdomains, org, data_source)
-
+            try:
+                if subdomains:
+                    save_censys_subdomains_to_db(subdomains, org, data_source)
+                    upsert_scan_result(scan_id, organization_id)
+                else:
+                    return {
+                        "statusCode": 200,
+                        "body": "Censys sync completed successfully, but found no subdomains for {} ({}).".format(
+                            organization_name, org.acronym
+                        ),
+                    }
+            except Exception as e:
+                LOGGER.error(
+                    "Error saving subdomains or updating scan result: {}".format(e)
+                )
             if current_page >= total_pages:
                 done = True
             else:
                 page += 1
 
-        return {"statusCode": 200, "body": "Censys sync completed successfully."}
+        return {
+            "statusCode": 200,
+            "body": "Censys sync completed successfully for {} ({}).".format(
+                organization_name, org.acronym
+            ),
+        }
 
     except Exception as e:
         LOGGER.error(e)
