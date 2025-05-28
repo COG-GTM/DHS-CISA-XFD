@@ -991,6 +991,11 @@ class Scan(models.Model):
         help_text="A boolean to flag if a manually called scan is still waiting to be run.",
     )
     concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
+    total_orgs = models.IntegerField(
+        db_column="total_orgs",
+        default=0,
+        help_text="Total number of organizations the scan is run on.",
+    )
     created_by = models.ForeignKey(
         "User",
         models.DO_NOTHING,

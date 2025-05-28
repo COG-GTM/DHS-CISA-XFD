@@ -73,15 +73,23 @@ class Scheduler:
 
         # Get organizations to run on
         orgs = get_scan_organizations(scan) if scan.is_granular else self.organizations
+        print("Organizations for {}: {}".format(scan.name, [org.name for org in orgs]))
         filtered_orgs = [org for org in orgs if self.should_run_scan(scan, org)]
+        print(
+            "Filtered Organizations for {}: {}".format(
+                scan.name, [org.name for org in filtered_orgs]
+            )
+        )
 
         if not filtered_orgs:
             print(
-                "Skipping scan execution for {} - No organizations to run on.".format(
+                "Skipping scan execution for {} - No organizations to run on or no manual run pending.".format(
                     scan.name
                 )
             )
             return
+        else:
+            total_orgs = len(filtered_orgs)
 
         # Prepare scan specific queue
         queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan.name)
@@ -152,6 +160,7 @@ class Scheduler:
             # Set manual_run_pending to False since scan is now launched
             scan.manual_run_pending = False
             scan.last_run = timezone.now()
+            scan.total_orgs = total_orgs
             scan.save()
             print("Updated scan: manual_run_pending set to False")
 

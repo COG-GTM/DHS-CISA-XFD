@@ -29,7 +29,6 @@ def list_scans(current_user, window_days: int = 7):
         scans_qs = (
             Scan.objects.prefetch_related("tags")
             .annotate(
-                total_orgs=Count("organizations", distinct=True),
                 orgs_with_results=Count(
                     "scan_results__organization",
                     filter=Q(scan_results__latest_result_at__gte=cutoff),
@@ -224,6 +223,7 @@ def get_scan(scan_id: str, current_user):
         "organizations": related_organizations,
         "tags": list(scan.tags.values()),
         "concurrent_tasks": scan.concurrent_tasks,
+        "total_orgs": scan.total_orgs,
     }
 
     # Return the scan details along with its related data
