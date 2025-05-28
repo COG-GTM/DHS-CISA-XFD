@@ -517,8 +517,6 @@ def approve_user_registration(user_id, current_user):
     try:
         # Retrieve the user by ID
         user = User.objects.get(id=user_id)
-        print("User found: ", vars(user))
-        print("Current user: ", vars(current_user))
         user.date_approved = datetime.now()
         user.approved_by = current_user
         user.save()
