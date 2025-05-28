@@ -1,6 +1,7 @@
 """Stats methods."""
 # Standard Python Libraries
 import json
+import uuid
 
 # Third-Party Libraries
 from django.forms.models import model_to_dict
