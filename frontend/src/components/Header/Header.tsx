@@ -119,7 +119,7 @@ export const Header: React.FC = () => {
 
   const inventoryMenuItems: MenuItemType[] = [
     {
-      menuItemTitle: 'Inventory',
+      menuItemTitle: 'Asset Inventory',
       path: '/inventory',
       users: STANDARD_USER
     }
@@ -127,7 +127,7 @@ export const Header: React.FC = () => {
 
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
     { 'Scanning Results': scanningResults },
-    { Inventory: inventoryMenuItems },
+    { 'Asset Inventory': inventoryMenuItems },
     { 'Learning Center': learningCenterMenuItems },
     { Support: supportMenuItems },
     userLevel > 1 ? { 'Admin Hub': adminHubMenuItems } : {},
@@ -219,12 +219,6 @@ export const Header: React.FC = () => {
               const [title, menuItems] = Object.entries(sectionObj)[0] || [];
               if (!title || !menuItems) {
                 return null;
-              } else if (title === 'Learning Center') {
-                return (
-                  <Box key={title + index} sx={{ mr: { xs: 0, xl: 4 } }}>
-                    <NavMenuButton title={title} menuItems={menuItems} />
-                  </Box>
-                );
               }
               return (
                 <NavMenuButton
