@@ -127,10 +127,12 @@ class LogSearchFilter(BaseModel):
             "event_type",
             "result",
             "timestamp",
-            "payload.user.email",
-            "payload.user_performed_assignment.email",
+            "payload.user.full_name",
+            "payload.user_performed_assignment.full_name",
             "payload.user_performed_assignment.region_id",
             "payload.organization.name",
+            "payload.role",
+            "payload.state",
         ]
         allowed_operators = [
             "contains",
@@ -141,11 +143,14 @@ class LogSearchFilter(BaseModel):
             "is not empty",
         ]
         allowed_date_operators = [
-            "equals",
-            "lessThan",
-            "greaterThan",
             "is empty",
             "is not empty",
+            "is",
+            "is not",
+            "is after",
+            "is on or after",
+            "is before",
+            "is on or before",
         ]
         for field, condition in v.items():
             if field not in allowed_fields:

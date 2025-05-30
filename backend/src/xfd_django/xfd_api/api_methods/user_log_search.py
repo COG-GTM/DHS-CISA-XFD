@@ -114,7 +114,7 @@ def matches_string_filter(log_value: str, operator: str, value: str) -> bool:
     if operator == "contains":
         return value.lower() in log_value.lower()
     elif operator == "equals":
-        return log_value == value
+        return log_value.lower() == value.lower()
     elif operator == "starts with":
         return log_value.lower().startswith(value.lower())
     elif operator == "ends with":
@@ -151,26 +151,78 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                         break
                     continue
                 elif field == "timestamp":
-                    log_date = parse(log["created_at"])
-                    filter_date = parse(value)
-                    if operator == "equals" and log_date != filter_date:
-                        matches = False
-                    elif operator == "lessthan" and log_date >= filter_date:
-                        matches = False
-                    elif operator == "greaterthan" and log_date <= filter_date:
-                        matches = False
-                    elif operator == "is empty" and log_date:
-                        matches = False
-                    elif operator == "is not empty" and not log_date:
-                        matches = False
-                    continue
-                elif field == "payload.user.email":
-                    log_value = log["payload"].get("user", {}).get("email", "")
-                elif field == "payload.user_performed_assignment.email":
+                    log_date = parse(log["timestamp"])
+                    if operator == "is empty":
+                        if log_date is not None:
+                            matches = False
+                    elif operator == "is not empty":
+                        if log_date is None:
+                            matches = False
+                    else:
+                        filter_criteria_date = None
+                        valid_filter_value_for_comparison = False
+
+                        if isinstance(value, str) and value:
+                            try:
+                                filter_criteria_date = parse(value)
+                                valid_filter_value_for_comparison = True
+                            except (ValueError, TypeError):
+                                matches = False
+                        else:
+                            matches = False
+
+                        if matches and valid_filter_value_for_comparison:
+                            if operator == "is":
+                                if log_date is None or log_date != filter_criteria_date:
+                                    matches = False
+                            elif operator == "is not":
+                                if (
+                                    log_date is not None
+                                    and log_date == filter_criteria_date
+                                ):
+                                    matches = False
+                            elif operator == "is after":
+                                if (
+                                    log_date is None
+                                    or not log_date > filter_criteria_date
+                                ):
+                                    matches = False
+                            elif operator == "is on or after":
+                                if (
+                                    log_date is None
+                                    or not log_date >= filter_criteria_date
+                                ):
+                                    matches = False
+                            elif operator == "is before":
+                                if (
+                                    log_date is None
+                                    or not log_date < filter_criteria_date
+                                ):
+                                    matches = False
+                            elif operator == "is on or before":
+                                if (
+                                    log_date is None
+                                    or not log_date <= filter_criteria_date
+                                ):
+                                    matches = False
+                    # if operator == "equals" and log_date != filter_date:
+                    #     matches = False
+                    # elif operator == "lessthan" and log_date >= filter_date:
+                    #     matches = False
+                    # elif operator == "greaterthan" and log_date <= filter_date:
+                    #     matches = False
+                    # elif operator == "is empty" and log_date:
+                    #     matches = False
+                    # elif operator == "is not empty" and not log_date:
+                    #     matches = False
+                    # continue
+                elif field == "payload.user.full_name":
+                    log_value = log["payload"].get("user", {}).get("full_name", "")
+                elif field == "payload.user_performed_assignment.full_name":
                     log_value = (
                         log["payload"]
                         .get("user_performed_assignment", {})
-                        .get("email", "")
+                        .get("full_name", "")
                     )
                 elif field == "payload.user_performed_assignment.region_id":
                     log_value = str(
@@ -180,6 +232,10 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                     )
                 elif field == "payload.organization.name":
                     log_value = log["payload"].get("organization", {}).get("name", "")
+                elif field == "payload.role":
+                    log_value = log["payload"].get("role", "")
+                elif field == "payload.state":
+                    log_value = log["payload"].get("state", "")
                 else:
                     continue
 

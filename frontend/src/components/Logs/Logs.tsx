@@ -54,8 +54,8 @@ export const Logs: FC<LogsProps> = () => {
       region: 'payload.user_performed_assignment.region_id',
       role: 'payload.role',
       state: 'payload.state',
-      user: 'payload.user.full_name',
-      created_at: 'created_at',
+      user_type: 'payload.user.user_type',
+      created_at: 'timestamp',
       result: 'result'
     };
 
@@ -180,12 +180,12 @@ export const Logs: FC<LogsProps> = () => {
       }
     },
     {
-      field: 'user',
-      headerName: 'User',
+      field: 'user_type',
+      headerName: 'User Type',
       minWidth: 100,
       flex: 1.5,
       valueGetter: (params) => {
-        return params.row.payload?.user?.full_name || 'N/A';
+        return params.row.payload?.user?.user_type || 'N/A';
       }
     },
     {
