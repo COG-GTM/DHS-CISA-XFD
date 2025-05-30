@@ -14,6 +14,7 @@ from uuid import uuid4
 import dnstwist
 import dshield
 import requests
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import DataSource, DomainPermutations, Organization, SubDomains
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -260,7 +261,7 @@ def execute_dnstwist_data(domain_dict):
         LOGGER.error(f"Error adding domain permutation to data lake {str(e)}")
 
 
-def process_org(org, orgs_list, data_source, failures):
+def process_org(org, orgs_list, data_source, failures, scan_id):
     """Process the domains for the given organization."""
     org_id = org.id
     org_name = org.name
@@ -295,6 +296,8 @@ def process_org(org, orgs_list, data_source, failures):
                     LOGGER.info(
                         "Inserted %s into database", domain["domain_permutation"]
                     )
+                if domain_list:
+                    upsert_scan_result(org_id, scan_id)
             except Exception:
                 # TODO: Create custom exceptions.
                 # Issue 265: https://github.com/cisagov/pe-reports/issues/265
@@ -338,11 +341,12 @@ def main(event):
     """Run DNStwist on certain domains and upload findings to database."""
     organizationId = event.get("organizationId")
     org_record = Organization.objects.get(id=organizationId)
+    scan_id = event.get("scanId")
     LOGGER.info("Running DNSTwist on %s", org_record.name)
     data_source = get_data_source("DNSTwist")
     failures = []
     orgs_list = [org_record.name]
-    process_org(org_record, orgs_list, data_source, failures)
+    process_org(org_record, orgs_list, data_source, failures, scan_id)
     if failures:
         LOGGER.error("These orgs failed:")
         LOGGER.error(failures)

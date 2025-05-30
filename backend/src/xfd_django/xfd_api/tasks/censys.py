@@ -8,8 +8,8 @@ import time
 # Third-Party Libraries
 from django.utils import timezone
 import requests
-from xfd_api.helpers.upsert_scan_result import upsert_scan_result
 from xfd_api.tasks.helpers.get_root_domains import get_root_domains
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Constants controlling pagination and rate limiting

@@ -10,8 +10,8 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 import requests
 import shodan
-from xfd_api.helpers.upsert_scan_result import upsert_scan_result
 from xfd_api.tasks.helpers.get_ips import get_ips_by_cidr
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import DataSource, Ip, Organization, ShodanAssets, ShodanVulns
 
 # Constants controlling pagination and rate limiting

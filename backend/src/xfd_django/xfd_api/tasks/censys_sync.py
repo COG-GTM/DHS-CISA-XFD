@@ -9,7 +9,7 @@ import django
 from django.utils import timezone
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
-from xfd_api.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Django setup
