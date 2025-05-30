@@ -254,13 +254,14 @@ export const Logs: FC<LogsProps> = () => {
             pagination: { paginationModel: { pageSize: PAGE_SIZE } },
             sorting: {
               sortModel: [{ field: 'created_at', sort: 'desc' }]
+            },
+            columns: {
+              columnVisibilityModel: {
+                role: false,
+                region: false,
+                state: false
+              }
             }
-            // columns: {
-            //   columnVisibilityModel: {
-            //     // event_type: false,
-            //     created_at: false
-            //   }
-            // }
           }}
           pageSizeOptions={[15, 30, 50, 100]}
         />
