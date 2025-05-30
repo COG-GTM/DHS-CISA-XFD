@@ -547,7 +547,7 @@ def approve_user_registration(user_id, current_user):
 
     return {
         "status_code": 200,
-        "body": "User registration approved by {}.".format(user.approved_by.email),
+        "body": "User registration approved.",
     }
 
 
