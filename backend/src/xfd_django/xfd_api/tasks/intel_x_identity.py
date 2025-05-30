@@ -106,6 +106,7 @@ class IntelX:
     def __init__(self, org_objects: list[Organization], scan_id: str):
         """Initialize IntelX class."""
         self.org_objects = org_objects
+        self.scan_id = scan_id
 
     def run_intelx(self):
         """Run IntelX api calls."""
