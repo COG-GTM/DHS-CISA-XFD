@@ -212,6 +212,14 @@ def get_users(current_user):
                 "state": user.state,
                 "user_type": user.user_type,
                 "last_logged_in": user.last_logged_in,
+                "date_approved": user.date_approved,
+                "approved_by": {
+                    "id": str(user.approved_by.id),
+                    "full_name": str(user.approved_by.full_name),
+                    "email": str(user.approved_by.email),
+                }
+                if user.approved_by
+                else None,
                 "accepted_terms_version": user.accepted_terms_version,
                 "date_accepted_terms": user.date_accepted_terms,
                 "roles": [
@@ -378,6 +386,7 @@ def get_users_v2(state, region_id, invite_pending, current_user):
         return [
             {
                 "id": str(user.id),
+                "cognito_use_case_description": user.cognito_use_case_description,
                 "created_at": user.created_at.isoformat(),
                 "updated_at": user.updated_at.isoformat(),
                 "first_name": user.first_name,
@@ -388,6 +397,14 @@ def get_users_v2(state, region_id, invite_pending, current_user):
                 "state": user.state,
                 "user_type": user.user_type,
                 "last_logged_in": user.last_logged_in,
+                "date_approved": user.date_approved,
+                "approved_by": {
+                    "id": str(user.approved_by.id),
+                    "full_name": str(user.approved_by.full_name),
+                    "email": str(user.approved_by.email),
+                }
+                if user.approved_by
+                else None,
                 "accepted_terms_version": user.accepted_terms_version,
                 "roles": [
                     {
@@ -500,6 +517,9 @@ def approve_user_registration(user_id, current_user):
     try:
         # Retrieve the user by ID
         user = User.objects.get(id=user_id)
+        user.date_approved = datetime.now()
+        user.approved_by = current_user
+        user.save()
     except ObjectDoesNotExist:
         raise HTTPException(status_code=404, detail="User not found.")
 
@@ -525,7 +545,10 @@ def approve_user_registration(user_id, current_user):
             status_code=500, detail="Failed to send email: {}".format(str(e))
         )
 
-    return {"status_code": 200, "body": "User registration approved."}
+    return {
+        "status_code": 200,
+        "body": "User registration approved.",
+    }
 
 
 # PUT: /users/{user_id}/register/deny
