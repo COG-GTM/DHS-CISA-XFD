@@ -11,6 +11,7 @@ from django.utils import timezone
 from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
@@ -52,7 +53,7 @@ def handler(command_options):
         is_local = os.getenv("IS_LOCAL", "true") == "true"
 
         if not is_lz and not is_local:
-            LOGGER.warning("Scan can only be run in the LZ or locally. Exitting now.")
+            LOGGER.warning("Scan can only be run in the LZ or locally. Exiting now.")
             return {
                 "statusCode": 200,
                 "body": "ASM DMZ Sync pull cannot run outside the LZ.",
@@ -71,6 +72,7 @@ def main(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
+        scan_id = command_options.get("scanId")
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -104,7 +106,14 @@ def main(command_options):
                 )
                 if response:
                     LOGGER.info(response.json())
-                    total_pages = process_response(response, org)
+                    result = process_response(response, org)
+
+                    # save timestamp of latest result for each organization per scan
+                    if result.get("data_saved"):
+                        upsert_scan_result(scan_id, org.id)
+
+                    total_pages = result.get("total_pages", 1)
+
                 else:
                     LOGGER.error("Failed to query DMZ Cred Sync API for %s.", acronym)
                     return {
@@ -136,6 +145,7 @@ def process_response(response, org):
 
     cred_breaches_array = data.get("credential_breaches", [])
     total_pages = data.get("total_pages", 1)
+    breaches_saved, exposures_saved = False, False
 
     if cred_breaches_array:
         breach_dict = {}
@@ -184,6 +194,7 @@ def process_response(response, org):
                             ],
                         },
                     )
+                breaches_saved = True
             except Exception as e:
                 print("Error saving Cred Breaches: {error}".format(error=e))
 
@@ -252,6 +263,12 @@ def process_response(response, org):
                         "sub_domain": sub_obj,
                     },
                 )
+                exposures_saved = True
             except Exception as e:
                 print("Error saving Credential Exposure: {error}".format(error=e))
-    return total_pages
+
+    # return total pages and if both exposures and breaches were saved
+    return {
+        "total_pages": total_pages,
+        "data_saved": exposures_saved and breaches_saved,
+    }

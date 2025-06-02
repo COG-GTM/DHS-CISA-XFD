@@ -109,7 +109,7 @@ class Cybersixgill:
             if "credentials" in self.method_list:
                 if self.get_credentials(org, sixgill_id) == 1:
                     failed.append("%s credentials" % org_id)
-            # if all methods succeeded, upsert scan result
+            # Upsert scan result timestamp if all methods succeeded
             if (
                 ("%s alerts" % org_id)
                 and ("%s mentions" % org_id)
