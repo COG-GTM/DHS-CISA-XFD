@@ -296,6 +296,7 @@ def process_org(org, orgs_list, data_source, failures, scan_id):
                     LOGGER.info(
                         "Inserted %s into database", domain["domain_permutation"]
                     )
+                #  upsert timestamp of latest result for each organization per scan, if execute_dnstwist_data was successful and domain_list is not empty
                 if domain_list:
                     upsert_scan_result(org_id, scan_id)
             except Exception:

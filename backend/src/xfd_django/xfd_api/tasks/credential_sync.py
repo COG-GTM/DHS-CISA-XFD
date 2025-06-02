@@ -73,6 +73,7 @@ def main(command_options):
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
         scan_id = command_options.get("scanId")
+        data_saved = False
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -107,11 +108,7 @@ def main(command_options):
                 if response:
                     LOGGER.info(response.json())
                     result = process_response(response, org)
-
-                    # save timestamp of latest result for each organization per scan
-                    if result.get("data_saved"):
-                        upsert_scan_result(scan_id, org.id)
-
+                    data_saved = (result.get("data_saved", data_saved),)
                     total_pages = result.get("total_pages", 1)
 
                 else:
@@ -128,8 +125,16 @@ def main(command_options):
                     done = True
 
             update_query_timestamp(org, "credential_sync", start_pulling_time)
-
-        return {"statusCode": 200, "body": "Credential sync completed successfully."}
+        if data_saved:
+            upsert_scan_result(scan_id, organization_id)
+            return {
+                "statusCode": 200,
+                "body": "Credential sync completed successfully.",
+            }
+        return {
+            "statusCode": 204,
+            "body": "Credential sync completed successfully but saved no results to database.",
+        }
 
     except Exception as e:
         LOGGER.error("Scan failed to complete: %s", e)

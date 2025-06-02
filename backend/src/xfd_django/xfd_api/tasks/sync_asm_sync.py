@@ -11,6 +11,7 @@ from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import Cidr, DataSource, Ip, IpsSubs, Organization, SubDomains
 
 # Django setup
@@ -67,6 +68,8 @@ def main(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
+        scan_id = command_options.get("scanId")
+        data_saved = False
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -88,7 +91,9 @@ def main(command_options):
         )
 
         if response:
-            total_pages = process_response(response, organization)
+            result = process_response(response, organization)
+            data_saved = result.get("data_saved", data_saved)
+            total_pages = result.get("total_pages", 1)
         else:
             LOGGER.error("Failed to query DMZ ASM Sync API.")
             return {"statusCode": 500, "body": "Failed to query DMZ ASM Sync API."}
@@ -111,7 +116,13 @@ def main(command_options):
 
         flag_asset_changes(organization)
         LOGGER.info("Completed pulling ASM data for %s", organization.acronym)
-        return {"statusCode": 200, "body": "ASM sync completed successfully."}
+        if data_saved:
+            upsert_scan_result(scan_id, organization_id)
+            return {"statusCode": 200, "body": "ASM sync completed successfully."}
+        return {
+            "statusCode": 204,
+            "body": "ASM sync completed successfully but saved no results to database.",
+        }
 
     except Exception as e:
         LOGGER.error("Error Running Sync ASM Sync: %s", e)
@@ -141,6 +152,7 @@ def get_data_sources():
 def process_response(response, org):
     """Save ASM sync response to the MDL."""
     data = response.json()
+    ip_sub_saved, loose_sub_saved = False, False
 
     for ip_sub in data.get("ip_data", []):
         cidr = Cidr.objects.using(db_name).get(
@@ -179,6 +191,7 @@ def process_response(response, org):
             ip_obj.current = ip_sub.get("current")
             ip_obj.conflict_alerts = ip_sub.get("conflict_alerts")
             ip_obj.save()
+            ip_sub_saved = True
 
         for sub_dict in ip_sub.get("ip_sub_list", []):
             sub_obj = save_sub(sub_dict, org)
@@ -192,11 +205,15 @@ def process_response(response, org):
                         "current": sub_dict.get("link_current"),
                     },
                 )
+    # run save_sub for each loose subdomain and set loose_sub_saved to True if a subdomain is saved
+    loose_sub_saved = any(
+        save_sub(loose_sub, org) for loose_sub in data.get("loose_subs", [])
+    )
 
-    for loose_sub in data.get("loose_subs", []):
-        save_sub(loose_sub, org)
-
-    return data.get("total_pages")
+    return {
+        "total_pages": data.get("total_pages"),
+        "data_saved": ip_sub_saved or loose_sub_saved,
+    }
 
 
 def save_sub(sub_dict, org):
