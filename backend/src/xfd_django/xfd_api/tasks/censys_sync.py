@@ -87,9 +87,8 @@ def handler(command_options):
                         ),
                     }
             except Exception as e:
-                LOGGER.error(
-                    "Error saving subdomains or updating scan result: {}".format(e)
-                )
+                LOGGER.error("Error saving subdomains or updating scan result: %s", e)
+
             if current_page >= total_pages:
                 done = True
             else:

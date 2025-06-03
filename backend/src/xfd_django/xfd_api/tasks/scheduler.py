@@ -36,6 +36,31 @@ class Scheduler:
         self.scans = scans
         self.organizations = organizations
 
+    @staticmethod
+    def create_queue(scan_name):
+        """Create or retrieve an SQS queue for a scan."""
+        queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan_name)
+        base_queue_url = os.getenv("QUEUE_URL").rstrip("/")
+        is_local = os.getenv("IS_LOCAL")
+        sqs = boto3.client(
+            "sqs",
+            region_name=os.getenv("AWS_REGION", "us-east-1"),
+            endpoint_url=base_queue_url if is_local else None,
+        )
+        try:
+            response = sqs.create_queue(
+                QueueName=queue_name,
+                Attributes={
+                    "VisibilityTimeout": "18000",
+                    "MaximumMessageSize": "262144",
+                    "MessageRetentionPeriod": "604800",
+                },
+            )
+            return sqs, response["QueueUrl"]
+        except Exception as e:
+            print("Error creating queue: {}".format(e))
+            return None, None
+
     def launch_scan_execution(self, scan):
         """Prepare and send scan execution request."""
         # If global scan, ignore queue and start 1 concurrent task
@@ -91,27 +116,10 @@ class Scheduler:
         else:
             total_orgs = len(filtered_orgs)
 
-        # Prepare scan specific queue
-        queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan.name)
-        base_queue_url = os.getenv("QUEUE_URL").rstrip("/")
-        is_local = os.getenv("IS_LOCAL")
-        sqs = boto3.client(
-            "sqs",
-            region_name=os.getenv("AWS_REGION", "us-east-1"),
-            endpoint_url=base_queue_url if is_local else None,
-        )
-        # Create or get queue
-        response = sqs.create_queue(
-            QueueName=queue_name,
-            Attributes={
-                "VisibilityTimeout": "18000",
-                "MaximumMessageSize": "262144",
-                "MessageRetentionPeriod": "604800",
-            },
-        )
-        queue_url = response["QueueUrl"]
+        sqs, queue_url = Scheduler.create_queue(scan.name)
+        if not queue_url:
+            print("Failed to create or retrieve queue for scan: {}".format(scan.name))
 
-        # Check queue URL
         print("Queue URL: {}".format(queue_url))
 
         # Send organizations to the queue in batches of 10
