@@ -115,14 +115,17 @@ def matches_string_filter(log_value: str, operator: str, value: str) -> bool:
         return value.lower() in log_value.lower()
     elif operator == "equals":
         return log_value.lower() == value.lower()
-    elif operator == "starts with":
+    elif operator.lower() == "startswith":
         return log_value.lower().startswith(value.lower())
-    elif operator == "ends with":
+    elif operator.lower() == "endswith":
         return log_value.lower().endswith(value.lower())
-    elif operator == "is empty":
-        return log_value == ""
-    elif operator == "is not empty":
+    elif operator == "isempty":
+        return log_value is None or log_value == ""
+    elif operator == "isnotempty":
         return log_value != ""
+    elif operator == "isanyof":
+        lowered_array = [string.lower() for string in value]
+        return False if not value else log_value.lower() in lowered_array
     return False
 
 
@@ -230,12 +233,13 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                         .get("user_performed_assignment", {})
                         .get("region_id", "")
                     )
+                    print(log_value)
                 elif field == "payload.organization.name":
                     log_value = log["payload"].get("organization", {}).get("name", "")
                 elif field == "payload.role":
                     log_value = log["payload"].get("role", "")
                 elif field == "payload.state":
-                    log_value = log["payload"].get("state", "")
+                    log_value = log["payload"].get("user", {}).get("state", "")
                 else:
                     continue
 

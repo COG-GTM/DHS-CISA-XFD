@@ -119,7 +119,9 @@ export const Logs: FC<LogsProps> = () => {
       valueGetter: (params) => {
         const p =
           params.row.payload?.user_performed_assignment ||
-          params.row.payload?.user_performed_removal;
+          params.row.payload?.user_performed_removal ||
+          params.row.payload?.user_performed_approval ||
+          params.row.payload?.user_performed_invite;
         return p?.full_name || 'N/A';
       }
     },
@@ -131,7 +133,9 @@ export const Logs: FC<LogsProps> = () => {
       valueGetter: (params) => {
         const u =
           params.row.payload?.user ||
-          params.row.payload?.removal_result?.role_deleted?.user;
+          params.row.payload?.removal_result?.role_deleted?.user ||
+          params.row.payload?.user_to_approve ||
+          params.row.payload?.approval_results?.role_deleted?.user;
         return u?.full_name || 'N/A';
       }
     },
@@ -156,6 +160,8 @@ export const Logs: FC<LogsProps> = () => {
       valueGetter: (params) =>
         params.row.payload?.user_performed_assignment?.region_id ||
         params.row.payload?.user_performed_removal?.region_id ||
+        params.row.payload?.user_performed_approval?.region_id ||
+        params.row.payload?.user_performed_invite?.region_id ||
         'N/A'
     },
     {
@@ -174,6 +180,9 @@ export const Logs: FC<LogsProps> = () => {
         return (
           params.row.payload?.state ||
           params.row.payload?.user_performed_assignment?.state ||
+          params.row.payload?.user_performed_removal?.state ||
+          params.row.payload?.user_performed_approval?.state ||
+          params.row.payload?.user_performed_invite?.state ||
           params.row.payload?.user?.state ||
           'N/A'
         );
@@ -185,7 +194,11 @@ export const Logs: FC<LogsProps> = () => {
       minWidth: 100,
       flex: 1.5,
       valueGetter: (params) => {
-        return params.row.payload?.user?.user_type || 'N/A';
+        return (
+          params.row.payload?.user?.user_type ||
+          params.row.payload?.user_to_approve?.user_type ||
+          'N/A'
+        );
       }
     },
     {

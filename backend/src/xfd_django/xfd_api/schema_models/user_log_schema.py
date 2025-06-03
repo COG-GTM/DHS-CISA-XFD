@@ -106,9 +106,11 @@ class FilterCondition(BaseModel):
     def validate_value(cls, v, values):
         """Validate the filter value based on operator."""
         operator = values.get("operator", "").lower()
-        if operator in ["is empty", "is not empty"] and v is not None:
+        if operator == "isanyof":
+            return v
+        if operator in ["isempty", "isnotempty"] and v is not None:
             raise ValueError(f"Value must be null for operator '{operator}'")
-        if operator not in ["is empty", "is not empty"] and v is None:
+        if operator not in ["isempty", "isnotempty"] and v is None:
             raise ValueError(f"Value is required for operator '{operator}'")
         return v
 
@@ -137,10 +139,11 @@ class LogSearchFilter(BaseModel):
         allowed_operators = [
             "contains",
             "equals",
-            "starts with",
-            "ends with",
-            "is empty",
-            "is not empty",
+            "startswith",
+            "endswith",
+            "isempty",
+            "isnotempty",
+            "isanyof",
         ]
         allowed_date_operators = [
             "is empty",
