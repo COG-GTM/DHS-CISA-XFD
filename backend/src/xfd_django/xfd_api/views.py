@@ -46,6 +46,7 @@ from .api_methods.stats import (
     get_num_vulns,
     get_severity_stats,
     get_stats,
+    get_stats_comparison_data,
     get_user_ports_count,
     get_user_services_count,
     get_vs_condensed_trending_data,
@@ -1104,6 +1105,20 @@ async def get_vs_condensed_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_condensed_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/stats/compare",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.StatsComparisonResponse,
+    tags=["Stats"],
+)
+async def get_stats_comparison(
+    filter_data: stat_schema.StatsComparisonPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve Summary Comparison between two dates provided by the user."""
+    return get_stats_comparison_data(filter_data, current_user)
 
 
 @api_router.post(
