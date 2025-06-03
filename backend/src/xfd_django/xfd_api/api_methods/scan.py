@@ -186,52 +186,72 @@ def create_scan(scan_data: NewScan, current_user):
 
 
 # GET: /scans/{scan_id}
-def get_scan(scan_id: str, current_user):
+def get_scan(scan_id: str, current_user, window_days: int = 7):
     """Get a scan by its ID."""
-    # Check if the user is a GlobalViewAdmin
-    if not is_global_view_admin(current_user):
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-
     try:
+        # Check if the user is a GlobalViewAdmin
+        if not is_global_view_admin(current_user):
+            raise HTTPException(status_code=403, detail="Unauthorized access.")
+
+        cutoff = timezone.now() - timedelta(days=window_days)
         # Fetch the scan with its related organizations and tags
-        scan = Scan.objects.prefetch_related("organizations", "tags").get(id=scan_id)
+        # Fetch the scan with its related organizations and tags
+        scan = (
+            Scan.objects.prefetch_related("organizations", "tags")
+            .annotate(
+                orgs_with_results=Count(
+                    "scan_results__organization",
+                    filter=Q(scan_results__latest_result_at__gte=cutoff),
+                    distinct=True,
+                ),
+            )
+            .get(id=scan_id)
+        )
 
         # Fetch all organizations
         all_organizations = Organization.objects.values("id", "name")
+
+        # Get related organizations with all fields and remove unwanted fields
+        related_organizations = list(scan.organizations.values())
+        for org in related_organizations:
+            org.pop("parent_id", None)
+            org.pop("created_by_id", None)
+
+        # Serialize scan data
+        scan_data = {
+            "id": str(scan.id),
+            "created_at": scan.created_at,
+            "updated_at": scan.updated_at,
+            "name": scan.name,
+            "arguments": scan.arguments,
+            "last_run": scan.last_run,
+            "frequency": scan.frequency,
+            "is_granular": scan.is_granular,
+            "is_user_modifiable": scan.is_user_modifiable,
+            "is_single_scan": scan.is_single_scan,
+            "manual_run_pending": scan.manual_run_pending,
+            "organizations": related_organizations,
+            "tags": list(scan.tags.values()),
+            "concurrent_tasks": scan.concurrent_tasks,
+            "total_orgs": scan.total_orgs,
+            "orgs_with_results": scan.orgs_with_results,
+        }
+
+        # Return the scan details along with its related data
+        return {
+            "scan": scan_data,
+            "schema": dict(SCAN_SCHEMA[scan.name]),
+            "organizations": list(all_organizations),
+        }
+
     except Scan.DoesNotExist:
         raise HTTPException(status_code=404, detail="Scan not found")
 
-    # Get related organizations with all fields and remove unwanted fields
-    related_organizations = list(scan.organizations.values())
-    for org in related_organizations:
-        org.pop("parent_id", None)
-        org.pop("created_by_id", None)
+    except HTTPException as http_exc:
+        raise http_exc
 
-    # Serialize scan data
-    scan_data = {
-        "id": str(scan.id),
-        "created_at": scan.created_at,
-        "updated_at": scan.updated_at,
-        "name": scan.name,
-        "arguments": scan.arguments,
-        "last_run": scan.last_run,
-        "frequency": scan.frequency,
-        "is_granular": scan.is_granular,
-        "is_user_modifiable": scan.is_user_modifiable,
-        "is_single_scan": scan.is_single_scan,
-        "manual_run_pending": scan.manual_run_pending,
-        "organizations": related_organizations,
-        "tags": list(scan.tags.values()),
-        "concurrent_tasks": scan.concurrent_tasks,
-        "total_orgs": scan.total_orgs,
-    }
-
-    # Return the scan details along with its related data
-    return {
-        "scan": scan_data,
-        "schema": dict(SCAN_SCHEMA[scan.name]),
-        "organizations": list(all_organizations),
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # PUT: /scans/{scan_id}
