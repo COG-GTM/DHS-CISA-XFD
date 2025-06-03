@@ -20,9 +20,9 @@ export const FilterDrawer: FC<
     isMobile: boolean;
     setIsFilterDrawerOpen: (isOpen: boolean) => void;
     initialFilters: any[];
-    autocompletedResults: any[];
-    results: any[];
-    autocompletedSuggestions: any;
+    // autocompletedResults: any[];
+    // results: any[];
+    // autocompletedSuggestions: any;
   }
 > = (props) => {
   const {
@@ -32,7 +32,7 @@ export const FilterDrawer: FC<
     addFilter,
     removeFilter,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm,
     filters,
     initialFilters,
@@ -52,9 +52,15 @@ export const FilterDrawer: FC<
         justifyContent="space-between"
         px={2}
       >
-        <Typography variant="h6" component="h3">
-          Filter
-        </Typography>
+        {matchPath(['/inventory'], pathname) ? (
+          <Typography variant="h6" component="h3">
+            Search & Filter
+          </Typography>
+        ) : (
+          <Typography variant="h6" component="h3">
+            Filter
+          </Typography>
+        )}
         <IconButton
           onClick={() => setIsFilterDrawerOpen(false)}
           sx={{
@@ -68,44 +74,38 @@ export const FilterDrawer: FC<
           <CloseIcon />
         </IconButton>
       </Stack>
-      {matchPath(['/', '/inventory'], pathname) ? (
+      {matchPath(['/overview', '/inventory'], pathname) && (
         <RegionAndOrganizationFilters
           addFilter={addFilter}
           removeFilter={removeFilter}
           filters={filters}
           setSearchTerm={setSearchTerm}
-          search_term={search_term}
+          searchTerm={searchTerm}
           autocompletedResults={autocompletedResults}
           autocompletedSuggestions={autocompletedSuggestions}
           results={results}
         />
-      ) : (
-        <></>
       )}
-      {matchPath(['/VSDashboard'], pathname) ? (
+      {matchPath(['/', '/VSDashboard'], pathname) && (
         <VSDashRegionAndOrgFilters
           addFilter={addFilter}
           removeFilter={removeFilter}
           filters={filters}
         />
-      ) : (
-        <></>
       )}
       {matchPath(
         ['/inventory', '/inventory/domains', '/inventory/vulnerabilities'],
         pathname
-      ) ? (
+      ) && (
         <DrawerInterior
           addFilter={addFilter}
           removeFilter={removeFilter}
           filters={filters}
           facets={facets}
-          search_term={search_term}
+          searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           initialFilters={initialFilters}
         />
-      ) : (
-        <></>
       )}
     </Box>
   );
@@ -143,7 +143,7 @@ export const FilterDrawerV2 = withSearch(
     removeFilter,
     filters,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm,
     autocompletedResults,
     autocompletedSuggestions,
@@ -153,7 +153,7 @@ export const FilterDrawerV2 = withSearch(
     removeFilter,
     filters,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm,
     autocompletedResults,
     autocompletedSuggestions,

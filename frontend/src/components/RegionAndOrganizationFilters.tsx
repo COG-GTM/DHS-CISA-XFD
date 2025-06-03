@@ -1,6 +1,9 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useAuthContext } from 'context';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Autocomplete,
   Box,
   Button,
@@ -10,16 +13,20 @@ import {
   FormGroup,
   List,
   ListItem,
-  TextField
+  TextField,
+  Typography
 } from '@mui/material';
 import { useStaticsContext } from 'context/StaticsContext';
 import {
-  ORGANIZATION_EXCLUSIONS
+  ORGANIZATION_EXCLUSIONS,
+  useUserTypeFilters
   // REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS
 } from 'hooks/useUserTypeFilters';
 import { SearchBar } from './SearchBar';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { matchPath } from 'utils/matchPath';
+import { ExpandMore } from '@mui/icons-material';
+import { useUserLevel } from 'hooks/useUserLevel';
 
 const GLOBAL_ADMIN = 3;
 const REGIONAL_ADMIN = 2;
@@ -51,7 +58,7 @@ interface RegionAndOrganizationFiltersProps {
   ) => void;
   filters: any[];
   setSearchTerm: (s: string, opts?: any) => void;
-  search_term: string;
+  searchTerm: string;
   autocompletedResults: any[];
   autocompletedSuggestions: any;
   results: any[];
@@ -63,7 +70,7 @@ export const RegionAndOrganizationFilters: React.FC<
   addFilter,
   removeFilter,
   filters,
-  search_term: domainSearchTerm,
+  searchTerm: domainSearchTerm,
   setSearchTerm: setDomainSearchTerm,
   autocompletedResults,
   autocompletedSuggestions,
@@ -75,20 +82,8 @@ export const RegionAndOrganizationFilters: React.FC<
   const [orgResults, setOrgResults] = useState<OrganizationShallow[]>([]);
   const [isOrgOpen, setIsOrgOpen] = useState(false);
   const [isRegOpen, setIsRegOpen] = useState(false);
+  const userLevel = useUserLevel().userLevel;
 
-  let userLevel = 0;
-  if (user && user.isRegistered) {
-    if (user.user_type === 'standard') {
-      userLevel = STANDARD_USER;
-    } else if (user.user_type === 'globalAdmin') {
-      userLevel = GLOBAL_ADMIN;
-    } else if (
-      user.user_type === 'regionalAdmin' ||
-      user.user_type === 'globalView'
-    ) {
-      userLevel = REGIONAL_ADMIN;
-    }
-  }
   const searchOrganizations = useCallback(
     async (search_term: string, regions?: string[]) => {
       try {
@@ -158,6 +153,7 @@ export const RegionAndOrganizationFilters: React.FC<
     const regionFilter = filters.find(
       (filter) => filter.field === REGION_FILTER_KEY
     );
+
     if (regionFilter !== undefined) {
       return regionFilter.values as string[];
     }
@@ -176,10 +172,6 @@ export const RegionAndOrganizationFilters: React.FC<
     setSearchTerm(v);
   };
 
-  useEffect(() => {
-    searchOrganizations(search_term, regionFilterValues ?? []);
-  }, [searchOrganizations, search_term, regionFilterValues]);
-
   const organizationsInFilters = useMemo(() => {
     const orgsFilter = filters.find(
       (filter) => filter.field === ORGANIZATION_FILTER_KEY
@@ -190,6 +182,37 @@ export const RegionAndOrganizationFilters: React.FC<
       return null;
     }
   }, [filters]);
+
+  useEffect(() => {
+    searchOrganizations(search_term, regionFilterValues ?? []);
+  }, [searchOrganizations, search_term, regionFilterValues]);
+
+  // useEffect(() => {
+  //   // if (!organizationsInFilters || organizationsInFilters.length === 0) {
+  //   //   // No orgs selected: ensure all regions are present as filters
+  //   //   regions.forEach((region) => {
+  //   //     if (!regionFilterValues?.includes(region)) {
+  //   //       addFilter(REGION_FILTER_KEY, region, 'any');
+  //   //     }
+  //   //   });
+  //   // } else {
+  //   // Orgs selected: only keep region filters that match selected orgs' region_ids
+  //   const orgRegionIds = organizationsInFilters?.map((org) => org.region_id);
+  //   // Remove region filters not in orgRegionIds
+  //   regionFilterValues?.forEach((region) => {
+  //     if (!orgRegionIds?.includes(region)) {
+  //       removeFilter(REGION_FILTER_KEY, region, 'any');
+  //     }
+  //   });
+  //   // Ensure all org region_ids are present as region filters
+  //   // orgRegionIds.forEach((regionId) => {
+  //   //   if (!regionFilterValues?.includes(regionId)) {
+  //   //     addFilter(REGION_FILTER_KEY, regionId, 'any');
+  //   //   }
+  //   // });
+  //   // }
+  //   // eslint-disable-next-line
+  // }, [organizationsInFilters, regions, regionFilterValues]);
 
   const userOrg = user?.roles?.map((role) => role.organization.name);
   // const showUsersRegionDisabled = useMemo(() => {
@@ -209,7 +232,6 @@ export const RegionAndOrganizationFilters: React.FC<
   );
   // const history = useHistory();
   const location = useLocation();
-
   const handleAddOrganization = (org: OrganizationShallow) => {
     if (org) {
       const exists = organizationsInFilters?.find((o) => o.id === org.id);
@@ -225,15 +247,11 @@ export const RegionAndOrganizationFilters: React.FC<
       } else {
         setShowMaps(false);
       }
-    } else {
     }
   };
 
-  console.log('user', user);
-  console.log('autocompletedResults', autocompletedResults);
-  console.log('autocompletedSuggestions', autocompletedSuggestions);
-  console.log('results', results);
-  console.log('filters', filters);
+  console.log('orgResults', orgResults);
+  console.log('organizationsInFilters', organizationsInFilters);
 
   return (
     <>
@@ -244,13 +262,6 @@ export const RegionAndOrganizationFilters: React.FC<
             initialValue={domainSearchTerm}
             value={domainSearchTerm}
             onChange={(value) => {
-              // if (location.pathname !== '/inventory') {
-              //   history.push(`/inventory?q=${value}`);
-              //   setDomainSearchTerm(value, {
-              //     shouldClearFilters: false,
-              //     refresh: true
-              //   });
-              // }
               setDomainSearchTerm(value, {
                 shouldClearFilters: false
               });
@@ -261,213 +272,250 @@ export const RegionAndOrganizationFilters: React.FC<
       ) : (
         <></>
       )}
-      <Box padding={2}>
-        <Autocomplete
-          onInputChange={(e, v) => {
-            if (e && e.type === 'change') {
-              handleTextChange(v);
-            }
-          }}
-          // inputValue={search_term}
-          disableClearable
-          disabled={!userLevel || userLevel !== GLOBAL_ADMIN}
-          open={isRegOpen}
-          onOpen={() => {
-            setIsRegOpen(true);
-          }}
-          options={regions}
-          onChange={(e, v) => {
-            setTimeout(() => {
-              handleCheckboxChange(v);
-            }, 250);
-            return;
-          }}
-          getOptionLabel={(option) => `Region ${option}`}
-          ListboxProps={{
-            sx: {
-              ':active': {
-                bgcolor: 'transparent'
-              },
-              overflow: 'auto',
-              overscrollBehavior: 'contain'
-            }
-          }}
-          renderOption={(params, option) => {
-            return (
-              <li
-                {...params}
-                style={{ pointerEvents: 'none', padding: 0 }}
-                key={`region-filter-item-${option}`}
-              >
-                <Button
-                  sx={{
-                    pointerEvents: 'auto',
-                    height: '100%',
-                    width: '100%',
-                    display: 'flex',
-                    textAlign: 'left',
-                    justifyContent: 'start',
-                    fontWeight: 400,
-                    color: 'black',
-                    textTransform: 'none'
-                  }}
-                  id="search-region-button"
-                  onClick={() =>
-                    setTimeout(() => {
-                      handleCheckboxChange(option);
-                    }, 250)
-                  }
-                >
-                  {`Region ${option}`}
-                </Button>
-              </li>
-            );
-          }}
-          // isOptionEqualToValue={(option, value) =>
-          //   option?.name === value?.name
-          // }
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={
-                userLevel === GLOBAL_ADMIN
-                  ? 'Select Region'
-                  : `Region ${user?.region_id}`
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography>Regions</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          {/* <Autocomplete
+            onInputChange={(e, v) => {
+              if (e && e.type === 'change') {
+                handleTextChange(v);
               }
-              value={search_term}
-              defaultValue={user?.region_id}
-              onBlur={() => setIsRegOpen(false)}
-              placeholder="Search Region"
-            />
-          )}
-        />
-        <List>
-          {userLevel === GLOBAL_ADMIN &&
-            regions.map((region) => {
+            }}
+            // inputValue={search_term}
+            disableClearable
+            disabled={!userLevel || userLevel !== GLOBAL_ADMIN}
+            open={isRegOpen}
+            onOpen={() => {
+              setIsRegOpen(true);
+            }}
+            options={regions}
+            onChange={(e, v) => {
+              setTimeout(() => {
+                handleCheckboxChange(v);
+              }, 250);
+              return;
+            }}
+            getOptionLabel={(option) => `Region ${option}`}
+            ListboxProps={{
+              sx: {
+                ':active': {
+                  bgcolor: 'transparent'
+                },
+                overflow: 'auto',
+                overscrollBehavior: 'contain'
+              }
+            }}
+            renderOption={(params, option) => {
               return (
-                <RegionItem
-                  key={`region-item-${region}`}
-                  handleChange={handleCheckboxChange}
-                  region_id={region}
-                  checked={regionExistsInFilters(region) ?? false}
-                />
-              );
-            })}
-          {/* )} */}
-        </List>
-      </Box>
-      {/* Need to reconcile type issues caused by adding freeSolo prop */}
-      <Box padding={2}>
-        <Autocomplete
-          onInputChange={(e, v) => {
-            if (e && e.type === 'change') {
-              handleTextChange(v);
-            }
-          }}
-          inputValue={search_term}
-          // freeSolo
-          disableClearable
-          disabled={userLevel === STANDARD_USER}
-          open={isOrgOpen}
-          onOpen={() => {
-            setIsOrgOpen(true);
-          }}
-          options={orgResults}
-          onChange={(e, v) => {
-            setTimeout(() => {
-              handleAddOrganization(v);
-            }, 250);
-            return;
-          }}
-          getOptionLabel={(option) => option.name}
-          ListboxProps={{
-            sx: {
-              ':active': {
-                bgcolor: 'transparent'
-              },
-              overflow: 'auto',
-              overscrollBehavior: 'contain'
-            }
-          }}
-          renderOption={(params, option) => {
-            return (
-              <li
-                {...params}
-                style={{ pointerEvents: 'none', padding: 0 }}
-                key={option.id}
-              >
-                <Button
-                  sx={{
-                    pointerEvents: 'auto',
-                    height: '100%',
-                    width: '100%',
-                    display: 'flex',
-                    textAlign: 'left',
-                    justifyContent: 'start',
-                    fontWeight: 400,
-                    color: 'black',
-                    textTransform: 'none'
-                  }}
-                  id="search-org-button"
-                  onClick={() =>
-                    setTimeout(() => {
-                      handleAddOrganization(option);
-                    }, 250)
-                  }
+                <li
+                  {...params}
+                  style={{ pointerEvents: 'none', padding: 0 }}
+                  key={`region-filter-item-${option}`}
                 >
-                  {option.name}
-                </Button>
-              </li>
-            );
-          }}
-          isOptionEqualToValue={(option, value) => option?.name === value?.name}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={
-                userLevel !== STANDARD_USER
-                  ? 'Search Organizations'
-                  : `${userOrg}`
-              }
-              onBlur={() => setIsOrgOpen(false)}
-              helperText={
-                userLevel === REGIONAL_ADMIN || GLOBAL_ADMIN
-                  ? 'This filter, by default, displays data for all organinzations in your region. Use this filter to select one or multiple organizations.'
-                  : ''
-              }
-            />
-          )}
-        />
-        {userLevel !== STANDARD_USER && (
-          <List sx={{ width: '100%' }}>
-            {organizationsInFilters?.map((org) => {
-              return (
-                <ListItem key={org.id} sx={{ padding: '0px' }}>
-                  <FormGroup>
-                    <FormControlLabel
-                      sx={{ padding: '0px' }}
-                      // disabled={userLevel === STANDARD_USER}
-                      label={org?.name}
-                      control={<Checkbox />}
-                      checked={true}
-                      onChange={() => {
-                        const exists = organizationsInFilters.find(
-                          (organization) => organization.id === org.id
-                        );
-                        if (exists) {
-                          removeFilter(ORGANIZATION_FILTER_KEY, org, 'any');
-                        } else {
-                          addFilter(ORGANIZATION_FILTER_KEY, org, 'any');
-                        }
-                      }}
-                    />
-                  </FormGroup>
-                </ListItem>
+                  <Button
+                    sx={{
+                      pointerEvents: 'auto',
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      textAlign: 'left',
+                      justifyContent: 'start',
+                      fontWeight: 400,
+                      color: 'black',
+                      textTransform: 'none'
+                    }}
+                    id="search-region-button"
+                    onClick={() =>
+                      setTimeout(() => {
+                        handleCheckboxChange(option);
+                      }, 250)
+                    }
+                  >
+                    {`Region ${option}`}
+                  </Button>
+                </li>
               );
-            })}
+            }}
+            // isOptionEqualToValue={(option, value) =>
+            //   option?.name === value?.name
+            // }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={
+                  userLevel === GLOBAL_ADMIN
+                    ? 'All Regions'
+                    : `Region ${user?.region_id}`
+                }
+                value={search_term}
+                // defaultValue={user?.region_id}
+                onBlur={() => setIsRegOpen(false)}
+                placeholder={
+                  organizationsInFilters
+                    ? `Region${organizationsInFilters[0].region_id}`
+                    : 'All Regions'
+                }
+              />
+            )}
+          /> */}
+          <List sx={{ maxHeight: 5 * 42, overflowY: 'auto' }}>
+            {userLevel === GLOBAL_ADMIN &&
+              regions.map((region) => {
+                return (
+                  <RegionItem
+                    key={`region-item-${region}`}
+                    handleChange={handleCheckboxChange}
+                    region_id={region}
+                    checked={regionExistsInFilters(region) ?? false}
+                    // disabled={
+                    //   filters
+                    //     .map((f) => f.values)
+                    //     .flat()
+                    //     .some((v) => v.region_id === region) ||
+                    //   !toggleRegionalUserType
+                    // }
+                  />
+                );
+              })}
+            {/* )} */}
           </List>
-        )}
-      </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Need to reconcile type issues caused by adding freeSolo prop */}
+
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography>Organizations</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Autocomplete
+            onInputChange={(e, v) => {
+              if (e && e.type === 'change') {
+                handleTextChange(v);
+              }
+            }}
+            inputValue={search_term}
+            // freeSolo
+            disableClearable
+            disabled={userLevel === STANDARD_USER}
+            open={isOrgOpen}
+            onOpen={() => {
+              setIsOrgOpen(true);
+            }}
+            options={orgResults}
+            onChange={(e, v) => {
+              setTimeout(() => {
+                handleAddOrganization(v);
+              }, 250);
+              return;
+            }}
+            getOptionLabel={(option) => option.name}
+            ListboxProps={{
+              sx: {
+                ':active': {
+                  bgcolor: 'transparent'
+                },
+                overflow: 'auto',
+                overscrollBehavior: 'contain'
+              }
+            }}
+            renderOption={(params, option) => {
+              return (
+                <li
+                  {...params}
+                  style={{ pointerEvents: 'none', padding: 0 }}
+                  key={option.id}
+                >
+                  <Button
+                    sx={{
+                      pointerEvents: 'auto',
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      textAlign: 'left',
+                      justifyContent: 'start',
+                      fontWeight: 400,
+                      color: 'black',
+                      textTransform: 'none'
+                    }}
+                    id="search-org-button"
+                    onClick={() =>
+                      setTimeout(() => {
+                        handleAddOrganization(option);
+                      }, 250)
+                    }
+                  >
+                    {option.name}
+                  </Button>
+                </li>
+              );
+            }}
+            isOptionEqualToValue={(option, value) =>
+              option?.name === value?.name
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={
+                  userLevel !== STANDARD_USER
+                    ? 'Search Organizations'
+                    : `${userOrg}`
+                }
+                onBlur={() => setIsOrgOpen(false)}
+                helperText={
+                  userLevel === REGIONAL_ADMIN || GLOBAL_ADMIN
+                    ? 'This filter, by default, displays data for all organizations in your region. Use this filter to select one or multiple organizations.'
+                    : ''
+                }
+                placeholder={
+                  `Regions ${regionFilterValues}`
+                  // organizationsInFilters
+                  //   ? `Organization${
+                  //       organizationsInFilters[0].name
+                  //         ? ` (${organizationsInFilters[0].name})`
+                  //         : ''
+                  //     }`
+                  //   : 'Search Organizations'
+                }
+              />
+            )}
+          />
+          {userLevel !== STANDARD_USER && (
+            <List sx={{ width: '100%', maxHeight: 5 * 42, overflowY: 'auto' }}>
+              {organizationsInFilters?.map((org) => {
+                return (
+                  <ListItem key={org.id} sx={{ padding: '0px' }}>
+                    <FormGroup>
+                      <FormControlLabel
+                        sx={{ padding: '0px' }}
+                        // disabled={userLevel === STANDARD_USER}
+                        label={
+                          org?.name + `${' (Region ' + org?.region_id + ')'}`
+                        }
+                        control={<Checkbox />}
+                        checked={true}
+                        onChange={() => {
+                          const exists = organizationsInFilters.find(
+                            (organization) => organization.id === org.id
+                          );
+                          if (exists) {
+                            removeFilter(ORGANIZATION_FILTER_KEY, org, 'any');
+                          } else {
+                            addFilter(ORGANIZATION_FILTER_KEY, org, 'any');
+                          }
+                        }}
+                      />
+                    </FormGroup>
+                  </ListItem>
+                );
+              })}
+            </List>
+          )}
+        </AccordionDetails>
+      </Accordion>
     </>
   );
 };
@@ -476,12 +524,14 @@ interface RegionItemProps {
   region_id: string;
   handleChange: (region_id: string) => void;
   checked: boolean;
+  disabled?: boolean;
 }
 
 const RegionItem: React.FC<RegionItemProps> = ({
   region_id: region,
   handleChange,
-  checked
+  checked,
+  disabled = false
 }) => {
   return (
     <ListItem sx={{ padding: '0px' }} key={`region-filter-item-${region}`}>
@@ -490,6 +540,7 @@ const RegionItem: React.FC<RegionItemProps> = ({
           control={<Checkbox />}
           label={`Region ${region}`}
           checked={checked}
+          disabled={disabled}
           onChange={() => {
             handleChange(region);
           }}

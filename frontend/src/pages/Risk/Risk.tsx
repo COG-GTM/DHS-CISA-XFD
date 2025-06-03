@@ -63,7 +63,7 @@ const Risk: React.FC<ContextType> = ({
   filters,
   removeFilter,
   addFilter,
-  search_term,
+  searchTerm,
   setSearchTerm
 }) => {
   const {
@@ -111,18 +111,18 @@ const Risk: React.FC<ContextType> = ({
   const { pathname } = useLocation();
 
   const filtersToDisplay = useMemo(() => {
-    if (search_term !== '') {
+    if (searchTerm !== '') {
       return [
         ...filters,
         {
           field: 'query',
-          values: [search_term],
+          values: [searchTerm],
           onClear: () => setSearchTerm('', { shouldClearFilters: false })
         }
       ];
     }
     return filters;
-  }, [filters, search_term, setSearchTerm]);
+  }, [filters, searchTerm, setSearchTerm]);
 
   const userLevel = useUserLevel().userLevel;
 
@@ -538,14 +538,14 @@ export const RiskWithSearch = withSearch(
     removeFilter,
     filters,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm
   })
 )(Risk);

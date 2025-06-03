@@ -81,7 +81,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
         current,
         filters,
         resultsPerPage,
-        search_term,
+        searchTerm,
         sort_direction,
         sort_field
       } = state;
@@ -89,7 +89,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
         current,
         filters,
         resultsPerPage,
-        search_term,
+        searchTerm,
         sort_direction,
         sort_field
       };

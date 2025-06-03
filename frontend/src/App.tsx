@@ -102,7 +102,8 @@ const App: React.FC = () => (
                           exact
                           path="/"
                           unauth={AuthLogin}
-                          component={VulnerabilityScan}
+                          // component={VulnerabilityScan}
+                          component={VulnerabilityScanWithSearch}
                         />
                         <Route
                           exact

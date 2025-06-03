@@ -14,7 +14,8 @@ import {
   FormControlLabel,
   ListItem,
   FormGroup,
-  Radio
+  Radio,
+  useTheme
 } from '@mui/material';
 import {
   classes,
@@ -22,6 +23,7 @@ import {
 } from '../pages/Search/Styling/filterDrawerStyle';
 import {
   Delete,
+  DeleteOutline,
   ExpandMore,
   FiberManualRecordRounded,
   FilterAlt,
@@ -32,14 +34,16 @@ import { ContextType } from '../context/SearchProvider';
 import { useAuthContext } from '../context';
 import { useSavedSearchContext } from 'context/SavedSearchContext';
 import { withSearch } from '@elastic/react-search-ui';
+import { SaveSearchModal } from './SaveSearchModal/SaveSearchModal';
 
 interface Props {
   addFilter: ContextType['addFilter'];
   removeFilter: ContextType['removeFilter'];
   filters: ContextType['filters'];
   facets: ContextType['facets'];
-  search_term: ContextType['search_term'];
+  searchTerm: ContextType['searchTerm'];
   setSearchTerm: ContextType['setSearchTerm'];
+  totalResults?: ContextType['totalResults'];
   initialFilters: any[];
 }
 
@@ -69,8 +73,9 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     addFilter,
     removeFilter,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm,
+    totalResults = 0, // Default to 0 if not provided
     initialFilters
   } = props;
   const { apiGet, apiDelete } = useAuthContext();
@@ -82,6 +87,9 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     activeSearchId,
     setActiveSearchId
   } = useSavedSearchContext();
+
+  const advanceFiltersReq = filters.length > 1 || searchTerm !== '';
+  const theme = useTheme();
 
   const deleteSearch = async (id: string) => {
     try {
@@ -128,7 +136,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
 
   const selectedFiltersAndSearch = filters.filter(
     (filter) =>
-      !initialFilters.some((f) => f.field === filter.field) || search_term
+      !initialFilters.some((f) => f.field === filter.field) || searchTerm
   );
 
   const revertSearch = () => {
@@ -247,24 +255,17 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     });
 
   return (
-    <StyledWrapper style={{ overflowY: 'auto' }}>
-      <Toolbar sx={{ justifyContent: 'center' }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Typography variant="h6" component="h3">
-            Advanced Filters
-          </Typography>
-          <FilterAlt />
-        </Stack>
-      </Toolbar>
-
-      {selectedFiltersAndSearch.length > 0 ? (
+    <Box>
+      {/* Gives space for accordion divider to render*/}
+      <Box></Box>
+      {selectedFiltersAndSearch.length > 0 && (
         <>
           <Divider />
           <Box marginY={1} display="flex" width="100%" justifyContent="center">
             <Button onClick={clearFiltersAndSearch}>Clear Filters</Button>
           </Box>
         </>
-      ) : null}
+      )}
       <Accordion
         elevation={0}
         square
@@ -471,22 +472,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           </AccordionDetails>
         </Accordion>
       )}
-      <Toolbar sx={{ justifyContent: 'center' }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Typography variant="h6" component="h3">
-            Saved Searches
-          </Typography>
-          <Save />
-        </Stack>
-      </Toolbar>
-      <Divider />
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography>Saved Searches</Typography>
         </AccordionSummary>
         <AccordionDetails>
+          <SaveSearchModal
+            searchTerm={searchTerm}
+            filters={filters}
+            totalResults={totalResults} // Placeholder, as totalResults is not passed in this context
+            sort_field={''} // Placeholder, as sort_field is not passed in this context
+            sort_direction={''} // Placeholder, as sort_direction is not passed in this context
+            advancedFiltersReq={advanceFiltersReq} // Placeholder, as advancedFiltersReq is not passed in this context
+          />
           {ascendingSavedSearches.length > 0 ? (
-            <List>
+            <List sx={{ maxHeight: 5 * 42, overflowY: 'auto' }}>
               {ascendingSavedSearches.map((search) => (
                 <ListItem
                   key={search.id}
@@ -507,8 +507,11 @@ export const DrawerInterior: React.FC<Props> = (props) => {
                     aria-label="Delete"
                     title="Delete Search"
                     onClick={() => deleteSearch(search.id)}
+                    sx={{
+                      color: theme.palette.neutrals.main
+                    }}
                   >
-                    <Delete />
+                    <DeleteOutline />
                   </IconButton>
                 </ListItem>
               ))}
@@ -522,13 +525,14 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           )}
         </AccordionDetails>
       </Accordion>
-    </StyledWrapper>
+    </Box>
   );
 };
 
 export const DrawerInteriorWithSearch = withSearch(
-  ({ search_term, setSearchTerm }: ContextType) => ({
-    search_term,
-    setSearchTerm
+  ({ searchTerm, setSearchTerm, totalResults }: ContextType) => ({
+    searchTerm,
+    setSearchTerm,
+    totalResults
   })
 )(DrawerInterior);

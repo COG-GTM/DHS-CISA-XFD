@@ -216,9 +216,9 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
     current = state.current
     filters = state.filters or []
     results_per_page = state.results_per_page
-    search_term = state.search_term
-    sort_direction = state.sort_direction
-    sort_field = state.sort_field
+    search_term = state.searchTerm
+    sort_direction = state.sortDirection
+    sort_field = state.sortField
 
     orgs_in_filters = next(
         (f for f in filters if f["field"] == "organization_id"), None

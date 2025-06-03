@@ -18,7 +18,7 @@ export const toggleRegionalUserType = true;
 export const REGION_FILTER_KEY = 'organization.region_id';
 export const ORGANIZATION_FILTER_KEY = 'organization_id';
 
-interface RegionAndOrgFiltersProps {
+interface VSRegionAndOrgFiltersProps {
   addFilter: (
     name: string,
     value: any,
@@ -32,13 +32,12 @@ interface RegionAndOrgFiltersProps {
   filters: any[];
 }
 
-export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
-  addFilter,
-  removeFilter,
-  filters
-}) => {
-  const { setShowMaps, user, apiPost } = useAuthContext();
+export const VSDashRegionAndOrgFilters: React.FC<
+  VSRegionAndOrgFiltersProps
+> = ({ addFilter, removeFilter, filters }) => {
+  const { setShowMaps, user, apiPost, currentOrganization } = useAuthContext();
   const { regions } = useStaticsContext();
+  const location = useLocation();
   const [search_term, setSearchTerm] = useState<string>('');
   const [orgResults, setOrgResults] = useState<OrganizationShallow[]>([]);
   const [isRegOpen, setIsRegOpen] = useState(false);
@@ -139,14 +138,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
     return null;
   }, [filters]);
 
-  //   const handleCheckboxChange = (region_id: string) => {
-  //     if (regionFilterValues?.includes(region_id)) {
-  //       removeFilter(REGION_FILTER_KEY, region_id, 'any');
-  //     } else {
-  //       addFilter(REGION_FILTER_KEY, region_id, 'any');
-  //     }
-  //   };
-
   const handleTextChange = (v: string) => {
     setSearchTerm(v);
   };
@@ -154,47 +145,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
   useEffect(() => {
     searchOrganizations(search_term, regionFilterValues ?? []);
   }, [searchOrganizations, search_term, regionFilterValues]);
-
-  const organizationsInFilters = useMemo(() => {
-    const orgsFilter = filters.find(
-      (filter) => filter.field === ORGANIZATION_FILTER_KEY
-    );
-    if (orgsFilter !== undefined) {
-      return orgsFilter.values as OrganizationShallow[];
-    } else {
-      return null;
-    }
-  }, [filters]);
-
-  console.log('organizationsInFilters', organizationsInFilters);
-
-  //   const regionExistsInFilters = useCallback(
-  //     (region_id: string) => {
-  //       return regionFilterValues?.includes(region_id);
-  //     },
-  //     [regionFilterValues]
-  //   );
-  // const history = useHistory();
-  //   const location = useLocation();
-
-  //   const handleAddOrganization = (org: OrganizationShallow) => {
-  //     if (org) {
-  //       const exists = organizationsInFilters?.find((o) => o.id === org.id);
-  //       if (exists) {
-  //         removeFilter(ORGANIZATION_FILTER_KEY, org, 'any');
-  //       } else {
-  //         addFilter(ORGANIZATION_FILTER_KEY, org, 'any');
-  //       }
-  //       setSearchTerm('');
-  //       setIsOrgOpen(false);
-  //       if (org.name === 'Election') {
-  //         setShowMaps(true);
-  //       } else {
-  //         setShowMaps(false);
-  //       }
-  //     } else {
-  //     }
-  //   };
 
   const handleChangeRegion = (region_id: string) => {
     if (region_id) {
@@ -205,7 +155,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
         removeFilter(REGION_FILTER_KEY, existingRegion, 'any');
       });
       addFilter(REGION_FILTER_KEY, region_id, 'any');
-      //   setSearchTerm('');
       setIsRegOpen(false);
     }
   };
@@ -216,7 +165,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
     const existingFilters =
       filters.find((filter) => filter.field === ORGANIZATION_FILTER_KEY)
         ?.values || [];
-    console.log('existingFilters', existingFilters);
     existingFilters.forEach((existingOrg: OrganizationShallow) => {
       removeFilter(ORGANIZATION_FILTER_KEY, existingOrg, 'any');
     });
@@ -225,31 +173,14 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
     setIsOrgOpen(false);
   };
 
-  // const userOrg = user?.roles?.map((role) => role.organization.name);
-  const userOrg = filters.find(
-    (filter) => filter.field === ORGANIZATION_FILTER_KEY
-  )?.values as OrganizationShallow[];
-  const userRegion = filters.find(
-    (filter) => filter.field === REGION_FILTER_KEY
-  )?.values as string[];
-  console.log('userOrg', userOrg);
-  console.log('userRegion', userRegion);
-  const userOrgId = userOrg?.map((org) => org.id);
-  console.log('userOrgId', userOrgId);
-  const userOrgName = userOrg?.map((org) => org.name);
-  console.log('userOrgName', userOrgName);
-  // const userRegion = user?.region_id;
-  // console.log('userRegion', userRegion);
   return (
     <>
       <Box padding={2}>
         <Autocomplete
-          value={selectedRegion}
           onChange={(e, v) => {
             setTimeout(() => {
               setSelectedRegion(v);
               handleChangeRegion(v);
-              //   handleCheckboxChange(v);
             }, 250);
             return;
           }}
@@ -258,7 +189,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
               handleTextChange(v);
             }
           }}
-          //   inputValue={search_term}
           disableClearable
           disabled={!userLevel || userLevel !== GLOBAL_ADMIN}
           open={isRegOpen}
@@ -267,13 +197,15 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
           }}
           options={regions}
           getOptionLabel={(option) => `Region ${option}`}
-          ListboxProps={{
-            sx: {
-              ':active': {
-                bgcolor: 'transparent'
-              },
-              overflow: 'auto',
-              overscrollBehavior: 'contain'
+          slotProps={{
+            listbox: {
+              sx: {
+                ':active': {
+                  bgcolor: 'transparent'
+                },
+                overflow: 'auto',
+                overscrollBehavior: 'contain'
+              }
             }
           }}
           renderOption={(params, option) => {
@@ -300,7 +232,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
                     setTimeout(() => {
                       setSelectedRegion(option);
                       handleChangeRegion(option);
-                      //   handleCheckboxChange(option);
                     }, 250)
                   }
                 >
@@ -309,20 +240,15 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
               </li>
             );
           }}
-          // isOptionEqualToValue={(option, value) =>
-          //   option?.name === value?.name
-          // }
           renderInput={(params) => (
             <TextField
               {...params}
-              // label={
-              //   selectedRegion
-              //     ? `Region ${selectedRegion}`
-              //     : `Region ${userRegion}`
-              // }
-              label={`Region ${userRegion?.length ? userRegion[0] : ''}`}
-              value={search_term}
-              defaultValue={user?.region_id}
+              label={
+                selectedRegion
+                  ? `Region ${selectedRegion}`
+                  : `Region ${user?.region_id || ''}`
+              }
+              placeholder="Select Region"
               onBlur={() => setIsRegOpen(false)}
             />
           )}
@@ -339,7 +265,6 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
             }, 250);
             return;
           }}
-          //   inputValue={search_term}
           onInputChange={(e, v) => {
             if (e && e.type === 'change') {
               handleTextChange(v);
@@ -354,13 +279,15 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
           }}
           options={orgResults}
           getOptionLabel={(option) => option.name}
-          ListboxProps={{
-            sx: {
-              ':active': {
-                bgcolor: 'transparent'
-              },
-              overflow: 'auto',
-              overscrollBehavior: 'contain'
+          slotProps={{
+            listbox: {
+              sx: {
+                ':active': {
+                  bgcolor: 'transparent'
+                },
+                overflow: 'auto',
+                overscrollBehavior: 'contain'
+              }
             }
           }}
           renderOption={(params, option) => {
@@ -402,12 +329,16 @@ export const VSDashRegionAndOrgFilters: React.FC<RegionAndOrgFiltersProps> = ({
           renderInput={(params) => (
             <TextField
               {...params}
-              // label={selectedOrg?.name ? selectedOrg.name : 'Organization'}
-              label={userOrgName?.length ? userOrgName[0] : 'Organization'}
+              label={
+                selectedOrg?.name
+                  ? selectedOrg.name
+                  : currentOrganization?.name || ''
+              }
+              placeholder="Select Organization"
               onBlur={() => setIsOrgOpen(false)}
               helperText={
                 userLevel === REGIONAL_ADMIN || GLOBAL_ADMIN
-                  ? 'This filter, by default, displays data for all organizations in your region. Use this filter to select one or multiple organizations.'
+                  ? 'This filter, by default, displays data for all organizations in your region. Use this filter to select an organization.'
                   : ''
               }
             />
