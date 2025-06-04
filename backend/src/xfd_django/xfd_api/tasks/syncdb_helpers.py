@@ -1768,3 +1768,4 @@ def create_service_view(database):
         )
 
         print("View 'vw_service' created.")
+        
