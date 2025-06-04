@@ -952,44 +952,41 @@ def synchronize(target_app_label=None, using=None):
         )
     )
 
-    ordered_models = get_ordered_models(target_app_label)
-    allowed_tables = {m._meta.db_table for m in ordered_models}
+    # Warning: Cursor automatically closes after use of 'with'
+    with connections[database].schema_editor() as schema_editor:
+        ordered_models = get_ordered_models(target_app_label)
+        # Compute allowed table names from the models we are syncing.
+        allowed_tables = {m._meta.db_table for m in ordered_models}
+        for model in ordered_models:
+            print("Processing model: {}".format(model.__name__))
+            process_model(schema_editor, model, database, allowed_tables)
 
-    for model in ordered_models:
-        print("Processing model: {}".format(model.__name__))
-        try:
-            with transaction.atomic(using=database):
-                with connections[database].schema_editor() as schema_editor:
-                    process_model(schema_editor, model, database, allowed_tables)
-        except Exception as e:
-            print("❌ Error processing model {}: {}".format(model.__name__, e))
+        print("Processing Many-to-Many tables...")
+        process_m2m_tables(schema_editor, ordered_models, database)
 
-    print("Processing Many-to-Many tables...")
-    process_m2m_tables(schema_editor, ordered_models, database)
-
-    if target_app_label == "xfd_mini_dl":
-        print("Ensuring GiST index exists on ip.ip...")
-        with connections[database].cursor() as cursor:
-            cursor.execute(
+        if target_app_label == "xfd_mini_dl":
+            print("Ensuring GiST index exists on ip.ip...")
+            with connections[database].cursor() as cursor:
+                cursor.execute(
+                    """
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_indexes
+                            WHERE tablename = 'ip' AND indexname = 'ip_ip_gist_idx'
+                        ) THEN
+                            EXECUTE 'CREATE INDEX ip_ip_gist_idx ON ip USING gist (ip inet_ops)';
+                        END IF;
+                    END
+                    $$;
                 """
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_indexes
-                        WHERE tablename = 'ip' AND indexname = 'ip_ip_gist_idx'
-                    ) THEN
-                        EXECUTE 'CREATE INDEX ip_ip_gist_idx ON ip USING gist (ip inet_ops)';
-                    END IF;
-                END
-                $$;
-            """
-            )
-        create_domain_view(database)
-        create_service_view(database)
-        create_vuln_normal_views(database)
-        create_vuln_materialized_views(database)
+                )
+            create_domain_view(database)
+            create_service_view(database)
+            create_vuln_normal_views(database)
+            create_vuln_materialized_views(database)
 
-    cleanup_stale_tables(ordered_models, database)
+        cleanup_stale_tables(ordered_models, database)
 
     print("Database synchronization complete.")
 
@@ -1094,90 +1091,41 @@ def process_m2m_tables(schema_editor: BaseDatabaseSchemaEditor, models, database
 def update_table(
     schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
 ):
-    """Update an existing table for the given model. Ensure columns match fields and types."""
+    """Update an existing table for the given model. Ensure columns match fields."""
     table_name = model._meta.db_table
     db_fields = {field.column for field in model._meta.fields}
 
     with connections[database].cursor() as cursor:
-        # Get existing columns and their data types
+        # Get existing columns
         cursor.execute(
-            """
-            SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_name = %s;
-        """,
+            "SELECT column_name FROM information_schema.columns WHERE table_name = %s;",
             [table_name],
         )
-        existing_columns = {row[0]: row[1] for row in cursor.fetchall()}
+        existing_columns = {row[0] for row in cursor.fetchall()}
 
+        # Add missing columns
+        missing_columns = db_fields - existing_columns
         for field in model._meta.fields:
-            column_name = field.column
-            if column_name not in existing_columns:
+            if field.column in missing_columns:
                 if hasattr(field, "remote_field") and field.remote_field:
                     related_table = field.remote_field.model._meta.db_table
+                    # If the related table isn't in allowed_tables or doesn't exist yet, skip adding this field.
                     if related_table not in allowed_tables or not table_exists_in_db(
                         related_table, database
                     ):
                         print(
                             "Skipping addition of foreign key field '{}' on model '{}' because referenced table '{}' does not exist yet.".format(
-                                column_name, model.__name__, related_table
+                                field.column, model.__name__, related_table
                             )
                         )
                         continue
                 print(
-                    "Adding column '{}' to table '{}'".format(column_name, table_name)
+                    "Adding column '{}' to table '{}'".format(field.column, table_name)
                 )
                 schema_editor.add_field(model, field)
-            else:
-                db_type = existing_columns[column_name]
-                django_type = field.db_type(connection=connections[database])
-                normalized_db_type = db_type.lower()
-                normalized_django_type = django_type.lower()
-
-                if normalized_db_type == normalized_django_type:
-                    continue  # no change needed
-
-                print(
-                    "Altering column '{}.{}' from '{}' to '{}'".format(
-                        table_name,
-                        column_name,
-                        normalized_db_type,
-                        normalized_django_type,
-                    )
-                )
-
-                try:
-                    # Drop any dependent views first
-                    dependent_views = get_dependent_views(
-                        column_name, table_name, cursor
-                    )
-                    for view in dependent_views:
-                        print(
-                            "⚠️ Dropping dependent view '{}' to allow altering '{}.{}'".format(
-                                view, table_name, column_name
-                            )
-                        )
-                        cursor.execute(
-                            "DROP VIEW IF EXISTS {} CASCADE;".format(
-                                connections[database].ops.quote_name(view)
-                            )
-                        )
-
-                    alter_sql = "ALTER TABLE {} ALTER COLUMN {} TYPE {};".format(
-                        connections[database].ops.quote_name(table_name),
-                        connections[database].ops.quote_name(column_name),
-                        django_type,
-                    )
-                    cursor.execute(alter_sql)
-                except Exception as e:
-                    print(
-                        "⚠️ Failed to alter column '{}.{}': {}".format(
-                            table_name, column_name, e
-                        )
-                    )
 
         # Remove extra columns
-        extra_columns = set(existing_columns.keys()) - db_fields
+        extra_columns = existing_columns - db_fields
         for column in extra_columns:
             print(
                 "Removing extra column '{}' from table '{}'".format(column, table_name)
@@ -1195,17 +1143,6 @@ def update_table(
                         column, table_name, e
                     )
                 )
-
-
-def get_dependent_views(column_name, table_name, cursor):
-    """Return list of views that depend on a given column."""
-    query = """
-        SELECT DISTINCT vcu.view_name
-        FROM information_schema.view_column_usage vcu
-        WHERE vcu.column_name = %s AND vcu.table_name = %s;
-    """
-    cursor.execute(query, [column_name, table_name])
-    return [row[0] for row in cursor.fetchall()]
 
 
 def cleanup_stale_tables(models, database):
@@ -1347,6 +1284,7 @@ def sync_es_organizations():
                         "tags",
                     )
                 )
+                print("Syncing {} organizations...".format(len(organizations)))
 
                 # Attempt to update Elasticsearch
                 update_organization_chunk(es_client, organizations)
