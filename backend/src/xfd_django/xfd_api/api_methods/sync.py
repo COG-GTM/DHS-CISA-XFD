@@ -15,7 +15,6 @@ from uuid import uuid4
 from django.db import transaction
 from fastapi import HTTPException, Request
 from xfd_api.tasks.vulnScanningSync import save_organization_to_mdl
-from xfd_api.utils.scan_utils.alerting import SyncError
 from xfd_mini_dl.models import Organization, Sector
 
 from ..auth import is_global_view_admin
