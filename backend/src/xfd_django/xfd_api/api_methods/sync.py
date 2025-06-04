@@ -51,7 +51,7 @@ async def sync_post(sync_body, request: Request, current_user):
         raise HTTPException(status_code=500, detail=http_exc)
     except Exception as e:
         print(e)
-        raise HTTPException(status_code=500, detail=http_exc)
+        raise HTTPException(status_code=500, detail=e)
 
 
 def process_request(headers, sync_body):
