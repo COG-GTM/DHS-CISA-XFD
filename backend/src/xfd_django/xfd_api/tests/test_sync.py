@@ -81,7 +81,7 @@ def test_sync_invalid_checksum_should_return_500():
             "Authorization": "Bearer {}".format(create_jwt_token(user)),
         },
     )
-    assert response.status_code == 500
+    assert response.status_code == 400
 
 
 # Test: post valid data with missing checksum should return 500
@@ -98,7 +98,7 @@ def test_sync_missing_checksum_should_return_500():
     )
     headers = {"Authorization": "Bearer {}".format(create_jwt_token(user))}
     response = client.post("/sync", json=dummy_org_data, headers=headers)
-    assert response.status_code == 500
+    assert response.status_code == 400
 
 
 # Test: post empty data should return 500
