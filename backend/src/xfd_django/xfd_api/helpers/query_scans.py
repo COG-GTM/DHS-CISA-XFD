@@ -6,8 +6,7 @@ from typing import Optional
 # Third-Party Libraries
 from django.db.models import Count, Q
 from django.utils import timezone
-
-from ...xfd_mini_dl.models import Scan
+from xfd_mini_dl.models import Scan
 
 # Query this number of days back unless a value is provided in the function call.
 default_window = 7
