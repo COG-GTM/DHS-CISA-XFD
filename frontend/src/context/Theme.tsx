@@ -341,7 +341,7 @@ const theme = createTheme({
     },
     h3: {
       fontSize: '18px',
-      fontWeight: 500,
+      fontWeight: 600,
       textTransform: 'none'
     },
     link: {
