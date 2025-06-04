@@ -65,7 +65,6 @@ export interface ScansRow {
 
 const ScansView: React.FC = () => {
   const { apiGet, apiPost, apiDelete } = useAuthContext();
-  const [windowDays] = useState<number>(7); // Number of days to look back for results when computing success rate
   const [selectedId, setSelectedId] = useState<string>('');
   const [selectedName, setSelectedName] = useState<string>('');
   const [scans, setScans] = useState<Scan[]>([]);
@@ -97,7 +96,7 @@ const ScansView: React.FC = () => {
         scans: Scan[];
         organizations: Organization[];
         schema: ScanSchema;
-      }>(`/scans?window_days=${windowDays}`);
+      }>(`/scans`);
       const tags = await apiGet<OrganizationTag[]>(`/organizations/tags`);
       setScans(scans);
       setScanSchema(schema);
@@ -108,7 +107,7 @@ const ScansView: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
-  }, [apiGet, windowDays]);
+  }, [apiGet]);
 
   const deleteRow = async (id: string) => {
     try {
@@ -322,7 +321,6 @@ const ScansView: React.FC = () => {
               <>
                 <div>Organizations Scanned: {total}</div>
                 <div>Organizations with Results: {succeeded}</div>
-                <div>Result Window: {windowDays} days</div>
               </>
             }
             placement="top"

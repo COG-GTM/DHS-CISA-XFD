@@ -73,6 +73,7 @@ from .api_methods.vulnerability import (
     search_vulnerabilities,
 )
 from .auth import get_current_active_user, handle_okta_callback
+from .helpers.query_scans import default_window
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
@@ -888,15 +889,11 @@ async def call_delete_saved_search(
     tags=["Scans"],
 )
 async def list_scans(
+    window_days: Optional[int],
     current_user: User = Depends(get_current_active_user),
-    window_days: int = Query(
-        7,
-        ge=1,
-        description="How many days back to look for scan results",
-    ),
 ):
     """List all scans and annotate with metrics."""
-    return scan.list_scans(current_user, window_days)
+    return scan.list_scans(current_user, window_days or default_window)
 
 
 @api_router.get(
@@ -929,9 +926,13 @@ async def create_scan(
     response_model=scanSchema.GetScanResponseModel,
     tags=["Scans"],
 )
-async def get_scan(scan_id: str, current_user: User = Depends(get_current_active_user)):
+async def get_scan(
+    scan_id: str,
+    window_days: Optional[int],
+    current_user: User = Depends(get_current_active_user),
+):
     """Get a scan by its ID. User must be authenticated."""
-    return scan.get_scan(scan_id, current_user)
+    return scan.get_scan(scan_id, current_user, window_days or default_window)
 
 
 @api_router.put(
