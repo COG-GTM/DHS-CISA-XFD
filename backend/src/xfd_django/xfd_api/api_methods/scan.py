@@ -1,49 +1,36 @@
 """API methods to support Scan endpoints."""
 
 # Standard Python Libraries
-from datetime import timedelta
 import os
+from typing import Optional
 
 # Third-Party Libraries
-from django.db.models import Count, Q
-from django.utils import timezone
 from fastapi import HTTPException
 from xfd_mini_dl.models import Organization, OrganizationTag, Scan
 
 from ..auth import is_global_view_admin, is_global_write_admin
+from ..helpers.query_scans import default_window, query_scans
 from ..schema_models.scan import SCAN_SCHEMA, NewScan
 from ..tasks.lambda_client import LambdaClient
 
 
 # GET: /scans
-def list_scans(current_user, window_days: int = 7):
+def list_scans(current_user, window_days: Optional[int]):
     """List scans, their schema/orgs, plus total_orgs and orgs_with_results in the last `window_days`."""
     try:
         # Check if the user is a GlobalViewAdmin
         if not is_global_view_admin(current_user):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
 
-        cutoff = timezone.now() - timedelta(days=window_days)
-
-        # Fetch scans, prefetch related tags, and annotate with metrics
-        scans_qs = (
-            Scan.objects.prefetch_related("tags")
-            .annotate(
-                orgs_with_results=Count(
-                    "scan_results__organization",
-                    filter=Q(scan_results__latest_result_at__gte=cutoff),
-                    distinct=True,
-                ),
-            )
-            .all()
-        )
+        # Fetch scans, prefetch related orgs/tags, and annotate with metrics
+        scans = query_scans(None, window_days or default_window)
 
         # Fetch all organizations
         organizations = Organization.objects.values("id", "name")
 
         # Convert to list of dicts with related tags
         scan_list = []
-        for scan in scans_qs:
+        for scan in scans:
             scan_list.append(
                 {
                     "id": scan.id,
@@ -186,27 +173,15 @@ def create_scan(scan_data: NewScan, current_user):
 
 
 # GET: /scans/{scan_id}
-def get_scan(scan_id: str, current_user, window_days: int = 7):
+def get_scan(scan_id: str, current_user, window_days: Optional[int]):
     """Get a scan by its ID."""
     try:
         # Check if the user is a GlobalViewAdmin
         if not is_global_view_admin(current_user):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
 
-        cutoff = timezone.now() - timedelta(days=window_days)
-        # Fetch the scan with its related organizations and tags
-        # Fetch the scan with its related organizations and tags
-        scan = (
-            Scan.objects.prefetch_related("organizations", "tags")
-            .annotate(
-                orgs_with_results=Count(
-                    "scan_results__organization",
-                    filter=Q(scan_results__latest_result_at__gte=cutoff),
-                    distinct=True,
-                ),
-            )
-            .get(id=scan_id)
-        )
+        # Fetch scans, prefetch related orgs/tags, and annotate with metrics
+        scan = query_scans(scan_id, window_days or default_window)
 
         # Fetch all organizations
         all_organizations = Organization.objects.values("id", "name")
