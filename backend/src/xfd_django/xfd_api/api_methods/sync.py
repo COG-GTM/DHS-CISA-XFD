@@ -39,7 +39,9 @@ async def sync_post(sync_body, request: Request, current_user):
     try:
         process_request(headers, sync_body)
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Unhandled sync error: {}".format(str(e)))
+        raise HTTPException(
+            status_code=500, detail="Unhandled sync error: {}".format(str(e))
+        )
 
 
 def process_request(headers, sync_body):

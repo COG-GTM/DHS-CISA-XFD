@@ -68,7 +68,7 @@ def test_sync_invalid_checksum_should_return_500():
         first_name="first",
         last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        user_type=UserType.STANDARD,
+        user_type=UserType.GLOBAL_ADMIN,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -92,7 +92,7 @@ def test_sync_missing_checksum_should_return_500():
         first_name="first",
         last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        user_type=UserType.STANDARD,
+        user_type=UserType.GLOBAL_ADMIN,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -109,7 +109,7 @@ def test_sync_missing_data_should_return_422():
         first_name="first",
         last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        user_type=UserType.STANDARD,
+        user_type=UserType.GLOBAL_ADMIN,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
