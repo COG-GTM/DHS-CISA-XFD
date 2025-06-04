@@ -889,11 +889,11 @@ async def call_delete_saved_search(
     tags=["Scans"],
 )
 async def list_scans(
-    window_days: Optional[int],
+    window_days: Optional[int] = default_window,
     current_user: User = Depends(get_current_active_user),
 ):
     """List all scans and annotate with metrics."""
-    return scan.list_scans(current_user, window_days or default_window)
+    return scan.list_scans(current_user, window_days)
 
 
 @api_router.get(
@@ -928,11 +928,11 @@ async def create_scan(
 )
 async def get_scan(
     scan_id: str,
-    window_days: Optional[int],
+    window_days: Optional[int] = default_window,
     current_user: User = Depends(get_current_active_user),
 ):
     """Get a scan by its ID. User must be authenticated."""
-    return scan.get_scan(scan_id, current_user, window_days or default_window)
+    return scan.get_scan(scan_id, current_user, window_days)
 
 
 @api_router.put(
