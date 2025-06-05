@@ -86,6 +86,14 @@ export const Header: React.FC = () => {
     }
   ].filter(({ users }) => users <= userLevel);
 
+  const vulnScanningMenuItems: MenuItemType[] = [
+    {
+      menuItemTitle: 'Vulnerability Scanning',
+      path: '/VSDashboard',
+      users: STANDARD_USER
+    }
+  ].filter(({ users }) => users <= userLevel);
+
   const supportMenuItems: MenuItemType[] = [
     // {
     //   menuItemTitle: 'Report Bug',
@@ -119,15 +127,16 @@ export const Header: React.FC = () => {
 
   const inventoryMenuItems: MenuItemType[] = [
     {
-      menuItemTitle: 'Asset Inventory',
+      menuItemTitle: 'Findings Library',
       path: '/inventory',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
 
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
-    { 'Scanning Results': scanningResults },
-    { 'Asset Inventory': inventoryMenuItems },
+    // { 'Scanning Results': scanningResults },
+    { 'Vulnerability Scanning': vulnScanningMenuItems },
+    { 'Findings Library': inventoryMenuItems },
     { 'Learning Center': learningCenterMenuItems },
     { Support: supportMenuItems },
     userLevel > 1 ? { 'Admin Hub': adminHubMenuItems } : {},
@@ -161,40 +170,49 @@ export const Header: React.FC = () => {
     </>
   );
   const headerLogoWrapper = (
-    <Button
-      component={Box}
-      onClick={handleLogoClick}
-      onKeyDown={handleKeyDown}
-      aria-label="Navigate to VS Dashboard"
-      role="link"
-      tabIndex={0}
+    <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'left',
-        width: '100%',
-        transition: 'margin-left 0.3s ease-in-out',
-        backgroundColor: 'transparent',
-        padding: 0,
-        minWidth: 0,
-        '&:hover': {
-          backgroundColor: 'transparent',
-          textDecoration: 'none',
-          '.MuiTypography-root': {
-            color: 'primary.main'
-          }
-        },
-        '&:active': {
-          backgroundColor: 'transparent'
-        },
-        '&:focus-visible': {
-          outline: `2px solid`,
-          outlineOffset: '2px'
-        }
+        width: '100%'
       }}
     >
-      {headerLogo}
-    </Button>
+      <Button
+        component={Box}
+        onClick={handleLogoClick}
+        onKeyDown={handleKeyDown}
+        aria-label="Navigate to VS Dashboard"
+        role="link"
+        tabIndex={0}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'left',
+          pr: 1,
+          py: 0,
+          pl: 0,
+          transition: 'margin-left 0.3s ease-in-out',
+          backgroundColor: 'transparent',
+          '&:hover': {
+            backgroundColor: 'transparent',
+            textDecoration: 'none',
+            '.MuiTypography-root': {
+              color: 'primary.main'
+            }
+          },
+          '&:active': {
+            backgroundColor: 'transparent'
+          },
+          '&:focus-visible': {
+            outline: `2px solid`,
+            outlineOffset: '2px'
+          }
+        }}
+      >
+        {headerLogo}
+      </Button>
+    </Box>
   );
 
   return (
@@ -217,20 +235,24 @@ export const Header: React.FC = () => {
           <>
             {allMenuItems.map((sectionObj, index) => {
               const [title, menuItems] = Object.entries(sectionObj)[0] || [];
+              const padding =
+                userLevel === 1 && title === 'Learning Center'
+                  ? 6
+                  : userLevel === 1
+                    ? 1
+                    : 0;
               if (!title || !menuItems) {
                 return null;
               }
               return (
-                <NavMenuButton
-                  key={title + index}
-                  title={title}
-                  menuItems={menuItems}
-                />
+                <Box key={title + index} sx={{ mr: padding }}>
+                  <NavMenuButton title={title} menuItems={menuItems} />
+                </Box>
               );
             })}
             <IconButton
               sx={{
-                display: { xs: 'flex', lg: 'none' },
+                display: { xs: 'flex', xl: 'none' },
                 color: 'primary.dark'
               }}
               aria-label="Open mobile menu"
