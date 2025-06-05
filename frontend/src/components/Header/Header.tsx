@@ -27,6 +27,14 @@ interface MenuItemType {
   onClick?: any;
 }
 
+const LEARNING_CENTER_DOC_URLS = {
+  // Populate with S3 Object URLs
+  glossary: '',
+  faq: '',
+  methodology: '',
+  userGuide: ''
+};
+
 export const Header: React.FC = () => {
   const history = useHistory();
   const { logout } = useAuthContext();
@@ -100,16 +108,26 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   const learningCenterMenuItems: MenuItemType[] = [
-    // {
-    //   menuItemTitle: 'Glossary',
-    //   path: '#',
-    //   users: STANDARD_USER
-    // },
-    // {
-    //   menuItemTitle: 'FAQ',
-    //   path: '#',
-    //   users: STANDARD_USER
-    // },
+    {
+      menuItemTitle: 'VS Glossary',
+      path: LEARNING_CENTER_DOC_URLS.glossary,
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'VS FAQ',
+      path: LEARNING_CENTER_DOC_URLS.faq,
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'VS Methodology',
+      path: LEARNING_CENTER_DOC_URLS.methodology,
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'User Guide',
+      path: LEARNING_CENTER_DOC_URLS.userGuide,
+      users: STANDARD_USER
+    },
     {
       menuItemTitle: 'CISA Resources',
       path: 'https://www.cisa.gov',
