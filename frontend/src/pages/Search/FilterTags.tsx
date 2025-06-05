@@ -1,13 +1,11 @@
 import React, { useMemo } from 'react';
 import { classes, Root } from './Styling/filterTagsStyle';
 import { ContextType } from '../../context/SearchProvider';
-import { Chip, IconButton } from '@mui/material';
-import { FilterAlt } from '@mui/icons-material';
+import { Chip } from '@mui/material';
 import { REGIONAL_ADMIN, useUserLevel } from 'hooks/useUserLevel';
 import { STANDARD_USER } from 'context/userStateUtils';
 import { REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS } from 'hooks/useUserTypeFilters';
 import { useLocation } from 'react-router-dom';
-import { useFilterDrawerContext } from 'context/FilterDrawerContext';
 
 interface Props {
   filters: ContextType['filters'];
@@ -293,7 +291,8 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
             />
           ))
         )}
-        {/* {regionFilter &&
+        {/* Uncomment this section if you want to display grouped region/org chips
+         {regionFilter &&
           Object.entries(regionOrgMap).map(([regionId, orgNames]) => (
             <Chip
               key={regionId}

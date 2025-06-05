@@ -29,7 +29,6 @@ import { ExpandMore } from '@mui/icons-material';
 import { useUserLevel } from 'hooks/useUserLevel';
 
 const GLOBAL_ADMIN = 3;
-const REGIONAL_ADMIN = 2;
 const STANDARD_USER = 1;
 
 // Swap this value to allow regional admin to filter on regions that aren't their own
@@ -404,6 +403,26 @@ export const RegionAndOrganizationFilters: React.FC<
                 })}
             </List>
           )}
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: 0
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 24,
+                pointerEvents: 'none',
+                background:
+                  'linear-gradient(to bottom, rgba(255,255,255,0), #fff 90%)'
+              }}
+            />
+          </div>
         </AccordionDetails>
       </Accordion>
 

@@ -93,9 +93,9 @@ const Root = styled('div')(({ theme }) => ({
     width: '100%',
     paddingTop: 0,
     flexWrap: 'nowrap',
-    maxHeight: 5.75 * 42, // 5.75 items of height 42px. Works with the gradient overlay.
-    overflow: 'scroll',
-    scrollbarWidth: 'thin'
+    maxHeight: 4.75 * 42, // 4.75 items of height 42px. Works with the gradient overlay.
+    overflowY: 'scroll',
+    scrollbarWidth: 'auto'
   },
 
   [`& .${classes.count}`]: {

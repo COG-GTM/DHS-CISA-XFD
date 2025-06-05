@@ -20,7 +20,6 @@ import { useAuthContext } from 'context';
 import { FilterTags } from './FilterTags';
 import { NoResults } from 'components/NoResults';
 import { exportCSV } from 'components/ImportExport';
-import { SaveSearchModal } from 'components/SaveSearchModal/SaveSearchModal';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
@@ -159,14 +158,6 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
             isFixed={resultsScrolled}
             advancedFiltersReq={advanceFiltersReq}
           />
-          {/* <SaveSearchModal
-            search_term={searchTerm}
-            filters={filters}
-            totalResults={totalResults}
-            sort_field={''}
-            sort_direction={''}
-            advancedFiltersReq={advanceFiltersReq}
-          /> */}
         </Stack>
       </Box>
       <Box
@@ -204,17 +195,7 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
                 <NoResults
                   message={"We don't see any results that match your criteria."}
                 ></NoResults>
-                <Button
-                  variant="contained"
-                  // onClick={() =>
-                  //   initialFiltersForUser.forEach((filter) => {
-                  //     filter.values.forEach((value) => {
-                  //       addFilter(filter.field, value, filter.type);
-                  //     });
-                  //   })
-                  // }
-                  onClick={resetFilters}
-                >
+                <Button variant="contained" onClick={resetFilters}>
                   {' '}
                   Reset Filters
                 </Button>

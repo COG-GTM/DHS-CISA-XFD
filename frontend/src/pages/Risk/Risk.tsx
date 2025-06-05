@@ -27,7 +27,6 @@ import {
 } from 'components/FilterDrawer/RegionAndOrganizationFilters';
 import { withSearch } from '@elastic/react-search-ui';
 import { FilterTags } from 'pages/Search/FilterTags';
-import { useLocation } from 'react-router-dom';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
@@ -107,8 +106,6 @@ const Risk: React.FC<ContextType> = ({
           : []
     };
   }, [filters]);
-
-  const { pathname } = useLocation();
 
   const filtersToDisplay = useMemo(() => {
     if (searchTerm !== '') {
@@ -244,14 +241,7 @@ const Risk: React.FC<ContextType> = ({
         });
       });
     }
-  }, [
-    // pathname,
-    removeFilter,
-    filters,
-    addFilter,
-    // riskFilters,
-    initialFiltersForUser
-  ]);
+  }, [removeFilter, filters, addFilter, initialFiltersForUser]);
 
   const MapCard = ({
     title,
