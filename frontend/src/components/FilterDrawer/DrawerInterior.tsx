@@ -4,12 +4,9 @@ import {
   Accordion as MuiAccordion,
   AccordionSummary as MuiAccordionSummary,
   IconButton,
-  Divider,
   Stack,
-  Toolbar,
   Typography,
   Box,
-  Button,
   List,
   FormControlLabel,
   ListItem,
@@ -17,24 +14,18 @@ import {
   Radio,
   useTheme
 } from '@mui/material';
+import { classes } from '../../pages/Search/Styling/filterDrawerStyle';
 import {
-  classes,
-  StyledWrapper
-} from '../pages/Search/Styling/filterDrawerStyle';
-import {
-  Delete,
   DeleteOutline,
   ExpandMore,
-  FiberManualRecordRounded,
-  FilterAlt,
-  Save
+  FiberManualRecordRounded
 } from '@mui/icons-material';
 import { FacetFilter, TaggedArrayInput } from 'components';
-import { ContextType } from '../context/SearchProvider';
-import { useAuthContext } from '../context';
+import { ContextType } from '../../context/SearchProvider';
+import { useAuthContext } from '../../context';
 import { useSavedSearchContext } from 'context/SavedSearchContext';
 import { withSearch } from '@elastic/react-search-ui';
-import { SaveSearchModal } from './SaveSearchModal/SaveSearchModal';
+import { SaveSearchModal } from '../SaveSearchModal/SaveSearchModal';
 
 interface Props {
   addFilter: ContextType['addFilter'];
@@ -57,10 +48,12 @@ interface GroupedData {
 }
 
 const FiltersApplied: React.FC = () => {
+  const theme = useTheme();
   return (
-    <div className={classes.applied}>
-      <FiberManualRecordRounded /> Filters Applied
-    </div>
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <FiberManualRecordRounded sx={{ color: theme.palette.success.main }} />
+      <Typography color="textSecondary">Filters Applied</Typography>
+    </Stack>
   );
 };
 
@@ -126,19 +119,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     });
   };
 
-  const clearFiltersAndSearch = () => {
-    setSearchTerm('', {
-      shouldClearFilters: true,
-      autocompleteResults: false
-    });
-    restoreInitialFilters();
-  };
-
-  const selectedFiltersAndSearch = filters.filter(
-    (filter) =>
-      !initialFilters.some((f) => f.field === filter.field) || searchTerm
-  );
-
   const revertSearch = () => {
     setSearchTerm('', {
       shouldClearFilters: true,
@@ -179,20 +159,20 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     [filters]
   );
 
-  const portFacet: any[] = facets['services.port']
+  const portFacet: any[] = facets?.['services.port']
     ? facets['services.port'][0].data.sort(
         (a: { value: number }, b: { value: number }) => a.value - b.value
       )
     : [];
 
-  const fromDomainFacet: any[] = facets['from_root_domain']
+  const fromDomainFacet: any[] = facets?.['from_root_domain']
     ? facets['from_root_domain'][0].data.sort(
         (a: { value: string }, b: { value: string }) =>
           a.value.localeCompare(b.value)
       )
     : [];
 
-  const cveFacet: any[] = facets['vulnerabilities.cve']
+  const cveFacet: any[] = facets?.['vulnerabilities.cve']
     ? facets['vulnerabilities.cve'][0].data.sort(
         (a: { value: string }, b: { value: string }) =>
           a.value.localeCompare(b.value)
@@ -200,7 +180,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     : [];
 
   // To-Do: Create array(s) to handle permutations of null and N/A values
-  const titleCaseSeverityFacet = facets['vulnerabilities.severity']
+  const titleCaseSeverityFacet = facets?.['vulnerabilities.severity']
     ? facets['vulnerabilities.severity'][0].data.map(
         (d: { value: string; count: number }) => {
           if (d.value === null || d.value === undefined) {
@@ -258,14 +238,14 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     <Box>
       {/* Gives space for accordion divider to render*/}
       <Box></Box>
-      {selectedFiltersAndSearch.length > 0 && (
+      {/* {selectedFiltersAndSearch.length > 0 && (
         <>
           <Divider />
           <Box marginY={1} display="flex" width="100%" justifyContent="center">
             <Button onClick={clearFiltersAndSearch}>Clear Filters</Button>
           </Box>
         </>
-      )}
+      )} */}
       <Accordion
         elevation={0}
         square
@@ -480,10 +460,10 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           <SaveSearchModal
             searchTerm={searchTerm}
             filters={filters}
-            totalResults={totalResults} // Placeholder, as totalResults is not passed in this context
-            sort_field={''} // Placeholder, as sort_field is not passed in this context
-            sort_direction={''} // Placeholder, as sort_direction is not passed in this context
-            advancedFiltersReq={advanceFiltersReq} // Placeholder, as advancedFiltersReq is not passed in this context
+            totalResults={totalResults}
+            sort_field={''}
+            sort_direction={''}
+            advancedFiltersReq={advanceFiltersReq}
           />
           {ascendingSavedSearches.length > 0 ? (
             <List sx={{ maxHeight: 5 * 42, overflowY: 'auto' }}>
@@ -530,9 +510,19 @@ export const DrawerInterior: React.FC<Props> = (props) => {
 };
 
 export const DrawerInteriorWithSearch = withSearch(
-  ({ searchTerm, setSearchTerm, totalResults }: ContextType) => ({
+  ({
+    facets,
     searchTerm,
     setSearchTerm,
-    totalResults
+    totalResults,
+    addFilter,
+    removeFilter
+  }: ContextType) => ({
+    facets,
+    searchTerm,
+    setSearchTerm,
+    totalResults,
+    addFilter,
+    removeFilter
   })
 )(DrawerInterior);

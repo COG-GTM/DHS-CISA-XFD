@@ -240,37 +240,30 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
 
   //New code for handling more complex filters
   // 1. Find all region and org filters
-  const regionFilter = filters.find(
-    (f) => f.field === 'organization.region_id'
-  );
-  const orgFilter = filters.find((f) => f.field === 'organization_id');
+  // const regionFilter = filters.find(
+  //   (f) => f.field === 'organization.region_id'
+  // );
+  // const orgFilter = filters.find((f) => f.field === 'organization_id');
 
   // 2. Group orgs by region
-  let regionOrgMap: Record<string, string[]> = {};
-  if (regionFilter && orgFilter && Array.isArray(orgFilter.values)) {
-    // orgFilter.values should be array of org objects with .region_id and .name
-    regionOrgMap = orgFilter.values.reduce(
-      (
-        acc: { [x: string]: any[] },
-        org: { region_id: string | number; name: any }
-      ) => {
-        if (!acc[org.region_id]) acc[org.region_id] = [];
-        acc[org.region_id].push(org.name);
-        return acc;
-      },
-      {} as Record<string, string[]>
-    );
-  }
+  // let regionOrgMap: Record<string, string[]> = {};
+  // if (regionFilter && orgFilter && Array.isArray(orgFilter.values)) {
+  //   // orgFilter.values should be array of org objects with .region_id and .name
+  //   regionOrgMap = orgFilter.values.reduce(
+  //     (
+  //       acc: { [x: string]: any[] },
+  //       org: { region_id: string | number; name: any }
+  //     ) => {
+  //       if (!acc[org.region_id]) acc[org.region_id] = [];
+  //       acc[org.region_id].push(org.name);
+  //       return acc;
+  //     },
+  //     {} as Record<string, string[]>
+  //   );
+  // }
 
   return (
     <Root aria-live="polite" aria-atomic="true">
-      {/* <IconButton
-        aria-label="filter-drawer-toggle"
-        sx={{ mt: '0.5rem' }}
-        onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
-      >
-        <FilterAlt />
-      </IconButton> */}
       <>
         {filtersByColumn.length === 0 && pathname === '/inventory' ? (
           <Chip
@@ -300,7 +293,7 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
             />
           ))
         )}
-        {regionFilter &&
+        {/* {regionFilter &&
           Object.entries(regionOrgMap).map(([regionId, orgNames]) => (
             <Chip
               key={regionId}
@@ -322,7 +315,7 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
                 });
               }}
             />
-          ))}
+          ))} */}
       </>
     </Root>
   );

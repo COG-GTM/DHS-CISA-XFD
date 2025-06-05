@@ -121,7 +121,7 @@ const theme = createTheme({
           props: { variant: 'primaryContained' },
           style: ({ theme }: { theme: Theme }) => ({
             backgroundColor: theme.palette.primary.dark,
-            color: theme.palette.primary.white,
+            color: theme.palette.neutrals.white,
             '&:hover': {
               backgroundColor: theme.palette.primary.darker
             },

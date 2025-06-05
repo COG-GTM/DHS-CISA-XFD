@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Button, TextField } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
-import { useUserLevel } from 'hooks/useUserLevel';
 import { useAuthContext } from 'context';
 import { useStaticsContext } from 'context/StaticsContext';
 import { ORGANIZATION_EXCLUSIONS } from 'hooks/useUserTypeFilters';
-import { useLocation } from 'react-router-dom';
 import { OrganizationShallow } from './RegionAndOrganizationFilters';
 
 const GLOBAL_ADMIN = 3;
@@ -35,9 +33,8 @@ interface VSRegionAndOrgFiltersProps {
 export const VSDashRegionAndOrgFilters: React.FC<
   VSRegionAndOrgFiltersProps
 > = ({ addFilter, removeFilter, filters }) => {
-  const { setShowMaps, user, apiPost, currentOrganization } = useAuthContext();
+  const { user, apiPost, currentOrganization } = useAuthContext();
   const { regions } = useStaticsContext();
-  const location = useLocation();
   const [search_term, setSearchTerm] = useState<string>('');
   const [orgResults, setOrgResults] = useState<OrganizationShallow[]>([]);
   const [isRegOpen, setIsRegOpen] = useState(false);

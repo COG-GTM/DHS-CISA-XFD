@@ -88,6 +88,20 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
   const { regions } = useStaticsContext();
   const initialFiltersForUser = useUserTypeFilters(regions, user, userLevel);
 
+  const resetFilters = () => {
+    filters.forEach((filter) => {
+      removeFilter(filter.field, filter.values[0], filter.type);
+    });
+    initialFiltersForUser.forEach(
+      (filter) => {
+        filter.values.forEach((value) => {
+          addFilter(filter.field, value, filter.type);
+        });
+      },
+      setSearchTerm('', { shouldClearFilters: false })
+    );
+  };
+
   useEffect(() => {
     filters.forEach((filter) => {
       removeFilter(filter.field, filter.values[0], filter.type);
@@ -192,13 +206,14 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
                 ></NoResults>
                 <Button
                   variant="contained"
-                  onClick={() =>
-                    initialFiltersForUser.forEach((filter) => {
-                      filter.values.forEach((value) => {
-                        addFilter(filter.field, value, filter.type);
-                      });
-                    })
-                  }
+                  // onClick={() =>
+                  //   initialFiltersForUser.forEach((filter) => {
+                  //     filter.values.forEach((value) => {
+                  //       addFilter(filter.field, value, filter.type);
+                  //     });
+                  //   })
+                  // }
+                  onClick={resetFilters}
                 >
                   {' '}
                   Reset Filters

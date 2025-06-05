@@ -11,7 +11,7 @@ import { useUserActivityTimeout } from 'hooks/useUserActivityTimeout';
 import { useAuthContext } from 'context/AuthContext';
 import UserInactiveModal from './UserInactivityModal/UserInactivityModal';
 import { matchPath } from 'utils/matchPath';
-import { FilterDrawerV2 } from './FilterDrawerV2';
+import { FilterDrawerV2 } from './FilterDrawer/FilterDrawerV2';
 import { withSearch } from '@elastic/react-search-ui';
 import { ContextType } from 'context';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
@@ -20,7 +20,7 @@ import { useFilterDrawerContext } from 'context/FilterDrawerContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/system';
-import FilterDrawerToggle from './FilterDrawerToggle';
+import FilterDrawerToggle from './FilterDrawer/FilterDrawerToggle';
 
 const Main = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'user'

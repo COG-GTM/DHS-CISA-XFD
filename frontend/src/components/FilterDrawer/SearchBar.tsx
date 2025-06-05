@@ -126,7 +126,6 @@ export const SearchBar = React.forwardRef<HTMLInputElement, Props>(
     return (
       <Root className={classes.wrapper}>
         <Box className={classes.inner}>
-          {/* <SearchOutlined className={classes.icon} /> */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -173,7 +172,7 @@ export const SearchBar = React.forwardRef<HTMLInputElement, Props>(
               right: '0.01rem',
               top: '50%',
               transform: 'translateY(-50%)',
-              backgroundColor: theme.palette.primary.main,
+              backgroundColor: theme.palette.primary.dark,
               height: '100%',
               width: '20%',
               display: 'flex',

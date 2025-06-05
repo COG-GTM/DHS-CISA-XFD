@@ -293,6 +293,12 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
             "name": {"terms": {"field": "name.keyword"}},
             "from_root_domain": {"terms": {"field": "from_root_domain.keyword"}},
             "organization": {"terms": {"field": "organization.name.keyword"}},
+            # The following commented-out code is to be used for future .x releases.
+            # Returning org id and region id with facets will allow for a full range of dynamic filters.
+            # "organization_id": {
+            #   "terms": {"field": "organization.id.keyword"}
+            # },
+            # "region": {"terms": {"field": "organization.region_id.keyword"}},
             "services": {
                 "nested": {"path": "services"},
                 "aggs": {
