@@ -131,6 +131,8 @@ class LogSearchFilter(BaseModel):
             "timestamp",
             "payload.user.full_name",
             "payload.user_performed_assignment.full_name",
+            "payload.user_to_approved.user_type",
+            "payload.user.user_type",
             "payload.user_performed_assignment.region_id",
             "payload.organization.name",
             "payload.role",
@@ -149,10 +151,14 @@ class LogSearchFilter(BaseModel):
             "is empty",
             "is not empty",
             "is",
+            "equals",
             "is not",
             "is after",
+            "after",
             "is on or after",
+            "on or after",
             "is before",
+            "before",
             "is on or before",
         ]
         for field, condition in v.items():

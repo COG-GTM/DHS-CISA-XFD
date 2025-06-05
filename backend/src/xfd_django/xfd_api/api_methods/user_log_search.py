@@ -154,7 +154,13 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                         break
                     continue
                 elif field == "timestamp":
-                    log_date = parse(log["timestamp"])
+                    log_value = log.get("created_at", "")
+                    log_date = None
+                    if log_value:
+                        try:
+                            log_date = parse(log_value)
+                        except (ValueError, TypeError):
+                            log_date = None
                     if operator == "is empty":
                         if log_date is not None:
                             matches = False
@@ -164,7 +170,6 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                     else:
                         filter_criteria_date = None
                         valid_filter_value_for_comparison = False
-
                         if isinstance(value, str) and value:
                             try:
                                 filter_criteria_date = parse(value)
@@ -173,7 +178,6 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                 matches = False
                         else:
                             matches = False
-
                         if matches and valid_filter_value_for_comparison:
                             if operator == "is":
                                 if log_date is None or log_date != filter_criteria_date:
@@ -184,7 +188,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                     and log_date == filter_criteria_date
                                 ):
                                     matches = False
-                            elif operator == "is after":
+                            elif operator in ["is after", "after"]:
                                 if (
                                     log_date is None
                                     or not log_date > filter_criteria_date
@@ -196,7 +200,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                     or not log_date >= filter_criteria_date
                                 ):
                                     matches = False
-                            elif operator == "is before":
+                            elif operator in ["is before", "before"]:
                                 if (
                                     log_date is None
                                     or not log_date < filter_criteria_date
@@ -208,17 +212,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                     or not log_date <= filter_criteria_date
                                 ):
                                     matches = False
-                    # if operator == "equals" and log_date != filter_date:
-                    #     matches = False
-                    # elif operator == "lessthan" and log_date >= filter_date:
-                    #     matches = False
-                    # elif operator == "greaterthan" and log_date <= filter_date:
-                    #     matches = False
-                    # elif operator == "is empty" and log_date:
-                    #     matches = False
-                    # elif operator == "is not empty" and not log_date:
-                    #     matches = False
-                    # continue
+
                 elif field == "payload.user.full_name":
                     log_value = log["payload"].get("user", {}).get("full_name", "")
                 elif field == "payload.user_performed_assignment.full_name":
@@ -240,6 +234,12 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                     log_value = log["payload"].get("role", "")
                 elif field == "payload.state":
                     log_value = log["payload"].get("user", {}).get("state", "")
+                elif field == "payload.user.user_type":
+                    log_value = log["payload"].get("user", {}).get("user_type", "")
+                elif field == "payload.user_to_approve.user_type":
+                    log_value = (
+                        log["payload"].get("user_to_approve", {}).get("user_type", "")
+                    )
                 else:
                     continue
 
