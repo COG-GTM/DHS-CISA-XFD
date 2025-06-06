@@ -6,7 +6,6 @@ import os
 
 # Third-Party Libraries
 from django.apps import apps
-
 from django.db import connections
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.utils import OperationalError, ProgrammingError
@@ -346,10 +345,3 @@ def drop_all_tables(app_label=None):
             print("Error resetting schema: {}".format(e))
 
     print("Database schema reset successfully.")
-
-
-
-
-
-
-

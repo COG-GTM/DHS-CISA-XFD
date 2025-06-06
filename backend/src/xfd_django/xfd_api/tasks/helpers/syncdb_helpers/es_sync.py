@@ -1,5 +1,8 @@
 """Sync elasticsearch indexes."""
+# Standard Python Libraries
 from itertools import islice
+
+# Third-Party Libraries
 from xfd_api.tasks.es_client import ESClient
 from xfd_mini_dl.models import Organization
 
@@ -20,7 +23,6 @@ def manage_elasticsearch_indices(dangerouslyforce):
         print("Elasticsearch indices synchronized.")
     except Exception as e:
         print("Error managing Elasticsearch indices: {}".format(e))
-
 
 
 def chunked_iterable(iterable, size):

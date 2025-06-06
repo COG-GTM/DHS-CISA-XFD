@@ -1,7 +1,30 @@
 """Create sample data for local development."""
 
+# Standard Python Libraries
+from datetime import datetime, timedelta
+from decimal import Decimal
+import hashlib
+import ipaddress
 import json
+import os
+import random
+import secrets
+import string
+import sys
+from typing import Optional
+import uuid
 
+# Third-Party Libraries
+from django.conf import settings
+from django.db import IntegrityError, transaction
+from django.utils import timezone
+from faker import Faker
+from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
+from xfd_api.models import Domain, Service, Vulnerability
+from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
+    fill_cidr_live_ips_bulk_update,
+)
 from xfd_mini_dl.models import (
     ApiKey,
     Cidr,
@@ -19,27 +42,6 @@ from xfd_mini_dl.models import (
     UserType,
     VulnScan,
 )
-from faker import Faker
-from django.conf import settings
-from typing import Optional
-import random
-import ipaddress
-import hashlib
-from datetime import datetime, timedelta
-from decimal import Decimal
-import secrets
-import string
-import sys
-from django.db import IntegrityError, transaction
-from django.utils import timezone
-from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
-import uuid
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
-    fill_cidr_live_ips_bulk_update,
-)
-import os
-from xfd_api.models import Domain, Service, Vulnerability
-from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 
 fake = Faker()
 
@@ -69,6 +71,7 @@ CVSS_VECTORS = {
     "v3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
     "v4": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
 }
+
 
 def create_ip_within_org_cidr(org: Organization) -> Optional[Ip]:
     """
@@ -883,4 +886,3 @@ def create_sample_services_and_vulnerabilities(domain):
             actions=[],
             structuredData={},
         )
-

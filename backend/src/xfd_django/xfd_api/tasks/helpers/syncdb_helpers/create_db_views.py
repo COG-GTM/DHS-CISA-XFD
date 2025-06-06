@@ -1,11 +1,13 @@
 """Create views helper."""
 
+# Third-Party Libraries
 from django.db import connections
 
 # If changes are made to materialized view make sure to update version number
-VW_SERVICE_VERSION = '20250606'
-MAT_VW_COMBINED_VULNS_VERSION = '20250606'
-DOMAIN_MAT_VIEW_VERSION = '20250606'
+VW_SERVICE_VERSION = "20250606"
+MAT_VW_COMBINED_VULNS_VERSION = "20250606"
+DOMAIN_MAT_VIEW_VERSION = "20250606"
+
 
 def create_vuln_normal_views(database):
     """Create vuln normal views."""
@@ -262,7 +264,9 @@ def create_vuln_materialized_views(database):
         )
 
         cursor.execute(
-            "COMMENT ON MATERIALIZED VIEW mat_vw_combined_vulns IS 'version:{}';".format(MAT_VW_COMBINED_VULNS_VERSION)
+            "COMMENT ON MATERIALIZED VIEW mat_vw_combined_vulns IS 'version:{}';".format(
+                MAT_VW_COMBINED_VULNS_VERSION
+            )
         )
 
         print("Materialized views created.")
@@ -359,7 +363,9 @@ def create_domain_materialized_view(database):
 
         # Add version comment
         cursor.execute(
-            "COMMENT ON MATERIALIZED VIEW mat_vw_domain IS 'version:{}';".format(DOMAIN_MAT_VIEW_VERSION)
+            "COMMENT ON MATERIALIZED VIEW mat_vw_domain IS 'version:{}';".format(
+                DOMAIN_MAT_VIEW_VERSION
+            )
         )
 
         print("Domain materialized view created.")
@@ -491,7 +497,9 @@ def create_service_mat_view(database):
         )
 
         cursor.execute(
-            "COMMENT ON MATERIALIZED VIEW mat_vw_service IS 'version:{}';".format(VW_SERVICE_VERSION)
+            "COMMENT ON MATERIALIZED VIEW mat_vw_service IS 'version:{}';".format(
+                VW_SERVICE_VERSION
+            )
         )
 
         print("Materialized view 'mat_vw_service' created.")

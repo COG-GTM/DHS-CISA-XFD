@@ -1,7 +1,11 @@
 """Adjust column types based on model.py vs. RDS."""
+# Standard Python Libraries
 import re
 import traceback
+
+# Third-Party Libraries
 from django.db import connections
+
 
 def normalize_pg_type(column_name: str, table_name: str, database: str) -> str:
     """Normalize postgres type."""
@@ -55,8 +59,9 @@ def normalize_pg_type(column_name: str, table_name: str, database: str) -> str:
 
 def adjust_column_types(target_app_label: str, using: str = None):
     """
-    For each model in target_app_label, compare Django’s db_type() vs. 
-    the actual Postgres type. Skip:
+    For each model in target_app_label, compare Django’s db_type() vs. the actual Postgres type.
+
+    Skip:
       • any "numeric" → "numeric(p,s)" mismatch,
       • any "varchar" → "varchar(…)" mismatch,
       • any array→scalar mismatch.
@@ -67,9 +72,13 @@ def adjust_column_types(target_app_label: str, using: str = None):
     if using:
         database = using
 
-    print(f"Phase 2: Adjusting column types for '{target_app_label}' on DB alias '{database}'…")
+    print(
+        f"Phase 2: Adjusting column types for '{target_app_label}' on DB alias '{database}'…"
+    )
 
+    # cisagov Libraries
     from backend.src.xfd_django.xfd_api.tasks.syncdb_task import get_ordered_models
+
     ordered = get_ordered_models(target_app_label)
 
     for model in ordered:
@@ -118,7 +127,9 @@ def adjust_column_types(target_app_label: str, using: str = None):
                 continue
 
             # 5) Otherwise, we truly need an ALTER:
-            print(f"Column type mismatch on {table_name}.{col}: actual='{actual}' vs desired='{desired_pref}'")
+            print(
+                f"Column type mismatch on {table_name}.{col}: actual='{actual}' vs desired='{desired_pref}'"
+            )
 
             # 5a) Drop any dependent views (via pg_depend):
             with connections[database].cursor() as cursor:
@@ -140,7 +151,9 @@ def adjust_column_types(target_app_label: str, using: str = None):
                 dependents = [r[0] for r in cursor.fetchall()]
 
             for vname in dependents:
-                print(f"Dropping dependent view '{vname}' to allow ALTER on {table_name}.{col}")
+                print(
+                    f"Dropping dependent view '{vname}' to allow ALTER on {table_name}.{col}"
+                )
                 try:
                     with connections[database].cursor() as c2:
                         c2.execute(
