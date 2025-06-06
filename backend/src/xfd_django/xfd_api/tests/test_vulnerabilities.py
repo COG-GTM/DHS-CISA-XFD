@@ -8,6 +8,11 @@ from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
+from xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
+    create_domain_materialized_view,
+    create_service_mat_view,
+    create_vuln_materialized_views,
+)
 from xfd_django.asgi import app
 from xfd_mini_dl.models import (
     DataSource,
@@ -24,13 +29,6 @@ from xfd_mini_dl.models import (
     UserType,
     Vulnerability,
     VulnScan,
-)
-
-# cisagov Libraries
-from backend.src.xfd_django.xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
-    create_domain_materialized_view,
-    create_service_mat_view,
-    create_vuln_materialized_views,
 )
 
 client = TestClient(app)

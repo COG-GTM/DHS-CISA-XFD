@@ -5,23 +5,14 @@ import os
 # Third-Party Libraries
 from django.core.management.base import BaseCommand
 from django.db import connections
-
-# cisagov Libraries
-from backend.src.xfd_django.xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import (
-    populate_sample_data,
-)
-from backend.src.xfd_django.xfd_api.tasks.helpers.syncdb_helpers.es_sync import (
+from xfd_api.tasks.helpers.syncdb_helpers.adjust_columns import adjust_column_types
+from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import populate_sample_data
+from xfd_api.tasks.helpers.syncdb_helpers.es_sync import (
     manage_elasticsearch_indices,
     sync_es_organizations,
 )
-from backend.src.xfd_django.xfd_api.tasks.helpers.syndb_helpers.adjust_columns import (
-    adjust_column_types,
-)
-from backend.src.xfd_django.xfd_api.tasks.searchSync import handler as sync_es_domains
-from backend.src.xfd_django.xfd_api.tasks.syncdb_task import (
-    drop_all_tables,
-    synchronize,
-)
+from xfd_api.tasks.searchSync import handler as sync_es_domains
+from xfd_api.tasks.syncdb_task import drop_all_tables, synchronize
 
 
 class Command(BaseCommand):

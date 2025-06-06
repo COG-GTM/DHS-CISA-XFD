@@ -7,9 +7,8 @@ import os
 import django
 from django.db import connections
 
-# cisagov Libraries
 # Import your existing view creation functions
-from backend.src.xfd_django.xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
+from xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
     DOMAIN_MAT_VIEW_VERSION,
     MAT_VW_COMBINED_VULNS_VERSION,
     VW_SERVICE_VERSION,

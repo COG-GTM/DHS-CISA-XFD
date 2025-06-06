@@ -57,7 +57,7 @@ def normalize_pg_type(column_name: str, table_name: str, database: str) -> str:
     return data_type  # e.g. "integer", "numeric", "boolean", etc.
 
 
-def adjust_column_types(target_app_label: str, using: str = None):
+def adjust_column_types(target_app_label: str, using: str = "mini_data_lake"):
     """
     For each model in target_app_label, compare Django’s db_type() vs. the actual Postgres type.
 
@@ -76,8 +76,8 @@ def adjust_column_types(target_app_label: str, using: str = None):
         f"Phase 2: Adjusting column types for '{target_app_label}' on DB alias '{database}'…"
     )
 
-    # cisagov Libraries
-    from backend.src.xfd_django.xfd_api.tasks.syncdb_task import get_ordered_models
+    # Third-Party Libraries
+    from xfd_api.tasks.syncdb_task import get_ordered_models
 
     ordered = get_ordered_models(target_app_label)
 

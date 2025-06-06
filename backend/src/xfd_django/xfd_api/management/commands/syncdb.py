@@ -1,16 +1,9 @@
 """Populate command."""
 # Third-Party Libraries
 from django.core.management.base import BaseCommand
+from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import populate_sample_data
 from xfd_api.tasks.searchSync import handler as sync_es_domains
-
-# cisagov Libraries
-from backend.src.xfd_django.xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import (
-    populate_sample_data,
-)
-from backend.src.xfd_django.xfd_api.tasks.syncdb_task import (
-    drop_all_tables,
-    synchronize,
-)
+from xfd_api.tasks.syncdb_task import drop_all_tables, synchronize
 
 
 class Command(BaseCommand):
