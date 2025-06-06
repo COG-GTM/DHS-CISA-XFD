@@ -72,19 +72,18 @@ export const Header: React.FC = () => {
     }
   ].filter(({ users }) => users <= userLevel);
 
-  // TODO: Add path for below menu items
-  const scanningResults: MenuItemType[] = [
-    {
-      menuItemTitle: 'Overview',
-      path: '/overview',
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'Vulnerability Scanning',
-      path: '/VSDashboard',
-      users: STANDARD_USER
-    }
-  ].filter(({ users }) => users <= userLevel);
+  // const scanningResults: MenuItemType[] = [
+  //   {
+  //     menuItemTitle: 'Overview',
+  //     path: '/overview',
+  //     users: STANDARD_USER
+  //   },
+  //   {
+  //     menuItemTitle: 'Vulnerability Scanning',
+  //     path: '/VSDashboard',
+  //     users: STANDARD_USER
+  //   }
+  // ].filter(({ users }) => users <= userLevel);
 
   const vulnScanningMenuItems: MenuItemType[] = [
     {

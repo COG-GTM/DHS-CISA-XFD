@@ -7,8 +7,7 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
-  Typography
+  ListItemText
 } from '@mui/material';
 
 interface MenuItemType {
