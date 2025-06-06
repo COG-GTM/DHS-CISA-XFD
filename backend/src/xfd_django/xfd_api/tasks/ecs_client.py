@@ -146,8 +146,10 @@ class ECSClient:
         ]
 
         # Conditionally add NO_PROXY
-        if os.getenv("IS_DMZ"):
-            container_env.append({"name": "NO_PROXY", "value": "*"})
+        if not os.getenv("IS_DMZ"):
+            container_env.append(
+                {"name": "HTTPS_PROXY", "value": os.getenv("LZ_PROXY_URL")}
+            )
 
         response = self.ecs.run_task(
             cluster=os.getenv("FARGATE_CLUSTER_NAME"),

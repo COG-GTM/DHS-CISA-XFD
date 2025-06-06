@@ -38,6 +38,8 @@ export interface VulnScanSummary {
 
   critical_max_age?: number | null;
   high_max_age?: number | null;
+  medium_max_age?: number | null;
+  low_max_age?: number | null;
 
   none_kev_count?: number | null;
   low_kev_count?: number | null;
@@ -46,6 +48,10 @@ export interface VulnScanSummary {
   critical_kev_count?: number | null;
 
   kev_max_age?: number | null;
+  critical_kev_max_age?: number | null;
+  high_kev_max_age?: number | null;
+  medium_kev_max_age?: number | null;
+  low_kev_max_age?: number | null;
 
   one_to_five_vulns_count?: number | null;
   six_to_nine_vulns_count?: number | null;
@@ -83,6 +89,18 @@ export interface PortScanSummaries {
   nmi_service_count?: number | null;
   unique_ip_count?: number | null;
   unique_service_count?: number | null;
+  risky_service_group_counts?: {
+    ftp?: number;
+    sql?: number;
+    netbios?: number;
+    ldap?: number;
+    rpc?: number;
+    irc?: number;
+    kerberos?: number;
+    rdp?: number;
+    telnet?: number;
+    smb?: number;
+  } | null;
 }
 
 export interface PortScanServiceSummaries {
@@ -104,11 +122,31 @@ export interface StatsTrendsRawData {
   vuln_scan_summaries: VulnScanSummary[];
 }
 
+export interface ServiceData {
+  serviceName: string;
+  count: number;
+}
+
 export interface KeyMetrics {
   title: string;
   value: number;
 }
-
+export interface Top5VulnerableHostsGraphData {
+  hostName: string;
+  lowSeverity: number;
+  mediumSeverity: number;
+  highSeverity: number;
+  criticalSeverity: number;
+  all: number;
+  domainId: string;
+}
+export interface SeverityByProminenceGraphData {
+  vulnType: string;
+  lowSeverity: number;
+  mediumSeverity: number;
+  highSeverity: number;
+  criticalSeverity: number;
+}
 export type vulnScanDataTransformed = {
   vulnScanSummary: {
     hostScan: string;
@@ -119,4 +157,9 @@ export type vulnScanDataTransformed = {
   vulnScanKeyMetrics: KeyMetrics[];
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];
+  detectedHostsTop5VulnerableHosts: Top5VulnerableHostsGraphData[];
+  topVulnerabilities: CVEItem[];
+  topKevVulnerabilities: CVEItem[];
+  riskyServices: ServiceData[];
+  severityByProminence: SeverityByProminenceGraphData[];
 };
