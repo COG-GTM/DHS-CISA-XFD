@@ -4,6 +4,9 @@ export function determineUrl(): string {
 }
 
 export function determineHeadless(): boolean {
+  if (process.env.PW_HEADLESS) {
+    return process.env.PW_HEADLESS !== 'false';
+  }
   const url = determineUrl();
   return !url.includes('localhost');
 }

@@ -3,7 +3,7 @@ import * as OTPAuth from 'otpauth';
 import * as dotenv from 'dotenv';
 import { determineUrl } from './utils/env'; // ✅ Now this works
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const authFile = './storageState.json';
 
