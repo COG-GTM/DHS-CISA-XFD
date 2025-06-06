@@ -726,7 +726,8 @@ def populate_sample_data():
     fill_cidr_live_ips_bulk_update()
 
     # Create or refresh materialized views
-    refresh_materialized_views()
+    result = refresh_materialized_views({})
+    print(result)
 
     print("\n✅ Done populating all data.")
 

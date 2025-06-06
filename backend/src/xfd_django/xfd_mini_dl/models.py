@@ -1184,7 +1184,7 @@ class Service(models.Model):
 
         app_label = app_label_name
         managed = False
-        db_table = "vw_service"
+        db_table = "mat_vw_service"
         unique_together = (("port", "domain"),)
 
 
@@ -4612,7 +4612,7 @@ class Domain(models.Model):
     class Meta:
         """The meta class for Domain."""
 
-        db_table = "vw_domain"
+        db_table = "mat_vw_domain"
         managed = False
         unique_together = (("name", "organization"),)  # Unique constraint
 

@@ -273,15 +273,15 @@ def create_vuln_materialized_views(database):
 
 
 def create_domain_materialized_view(database):
-    """Create vw_domain view."""
+    """Create mat_vw_domain view."""
     with connections[database].cursor() as cursor:
         print("Creating domain view...")
-        cursor.execute("DROP MATERIALIZED VIEW IF EXISTS vw_domain;")
+        cursor.execute("DROP MATERIALIZED VIEW IF EXISTS mat_vw_domain;")
 
         # Example materialized view
         cursor.execute(
             """
-            CREATE MATERIALIZED VIEW mat_vw_domain AS AS
+            CREATE MATERIALIZED VIEW mat_vw_domain AS
 
             -- Subdomains (with or without linked IP)
             SELECT

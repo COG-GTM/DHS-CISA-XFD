@@ -119,7 +119,7 @@ def get_matview_version(cursor, matview_name):
     return None
 
 
-def handler(event, context):
+def handler(event):
     """Refresh or create key materialized views in mini_data_lake."""
     list_matview_versions()
     refreshed = []
