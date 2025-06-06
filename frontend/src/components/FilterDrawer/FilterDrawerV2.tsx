@@ -11,7 +11,6 @@ import { Stack } from '@mui/system';
 import { Button, IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
-import { useAuthContext } from 'context';
 
 export const drawerWidth = 300;
 
