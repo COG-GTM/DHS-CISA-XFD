@@ -143,7 +143,7 @@ def handler(event):
                         else:
                             # Version matches → refresh
                             if has_unique_index(cursor, name):
-                                print("Refreshing view %s", name)
+                                print("Refreshing view {}".format(name))
                                 cursor.execute(
                                     "REFRESH MATERIALIZED VIEW CONCURRENTLY {};".format(
                                         name
@@ -162,12 +162,14 @@ def handler(event):
                 except Exception as e:
                     errors.append({"view": name, "error": str(e)})
 
-        return {
+        result = {
             "status_code": 200,
             "refreshed": refreshed,
             "created": created,
             "errors": errors,
         }
+        print(result)
+        return result
 
     except Exception as e:
         return {"status_code": 500, "error": str(e)}
