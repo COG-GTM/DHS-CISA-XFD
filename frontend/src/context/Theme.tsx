@@ -342,12 +342,12 @@ const theme = createTheme({
     },
     h2: {
       fontSize: '24px',
-      fontWeight: 500,
+      fontWeight: 600,
       textTransform: 'none'
     },
     h3: {
       fontSize: '18px',
-      fontWeight: 500,
+      fontWeight: 600,
       textTransform: 'none'
     },
     link: {
