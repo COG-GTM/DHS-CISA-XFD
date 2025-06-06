@@ -26,6 +26,7 @@ interface MenuItemType {
   path: string;
   users?: number;
   onClick?: any;
+  href?: string;
 }
 
 export const Header: React.FC = () => {
@@ -96,14 +97,14 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   const supportMenuItems: MenuItemType[] = [
-    // {
-    //   menuItemTitle: 'Report Bug',
-    //   path: '#',
-    //   users: STANDARD_USER
-    // },
+    {
+      menuItemTitle: 'Report Bug',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov?subject=CyHy%20Dashboard%20Bug%20Report&body=CyHy%20Dashboard%20Bug%20Report%0A%0ASummary%3A%0A%5BBrief%20description%20of%20the%20bug%5D%0A%0ASteps%20to%20Reproduce%3A%0A1.%20%0A2.%20%0A3.%20%0A%0AExpected%20Result%3A%0A%5BWhat%20you%20expected%20to%20happen%5D%0A%0AActual%20Result%3A%0A%5BWhat%20actually%20happened%5D%0A%0AEnvironment%3A%0A-%20Browser%3A%0A-%20OS%3A%0A-%20User%20role%3A%0A%0AAdditional%20Information%20%2F%20Screenshots%3A%0A%5BAny%20other%20details%5D',
+      users: STANDARD_USER
+    },
     {
       menuItemTitle: 'Send Feedback',
-      path: 'mailto:vulnerability@mail.cisa.dhs.gov',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov?subject=CyHy%20Dashboard%20Feedback&body=CyHy%20Dashboard%20Feedback%0A%0AWhat%20feature%20or%20area%20are%20you%20providing%20feedback%20on%3F%0A%5BDescribe%20the%20feature%20or%20area%5D%0A%0AFeedback%3A%0A%5BYour%20comments%2C%20suggestions%2C%20or%20questions%5D%0A%0AEnvironment%3A%0A-%20Browser%3A%0A-%20OS%3A%0A-%20User%20role%3A%0A%0AAdditional%20Information%3A%0A%5BOptional%20details%20or%20screenshots%5D',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
