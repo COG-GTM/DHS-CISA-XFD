@@ -23,10 +23,9 @@ import {
   ORGANIZATION_FILTER_KEY,
   OrganizationShallow,
   REGION_FILTER_KEY
-} from 'components/RegionAndOrganizationFilters';
+} from 'components/FilterDrawer/RegionAndOrganizationFilters';
 import { withSearch } from '@elastic/react-search-ui';
 import { FilterTags } from 'pages/Search/FilterTags';
-import { useLocation } from 'react-router-dom';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
@@ -61,7 +60,7 @@ const Risk: React.FC<ContextType> = ({
   filters,
   removeFilter,
   addFilter,
-  search_term,
+  searchTerm,
   setSearchTerm
 }) => {
   const { showMaps, user, apiPost } = useAuthContext();
@@ -97,21 +96,19 @@ const Risk: React.FC<ContextType> = ({
     };
   }, [filters]);
 
-  const { pathname } = useLocation();
-
   const filtersToDisplay = useMemo(() => {
-    if (search_term !== '') {
+    if (searchTerm !== '') {
       return [
         ...filters,
         {
           field: 'query',
-          values: [search_term],
+          values: [searchTerm],
           onClear: () => setSearchTerm('', { shouldClearFilters: false })
         }
       ];
     }
     return filters;
-  }, [filters, search_term, setSearchTerm]);
+  }, [filters, searchTerm, setSearchTerm]);
 
   const userLevel = useUserLevel().userLevel;
 
@@ -165,14 +162,7 @@ const Risk: React.FC<ContextType> = ({
         });
       });
     }
-  }, [
-    pathname,
-    removeFilter,
-    filters,
-    addFilter,
-    riskFilters,
-    initialFiltersForUser
-  ]);
+  }, [removeFilter, filters, addFilter, initialFiltersForUser]);
 
   const MapCard = ({
     title,
@@ -392,14 +382,14 @@ export const RiskWithSearch = withSearch(
     removeFilter,
     filters,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    search_term,
+    searchTerm,
     setSearchTerm
   })
 )(Risk);

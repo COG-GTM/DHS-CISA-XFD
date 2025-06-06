@@ -13,7 +13,8 @@ import {
   Button,
   IconButton,
   Toolbar,
-  Typography
+  Typography,
+  useTheme
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import cisaLogo from 'assets/cisaSeal.svg';
@@ -30,6 +31,7 @@ interface MenuItemType {
 export const Header: React.FC = () => {
   const history = useHistory();
   const { logout } = useAuthContext();
+  const theme = useTheme();
   const { userLevel } = useUserLevel();
   const [openDrawer, setOpenDrawer] = React.useState(false);
   const toggleDrawer = (newOpen: boolean) => () => {
@@ -225,7 +227,8 @@ export const Header: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '84px'
+        height: '84px',
+        zIndex: theme.zIndex.FilterDrawerV2 + 1
       }}
     >
       <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>
