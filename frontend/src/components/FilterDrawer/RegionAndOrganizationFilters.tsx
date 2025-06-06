@@ -403,26 +403,28 @@ export const RegionAndOrganizationFilters: React.FC<
                 })}
             </List>
           )}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              height: 0
-            }}
-          >
+          {userLevel === GLOBAL_ADMIN && (
             <div
               style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: 24,
-                pointerEvents: 'none',
-                background:
-                  'linear-gradient(to bottom, rgba(255,255,255,0), #fff 90%)'
+                position: 'relative',
+                width: '100%',
+                height: 0
               }}
-            />
-          </div>
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 24,
+                  pointerEvents: 'none',
+                  background:
+                    'linear-gradient(to bottom, rgba(255,255,255,0), #fff 90%)'
+                }}
+              />
+            </div>
+          )}
         </AccordionDetails>
       </Accordion>
 

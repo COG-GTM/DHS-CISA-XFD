@@ -11,6 +11,7 @@ import { Stack } from '@mui/system';
 import { Button, IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
+import { useAuthContext } from 'context';
 
 export const drawerWidth = 300;
 
@@ -20,9 +21,6 @@ export const FilterDrawer: FC<
     isMobile: boolean;
     setIsFilterDrawerOpen: (isOpen: boolean) => void;
     initialFilters: any[];
-    // autocompletedResults: any[];
-    // results: any[];
-    // autocompletedSuggestions: any;
   }
 > = (props) => {
   const {
@@ -43,11 +41,13 @@ export const FilterDrawer: FC<
   const { pathname } = useLocation();
 
   const restoreInitialFilters = () => {
-    initialFilters.forEach((filter) => {
-      filter.values.forEach((value: string) => {
-        addFilter(filter.field, value, 'any');
+    if (matchPath(['/inventory'], pathname)) {
+      initialFilters.forEach((filter) => {
+        filter.values.forEach((value: string) => {
+          addFilter(filter.field, value, 'any');
+        });
       });
-    });
+    }
   };
 
   const clearFiltersAndSearch = () => {
@@ -126,18 +126,20 @@ export const FilterDrawer: FC<
           />
         )}
       </Box>
-      <Box>
-        {filters.length > 0 && (
-          <Box
-            paddingBottom={3}
-            display="flex"
-            width="100%"
-            justifyContent="center"
-          >
-            <Button onClick={clearFiltersAndSearch}>Reset</Button>
-          </Box>
-        )}
-      </Box>
+      {matchPath(['/inventory'], pathname) && (
+        <Box>
+          {filters.length > 0 && (
+            <Box
+              paddingBottom={3}
+              display="flex"
+              width="100%"
+              justifyContent="center"
+            >
+              <Button onClick={clearFiltersAndSearch}>Reset</Button>
+            </Box>
+          )}
+        </Box>
+      )}
     </Stack>
   );
 
