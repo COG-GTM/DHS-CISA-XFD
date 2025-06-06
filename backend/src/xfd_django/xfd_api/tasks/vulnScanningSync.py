@@ -17,19 +17,12 @@ import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
-from django.core.management import call_command
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
 from django.db.models.functions import Power
 from django.utils import timezone
 import psycopg2
 import requests
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
-from xfd_api.tasks.syncdb_helpers import (
-    create_domain_view,
-    create_service_view,
-    create_vuln_materialized_views,
-    create_vuln_normal_views,
-)
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
@@ -143,8 +136,6 @@ def main():  # pylint: disable=R0915
     """Execute the vulnerability scanning synchronization task."""
     LOGGER.info("Started VulnScanningSync scan...")
 
-    call_command("syncmdl", dangerouslyforce=False)
-
     # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
     LOGGER.info("Fetched %d requests from Redshift", len(request_list))
@@ -237,27 +228,6 @@ def main():  # pylint: disable=R0915
             raise QueryError(
                 SCAN_NAME, str(e), "Error creating vulnerability scan summary"
             ) from e
-
-    try:
-        create_domain_view("mini_data_lake")
-    except Exception as e:
-        raise QueryError(SCAN_NAME, str(e), "Error creating domain view") from e
-    try:
-        create_service_view("mini_data_lake")
-    except Exception as e:
-        raise QueryError(SCAN_NAME, str(e), "Error creating service view") from e
-    try:
-        create_vuln_normal_views("mini_data_lake")
-    except Exception as e:
-        raise QueryError(
-            SCAN_NAME, str(e), "Error creating vulnerability normal views"
-        ) from e
-    try:
-        create_vuln_materialized_views("mini_data_lake")
-    except Exception as e:
-        raise QueryError(
-            SCAN_NAME, str(e), "Error creating vulnerability materialized views"
-        ) from e
 
 
 def detect_data_set(query):

@@ -4,9 +4,7 @@ import traceback
 from django.db import connections
 
 def normalize_pg_type(column_name: str, table_name: str, database: str) -> str:
-    """
-    …same as before…
-    """
+    """Normalize postgres type."""
     with connections[database].cursor() as cursor:
         cursor.execute(
             """
@@ -57,7 +55,7 @@ def normalize_pg_type(column_name: str, table_name: str, database: str) -> str:
 
 def adjust_column_types(target_app_label: str, using: str = None):
     """
-    Phase 2: For each model in target_app_label, compare Django’s db_type() vs. 
+    For each model in target_app_label, compare Django’s db_type() vs. 
     the actual Postgres type. Skip:
       • any "numeric" → "numeric(p,s)" mismatch,
       • any "varchar" → "varchar(…)" mismatch,
@@ -71,7 +69,7 @@ def adjust_column_types(target_app_label: str, using: str = None):
 
     print(f"Phase 2: Adjusting column types for '{target_app_label}' on DB alias '{database}'…")
 
-    from xfd_api.tasks.syncdb_helpers import get_ordered_models
+    from backend.src.xfd_django.xfd_api.tasks.syncdb_task import get_ordered_models
     ordered = get_ordered_models(target_app_label)
 
     for model in ordered:
@@ -166,4 +164,4 @@ def adjust_column_types(target_app_label: str, using: str = None):
                 print(f"❌ Failed to ALTER {table_name}.{col} → {desired_pref}: {e}")
                 traceback.print_exc()
 
-    print("Phase 2 column‐type adjustments complete.")
+    print("Column‐type adjustments complete.")
