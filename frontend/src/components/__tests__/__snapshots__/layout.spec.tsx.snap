@@ -245,9 +245,6 @@ exports[`Layout component matches snapshot 1`] = `
               </div>
             </div>
           </div>
-          <div
-            class="MuiBox-root css-0"
-          />
         </div>
       </div>
     </div>
