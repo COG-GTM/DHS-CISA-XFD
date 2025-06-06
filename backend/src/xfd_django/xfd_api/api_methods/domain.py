@@ -8,7 +8,7 @@ import io
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 from fastapi import HTTPException
-from xfd_mini_dl.models import Domain, Service
+from xfd_mini_dl.models import Domain, Service, Vulnerability
 
 from ..auth import get_org_memberships, is_global_view_admin
 from ..helpers.filter_helpers import apply_domain_filters, sort_direction
@@ -91,9 +91,28 @@ def get_domain_by_id(domain_id: str):
 def search_domains(domain_search: DomainSearch, current_user):
     """List domains by search filter."""
     try:
+        services_prefetch = Prefetch(
+            "services",
+            queryset=Service.objects.only("id", "port", "products", "domain_id"),
+        )
+
+        vulns_prefetch = Prefetch(
+            "vulnerabilities",
+            queryset=Vulnerability.objects.only("id", "title", "domain_id"),
+        )
+
         domains = (
             Domain.objects.select_related("organization")
-            .prefetch_related("services", "vulnerabilities")
+            .only(
+                "id",
+                "name",
+                "ip",
+                "organization_id",
+                "source",
+                "created_at",
+                "updated_at",
+            )
+            .prefetch_related(services_prefetch, vulns_prefetch)
             .order_by(sort_direction(domain_search.sort, domain_search.order))
         )
 
