@@ -180,7 +180,7 @@ services:
       - PW_XFD_URL=http://frontend:3000
       - PW_XFD_USER_ROLE=${PW_XFD_USER_ROLE}
       - PW_XFD_USERNAME=${PW_XFD_USERNAME}
-      - PW_HEADLESS=false
+      - PW_HEADLESS=true
     command: >
       /bin/bash -c "npm ci && npx playwright install --with-deps && npx playwright test"
 
