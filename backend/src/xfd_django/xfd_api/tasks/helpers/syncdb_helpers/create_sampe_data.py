@@ -22,6 +22,7 @@ from faker import Faker
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
 from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
+from xfd_api.tasks.refresh_vs_summaries import handler as refresh_vs_summaries
 from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
     fill_cidr_live_ips_bulk_update,
 )
@@ -31,7 +32,6 @@ from xfd_mini_dl.models import (
     CidrOrgs,
     Cve,
     Host,
-    HostSummary,
     Ip,
     Location,
     Organization,
@@ -323,52 +323,6 @@ def build_fake_host(org):
         host_live_reason=random.choice(["ping", "syn-ack", "timeout", "reset", None]),
         status=random.choice(["WAITING", "READY", "RUNNING", "DONE", None]),
     )
-
-
-def build_fake_host_summaries():
-    """Build a fake Ticket for a pssed org."""
-    all_orgs = Organization.objects.all()
-
-    for org in all_orgs:
-        try:
-            summary_date = timezone.now().date()
-            start_date = timezone.now() - timedelta(
-                days=random.randint(25, 60), seconds=random.randint(0, 86400)
-            )
-            end_date = timezone.now() - timedelta(
-                days=random.randint(1, 5), seconds=random.randint(0, 86400)
-            )
-            host_done_count = random.randint(3000, 5000)
-            host_waiting_count = random.randint(0, 50)
-            host_running_count = random.randint(0, 50)
-            host_ready_count = random.randint(0, 50)
-            total_count = (
-                host_done_count
-                + host_waiting_count
-                + host_running_count
-                + host_ready_count
-            )
-            up_host_count = total_count - random.randint(0, 1500)
-            down_host_count = total_count - up_host_count
-
-            HostSummary.objects.update_or_create(
-                organization=org,
-                summary_date=summary_date,
-                defaults={
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "host_done_count": host_done_count,
-                    "host_waiting_count": host_waiting_count,
-                    "host_running_count": host_running_count,
-                    "host_ready_count": host_ready_count,
-                    "up_host_count": up_host_count,
-                    "down_host_count": down_host_count,
-                    "scanned_asset_count": total_count,
-                },
-            )
-        except Exception as e:
-            print("\n❌ Error while creating host_summary for org %s: %s", org.name, e)
-            continue
 
 
 def build_fake_ticket(org):
@@ -728,6 +682,9 @@ def populate_sample_data():
     # Create or refresh materialized views
     result = refresh_materialized_views({})
     print(result)
+
+    # Refresh VS Summaries for local
+    refresh_vs_summaries({})
 
     print("\n✅ Done populating all data.")
 

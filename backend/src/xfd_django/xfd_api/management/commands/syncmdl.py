@@ -124,7 +124,6 @@ class Command(BaseCommand):
 
             # Step 4.1: Sync domains in ES
             sync_es_domains({})
-        
 
         # Step 5: Sync organizations in ES
         sync_es_organizations()

@@ -143,6 +143,7 @@ def handler(event):
                         else:
                             # Version matches → refresh
                             if has_unique_index(cursor, name):
+                                print("Refreshing view %s", name)
                                 cursor.execute(
                                     "REFRESH MATERIALIZED VIEW CONCURRENTLY {};".format(
                                         name
