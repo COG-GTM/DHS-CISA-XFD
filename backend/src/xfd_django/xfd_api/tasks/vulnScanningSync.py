@@ -522,9 +522,9 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
             SUM(CASE WHEN status = 'WAITING' THEN 1 ELSE 0 END) AS host_waiting_count,
             SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
             SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END) AS host_ready_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'true' THEN 1 ELSE 0 END) AS up_host_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'false' THEN 1 ELSE 0 END) AS down_host_count,
-            COUNT(ip) AS scanned_asset_count
+            SUM(CASE WHEN POSITION('\"up\":true' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS up_host_count,
+            SUM(CASE WHEN POSITION('\"up\":false' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS down_host_count,
+            COUNT(DISTINCT ip) AS scanned_asset_count
         FROM vmtableau.hosts
         WHERE last_change >= GETDATE() - INTERVAL '100 days'
         GROUP BY owner;
