@@ -1,7 +1,7 @@
 """User log search."""
 
 # Standard Python Libraries
-from datetime import datetime
+from datetime import timedelta
 import json
 import re
 import traceback
@@ -10,6 +10,7 @@ from typing import Any, Dict
 # Third-Party Libraries
 from dateutil.parser import parse  # type: ignore
 from django.db.models import Q
+from django.utils import timezone
 from fastapi import HTTPException
 from xfd_mini_dl.models import Log
 
@@ -35,28 +36,58 @@ def parse_query_string(query):
 
 def generate_date_condition(filter_obj: Dict[str, Any]) -> Q:
     """Return a Q object for date-based log filtering."""
-    operator = filter_obj.get("operator")
+    operator = (
+        filter_obj.get("operator", "")
+        .replace("_", " ")
+        .replace("-", " ")
+        .lower()
+        .strip()
+    )
     value = filter_obj.get("value", "")
-    try:
-        date_obj = datetime.fromisoformat(value)
-    except ValueError:
-        raise ValueError("Invalid date format. Use ISO format.")
-    if operator == "is":
-        return Q(created_at__exact=date_obj)
-    elif operator == "not":
-        return ~Q(created_at__exact=date_obj)
-    elif operator == "after":
-        return Q(created_at__gt=date_obj)
-    elif operator == "on_or_after":
-        return Q(created_at__gte=date_obj)
-    elif operator == "before":
-        return Q(created_at__lt=date_obj)
-    elif operator == "on_or_before":
-        return Q(created_at__lte=date_obj)
-    elif operator == "empty":
+    if operator in ["empty", "is empty"]:
         return Q(created_at__isnull=True)
-    elif operator == "not_empty":
+    elif operator in ["not empty", "is not empty"]:
         return Q(created_at__isnull=False)
+    operators_require_value = [
+        "is",
+        "equals",
+        "not",
+        "is not",
+        "after",
+        "is after",
+        "on or after",
+        "is on or after",
+        "before",
+        "is before",
+        "on or before",
+        "is on or before",
+    ]
+    if operator in operators_require_value and (value is None or value == ""):
+        return Q()
+    try:
+        date_obj = parse(value)
+        date_obj = date_obj.replace(second=0, microsecond=0)
+        if timezone.is_naive(date_obj):
+            date_obj = timezone.make_aware(date_obj, timezone.get_current_timezone())
+        date_obj = date_obj.replace(second=0, microsecond=0)
+    except Exception:
+        raise ValueError("Invalid date format. Use ISO format.")
+    if operator in ["is", "equals"]:
+        start_dt = date_obj
+        end_dt = start_dt + timedelta(minutes=1)
+        return Q(created_at__gte=start_dt, created_at__lt=end_dt)
+    elif operator in ["not", "is not"]:
+        start_dt = date_obj
+        end_dt = start_dt + timedelta(minutes=1)
+        return ~Q(created_at__gte=start_dt, created_at__lt=end_dt)
+    elif operator in ["after", "is after"]:
+        return Q(created_at__gt=date_obj)
+    elif operator in ["on or after", "is on or after"]:
+        return Q(created_at__gte=date_obj)
+    elif operator in ["before", "is before"]:
+        return Q(created_at__lt=date_obj)
+    elif operator in ["on or before", "is on or before"]:
+        return Q(created_at__lte=date_obj)
     else:
         raise ValueError("Invalid date operator.")
 
@@ -111,22 +142,37 @@ def search_logs(search_data, current_user):
 
 def matches_string_filter(log_value: str, operator: str, value: str) -> bool:
     """Check if a log value matches a string filter condition."""
-    if operator == "contains":
-        return value.lower() in log_value.lower()
-    elif operator == "equals":
-        return log_value.lower() == value.lower()
-    elif operator.lower() == "startswith":
-        return log_value.lower().startswith(value.lower())
-    elif operator.lower() == "endswith":
-        return log_value.lower().endswith(value.lower())
-    elif operator == "isempty":
+    op = operator.replace(" ", "").lower()
+    if op == "contains":
+        return value.lower() in (log_value or "").lower()
+    elif op in ("equals", "is"):
+        return (log_value or "").lower() == (value or "").lower()
+    elif op in ("startswith", "startswith", "starts with"):
+        return (log_value or "").lower().startswith((value or "").lower())
+    elif op in ("endswith", "endswith", "ends with"):
+        return (log_value or "").lower().endswith((value or "").lower())
+    elif op in ("isempty", "is empty"):
         return log_value is None or log_value == ""
-    elif operator == "isnotempty":
-        return log_value != ""
-    elif operator == "isanyof":
-        lowered_array = [string.lower() for string in value]
-        return False if not value else log_value.lower() in lowered_array
+    elif op in ("isnotempty", "is not empty"):
+        return log_value is not None and log_value != ""
+    elif op in ("isanyof", "is any of"):
+        if not value:
+            return False
+        if isinstance(value, str):
+            value_list = [v.strip().lower() for v in value.split(",")]
+        else:
+            value_list = [str(v).strip().lower() for v in value]
+        return (log_value or "").lower() in value_list
     return False
+
+
+def safe_get(d, *keys):
+    """Safely get a nested value from a dictionary, returning an empty dict if any key is missing."""
+    for key in keys:
+        if not isinstance(d, dict):
+            return {}
+        d = d.get(key, {})
+    return d
 
 
 def search_logs_filtered(search_data: LogSearchFilter, current_user):
@@ -142,18 +188,13 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
         for log in all_logs:
             matches = True
             for field, condition in search_data.filters.items():
-                value = condition.value or ""
-                operator = condition.operator.lower()
+                value = getattr(condition, "value", "") or ""
+                operator = getattr(condition, "operator", "")
+                # Normalize camelCase, underscores, hyphens to spaces, and lowercase
+                operator = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
+                operator = operator.replace("_", " ").replace("-", " ").lower().strip()
 
-                if field == "event_type":
-                    log_value = log["event_type"] or ""
-                elif field == "result":
-                    log_value = log.get("result", "") or ""
-                    if not matches_string_filter(log_value, operator, value):
-                        matches = False
-                        break
-                    continue
-                elif field == "timestamp":
+                if field == "timestamp":
                     log_value = log.get("created_at", "")
                     log_date = None
                     if log_value:
@@ -161,10 +202,10 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                             log_date = parse(log_value)
                         except (ValueError, TypeError):
                             log_date = None
-                    if operator == "is empty":
+                    if operator in ["is empty"]:
                         if log_date is not None:
                             matches = False
-                    elif operator == "is not empty":
+                    elif operator in ["is not empty"]:
                         if log_date is None:
                             matches = False
                     else:
@@ -178,11 +219,25 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                 matches = False
                         else:
                             matches = False
+                        if log_date and filter_criteria_date:
+                            log_date = log_date.replace(second=0, microsecond=0)
+                            filter_criteria_date = filter_criteria_date.replace(
+                                second=0, microsecond=0
+                            )
+                            if timezone.is_naive(log_date):
+                                log_date = timezone.make_aware(
+                                    log_date, timezone.get_current_timezone()
+                                )
+                            if timezone.is_naive(filter_criteria_date):
+                                filter_criteria_date = timezone.make_aware(
+                                    filter_criteria_date,
+                                    timezone.get_current_timezone(),
+                                )
                         if matches and valid_filter_value_for_comparison:
-                            if operator == "is":
+                            if operator in ["is", "equals"]:
                                 if log_date is None or log_date != filter_criteria_date:
                                     matches = False
-                            elif operator == "is not":
+                            elif operator in ["is not", "not"]:
                                 if (
                                     log_date is not None
                                     and log_date == filter_criteria_date
@@ -194,7 +249,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                     or not log_date > filter_criteria_date
                                 ):
                                     matches = False
-                            elif operator == "is on or after":
+                            elif operator in ["is on or after", "on or after"]:
                                 if (
                                     log_date is None
                                     or not log_date >= filter_criteria_date
@@ -206,42 +261,113 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                                     or not log_date < filter_criteria_date
                                 ):
                                     matches = False
-                            elif operator == "is on or before":
+                            elif operator in ["is on or before", "on or before"]:
                                 if (
                                     log_date is None
                                     or not log_date <= filter_criteria_date
                                 ):
                                     matches = False
-
-                elif field == "payload.user.full_name":
-                    log_value = log["payload"].get("user", {}).get("full_name", "")
-                elif field == "payload.user_performed_assignment.full_name":
-                    log_value = (
-                        log["payload"]
-                        .get("user_performed_assignment", {})
-                        .get("full_name", "")
-                    )
-                elif field == "payload.user_performed_assignment.region_id":
-                    log_value = str(
-                        log["payload"]
-                        .get("user_performed_assignment", {})
-                        .get("region_id", "")
-                    )
-                    print(log_value)
-                elif field == "payload.organization.name":
-                    log_value = log["payload"].get("organization", {}).get("name", "")
-                elif field == "payload.role":
-                    log_value = log["payload"].get("role", "")
-                elif field == "payload.state":
-                    log_value = log["payload"].get("user", {}).get("state", "")
-                elif field == "payload.user.user_type":
-                    log_value = log["payload"].get("user", {}).get("user_type", "")
-                elif field == "payload.user_to_approve.user_type":
-                    log_value = (
-                        log["payload"].get("user_to_approve", {}).get("user_type", "")
-                    )
-                else:
                     continue
+
+                # --- Event type field extraction ---
+                if field == "event_type":
+                    log_value = log.get("event_type", "")
+                elif field == "result":
+                    log_value = log.get("result", "")
+                # --- Acted-on user field extraction ---
+                elif field == "acted_on_user" or field == "payload.user.full_name":
+                    payload = log.get("payload", {})
+                    if isinstance(payload, str):
+                        try:
+                            payload = json.loads(payload)
+                        except Exception:
+                            payload = {}
+                    log_value = ""
+                    sources = [
+                        payload.get("user", {}),
+                        safe_get(payload, "removal_result", "role_deleted", "user"),
+                        payload.get("user_to_approve", {}),
+                        safe_get(payload, "approval_results", "role_deleted", "user"),
+                    ]
+                    for source in sources:
+                        if source and source.get("full_name"):
+                            log_value = source.get("full_name", "")
+                            break
+                else:
+                    # Robust multi-source field extraction for all other fields
+                    payload = log.get("payload", {})
+                    if isinstance(payload, str):
+                        try:
+                            payload = json.loads(payload)
+                        except Exception:
+                            payload = {}
+                    log_value = ""
+                    if field == "payload.user_performed_assignment.full_name":
+                        sources = [
+                            payload.get("user_performed_assignment", {}),
+                            payload.get("user_performed_removal", {}),
+                            payload.get("user_performed_approval", {}),
+                            payload.get("user_performed_invite", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("full_name"):
+                                log_value = source.get("full_name", "")
+                                break
+                    elif field == "payload.user_performed_assignment.region_id":
+                        sources = [
+                            payload.get("user_performed_assignment", {}),
+                            payload.get("user_performed_removal", {}),
+                            payload.get("user_performed_approval", {}),
+                            payload.get("user_performed_invite", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("region_id"):
+                                log_value = str(source.get("region_id", ""))
+                                break
+                    elif field == "payload.organization.name":
+                        sources = [
+                            payload.get("organization", {}),
+                            payload.get("from_organization", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("name"):
+                                log_value = source.get("name", "")
+                                break
+                    elif field == "payload.role":
+                        log_value = payload.get("role", "")
+                    elif field == "payload.state":
+                        sources = [
+                            payload,
+                            payload.get("user_performed_assignment", {}),
+                            payload.get("user_performed_removal", {}),
+                            payload.get("user_performed_approval", {}),
+                            payload.get("user_performed_invite", {}),
+                            payload.get("user", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("state"):
+                                log_value = source.get("state", "")
+                                break
+                    elif field == "payload.user.user_type":
+                        sources = [
+                            payload.get("user", {}),
+                            payload.get("user_to_approve", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("user_type"):
+                                log_value = source.get("user_type", "")
+                                break
+                    elif field == "payload.user_to_approve.user_type":
+                        sources = [
+                            payload.get("user_to_approve", {}),
+                            payload.get("user", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("user_type"):
+                                log_value = source.get("user_type", "")
+                                break
+                    else:
+                        continue
 
                 if not matches_string_filter(log_value, operator, value):
                     matches = False

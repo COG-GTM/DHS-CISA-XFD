@@ -20,6 +20,12 @@ import { format, parseISO } from 'date-fns';
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 
+import { parse, formatISO } from 'date-fns';
+
+const userInput = '05/31/2025 02:26 AM';
+const parsedDate = parse(userInput, 'MM/dd/yyyy hh:mm a', new Date());
+const isoString = formatISO(parsedDate); // "2025-05-31T02:26:00-04:00"
+
 interface LogsProps {}
 
 interface LogDetails {

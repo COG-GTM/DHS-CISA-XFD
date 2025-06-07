@@ -78,6 +78,21 @@ class LogSearchResponse(BaseModel):
     count: int
 
 
+# Standard Python Libraries
+from datetime import datetime
+from typing import Optional
+
+# Third-Party Libraries
+from pydantic import BaseModel
+
+
+class LogFilterCondition(BaseModel):
+    """Represents a filter condition for a log field."""
+
+    operator: str
+    value: Optional[datetime]  # Pydantic will auto-parse ISO 8601
+
+
 class LogFilters(BaseModel):
     """Schema for available log filter options."""
 
@@ -116,7 +131,7 @@ class FilterCondition(BaseModel):
 
 
 class LogSearchFilter(BaseModel):
-    """Advanced log search filter with pagination."""
+    """Schema for advanced log search filters."""
 
     page: int = 1
     page_size: int = 15
@@ -155,20 +170,34 @@ class LogSearchFilter(BaseModel):
             "is not",
             "is after",
             "after",
+            "not",
             "is on or after",
             "on or after",
             "is before",
             "before",
             "is on or before",
+            "on or before",
+            "isempty",  # add these for robustness
+            "isnotempty",
         ]
         for field, condition in v.items():
             if field not in allowed_fields:
                 raise ValueError(f"Invalid filter field: {field}")
-            operator = condition.operator.lower()
-            if field == "timestamp" and operator not in allowed_date_operators:
-                raise ValueError(f"Invalid operator for timestamp: {operator}")
-            elif field != "timestamp" and operator not in allowed_operators:
-                raise ValueError(f"Invalid operator for {field}: {operator}")
+            # Normalize the operator string
+            operator = (
+                condition.operator.replace("_", " ")
+                .replace("-", " ")
+                .replace("Or", " or ")
+                .replace("And", " and ")
+                .lower()
+                .strip()
+            )
+            if field == "timestamp":
+                if operator not in allowed_date_operators:
+                    raise ValueError(f"Invalid operator for timestamp: {operator}")
+            else:
+                if operator not in allowed_operators:
+                    raise ValueError(f"Invalid operator for {field}: {operator}")
         return v
 
 
