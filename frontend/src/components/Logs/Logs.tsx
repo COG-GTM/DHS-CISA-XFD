@@ -20,11 +20,7 @@ import { format, parseISO } from 'date-fns';
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 
-import { parse, formatISO } from 'date-fns';
-
-const userInput = '05/31/2025 02:26 AM';
-const parsedDate = parse(userInput, 'MM/dd/yyyy hh:mm a', new Date());
-const isoString = formatISO(parsedDate); // "2025-05-31T02:26:00-04:00"
+import { toZonedTime } from 'date-fns-tz';
 
 interface LogsProps {}
 
@@ -68,7 +64,16 @@ export const Logs: FC<LogsProps> = () => {
     const tableFilters = filters.reduce(
       (acc, cur) => {
         const field = fieldMap[cur.field] || cur.field;
-        acc[field] = { value: cur.value, operator: cur.operator };
+        let value = cur.value;
+
+        // Convert local time to UTC ISO string for timestamp filter
+        if (field === 'timestamp' && typeof value === 'string' && value) {
+          // If value is like "2025-06-06T02:29", treat as local and convert to UTC
+          const localDate = new Date(value);
+          value = localDate.toISOString().slice(0, 16); // Keep up to minutes
+        }
+
+        acc[field] = { value, operator: cur.operator };
         return acc;
       },
       {} as { [key: string]: { value: any; operator: any } }
@@ -213,7 +218,14 @@ export const Logs: FC<LogsProps> = () => {
       type: 'dateTime',
       minWidth: 100,
       flex: 1.25,
-      valueFormatter: (e) => format(parseISO(e.value), 'MM/dd/yyyy hh:mm a')
+      valueFormatter: (e) => {
+        const utcDate = parseISO(e.value);
+        const localDate = toZonedTime(
+          utcDate,
+          Intl.DateTimeFormat().resolvedOptions().timeZone
+        );
+        return format(localDate, 'MM/dd/yyyy hh:mm a');
+      }
     },
     {
       field: 'result',
