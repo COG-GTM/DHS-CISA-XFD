@@ -4,7 +4,7 @@ from datetime import datetime
 import secrets
 
 # Third-Party Libraries
-from django.db import connections, transaction
+from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
