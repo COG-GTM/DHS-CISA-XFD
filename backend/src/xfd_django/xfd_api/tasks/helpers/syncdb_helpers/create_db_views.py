@@ -4,9 +4,9 @@
 from django.db import connections
 
 # If changes are made to materialized view make sure to update version number
-VW_SERVICE_VERSION = "20250606"
-MAT_VW_COMBINED_VULNS_VERSION = "20250606"
-DOMAIN_MAT_VIEW_VERSION = "20250606"
+VW_SERVICE_VERSION = "20250609"
+MAT_VW_COMBINED_VULNS_VERSION = "20250609"
+DOMAIN_MAT_VIEW_VERSION = "20250609"
 
 
 def create_vuln_normal_views(database):
@@ -329,13 +329,6 @@ def create_vuln_materialized_views(database):
             """
         CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_scan_source
         ON mat_vw_combined_vulns (scan_source);
-        """
-        )
-
-        cursor.execute(
-            """
-        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_source
-        ON mat_vw_combined_vulns (source);
         """
         )
 
