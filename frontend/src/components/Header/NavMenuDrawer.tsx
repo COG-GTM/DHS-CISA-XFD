@@ -78,6 +78,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       role="none"
                     >
                       {item.onClick ? (
+                        //Used for buttons with onClick handlers
                         <ListItemButton
                           role="menuitem"
                           aria-label={item.menuItemTitle}
@@ -89,6 +90,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                           <ListItemText primary={item.menuItemTitle} />
                         </ListItemButton>
                       ) : isExternalLink ? (
+                        // Used for external links
                         <ListItemButton
                           component="a"
                           href={item.path}
@@ -107,6 +109,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                           <ListItemText primary={item.menuItemTitle} />
                         </ListItemButton>
                       ) : (
+                        // Used for internal links
                         <ListItemButton
                           component={NavLink}
                           to={item.path}
