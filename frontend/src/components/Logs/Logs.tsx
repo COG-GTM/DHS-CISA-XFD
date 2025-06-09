@@ -68,9 +68,8 @@ export const Logs: FC<LogsProps> = () => {
 
         // Convert local time to UTC ISO string for timestamp filter
         if (field === 'timestamp' && typeof value === 'string' && value) {
-          // If value is like "2025-06-06T02:29", treat as local and convert to UTC
           const localDate = new Date(value);
-          value = localDate.toISOString().slice(0, 16); // Keep up to minutes
+          value = localDate.toISOString().slice(0, 16);
         }
 
         acc[field] = { value, operator: cur.operator };

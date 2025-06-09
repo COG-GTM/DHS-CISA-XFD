@@ -177,7 +177,7 @@ class LogSearchFilter(BaseModel):
             "before",
             "is on or before",
             "on or before",
-            "isempty",  # add these for robustness
+            "isempty",
             "isnotempty",
         ]
         for field, condition in v.items():
