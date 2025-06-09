@@ -4,9 +4,9 @@
 from django.db import connections
 
 # If changes are made to materialized view make sure to update version number
-VW_SERVICE_VERSION = "20250606"
-MAT_VW_COMBINED_VULNS_VERSION = "20250606"
-DOMAIN_MAT_VIEW_VERSION = "20250606"
+VW_SERVICE_VERSION = "20250609"
+MAT_VW_COMBINED_VULNS_VERSION = "20250609"
+DOMAIN_MAT_VIEW_VERSION = "20250609"
 
 
 def create_vuln_normal_views(database):
@@ -269,6 +269,144 @@ def create_vuln_materialized_views(database):
             )
         )
 
+        # Additional optimal indexes based on search patterns
+        print("Creating indexes on mat_vw_combined_vulns...")
+
+        # Make sure pg_trgm extension is enabled (safe if run multiple times)
+        cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+
+        # B-Tree indexes (exact matches, range filters)
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_domain_id
+        ON mat_vw_combined_vulns (domain_id);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_organization_id
+        ON mat_vw_combined_vulns (organization_id);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_severity
+        ON mat_vw_combined_vulns (severity);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_state
+        ON mat_vw_combined_vulns (state);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_substate
+        ON mat_vw_combined_vulns (substate);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_is_kev
+        ON mat_vw_combined_vulns (is_kev);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_created_at
+        ON mat_vw_combined_vulns (created_at);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_scan_source
+        ON mat_vw_combined_vulns (scan_source);
+        """
+        )
+
+        # GIN + pg_trgm indexes (for partial matches)
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_title_trgm
+        ON mat_vw_combined_vulns
+        USING gin (title gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_domain_string_trgm
+        ON mat_vw_combined_vulns
+        USING gin (domain_string gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_ip_string_trgm
+        ON mat_vw_combined_vulns
+        USING gin (ip_string gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_cpe_trgm
+        ON mat_vw_combined_vulns
+        USING gin (cpe gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_os_trgm
+        ON mat_vw_combined_vulns
+        USING gin (os gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_cve_trgm
+        ON mat_vw_combined_vulns
+        USING gin (cve gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_cwe_trgm
+        ON mat_vw_combined_vulns
+        USING gin (cwe gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_port_trgm
+        ON mat_vw_combined_vulns
+        USING gin (port gin_trgm_ops);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_mat_vw_combined_vulns_service_string_trgm
+        ON mat_vw_combined_vulns
+        USING gin (service_string gin_trgm_ops);
+        """
+        )
+
+        print("Indexes created on mat_vw_combined_vulns.")
+
         print("Materialized views created.")
 
 
@@ -369,6 +507,25 @@ def create_domain_materialized_view(database):
         )
 
         print("Domain materialized view created.")
+
+        print("Creating indexes on mat_vw_domain...")
+        cursor.execute(
+            "CREATE INDEX idx_vw_domain_organization_id ON mat_vw_domain (organization_id);"
+        )
+        cursor.execute("CREATE INDEX idx_vw_domain_name ON mat_vw_domain (name);")
+        cursor.execute(
+            "CREATE INDEX idx_vw_domain_reverse_name ON mat_vw_domain (reverse_name);"
+        )
+        cursor.execute("CREATE INDEX idx_vw_domain_ip ON mat_vw_domain (ip);")
+        cursor.execute("CREATE INDEX idx_vw_domain_source ON mat_vw_domain (source);")
+        cursor.execute(
+            "CREATE INDEX idx_vw_domain_created_at ON mat_vw_domain (created_at);"
+        )
+        cursor.execute(
+            "CREATE INDEX idx_vw_domain_updated_at ON mat_vw_domain (updated_at);"
+        )
+
+        print("Domain Indexes created.")
 
 
 def create_service_mat_view(database):
@@ -488,18 +645,49 @@ def create_service_mat_view(database):
             SELECT * FROM vw_portscan_service;
             """
         )
-
-        print("Creating unique index for concurrent refresh...")
-        cursor.execute(
-            """
-            CREATE UNIQUE INDEX idx_mat_vw_service_id ON mat_vw_service (id);
-            """
-        )
-
         cursor.execute(
             "COMMENT ON MATERIALIZED VIEW mat_vw_service IS 'version:{}';".format(
                 VW_SERVICE_VERSION
             )
+        )
+        print("Service materialized view created.")
+
+        print("Creating unique indexes for service view...")
+
+        cursor.execute(
+            """
+        CREATE UNIQUE INDEX idx_vw_service_id ON mat_vw_service (id);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_vw_service_domain_id ON mat_vw_service (domain_id);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_vw_service_port ON mat_vw_service (port);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_vw_service_service_source ON mat_vw_service (service_source);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_vw_service_updated_at ON mat_vw_service (updated_at);
+        """
+        )
+
+        cursor.execute(
+            """
+        CREATE INDEX IF NOT EXISTS idx_vw_service_last_seen ON mat_vw_service (last_seen);
+        """
         )
 
         print("Materialized view 'mat_vw_service' created.")
