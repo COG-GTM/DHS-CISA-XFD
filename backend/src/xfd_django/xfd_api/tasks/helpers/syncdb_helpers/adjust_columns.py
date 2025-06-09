@@ -5,6 +5,7 @@ import traceback
 
 # Third-Party Libraries
 from django.db import connections
+from xfd_api.tasks.syncdb_task import get_ordered_models
 
 
 def normalize_pg_type(column_name: str, table_name: str, database: str) -> str:
@@ -75,9 +76,6 @@ def adjust_column_types(target_app_label: str, using: str = "mini_data_lake"):
     print(
         f"Phase 2: Adjusting column types for '{target_app_label}' on DB alias '{database}'…"
     )
-
-    # Third-Party Libraries
-    from xfd_api.tasks.syncdb_task import get_ordered_models
 
     ordered = get_ordered_models(target_app_label)
 

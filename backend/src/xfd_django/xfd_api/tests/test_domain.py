@@ -4,7 +4,7 @@ from datetime import datetime
 import secrets
 
 # Third-Party Libraries
-from django.db import connections, transaction
+from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
@@ -12,6 +12,7 @@ from xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
     create_domain_materialized_view,
     create_service_mat_view,
     create_vuln_materialized_views,
+    create_vuln_normal_views,
 )
 from xfd_django.asgi import app
 from xfd_mini_dl.models import (
@@ -107,29 +108,11 @@ def sample_domain_ip_vuln(organization):
     return subdomain
 
 
-# Create the views
-@pytest.fixture(autouse=True, scope="session")
-def ensure_vuln_views_created(django_db_setup, django_db_blocker):
-    """Ensure all necessary views for vulnerability testing are created."""
-    with django_db_blocker.unblock():
-        create_domain_materialized_view("mini_data_lake")
-        create_service_mat_view("mini_data_lake")
-        create_vuln_materialized_views("mini_data_lake")
-
-
 @pytest.fixture
-def domain(sample_domain_ip_vuln):
+def domain(sample_domain_ip_vuln, refresh_vuln_views):
     """Get domain from view after creating source data."""
+    refresh_vuln_views()
     return Domain.objects.get(name="example.crossfeed.local")
-
-
-@pytest.fixture
-def refresh_vuln_views(django_db_blocker):
-    """Refresh service material view."""
-    with django_db_blocker.unblock():
-        with connections["mini_data_lake"].cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW vw_service;")
-            cursor.execute("REFRESH MATERIALIZED VIEW mat_vw_combined_vulns;")
 
 
 @pytest.fixture
@@ -159,6 +142,28 @@ def organization():
     transaction.commit()
     assert organization.name == search_fields["organization_name"]
     yield organization
+
+
+# Create the views
+@pytest.fixture(autouse=True, scope="session")
+def ensure_vuln_views_created(django_db_setup, django_db_blocker):
+    """Ensure all necessary views for vulnerability testing are created."""
+    with django_db_blocker.unblock():
+        create_vuln_normal_views("mini_data_lake")
+
+
+@pytest.fixture
+def refresh_vuln_views(django_db_blocker):
+    """Fixture that returns a function to refresh vuln materialized views."""
+
+    def _refresh():
+        with django_db_blocker.unblock():
+            create_service_mat_view("mini_data_lake")
+            create_domain_materialized_view("mini_data_lake")
+            create_vuln_normal_views("mini_data_lake")
+            create_vuln_materialized_views("mini_data_lake")
+
+    return _refresh
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
