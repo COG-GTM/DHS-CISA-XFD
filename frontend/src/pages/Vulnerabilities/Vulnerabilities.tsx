@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
-import { Vulnerability as VulnerabilityType } from 'types';
 import { Subnav } from 'components';
 import {
   Alert,
@@ -31,57 +30,36 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { getSeverityColor } from 'pages/Risk/utils';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { truncateString } from 'utils/dataTransformUtils';
-import { ORGANIZATION_EXCLUSIONS } from 'hooks/useUserTypeFilters';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import DynamicFeedIcon from '@mui/icons-material/DynamicFeed';
-
-export interface ApiResponse {
-  result: Vulnerability[];
-  count: number;
-  url?: string;
-}
+import { Vulnerability } from 'types/domain';
+import {
+  ApiResponse,
+  LocationState,
+  SearchParams,
+  VulnerabilityRow
+} from 'types/vulnerabilities';
+import { formatSeverity } from 'utils/vulnerabilitiesTableUtils';
+import { normalizeFilters } from 'utils/vulnerabilitiesTableUtils';
 
 const PAGE_SIZE = 15;
 
-export const stateMap: { [key: string]: string } = {
-  unconfirmed: 'Unconfirmed',
-  exploitable: 'Exploitable',
-  'false-positive': 'False Positive',
-  'accepted-risk': 'Accepted Risk',
-  remediated: 'Remediated'
-};
-
-export interface LooseVulnerabilityRow {
-  id: string;
-  title: string;
-  severity: string;
-  kev: string;
-  domain: string | undefined;
-  domainId: string | undefined;
-  product: string;
-  created_at: string;
-  state: string;
-}
-
-type Nullable<T> = {
-  [P in keyof T]: T[P] | null;
-};
-
-type VulnerabilityRow = Nullable<LooseVulnerabilityRow>;
-
-type Vulnerability = Nullable<VulnerabilityType>;
-
-interface LocationState {
-  domain: any;
-  severity: string;
-  title: string;
-}
-
-export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
-  group_by = undefined
-}: {
-  children?: React.ReactNode;
+interface VulnerabilitiesProps {
   group_by?: string;
+}
+
+const extractInitialFilters = (state: LocationState): GridFilterItem[] => {
+  if (state?.title)
+    return [{ field: 'title', value: state.title, operator: 'contains' }];
+  if (state?.domain)
+    return [{ field: 'domain', value: state.domain, operator: 'contains' }];
+  if (state?.severity)
+    return [{ field: 'severity', value: state.severity, operator: 'contains' }];
+  return [];
+};
+
+export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
+  group_by
 }) => {
   const { currentOrganization, apiPost, user } = useAuthContext();
   // To-do: Re-enable this as part of Status dropdown once the feature is approved.
@@ -90,7 +68,28 @@ export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
   const [totalResults, setTotalResults] = useState(0);
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const history = useHistory();
+  const location = useLocation();
+  const state = location.state as LocationState;
+  const [onlyOpenVulns, setOnlyOpenVulns] = useState(true);
+  const [initialFilters, setInitialFilters] = useState(() =>
+    extractInitialFilters(state)
+  );
+  const [filters, setFilters] = useState(initialFilters);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: PAGE_SIZE,
+    pageCount: 0,
+    filters: filters
+  });
+  const [filterModel, setFilterModel] = useState({
+    items: filters.map((filter) => ({
+      id: filter.id,
+      field: filter.field,
+      value: filter.value,
+      operator: filter.operator
+    }))
+  });
   // TO-DO
   // Implement regional rollup for vulnerabilities view to allow for proper vunl drilldown from dashboard
   // To-do: Re-enable this as part of Status dropdown once the feature is approved.
@@ -121,68 +120,19 @@ export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
       page,
       pageSize = PAGE_SIZE,
       doExport = false,
-      group_by = undefined,
+      group_by,
       showAll = false
-    }: {
-      filters: GridFilterItem[];
-      page: number;
-      pageSize?: number;
-      doExport?: boolean;
-      group_by?: string;
-      showAll?: boolean;
-    }): Promise<ApiResponse | undefined> => {
+    }: SearchParams): Promise<ApiResponse | undefined> => {
       try {
-        const tableFilters: {
-          [key: string]: string | boolean | undefined;
-        } = filters
-          .filter((f) => Boolean(f.value))
-          .reduce(
-            (accum, next) => ({
-              ...accum,
-              [next.field]: next.value
-            }),
-            {}
-          );
-        // If not open or closed, substitute for appropriate substate
-        if (
-          tableFilters['state'] &&
-          !['open', 'closed'].includes(tableFilters['state'] as string)
-        ) {
-          const substate = (tableFilters['state'] as string)
-            .match(/\((.*)\)/)
-            ?.pop();
-          if (substate)
-            tableFilters['substate'] = substate.toLowerCase().replace(' ', '-');
-          delete tableFilters['state'];
-        }
-        let userOrgIsExcluded = false;
-        ORGANIZATION_EXCLUSIONS.forEach((exc) => {
-          if (currentOrganization?.name.toLowerCase().includes(exc)) {
-            userOrgIsExcluded = true;
-          }
-        });
-
-        if (
-          currentOrganization &&
-          !userOrgIsExcluded &&
-          user?.user_type === 'standard'
-        ) {
-          tableFilters['organization'] = currentOrganization.id;
-        }
-        if (tableFilters['is_kev']) {
-          // Convert string to boolean filter.
-          tableFilters['is_kev'] = tableFilters['is_kev'] === 'true';
-        }
+        const tableFilters = normalizeFilters(
+          filters,
+          currentOrganization,
+          user?.user_type
+        );
         return await apiPost<ApiResponse>(
           doExport ? '/vulnerabilities/export' : '/vulnerabilities/search',
           {
-            body: {
-              page,
-              filters: tableFilters,
-              pageSize,
-              group_by,
-              showAll
-            }
+            body: { page, filters: tableFilters, pageSize, group_by, showAll }
           }
         );
       } catch (e) {
@@ -238,55 +188,6 @@ export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
     },
     [vulnerabilitiesSearch, group_by]
   );
-
-  const history = useHistory();
-  const location = useLocation();
-  const state = location.state as LocationState;
-  const [onlyOpenVulns, setOnlyOpenVulns] = useState(true);
-  const [initialFilters, setInitialFilters] = useState<GridFilterItem[]>(
-    state?.title
-      ? [
-          {
-            field: 'title',
-            value: state.title,
-            operator: 'contains'
-          }
-        ]
-      : state?.domain
-        ? [
-            {
-              field: 'domain',
-              value: state.domain,
-              operator: 'contains'
-            }
-          ]
-        : state?.severity
-          ? [
-              {
-                field: 'severity',
-                value: state.severity,
-                operator: 'contains'
-              }
-            ]
-          : []
-  );
-  const [filters, setFilters] = useState(initialFilters);
-
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: PAGE_SIZE,
-    pageCount: 0,
-    filters: filters
-  });
-
-  const [filterModel, setFilterModel] = useState({
-    items: filters.map((filter) => ({
-      id: filter.id,
-      field: filter.field,
-      value: filter.value,
-      operator: filter.operator
-    }))
-  });
 
   // To-do: Re-enable this as part of Status dropdown once the feature is approved.
   // Row scoped menu state management for vulnerability status updates
@@ -395,35 +296,6 @@ export const Vulnerabilities: React.FC<{ group_by?: string }> = ({
 
   const vulRows: VulnerabilityRow[] = vulnerabilities.map((vuln) => {
     //The following logic is to format irregular severity levels to match those used in VulnerabilityBarChart.tsx
-
-    const titleCase = (str: string) =>
-      str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-
-    const severityLevels: string[] = [
-      'N/A',
-      'Low',
-      'Medium',
-      'High',
-      'Critical',
-      'Other'
-    ];
-
-    const formatSeverity = (severity?: any) => {
-      const titleCaseSev = titleCase(severity);
-      if (severityLevels.includes(titleCaseSev)) {
-        return titleCaseSev;
-      }
-      if (
-        !titleCaseSev ||
-        ['None', 'Null', 'N/a', 'Undefined', 'undefined', ''].includes(
-          titleCaseSev
-        )
-      ) {
-        return 'N/A';
-      } else {
-        return 'Other';
-      }
-    };
 
     const severity = formatSeverity(vuln.severity ?? 'N/A');
 
