@@ -108,27 +108,6 @@ def sample_domain_ip_vuln(organization):
     return subdomain
 
 
-# Create the views
-@pytest.fixture(autouse=True, scope="session")
-def ensure_vuln_views_created(django_db_setup, django_db_blocker):
-    """Ensure all necessary views for vulnerability testing are created."""
-    with django_db_blocker.unblock():
-        create_vuln_normal_views("mini_data_lake")
-
-
-@pytest.fixture
-def refresh_vuln_views(django_db_blocker):
-    """Fixture that returns a function to refresh vuln materialized views."""
-
-    def _refresh():
-        with django_db_blocker.unblock():
-            create_service_mat_view("mini_data_lake")
-            create_domain_materialized_view("mini_data_lake")
-            create_vuln_materialized_views("mini_data_lake")
-
-    return _refresh
-
-
 @pytest.fixture
 def domain(sample_domain_ip_vuln):
     """Get domain from view after creating source data."""
@@ -163,6 +142,25 @@ def organization():
     assert organization.name == search_fields["organization_name"]
     yield organization
 
+# Create the views
+@pytest.fixture(autouse=True, scope="session")
+def ensure_vuln_views_created(django_db_setup, django_db_blocker):
+    """Ensure all necessary views for vulnerability testing are created."""
+    with django_db_blocker.unblock():
+        create_vuln_normal_views("mini_data_lake")
+
+
+@pytest.fixture
+def refresh_vuln_views(django_db_blocker):
+    """Fixture that returns a function to refresh vuln materialized views."""
+
+    def _refresh():
+        with django_db_blocker.unblock():
+            create_service_mat_view("mini_data_lake")
+            create_domain_materialized_view("mini_data_lake")
+            create_vuln_materialized_views("mini_data_lake")
+
+    return _refresh
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_domain_by_id(user, domain, refresh_vuln_views):
