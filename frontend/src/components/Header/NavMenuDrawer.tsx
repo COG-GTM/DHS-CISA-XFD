@@ -41,7 +41,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
         <List>
           {menuItems.map((section, index) => {
             const entries = Object.entries(section);
-            //if (entries.length === 0) return null;
+            if (entries.length === 0) return null;
 
             const [sectionTitle, items] = entries[0];
             const menuTitle = (
