@@ -255,15 +255,15 @@ def ticket_vuln_setup(db):
 def ensure_vuln_views_created(django_db_setup, django_db_blocker):
     """Ensure all necessary views for vulnerability testing are created."""
     with django_db_blocker.unblock():
-        create_domain_materialized_view("mini_data_lake")
         create_vuln_normal_views("mini_data_lake")
-        create_service_mat_view("mini_data_lake")
 
 
 @pytest.fixture
 def refresh_vuln_views(django_db_blocker):
     """Refresh the materialized vuln views after data is inserted."""
     with django_db_blocker.unblock():
+        create_service_mat_view("mini_data_lake")
+        create_domain_materialized_view("mini_data_lake")
         create_vuln_normal_views("mini_data_lake")
         create_vuln_materialized_views("mini_data_lake")
 
