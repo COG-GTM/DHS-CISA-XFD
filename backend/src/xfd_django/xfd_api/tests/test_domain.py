@@ -109,7 +109,7 @@ def sample_domain_ip_vuln(organization):
 
 
 @pytest.fixture
-def domain(sample_domain_ip_vuln):
+def domain(sample_domain_ip_vuln, refresh_vuln_views):
     """Get domain from view after creating source data."""
     return Domain.objects.get(name="example.crossfeed.local")
 
