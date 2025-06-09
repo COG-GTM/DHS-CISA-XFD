@@ -158,6 +158,7 @@ def refresh_vuln_views(django_db_blocker):
         with django_db_blocker.unblock():
             create_service_mat_view("mini_data_lake")
             create_domain_materialized_view("mini_data_lake")
+            create_vuln_normal_views("mini_data_lake")
             create_vuln_materialized_views("mini_data_lake")
 
     return _refresh
