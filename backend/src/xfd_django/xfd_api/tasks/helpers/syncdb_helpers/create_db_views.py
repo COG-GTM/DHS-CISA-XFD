@@ -515,21 +515,21 @@ def create_domain_materialized_view(database):
 
         print("Domain materialized view created.")
 
-        print("Creating indexes on vw_domain...")
+        print("Creating indexes on mat_vw_domain...")
         cursor.execute(
-            "CREATE INDEX idx_vw_domain_organization_id ON vw_domain (organization_id);"
+            "CREATE INDEX idx_vw_domain_organization_id ON mat_vw_domain (organization_id);"
         )
-        cursor.execute("CREATE INDEX idx_vw_domain_name ON vw_domain (name);")
+        cursor.execute("CREATE INDEX idx_vw_domain_name ON mat_vw_domain (name);")
         cursor.execute(
-            "CREATE INDEX idx_vw_domain_reverse_name ON vw_domain (reverse_name);"
+            "CREATE INDEX idx_vw_domain_reverse_name ON mat_vw_domain (reverse_name);"
         )
-        cursor.execute("CREATE INDEX idx_vw_domain_ip ON vw_domain (ip);")
-        cursor.execute("CREATE INDEX idx_vw_domain_source ON vw_domain (source);")
+        cursor.execute("CREATE INDEX idx_vw_domain_ip ON mat_vw_domain (ip);")
+        cursor.execute("CREATE INDEX idx_vw_domain_source ON mat_vw_domain (source);")
         cursor.execute(
-            "CREATE INDEX idx_vw_domain_created_at ON vw_domain (created_at);"
+            "CREATE INDEX idx_vw_domain_created_at ON mat_vw_domain (created_at);"
         )
         cursor.execute(
-            "CREATE INDEX idx_vw_domain_updated_at ON vw_domain (updated_at);"
+            "CREATE INDEX idx_vw_domain_updated_at ON mat_vw_domain (updated_at);"
         )
 
         print("Domain Indexes created.")
@@ -663,38 +663,38 @@ def create_service_mat_view(database):
 
         cursor.execute(
             """
-        CREATE UNIQUE INDEX idx_vw_service_id ON vw_service (id);
+        CREATE UNIQUE INDEX idx_vw_service_id ON mat_vw_service (id);
         """
         )
 
         cursor.execute(
             """
-        CREATE INDEX IF NOT EXISTS idx_vw_service_domain_id ON vw_service (domain_id);
+        CREATE INDEX IF NOT EXISTS idx_vw_service_domain_id ON mat_vw_service (domain_id);
         """
         )
 
         cursor.execute(
             """
-        CREATE INDEX IF NOT EXISTS idx_vw_service_port ON vw_service (port);
+        CREATE INDEX IF NOT EXISTS idx_vw_service_port ON mat_vw_service (port);
         """
         )
 
         cursor.execute(
             """
-        CREATE INDEX IF NOT EXISTS idx_vw_service_service_source ON vw_service (service_source);
+        CREATE INDEX IF NOT EXISTS idx_vw_service_service_source ON mat_vw_service (service_source);
         """
         )
 
         cursor.execute(
             """
-        CREATE INDEX IF NOT EXISTS idx_vw_service_updated_at ON vw_service (updated_at);
+        CREATE INDEX IF NOT EXISTS idx_vw_service_updated_at ON mat_vw_service (updated_at);
         """
         )
 
         cursor.execute(
             """
-        CREATE INDEX IF NOT EXISTS idx_vw_service_last_seen ON vw_service (last_seen);
+        CREATE INDEX IF NOT EXISTS idx_vw_service_last_seen ON mat_vw_service (last_seen);
         """
         )
 
-        print("View 'vw_service' created.")
+        print("Materialized view 'mat_vw_service' created.")
