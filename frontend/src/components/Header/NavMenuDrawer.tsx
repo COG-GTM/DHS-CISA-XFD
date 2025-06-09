@@ -43,31 +43,34 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
             const entries = Object.entries(section);
             if (entries.length === 0) return null;
 
-            const [sectionTitle, items] = entries[0];
-            const menuTitle = (
-              <ListItem role="presentation">
-                <ListItemText
-                  primary={
-                    sectionTitle === 'Vulnerability Scanning'
-                      ? 'Vulnerability Scanning'
-                      : sectionTitle === 'Findings Library'
-                        ? 'Inventory'
-                        : sectionTitle
-                  }
-                  slotProps={{
-                    primary: {
-                      id: `drawer-section-${index}`,
-                      sx: {
-                        fontWeight: 'bold'
-                      }
-                    }
-                  }}
-                />
-              </ListItem>
-            );
+            const [, items] = entries[0];
+
+            // Commented out until further notice as the headers are not currently being used
+            // const [sectionTitle, items] = entries[0];
+            // const menuTitle = (
+            //   <ListItem role="presentation">
+            //     <ListItemText
+            //       primary={
+            //         sectionTitle === 'Vulnerability Scanning'
+            //           ? 'Vulnerability Scanning'
+            //           : sectionTitle === 'Findings Library'
+            //             ? 'Inventory'
+            //             : sectionTitle
+            //       }
+            //       slotProps={{
+            //         primary: {
+            //           id: `drawer-section-${index}`,
+            //           sx: {
+            //             fontWeight: 'bold'
+            //           }
+            //         }
+            //       }}
+            //     />
+            //   </ListItem>
+            // );
             return (
               <React.Fragment key={index}>
-                {menuTitle}
+                {/* {menuTitle} */}
                 {items &&
                   items.length > 0 &&
                   items.map((item, subIndex) => {
