@@ -9,27 +9,27 @@ import {
   TextField,
   Button,
   Box
-} from '@mui/material/';
+} from '@mui/material';
 import { SavedSearch } from '../../types/saved-search';
 import { useAuthContext } from '../../context';
 import { Save } from '@mui/icons-material';
 
 interface SaveSearchModalProps {
-  searchTerm: string;
+  search_term: string;
   filters: any;
   totalResults: number;
-  sortField: string;
-  sortDirection: string;
+  sort_field: string;
+  sort_direction: string;
   advancedFiltersReq?: boolean;
 }
 
 export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
   const {
-    searchTerm,
+    search_term,
     filters,
     totalResults,
-    sortField,
-    sortDirection,
+    sort_field,
+    sort_direction,
     advancedFiltersReq
   } = props;
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -49,12 +49,12 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
     const body = {
       body: {
         ...savedSearchValues,
-        searchTerm,
+        search_term,
         filters,
         count: totalResults,
-        searchPath: window.location.search,
-        sortField,
-        sortDirection
+        search_path: window.location.search,
+        sort_field,
+        sort_direction
       }
     };
 
@@ -184,8 +184,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
                 formErrors.name
                   ? 'Name is required and must contain only alphanumeric characters, spaces, hyphens, or apostrophes.'
                   : formErrors.duplicate
-                  ? 'This name is already taken. Please choose a different name.'
-                  : ''
+                    ? 'This name is already taken. Please choose a different name.'
+                    : ''
               }
             />
           </DialogContentText>
@@ -289,8 +289,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
                 formErrors.name
                   ? 'Name is required and must contain only alphanumeric characters, spaces, hyphens, or apostrophes.'
                   : formErrors.duplicate
-                  ? 'This name is already taken. Please choose a different name.'
-                  : ''
+                    ? 'This name is already taken. Please choose a different name.'
+                    : ''
               }
             />
           </Box>

@@ -1,6 +1,6 @@
 export * from './Layout';
 export * from './GovBanner';
-export * from './Header';
+export * from './Header/Header';
 export * from './AuthRoute';
 export * from './Table';
 export * from './Paginator';

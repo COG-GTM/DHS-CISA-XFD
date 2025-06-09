@@ -31,6 +31,7 @@ import { useLocation } from 'react-router-dom';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
+import { LoginBlockedDialog } from 'components/LoginBlockedDialog';
 
 export interface Point {
   id: string;
@@ -62,10 +63,18 @@ const Risk: React.FC<ContextType> = ({
   filters,
   removeFilter,
   addFilter,
-  searchTerm,
+  search_term,
   setSearchTerm
 }) => {
-  const { showMaps, user, apiPost } = useAuthContext();
+  const {
+    showMaps,
+    user,
+    apiPost,
+    apiGet,
+    logout,
+    userMustSign,
+    isLoggingOut
+  } = useAuthContext();
 
   const [stats, setStats] = useState<Stats | undefined>(undefined);
   const [isUpdateStateFormOpen, setIsUpdateStateFormOpen] = useState(false);
@@ -102,18 +111,18 @@ const Risk: React.FC<ContextType> = ({
   const { pathname } = useLocation();
 
   const filtersToDisplay = useMemo(() => {
-    if (searchTerm !== '') {
+    if (search_term !== '') {
       return [
         ...filters,
         {
           field: 'query',
-          values: [searchTerm],
+          values: [search_term],
           onClear: () => setSearchTerm('', { shouldClearFilters: false })
         }
       ];
     }
     return filters;
-  }, [filters, searchTerm, setSearchTerm]);
+  }, [filters, search_term, setSearchTerm]);
 
   const userLevel = useUserLevel().userLevel;
 
@@ -121,9 +130,9 @@ const Risk: React.FC<ContextType> = ({
   const initialFiltersForUser = useUserTypeFilters(regions, user, userLevel);
 
   const fetchStats = useCallback(
-    async (orgId?: string) => {
+    async (org_id?: string) => {
       if (
-        user?.userType === 'globalAdmin' &&
+        user?.user_type === 'globalAdmin' &&
         riskFilters.regions.length === 0
       ) {
         return;
@@ -134,7 +143,7 @@ const Risk: React.FC<ContextType> = ({
           }
         });
         const max = Math.max(
-          ...result.vulnerabilities.byOrg.map((p) => p.value)
+          ...result.vulnerabilities.by_org.map((p) => p.value)
         );
         colorScale = scaleLinear<string>()
           .domain([0, Math.log(max)])
@@ -147,23 +156,83 @@ const Risk: React.FC<ContextType> = ({
     [riskFilters]
   );
 
+  const [isLoginBlockedDialogOpen, setIsLoginBlockedDialogOpen] =
+    useState(false);
+  const [maintenanceNotification, setMaintenanceNotification] =
+    useState<any>(null);
+
   useEffect(() => {
     fetchStats();
   }, [fetchStats, riskFilters]);
 
   useEffect(() => {
-    if (user) {
-      if (!user.state || user.state === '') {
+    if (!isLoggingOut && user) {
+      if (
+        (!user.state || user.state === '') &&
+        !localStorage.getItem('user_state')
+      ) {
         setIsUpdateStateFormOpen(true);
       }
     }
-  }, [user]);
+  }, [user, isLoggingOut]);
+
+  useEffect(() => {
+    const fetchAndCheckMaintenance = async () => {
+      // TODO: Some login blocking logic is a duplicate of backend
+      // checks to meet "waiting room" needs to allow controlled logins
+      // for populating new user state and terms agreement before blocking
+      // for pre-release. Standardize this once this is no longer needed.
+      if (
+        user &&
+        !user.invite_pending &&
+        user.state &&
+        user.date_accepted_terms &&
+        !isLoginBlockedDialogOpen
+      ) {
+        // Active Notifications
+        const notifications = await apiGet('/notifications');
+        const active = notifications.find(
+          (n: any) =>
+            n.status === 'active' &&
+            n.maintenance_type === 'major' &&
+            new Date(n.start_datetime) <= new Date() &&
+            new Date(n.end_datetime) >= new Date()
+        );
+        // Set non-blocking userTypes (additional check)
+        const nonBlockingUserTypes = ['globalAdmin', 'regionalAdmin'];
+        if (active && !nonBlockingUserTypes.includes(user.user_type)) {
+          setMaintenanceNotification(active);
+          setIsLoginBlockedDialogOpen(true);
+        }
+      }
+    };
+
+    fetchAndCheckMaintenance();
+  }, [apiGet, isLoginBlockedDialogOpen, user, userMustSign]);
+
+  useEffect(() => {
+    const handleMaintenanceBlocked = (e: any) => {
+      if (e.detail?.message) {
+        setMaintenanceNotification({ message: e.detail.message });
+        setIsLoginBlockedDialogOpen(true);
+      }
+    };
+
+    window.addEventListener('maintenance-blocked', handleMaintenanceBlocked);
+
+    return () => {
+      window.removeEventListener(
+        'maintenance-blocked',
+        handleMaintenanceBlocked
+      );
+    };
+  }, []);
 
   useEffect(() => {
     filters.forEach((filter) => {
       if (
-        filter.field !== 'organization.regionId' &&
-        filter.field !== 'organizationId'
+        filter.field !== 'organization.region_id' &&
+        filter.field !== 'organization_id'
       ) {
         removeFilter(filter.field, filter.values[0], filter.type);
       }
@@ -214,7 +283,7 @@ const Risk: React.FC<ContextType> = ({
                 geographies.map((geo) => {
                   const cur = findFn(geo) as
                     | (Point & {
-                        orgId: string;
+                        org_id: string;
                       })
                     | undefined;
                   const centroid = geoCentroid(geo);
@@ -225,7 +294,7 @@ const Risk: React.FC<ContextType> = ({
                         geography={geo}
                         fill={colorScale(cur ? Math.log(cur.value) : 0)}
                         onClick={() => {
-                          if (cur) fetchStats(cur.orgId);
+                          if (cur) fetchStats(cur.org_id);
                         }}
                       />
                       <g>
@@ -269,7 +338,7 @@ const Risk: React.FC<ContextType> = ({
     [key: string]: VulnerabilityCount;
   } = {};
   if (stats) {
-    for (const vuln of stats.vulnerabilities.latestVulnerabilities) {
+    for (const vuln of stats.vulnerabilities.latest_vulnerabilities) {
       if (vuln.title in latestVulnsGrouped)
         latestVulnsGrouped[vuln.title].count++;
       else {
@@ -279,12 +348,13 @@ const Risk: React.FC<ContextType> = ({
   }
 
   const latestVulnsGroupedArr = Object.values(latestVulnsGrouped).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
   if (stats) {
     for (const sev of severities) {
-      sev.disable = !stats.domains.numVulnerabilities.some((i) =>
+      sev.disable = !stats.domains.num_vulnerabilities.some((i) =>
         sev.sevList.includes(i.id.split('|')[1])
       );
     }
@@ -294,13 +364,45 @@ const Risk: React.FC<ContextType> = ({
     return (
       <UpdateStateForm
         open={isUpdateStateFormOpen}
-        userId={user?.id ?? ''}
-        onClose={() => setIsUpdateStateFormOpen(false)}
+        user_id={user?.id ?? ''}
+        onClose={async () => {
+          setIsUpdateStateFormOpen(false);
+
+          // Re-fetch updated user to prevent false popup
+          const updatedUser = await apiGet('/users/me');
+          if (updatedUser?.state && user?.user_type !== 'globalAdmin') {
+            const notifications = await apiGet('/notifications');
+            const active = notifications.find(
+              (n: any) =>
+                n.status === 'active' &&
+                n.maintenance_type === 'major' &&
+                new Date(n.start_datetime) <= new Date() &&
+                new Date(n.end_datetime) >= new Date()
+            );
+            if (active && updatedUser.user_type !== 'globalAdmin') {
+              setMaintenanceNotification(active);
+              setIsLoginBlockedDialogOpen(true);
+            }
+          }
+        }}
       />
     );
   }
 
-  if (user?.invitePending) {
+  if (isLoginBlockedDialogOpen && maintenanceNotification) {
+    return (
+      <LoginBlockedDialog
+        open={isLoginBlockedDialogOpen}
+        message={maintenanceNotification.message}
+        onClose={() => {
+          setIsLoginBlockedDialogOpen(false);
+          logout();
+        }}
+      />
+    );
+  }
+
+  if (user?.invite_pending) {
     return (
       <div
         style={{
@@ -327,8 +429,11 @@ const Risk: React.FC<ContextType> = ({
 
   return (
     <Grid container>
-      <Grid item sm={0.5} lg={1} xl={2} display={{ xs: 'none', sm: 'block' }} />
-      <Grid item sm={11} lg={10} xl={8} sx={{ maxWidth: '1500px' }}>
+      <Grid
+        size={{ sm: 0.5, lg: 1, xl: 2 }}
+        display={{ xs: 'none', sm: 'block' }}
+      />
+      <Grid size={{ sm: 11, lg: 10, xl: 8 }} sx={{ maxWidth: '1500px' }}>
         <RiskRoot className={classes.root}>
           <div id="wrapper" className={contentWrapper}>
             <Box sx={{ px: '1rem', pb: '2rem' }}>
@@ -339,7 +444,7 @@ const Risk: React.FC<ContextType> = ({
             </Box>
             {stats && (
               <Grid container>
-                <Grid item xs={12} sm={12} md={12} lg={6} xl={6} mb={-4}>
+                <Grid size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }} mb={-4}>
                   <div className={content}>
                     <div className={panel}>
                       <VulnerabilityCard
@@ -364,32 +469,32 @@ const Risk: React.FC<ContextType> = ({
                     </div>
                   </div>
                 </Grid>
-                <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                <Grid size={{ xs: 12, sm: 12, md: 12, lg: 6, xl: 6 }}>
                   <div className={content}>
                     <div className={panel}>
-                      <Paper elevation={0} className={cardRoot}>
-                        {stats.domains.numVulnerabilities.length > 0 && (
+                      {stats.domains.num_vulnerabilities.length > 0 && (
+                        <Paper elevation={0} className={cardRoot}>
                           <TopVulnerableDomains
-                            data={stats.domains.numVulnerabilities}
+                            data={stats.domains.num_vulnerabilities}
                           />
-                        )}
-                      </Paper>
+                        </Paper>
+                      )}
                       <VulnerabilityCard
                         title={'Most Common Vulnerabilities'}
-                        data={stats.vulnerabilities.mostCommonVulnerabilities}
+                        data={stats.vulnerabilities.most_common_vulnerabilities}
                         showLatest={false}
                         showCommon={true}
                       ></VulnerabilityCard>
                       <div id="mapWrapper">
-                        {(user?.userType === 'globalView' ||
-                          user?.userType === 'globalAdmin') &&
+                        {(user?.user_type === 'globalView' ||
+                          user?.user_type === 'globalAdmin') &&
                           showMaps && (
                             <>
                               <MapCard
                                 title={'State Vulnerabilities'}
                                 geoUrl={geoStateUrl}
                                 findFn={(geo) =>
-                                  stats?.vulnerabilities.byOrg.find(
+                                  stats?.vulnerabilities.by_org.find(
                                     (p) => p.label === geo.properties.name
                                   )
                                 }
@@ -399,7 +504,7 @@ const Risk: React.FC<ContextType> = ({
                                 title={'County Vulnerabilities'}
                                 geoUrl={geoStateUrl}
                                 findFn={(geo) =>
-                                  stats?.vulnerabilities.byOrg.find(
+                                  stats?.vulnerabilities.by_org.find(
                                     (p) =>
                                       p.label ===
                                       geo.properties.name + ' Counties'
@@ -418,25 +523,29 @@ const Risk: React.FC<ContextType> = ({
           </div>
         </RiskRoot>
       </Grid>
-      <Grid item sm={0.5} lg={1} xl={2} display={{ xs: 'none', sm: 'block' }} />
+      <Grid
+        size={{ sm: 0.5, lg: 1, xl: 2 }}
+        display={{ xs: 'none', sm: 'block' }}
+      />
     </Grid>
   );
 };
 
+//Use this as a reference point for the VS Dash UI
 export const RiskWithSearch = withSearch(
   ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   })
 )(Risk);

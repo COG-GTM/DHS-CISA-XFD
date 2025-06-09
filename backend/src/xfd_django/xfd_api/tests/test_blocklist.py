@@ -9,9 +9,8 @@ import secrets
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.models import User, UserType
 from xfd_django.asgi import app
-from xfd_mini_dl.models import Blocklist
+from xfd_mini_dl.models import Blocklist, User, UserType
 
 client = TestClient(app)
 
@@ -20,14 +19,17 @@ client = TestClient(app)
 def test_blocklist_check_blocked():
     """Test blocklist check."""
     user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
+        user_type=UserType.GLOBAL_ADMIN,
     )
     random_ip_address = "111.111.111.111"
     Blocklist.objects.create(
-        ip=random_ip_address, created_at=datetime.now(timezone.utc)
+        ip=random_ip_address,
+        created_at=datetime.now(timezone.utc),
+        reports=1,
+        attacks=1,
     )
 
     response = client.get(
@@ -37,17 +39,20 @@ def test_blocklist_check_blocked():
     )
 
     assert response.status_code == 200
-    assert response.json() == {"status": "BLOCKED"}
+    assert response.json() == {
+        "attacks": 1,
+        "reports": 1,
+    }
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_blocklist_check_unblocked():
     """Test blocklist check."""
     user = User.objects.create(
-        firstName="first",
-        lastName="last",
+        first_name="first",
+        last_name="last",
         email="{}@crossfeed.cisa.gov".format(secrets.token_hex(4)),
-        userType=UserType.STANDARD,
+        user_type=UserType.GLOBAL_ADMIN,
     )
     random_ip_address = "222.222.222.222"
     response = client.get(
@@ -56,4 +61,7 @@ def test_blocklist_check_unblocked():
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
-    assert response.json() == {"status": "UNBLOCKED"}
+    assert response.json() == {
+        "attacks": 0,
+        "reports": 0,
+    }

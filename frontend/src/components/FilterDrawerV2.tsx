@@ -16,19 +16,19 @@ export const drawerWidth = 300;
 export const FilterDrawer: FC<
   ContextType & {
     isFilterDrawerOpen: boolean;
-    isMobile: boolean;
+    // isMobile: boolean;
     setIsFilterDrawerOpen: (isOpen: boolean) => void;
     initialFilters: any[];
   }
 > = (props) => {
   const {
-    isMobile,
+    // isMobile,
     isFilterDrawerOpen,
     setIsFilterDrawerOpen,
     addFilter,
     removeFilter,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm,
     filters,
     initialFilters
@@ -50,7 +50,7 @@ export const FilterDrawer: FC<
         removeFilter={removeFilter}
         filters={filters}
         setSearchTerm={setSearchTerm}
-        searchTerm={searchTerm}
+        search_term={search_term}
       />
       {matchPath(
         ['/inventory', '/inventory/domains', '/inventory/vulnerabilities'],
@@ -61,7 +61,7 @@ export const FilterDrawer: FC<
           removeFilter={removeFilter}
           filters={filters}
           facets={facets}
-          searchTerm={searchTerm}
+          search_term={search_term}
           setSearchTerm={setSearchTerm}
           initialFilters={initialFilters}
         />
@@ -74,8 +74,10 @@ export const FilterDrawer: FC<
   return (
     <Drawer
       open={isFilterDrawerOpen}
-      variant={isMobile ? 'temporary' : 'persistent'}
-      ModalProps={{ keepMounted: isMobile }}
+      // variant={isMobile ? 'temporary' : 'persistent'}
+      variant="temporary"
+      // ModalProps={{ keepMounted: isMobile }}
+      ModalProps={{ keepMounted: true }}
       onClose={() => setIsFilterDrawerOpen(false)}
       sx={{
         width: drawerWidth,
@@ -83,7 +85,8 @@ export const FilterDrawer: FC<
         '&::-webkit-scrollbar': {
           display: 'none'
         },
-        height: isMobile ? 'unset' : 'calc(100vh - 24px)'
+        // height: isMobile ? 'unset' : 'calc(100vh - 24px)'
+        height: 'unset'
       }}
       PaperProps={{ style: { position: 'unset' } }}
     >
@@ -98,14 +101,14 @@ export const FilterDrawerV2 = withSearch(
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   }: ContextType) => ({
     addFilter,
     removeFilter,
     filters,
     facets,
-    searchTerm,
+    search_term,
     setSearchTerm
   })
 )(FilterDrawer);
