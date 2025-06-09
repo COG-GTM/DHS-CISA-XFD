@@ -111,6 +111,7 @@ def sample_domain_ip_vuln(organization):
 @pytest.fixture
 def domain(sample_domain_ip_vuln, refresh_vuln_views):
     """Get domain from view after creating source data."""
+    refresh_vuln_views()
     return Domain.objects.get(name="example.crossfeed.local")
 
 
@@ -142,6 +143,7 @@ def organization():
     assert organization.name == search_fields["organization_name"]
     yield organization
 
+
 # Create the views
 @pytest.fixture(autouse=True, scope="session")
 def ensure_vuln_views_created(django_db_setup, django_db_blocker):
@@ -162,6 +164,7 @@ def refresh_vuln_views(django_db_blocker):
             create_vuln_materialized_views("mini_data_lake")
 
     return _refresh
+
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_domain_by_id(user, domain, refresh_vuln_views):
