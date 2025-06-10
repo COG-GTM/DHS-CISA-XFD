@@ -41,6 +41,15 @@ import {
 } from 'types/vulnerabilities';
 import { formatSeverity } from 'utils/vulnerabilitiesTableUtils';
 import { normalizeFilters } from 'utils/vulnerabilitiesTableUtils';
+import InfoLabel from 'components/Dashboard/InfoLabel';
+
+const tooltipContentJson = [
+  {
+    id: 'Findings Library',
+    content:
+      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
+  }
+];
 
 const PAGE_SIZE = 15;
 
@@ -530,8 +539,27 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     }
   ];
 
+  const outerSpacing = {
+    mt: '56px',
+    px: {
+      xs: 1,
+      sm: 1,
+      md: 1,
+      lg: 1,
+      xl: 0
+    }
+  };
+
   return (
-    <Box sx={{ height: '100vh' }}>
+    <Box maxWidth="1152px" width="100%" margin="auto" sx={outerSpacing}>
+      <Box sx={{ my: '40px' }}>
+        <InfoLabel
+          label="Findings Library"
+          typographyVariant="h1"
+          viewDetails
+          tooltipContentJson={tooltipContentJson}
+        />
+      </Box>
       <Subnav
         items={[
           { title: 'Search Results', path: '/inventory', exact: true },
@@ -559,7 +587,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
             </Button>
           </Stack>
         ) : isLoading === false && loadingError === false ? (
-          <Paper elevation={2} sx={{ width: '90%', minHeight: 500 }}>
+          <Paper elevation={2} sx={{ width: '100%', minHeight: 500 }}>
             <DataGrid
               rows={vulRows}
               rowCount={totalResults}

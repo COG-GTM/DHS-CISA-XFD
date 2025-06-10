@@ -23,6 +23,15 @@ import { exportCSV } from 'components/ImportExport';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
+import InfoLabel from 'components/Dashboard/InfoLabel';
+
+const tooltipContentJson = [
+  {
+    id: 'Findings Library',
+    content:
+      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
+  }
+];
 
 export const DashboardUI: React.FC<ContextType & { location: any }> = (
   props
@@ -126,30 +135,46 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     return filters;
   }, [filters, searchTerm, setSearchTerm]);
 
+  const mobileMargin = {
+    px: {
+      xs: 1,
+      sm: 1,
+      md: 1,
+      lg: 1,
+      xl: 0
+    }
+  };
+
   return (
-    <Root className={classes.root}>
+    <Box maxWidth="1152px" width="100%" margin="auto" sx={mobileMargin}>
+      <Box sx={{ my: '40px' }}>
+        <InfoLabel
+          label="Findings Library"
+          typographyVariant="h1"
+          viewDetails
+          tooltipContentJson={tooltipContentJson}
+        />
+      </Box>
       <Subnav
         items={[
           { title: 'Search Results', path: '/inventory', exact: true },
           { title: 'All Domains', path: '/inventory/domains' },
           { title: 'All Vulnerabilities', path: '/inventory/vulnerabilities' }
         ]}
-        styles={{
-          paddingLeft: '0%'
-        }}
       />
-      <Box
-        width="100%"
-        display="flex"
-        alignSelf={'anchor-center'}
-        flexDirection={'column'}
+      <Stack
+        direction="row"
+        alignItems="flex-end"
+        justifyContent="space-between"
       >
-        <FilterTags filters={filtersToDisplay} removeFilter={removeFilter} />
-        <Stack
-          spacing={2}
-          direction="row"
-          alignItems="center"
+        <Box mb="16px">
+          <FilterTags filters={filtersToDisplay} removeFilter={removeFilter} />
+        </Box>
+        <Box
+          alignItems="flex-end"
           justifyContent="space-between"
+          minWidth="220px"
+          mb="10px"
         >
           <SortBar
             sort_field={sort_field}
@@ -158,8 +183,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
             isFixed={resultsScrolled}
             advancedFiltersReq={advanceFiltersReq}
           />
-        </Stack>
-      </Box>
+        </Box>
+      </Stack>
       <Box
         position="relative"
         height="calc(100% - 32px - 32px - 46px - 10px)"
@@ -213,64 +238,68 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
           )}
         </Box>
       </Box>
-      <Paper className={classes.pagination}>
-        <span>
-          <strong>
-            {(totalResults === 0
-              ? 0
-              : (current - 1) * resultsPerPage + 1
-            ).toLocaleString()}{' '}
-            -{' '}
-            {Math.min(
-              (current - 1) * resultsPerPage + resultsPerPage,
-              totalResults
-            ).toLocaleString()}
-          </strong>{' '}
-          of <strong>{totalResults.toLocaleString()}</strong>
-        </span>
-        <Pagination
-          count={totalPages}
-          page={current}
-          onChange={(_, page) => setCurrent(page)}
-          color="primary"
-          size="small"
-        />
-        <FormControl
-          variant="outlined"
-          className={classes.pageSize}
-          size="small"
-        >
-          <Typography id="results-per-page-label">Results per page:</Typography>
-          <Select
-            id="teststa"
-            labelId="results-per-page-label"
-            value={resultsPerPage}
-            onChange={(e) => setResultsPerPage(e.target.value as number)}
+      <Root className={classes.root}>
+        <Paper className={classes.pagination}>
+          <span>
+            <strong>
+              {(totalResults === 0
+                ? 0
+                : (current - 1) * resultsPerPage + 1
+              ).toLocaleString()}{' '}
+              -{' '}
+              {Math.min(
+                (current - 1) * resultsPerPage + resultsPerPage,
+                totalResults
+              ).toLocaleString()}
+            </strong>{' '}
+            of <strong>{totalResults.toLocaleString()}</strong>
+          </span>
+          <Pagination
+            count={totalPages}
+            page={current}
+            onChange={(_, page) => setCurrent(page)}
+            color="primary"
+            size="small"
+          />
+          <FormControl
+            variant="outlined"
+            className={classes.pageSize}
+            size="small"
           >
-            {[15, 45, 90].map((perPage) => (
-              <MenuItem key={perPage} value={perPage}>
-                {perPage}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Button
-          variant="outlined"
-          className={classes.exportButton}
-          onClick={() =>
-            exportCSV(
-              {
-                name: 'domains',
-                getDataToExport: fetchDomainsExport
-              },
-              setLoading
-            )
-          }
-        >
-          Export Results
-        </Button>
-      </Paper>
-    </Root>
+            <Typography id="results-per-page-label">
+              Results per page:
+            </Typography>
+            <Select
+              id="teststa"
+              labelId="results-per-page-label"
+              value={resultsPerPage}
+              onChange={(e) => setResultsPerPage(e.target.value as number)}
+            >
+              {[15, 45, 90].map((perPage) => (
+                <MenuItem key={perPage} value={perPage}>
+                  {perPage}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button
+            variant="outlined"
+            className={classes.exportButton}
+            onClick={() =>
+              exportCSV(
+                {
+                  name: 'domains',
+                  getDataToExport: fetchDomainsExport
+                },
+                setLoading
+              )
+            }
+          >
+            Export Results
+          </Button>
+        </Paper>
+      </Root>
+    </Box>
   );
 };
 
