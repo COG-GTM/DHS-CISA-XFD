@@ -4653,6 +4653,30 @@ class Domain(models.Model):
         super().save(*args, **kwargs)
 
 
+class DomainSearchView(models.Model):
+    """Domain Search Material View Model."""
+
+    domain_id = models.UUIDField(primary_key=True)
+    name = models.TextField()
+    ip = models.TextField()
+    organization_id = models.UUIDField()
+    organization_name = models.TextField()
+    source = models.TextField()
+    country = models.TextField(null=True)
+    cloud_hosted = models.BooleanField(null=True)
+    reverse_name = models.TextField(null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    services = models.JSONField()
+    vulnerabilities = models.JSONField()
+
+    class Meta:
+        """Set DomainSearchView metadata."""
+        managed = False
+        db_table = "mat_vw_domain_search"
+
+
 class DotgovDomains(models.Model):
     """Define DotgovDomains model."""
 

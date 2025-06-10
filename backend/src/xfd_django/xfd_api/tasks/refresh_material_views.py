@@ -10,9 +10,11 @@ from django.db import connections
 # Import your existing view creation functions
 from xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
     DOMAIN_MAT_VIEW_VERSION,
+    DOMAIN_SEARCH_MAT_VIEW_VERSION,
     MAT_VW_COMBINED_VULNS_VERSION,
     VW_SERVICE_VERSION,
     create_domain_materialized_view,
+    create_domain_search_mat_view,
     create_service_mat_view,
     create_vuln_materialized_views,
 )
@@ -38,6 +40,11 @@ MATERIALIZED_VIEWS = [
         "name": "mat_vw_combined_vulns",
         "create_fn": create_vuln_materialized_views,
         "version": MAT_VW_COMBINED_VULNS_VERSION,
+    },
+    {
+        "name": "mat_vw_domain_search",
+        "create_fn": create_domain_search_mat_view,
+        "version": DOMAIN_SEARCH_MAT_VIEW_VERSION,
     },
 ]
 
