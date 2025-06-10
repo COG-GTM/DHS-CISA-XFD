@@ -4,9 +4,14 @@ import { ContextType } from '../../context/SearchProvider';
 import { Chip, Stack, Typography, useTheme } from '@mui/material';
 import { REGIONAL_ADMIN, useUserLevel } from 'hooks/useUserLevel';
 import { STANDARD_USER } from 'context/userStateUtils';
-import { REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS } from 'hooks/useUserTypeFilters';
+import {
+  REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS,
+  useUserTypeFilters
+} from 'hooks/useUserTypeFilters';
 import { useLocation } from 'react-router-dom';
 import { FiberManualRecordRounded } from '@mui/icons-material';
+import { useAuthContext } from 'context';
+import { useStaticsContext } from 'context/StaticsContext';
 
 interface Props {
   filters: ContextType['filters'];
@@ -198,8 +203,11 @@ const sortFiltersByOrder = (filters: FlatFilters) => {
 
 export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
   const { pathname } = useLocation();
+  const { regions } = useStaticsContext();
+  const { user } = useAuthContext();
 
   const { userLevel } = useUserLevel();
+  const initialFiltersForUser = useUserTypeFilters(regions, user, userLevel);
 
   const disabledFilters = useMemo(() => {
     if (userLevel === STANDARD_USER) {
@@ -281,11 +289,33 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
       </Stack>
     );
   };
+  const initialFilters = useUserTypeFilters(regions, user, userLevel);
+  const nonInitialFilters = filters.filter((currentFilter) => {
+    // Find a matching initial filter by field
+    const initial = initialFilters.find(
+      (initFilter) => initFilter.field === currentFilter.field
+    );
+    if (!initial) return true; // No initial filter for this field
+
+    // Compare values (assuming arrays of primitives or use a deep equality check for objects)
+    const currentVals = Array.isArray(currentFilter.values)
+      ? currentFilter.values
+      : [currentFilter.values];
+    const initialVals = Array.isArray(initial.values)
+      ? initial.values
+      : [initial.values];
+
+    // Check if every value in currentVals is in initialVals and vice versa
+    if (currentVals.length !== initialVals.length) return true;
+    return !currentVals.every((val: any) => initialVals.includes(val));
+  });
+
+  console.log('nonInitialFilters', nonInitialFilters);
   return (
     <Root aria-live="polite" aria-atomic="true">
       <>
-        {filters.length > 1 && <FiltersApplied />}
-        {filtersByColumn.length === 0 && pathname === '/inventory' ? (
+        {nonInitialFilters.length > 0 && <FiltersApplied />}
+        {/* {filtersByColumn.length === 0 && pathname === '/inventory' ? (
           <Chip
             color="primary"
             classes={{ root: classes.chip }}
@@ -312,9 +342,9 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
               }
             />
           ))
-        )}
+        )} */}
         {/* Uncomment this section if you want to display grouped region/org chips*/}
-        {regionFilter &&
+        {/* {regionFilter &&
           Object.entries(regionOrgMap).map(([regionId, orgNames]) => (
             <Chip
               key={regionId}
@@ -336,11 +366,11 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
                 });
               }}
             />
-          ))}
-        <Stack direction={'row'} alignItems="center" spacing={1}>
-          <Typography color="textSecondary">Filters Applied:</Typography>
-          {/* <Typography>Filters Applied:</Typography> */}
-          {regionFilter &&
+          ))}*/}
+        {/* <Stack direction={'row'} alignItems="center" spacing={1}>
+          <Typography color="textSecondary">Filters Applied:</Typography> */}
+        {/* <Typography>Filters Applied:</Typography> */}
+        {/*{regionFilter &&
             Object.entries(regionOrgMap).map(([regionId, orgNames]) => {
               return (
                 <>
@@ -349,9 +379,9 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
                     variant="body2"
                     color="textSecondary"
                     // className={classes.regionOrgLabel}
-                  >{`Region ${regionId}- ${orgNames.join(', ')}`}</Typography>
+                  >{`Region ${regionId}- ${orgNames.join(', ')}`}</Typography> */}
 
-                  {/* <Chip
+        {/* <Chip
               //   key={regionId}
               //   color="primary"
               //   classes={{ root: classes.chip }}
@@ -372,10 +402,10 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
               //     });
               //   }}
               // />*/}
-                </>
+        {/* </>
               );
             })}
-        </Stack>
+        </Stack> */}
       </>
     </Root>
   );

@@ -138,28 +138,28 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
           paddingLeft: '0%'
         }}
       />
-      <Box
+      {/* <Box
         width="100%"
         display="flex"
         alignSelf={'anchor-center'}
         flexDirection={'column'}
+      > */}
+      <Stack
+        spacing={2}
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
       >
         <FilterTags filters={filtersToDisplay} removeFilter={removeFilter} />
-        <Stack
-          spacing={2}
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <SortBar
-            sort_field={sort_field}
-            sort_direction={sort_direction}
-            setSort={setSort}
-            isFixed={resultsScrolled}
-            advancedFiltersReq={advanceFiltersReq}
-          />
-        </Stack>
-      </Box>
+        <SortBar
+          sort_field={sort_field}
+          sort_direction={sort_direction}
+          setSort={setSort}
+          isFixed={resultsScrolled}
+          advancedFiltersReq={advanceFiltersReq}
+        />
+      </Stack>
+      {/* </Box> */}
       <Box
         position="relative"
         height="calc(100% - 32px - 32px - 46px - 10px)"
