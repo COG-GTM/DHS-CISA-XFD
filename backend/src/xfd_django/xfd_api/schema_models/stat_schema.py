@@ -1,11 +1,11 @@
 """Stats schema."""
 # Standard Python Libraries
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 # Third-Party Libraries
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # Reusing the previously defined models
