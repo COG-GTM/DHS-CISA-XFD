@@ -1,6 +1,4 @@
 """Domain schema."""
-# Third-Party Libraries
-# from pydantic.types import UUID1, UUID
 # Standard Python Libraries
 from datetime import datetime
 from typing import Any, List, Optional
@@ -64,7 +62,7 @@ class DomainSearch(BaseModel):
 
     page: int = 1
     sort: Optional[str] = "ASC"
-    order: Optional[str] = "id"
+    order: Optional[str] = "domain_id"
     filters: Optional[DomainFilters] = None
     page_size: Optional[int] = 25
 

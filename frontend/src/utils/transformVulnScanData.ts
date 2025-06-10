@@ -18,6 +18,8 @@ export function formatShortDate(
   });
 }
 
+// Utility function to get the latest summary based on summary_date and transform the data.
+// This function is not needed when no dates are provided, but should be kept in case there are multiple entries.
 function getLatestSummary<T extends { summary_date?: string | null }>(
   summaries: T[]
 ): T | undefined {
@@ -191,7 +193,11 @@ export const transformVulnScanData = (
         lowSeverity: latestVulnSummary?.low_kev_count ?? 0,
         mediumSeverity: latestVulnSummary?.medium_kev_count ?? 0,
         highSeverity: latestVulnSummary?.high_kev_count ?? 0,
-        criticalSeverity: latestVulnSummary?.critical_kev_count ?? 0
+        criticalSeverity: latestVulnSummary?.critical_kev_count ?? 0,
+        lowMaxAge: latestVulnSummary?.low_kev_max_age ?? 0,
+        mediumMaxAge: latestVulnSummary?.medium_kev_max_age ?? 0,
+        highMaxAge: latestVulnSummary?.high_kev_max_age ?? 0,
+        criticalMaxAge: latestVulnSummary?.critical_kev_max_age ?? 0
       },
       {
         vulnType: 'Distinct',
@@ -205,7 +211,11 @@ export const transformVulnScanData = (
         lowSeverity: latestVulnSummary?.low_severity_count ?? 0,
         mediumSeverity: latestVulnSummary?.medium_severity_count ?? 0,
         highSeverity: latestVulnSummary?.high_severity_count ?? 0,
-        criticalSeverity: latestVulnSummary?.critical_severity_count ?? 0
+        criticalSeverity: latestVulnSummary?.critical_severity_count ?? 0,
+        lowMaxAge: latestVulnSummary?.low_max_age ?? 0,
+        mediumMaxAge: latestVulnSummary?.medium_max_age ?? 0,
+        highMaxAge: latestVulnSummary?.high_max_age ?? 0,
+        criticalMaxAge: latestVulnSummary?.critical_max_age ?? 0
       }
     ]
   };

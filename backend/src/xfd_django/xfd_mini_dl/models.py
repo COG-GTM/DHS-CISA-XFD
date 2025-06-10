@@ -1184,7 +1184,7 @@ class Service(models.Model):
 
         app_label = app_label_name
         managed = False
-        db_table = "vw_service"
+        db_table = "mat_vw_service"
         unique_together = (("port", "domain"),)
 
 
@@ -1273,6 +1273,20 @@ class User(AutoLengthCheckModel):
         db_column="invite_pending",
         default=False,
         help_text="A boolean field flagging if the user's invite is pending.",
+    )
+    date_approved = models.DateTimeField(
+        db_column="date_approved",
+        blank=True,
+        null=True,
+        help_text="Date the user was approved to have access to the cyhy dashboard.",
+    )
+    approved_by = models.ForeignKey(
+        "User",
+        models.DO_NOTHING,
+        db_column="approved_by_id",
+        blank=True,
+        null=True,
+        help_text="Foreign key to the user who approved the user.",
     )
     login_blocked_by_maintenance = models.BooleanField(
         db_column="login_blocked_by_maintenance",
@@ -1895,6 +1909,16 @@ class VulnScanSummary(models.Model):
         blank=True,
         help_text="Age of the longest open high ticket.",
     )
+    medium_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open medium ticket.",
+    )
+    low_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open low ticket.",
+    )
     # median age of current vulns by severity (requires 'firstDiscovered') <- age=enddate() - firstDiscovered(); where ticket.open=true by severity; sum(age)/count(by severity)
     # none_median_age = models.IntegerField(
     #     null=True,
@@ -1945,6 +1969,26 @@ class VulnScanSummary(models.Model):
         null=True,
         blank=True,
         help_text="Age of the longest open KEV ticket.",
+    )
+    critical_kev_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open critical KEV ticket.",
+    )
+    high_kev_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open high KEV ticket.",
+    )
+    medium_kev_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open medium KEV ticket.",
+    )
+    low_kev_max_age = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Age of the longest open low KEV ticket.",
     )
     one_to_five_vulns_count = models.IntegerField(
         null=True,
@@ -4583,7 +4627,7 @@ class Domain(models.Model):
     class Meta:
         """The meta class for Domain."""
 
-        db_table = "vw_domain"
+        db_table = "mat_vw_domain"
         managed = False
         unique_together = (("name", "organization"),)  # Unique constraint
 
@@ -4592,6 +4636,31 @@ class Domain(models.Model):
         self.name = self.name.lower()
         self.reverse_name = ".".join(reversed(self.name.split(".")))
         super().save(*args, **kwargs)
+
+
+class DomainSearchView(models.Model):
+    """Domain Search Material View Model."""
+
+    domain_id = models.UUIDField(primary_key=True)
+    name = models.TextField()
+    ip = models.TextField()
+    organization_id = models.UUIDField()
+    organization_name = models.TextField()
+    source = models.TextField()
+    country = models.TextField(null=True)
+    cloud_hosted = models.BooleanField(null=True)
+    reverse_name = models.TextField(null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    services = models.JSONField()
+    vulnerabilities = models.JSONField()
+
+    class Meta:
+        """Set DomainSearchView metadata."""
+
+        managed = False
+        db_table = "mat_vw_domain_search"
 
 
 class DotgovDomains(models.Model):
@@ -6190,7 +6259,7 @@ class XpanseServicesMdl(models.Model):
 
     xpanse_service_uid = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid1,
+        default=uuid.uuid4,
         help_text="PK: Unique identifier for a Xpanse Service object.",
     )
     service_id = models.TextField(

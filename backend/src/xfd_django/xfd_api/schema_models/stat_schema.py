@@ -1,11 +1,11 @@
 """Stats schema."""
 # Standard Python Libraries
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 # Third-Party Libraries
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 # Reusing the previously defined models
@@ -116,14 +116,8 @@ class TrendStatsFilterSchema(BaseModel):
     """Filter options for trend statistics queries."""
 
     organization_id: str
-    start_date: Optional[date] = Field(
-        default_factory=lambda: (
-            datetime.today() - timedelta(days=180)
-        ).date()  # Using `datetime.today()`
-    )
-    end_date: Optional[date] = Field(
-        default_factory=lambda: datetime.today().date()  # Using `datetime.today()`
-    )
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
     sources: Optional[List[str]] = ["vs"]
     enhanced_data: Optional[bool] = False
 
@@ -200,11 +194,17 @@ class VulnScanSummaryResponse(BaseModel):
     critical_severity_count: Optional[int] = None
     critical_max_age: Optional[int] = None
     high_max_age: Optional[int] = None
+    medium_max_age: Optional[int] = None
+    low_max_age: Optional[int] = None
     low_kev_count: Optional[int] = None
     medium_kev_count: Optional[int] = None
     high_kev_count: Optional[int] = None
     critical_kev_count: Optional[int] = None
     kev_max_age: Optional[int] = None
+    critical_kev_max_age: Optional[int] = None
+    high_kev_max_age: Optional[int] = None
+    medium_kev_max_age: Optional[int] = None
+    low_kev_max_age: Optional[int] = None
     one_to_five_vulns_count: Optional[int] = None
     six_to_nine_vulns_count: Optional[int] = None
     ten_plus_vulns_count: Optional[int] = None
@@ -331,11 +331,17 @@ class VsTrendCondensedResponse(BaseModel):
     vuln_scan_summary_critical_severity_count: Optional[List[int]] = []
     vuln_scan_summary_critical_max_age: Optional[List[int]] = []
     vuln_scan_summary_high_max_age: Optional[List[int]] = []
+    vuln_scan_summary_medium_max_age: Optional[List[int]] = []
+    vuln_scan_summary_low_max_age: Optional[List[int]] = []
     vuln_scan_summary_low_kev_count: Optional[List[int]] = []
     vuln_scan_summary_medium_kev_count: Optional[List[int]] = []
     vuln_scan_summary_high_kev_count: Optional[List[int]] = []
     vuln_scan_summary_critical_kev_count: Optional[List[int]] = []
     vuln_scan_summary_kev_max_age: Optional[List[int]] = []
+    vuln_scan_summary_critical_kev_max_age: Optional[List[int]] = []
+    vuln_scan_summary_high_kev_max_age: Optional[List[int]] = []
+    vuln_scan_summary_medium_kev_max_age: Optional[List[int]] = []
+    vuln_scan_summary_low_kev_max_age: Optional[List[int]] = []
     vuln_scan_summary_one_to_five_vulns_count: Optional[List[int]] = []
     vuln_scan_summary_six_to_nine_vulns_count: Optional[List[int]] = []
     vuln_scan_summary_ten_plus_vulns_count: Optional[List[int]] = []

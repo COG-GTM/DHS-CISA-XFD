@@ -36,6 +36,8 @@ export interface VulnScanSummary {
 
   critical_max_age?: number | null;
   high_max_age?: number | null;
+  medium_max_age?: number | null;
+  low_max_age?: number | null;
 
   low_kev_count?: number | null;
   medium_kev_count?: number | null;
@@ -43,6 +45,10 @@ export interface VulnScanSummary {
   critical_kev_count?: number | null;
 
   kev_max_age?: number | null;
+  critical_kev_max_age?: number | null;
+  high_kev_max_age?: number | null;
+  medium_kev_max_age?: number | null;
+  low_kev_max_age?: number | null;
 
   one_to_five_vulns_count?: number | null;
   six_to_nine_vulns_count?: number | null;
@@ -137,6 +143,10 @@ export interface SeverityByProminenceGraphData {
   mediumSeverity: number;
   highSeverity: number;
   criticalSeverity: number;
+  lowMaxAge?: number;
+  mediumMaxAge?: number;
+  highMaxAge?: number;
+  criticalMaxAge?: number;
 }
 export type vulnScanDataTransformed = {
   vulnScanSummary: {
