@@ -412,6 +412,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Rerun VS Summary fills.",
     ),
+    "refresh_material_views": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="2048",
+        memory="16384",
+        description="Task to refresh or create all views/materialized views in mini_data_lake.",
+    ),
     "cisakev": ScanSchema(
         type="fargate",
         is_passive=True,
