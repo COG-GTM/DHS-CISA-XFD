@@ -406,6 +406,8 @@ class PortSummaryModel(BaseSummaryModel):
     unique_ip_count: Optional[int]
     unique_service_count: Optional[int]
 
+    risky_service_group_counts: Optional[Dict[str, int]] = None
+
 
 # ---------- Host Summary Model ----------
 
@@ -467,12 +469,24 @@ class VsScanComparisonResult(BaseModel):
     included_tickets_comparison: Optional[IncludedTicketsComparison]
 
 
+class RiskyServiceGroupChange(BaseModel):
+    """Risky Service Group Change Schema."""
+
+    base: int
+    compare: int
+    count_change: int
+    percent_change: float
+    note: Optional[str] = None
+
+
 class PortScanComparisonResult(BaseModel):
     """Port Scan Comparison Schema."""
 
     base_summary: Optional[PortSummaryModel]
     compare_summary: Optional[PortSummaryModel]
     delta: Dict[str, DeltaFieldChange]
+
+    risky_service_group_comparison: Optional[Dict[str, RiskyServiceGroupChange]] = None
 
 
 class HostScanComparisonResult(BaseModel):

@@ -627,6 +627,7 @@ SUMMARY_CONFIG = {
             "unique_ip_count",
             "unique_service_count",
         ],
+        "complex_fields": ["risky_service_group_counts"],
     },
     "vs": {
         "model": VulnScanSummary,
@@ -725,6 +726,42 @@ def compute_deltas(
             delta[field]["note"] = note
 
     return delta
+
+
+def compare_risky_service_groups(base_dict, compare_dict):
+    """Compare risky service group counts between two summaries."""
+    base_dict = base_dict or {}
+    compare_dict = compare_dict or {}
+
+    all_keys = set(base_dict.keys()) | set(compare_dict.keys())
+    result = {}
+
+    for key in all_keys:
+        base_val = base_dict.get(key, 0)
+        compare_val = compare_dict.get(key, 0)
+        count_change = compare_val - base_val
+
+        if base_val == 0 and compare_val > 0:
+            percent_change = 100.0
+            note = "Base value was 0; assumed 100% increase."
+        elif base_val == 0 and compare_val == 0:
+            percent_change = 0.0
+            note = None
+        else:
+            percent_change = (count_change / base_val) * 100
+            note = None
+
+        result[key] = {
+            "base": base_val,
+            "compare": compare_val,
+            "count_change": count_change,
+            "percent_change": round(percent_change, 2),
+        }
+
+        if note:
+            result[key]["note"] = note
+
+    return result
 
 
 def compare_included_tickets(base_tickets, compare_tickets):
@@ -879,6 +916,23 @@ def get_summary_comparison(
         result["included_tickets_comparison"] = compare_included_tickets(
             included_tickets_base, included_tickets_compare
         )
+
+    if summary_type == "port":
+        base_group_counts = (
+            getattr(base_summary, "risky_service_group_counts", None)
+            if base_summary
+            else {}
+        )
+        compare_group_counts = (
+            getattr(compare_summary, "risky_service_group_counts", None)
+            if compare_summary
+            else {}
+        )
+
+        result["risky_service_group_comparison"] = compare_risky_service_groups(
+            base_group_counts, compare_group_counts
+        )
+
     return result
 
 
