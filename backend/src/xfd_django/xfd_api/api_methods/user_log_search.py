@@ -275,7 +275,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                 elif field == "result":
                     log_value = log.get("result", "")
                 # --- Acted-on user field extraction ---
-                elif field == "acted_on_user" or field == "payload.user.full_name":
+                elif field == "acted_on_user_name" or field == "payload.user.full_name":
                     payload = log.get("payload", {})
                     if isinstance(payload, str):
                         try:
@@ -292,6 +292,25 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                     for source in sources:
                         if source and source.get("full_name"):
                             log_value = source.get("full_name", "")
+                            break
+                # --- Acted-on user email field extraction ---
+                elif field == "acted_on_user_email" or field == "payload.user.email":
+                    payload = log.get("payload", {})
+                    if isinstance(payload, str):
+                        try:
+                            payload = json.loads(payload)
+                        except Exception:
+                            payload = {}
+                    log_value = ""
+                    sources = [
+                        payload.get("user", {}),
+                        safe_get(payload, "removal_result", "role_deleted", "user"),
+                        payload.get("user_to_approve", {}),
+                        safe_get(payload, "approval_results", "role_deleted", "user"),
+                    ]
+                    for source in sources:
+                        if source and source.get("email"):
+                            log_value = source.get("email", "")
                             break
                 else:
                     # Robust multi-source field extraction for all other fields
@@ -312,6 +331,17 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                         for source in sources:
                             if source and source.get("full_name"):
                                 log_value = source.get("full_name", "")
+                                break
+                    elif field == "payload.user_performed_assignment.email":
+                        sources = [
+                            payload.get("user_performed_assignment", {}),
+                            payload.get("user_performed_removal", {}),
+                            payload.get("user_performed_approval", {}),
+                            payload.get("user_performed_invite", {}),
+                        ]
+                        for source in sources:
+                            if source and source.get("email"):
+                                log_value = source.get("email", "")
                                 break
                     elif field == "payload.user_performed_assignment.region_id":
                         sources = [

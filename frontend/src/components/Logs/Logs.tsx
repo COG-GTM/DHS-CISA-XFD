@@ -21,6 +21,7 @@ import React, { FC, useCallback, useEffect, useState } from 'react';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 
 import { toZonedTime } from 'date-fns-tz';
+import { act } from 'react-dom/test-utils';
 
 interface LogsProps {}
 
@@ -50,8 +51,10 @@ export const Logs: FC<LogsProps> = () => {
   const fetchLogs = useCallback(async () => {
     const fieldMap: Record<string, string> = {
       event_type: 'event_type',
-      acting_user: 'payload.user_performed_assignment.full_name',
-      acted_on_user: 'payload.user.full_name',
+      acting_user_name: 'payload.user_performed_assignment.full_name',
+      acting_user_email: 'payload.user_performed_assignment.email',
+      acted_on_user_name: 'payload.user.full_name',
+      acted_on_user_email: 'payload.user.email',
       organization: 'payload.organization.name',
       region: 'payload.user_performed_assignment.region_id',
       role: 'payload.role',
@@ -122,8 +125,8 @@ export const Logs: FC<LogsProps> = () => {
       flex: 1.25
     },
     {
-      field: 'acting_user',
-      headerName: 'Acting User',
+      field: 'acting_user_name',
+      headerName: 'Acting User Name',
       minWidth: 100,
       flex: 1.5,
       valueGetter: (params) => {
@@ -136,8 +139,22 @@ export const Logs: FC<LogsProps> = () => {
       }
     },
     {
-      field: 'acted_on_user',
-      headerName: 'Acted-on User',
+      field: 'acting_user_email',
+      headerName: 'Acting User Email',
+      minWidth: 100,
+      flex: 1.5,
+      valueGetter: (params) => {
+        const p =
+          params.row.payload?.user_performed_assignment ||
+          params.row.payload?.user_performed_removal ||
+          params.row.payload?.user_performed_approval ||
+          params.row.payload?.user_performed_invite;
+        return p?.email || 'N/A';
+      }
+    },
+    {
+      field: 'acted_on_user_name',
+      headerName: 'Acted-on User Name',
       minWidth: 100,
       flex: 1.5,
       valueGetter: (params) => {
@@ -147,6 +164,20 @@ export const Logs: FC<LogsProps> = () => {
           params.row.payload?.user_to_approve ||
           params.row.payload?.approval_results?.role_deleted?.user;
         return u?.full_name || 'N/A';
+      }
+    },
+    {
+      field: 'acted_on_user_email',
+      headerName: 'Acted-on User Email',
+      minWidth: 100,
+      flex: 1.5,
+      valueGetter: (params) => {
+        const u =
+          params.row.payload?.user ||
+          params.row.payload?.removal_result?.role_deleted?.user ||
+          params.row.payload?.user_to_approve ||
+          params.row.payload?.approval_results?.role_deleted?.user;
+        return u?.email || 'N/A';
       }
     },
     {
@@ -289,7 +320,9 @@ export const Logs: FC<LogsProps> = () => {
               columnVisibilityModel: {
                 role: false,
                 region: false,
-                state: false
+                state: false,
+                acting_user_email: false,
+                acted_on_user_email: false
               }
             }
           }}

@@ -145,6 +145,8 @@ class LogSearchFilter(BaseModel):
             "result",
             "timestamp",
             "payload.user.full_name",
+            "payload.user.email",
+            "payload.user_performed_assignment.email",
             "payload.user_performed_assignment.full_name",
             "payload.user_to_approved.user_type",
             "payload.user.user_type",
