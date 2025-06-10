@@ -306,8 +306,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
-        cpu="1024",
-        memory="4096",
+        cpu="4096",
+        memory="16384",
         description="Syncs records with Elasticsearch so that they appear in search results.",
     ),
     "shodan": ScanSchema(
