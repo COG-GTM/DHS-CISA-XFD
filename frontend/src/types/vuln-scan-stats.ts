@@ -146,6 +146,10 @@ export interface SeverityByProminenceGraphData {
   mediumSeverity: number;
   highSeverity: number;
   criticalSeverity: number;
+  lowMaxAge?: number;
+  mediumMaxAge?: number;
+  highMaxAge?: number;
+  criticalMaxAge?: number;
 }
 export type vulnScanDataTransformed = {
   vulnScanSummary: {
