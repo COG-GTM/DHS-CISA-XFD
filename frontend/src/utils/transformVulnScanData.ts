@@ -18,6 +18,8 @@ export function formatShortDate(
   });
 }
 
+// Utility function to get the latest summary based on summary_date and transform the data.
+// This function is not needed when no dates are provided, but should be kept in case there are multiple entries.
 function getLatestSummary<T extends { summary_date?: string | null }>(
   summaries: T[]
 ): T | undefined {
