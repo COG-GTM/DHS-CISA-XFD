@@ -4,7 +4,6 @@ import {
   Accordion as MuiAccordion,
   AccordionSummary as MuiAccordionSummary,
   IconButton,
-  Stack,
   Typography,
   Box,
   List,
@@ -15,11 +14,7 @@ import {
   useTheme
 } from '@mui/material';
 import { classes } from '../../pages/Search/Styling/filterDrawerStyle';
-import {
-  DeleteOutline,
-  ExpandMore,
-  FiberManualRecordRounded
-} from '@mui/icons-material';
+import { DeleteOutline, ExpandMore } from '@mui/icons-material';
 import { FacetFilter, TaggedArrayInput } from 'components';
 import { ContextType } from '../../context/SearchProvider';
 import { useAuthContext } from '../../context';
@@ -46,16 +41,6 @@ interface SeverityData {
 interface GroupedData {
   [key: string]: number;
 }
-
-const FiltersApplied: React.FC = () => {
-  const theme = useTheme();
-  return (
-    <Stack direction="row" alignItems="center" spacing={1}>
-      <FiberManualRecordRounded sx={{ color: theme.palette.success.main }} />
-      <Typography color="textSecondary">Filters Applied</Typography>
-    </Stack>
-  );
-};
 
 const Accordion = MuiAccordion;
 const AccordionSummary = MuiAccordionSummary;
@@ -238,14 +223,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     <Box>
       {/* Gives space for accordion divider to render*/}
       <Box></Box>
-      {/* {selectedFiltersAndSearch.length > 0 && (
-        <>
-          <Divider />
-          <Box marginY={1} display="flex" width="100%" justifyContent="center">
-            <Button onClick={clearFiltersAndSearch}>Clear Filters</Button>
-          </Box>
-        </>
-      )} */}
       <Accordion
         elevation={0}
         square
@@ -265,7 +242,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           }}
         >
           <div>IP(s)</div>
-          {filtersByColumn['ip']?.length > 0 && <FiltersApplied />}
         </AccordionSummary>
         <AccordionDetails classes={{ root: classes.details }}>
           <TaggedArrayInput
@@ -295,7 +271,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           }}
         >
           <div>Domain(s)</div>
-          {filtersByColumn['name']?.length > 0 && <FiltersApplied />}
         </AccordionSummary>
         <AccordionDetails classes={{ root: classes.details }}>
           <TaggedArrayInput
@@ -326,9 +301,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <div>Root Domain(s)</div>
-            {filtersByColumn['from_root_domain']?.length > 0 && (
-              <FiltersApplied />
-            )}
           </AccordionSummary>
           <AccordionDetails classes={{ root: classes.details }}>
             <FacetFilter
@@ -362,7 +334,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <div>Port(s)</div>
-            {filtersByColumn['services.port']?.length > 0 && <FiltersApplied />}
           </AccordionSummary>
           <AccordionDetails classes={{ root: classes.details }}>
             <FacetFilter
@@ -396,9 +367,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <div>CVE(s)</div>
-            {filtersByColumn['vulnerabilities.cve']?.length > 0 && (
-              <FiltersApplied />
-            )}
           </AccordionSummary>
           <AccordionDetails classes={{ root: classes.details }}>
             <FacetFilter
@@ -434,9 +402,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <div>Severity</div>
-            {filtersByColumn['vulnerabilities.severity']?.length > 0 && (
-              <FiltersApplied />
-            )}
           </AccordionSummary>
           <AccordionDetails classes={{ root: classes.details }}>
             <FacetFilter

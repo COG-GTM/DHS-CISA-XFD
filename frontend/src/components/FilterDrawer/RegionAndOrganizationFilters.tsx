@@ -5,7 +5,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Autocomplete,
-  Box,
+  // Box,
   Button,
   Checkbox,
   Divider,
@@ -22,9 +22,9 @@ import {
   ORGANIZATION_EXCLUSIONS
   // REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS
 } from 'hooks/useUserTypeFilters';
-import { SearchBar } from './SearchBar';
-import { useLocation } from 'react-router-dom';
-import { matchPath } from 'utils/matchPath';
+// import { SearchBar } from './SearchBar';
+// import { useLocation } from 'react-router-dom';
+// import { matchPath } from 'utils/matchPath';
 import { ExpandMore } from '@mui/icons-material';
 import { useUserLevel } from 'hooks/useUserLevel';
 
@@ -70,9 +70,9 @@ export const RegionAndOrganizationFilters: React.FC<
   addFilter,
   removeFilter,
   filters,
-  searchTerm: domainSearchTerm,
-  setSearchTerm: setDomainSearchTerm,
-  autocompletedResults,
+  // searchTerm: domainSearchTerm,
+  // setSearchTerm: setDomainSearchTerm,
+  // autocompletedResults,
   initialFilters
 }) => {
   const { setShowMaps, user, apiPost } = useAuthContext();
@@ -219,7 +219,6 @@ export const RegionAndOrganizationFilters: React.FC<
     },
     [regionFilterValues]
   );
-  const location = useLocation();
   const handleAddOrganization = (org: OrganizationShallow) => {
     if (org) {
       const exists = organizationsInFilters?.find((o) => o.id === org.id);
@@ -249,22 +248,7 @@ export const RegionAndOrganizationFilters: React.FC<
   return (
     <>
       <Divider />
-      {matchPath(['/inventory'], location.pathname) ? (
-        <Box padding={2}>
-          <SearchBar
-            initialValue={domainSearchTerm}
-            value={domainSearchTerm}
-            onChange={(value) => {
-              setDomainSearchTerm(value, {
-                shouldClearFilters: false
-              });
-            }}
-            autocompletedResults={autocompletedResults}
-          />
-        </Box>
-      ) : (
-        <></>
-      )}
+
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography>Regions</Typography>

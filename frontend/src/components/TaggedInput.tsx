@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import { Button, Chip, Stack } from '@mui/material';
+import { Add } from '@mui/icons-material';
 
 const PREFIX = 'TaggedArrayInput';
 
@@ -53,6 +54,7 @@ interface Props {
 export const TaggedArrayInput: React.FC<Props> = (props) => {
   const { values, onAddTag, onRemoveTag, placeholder = '' } = props;
   const [inpValue, setInpValue] = useState('');
+  const theme = useTheme();
 
   const error = useMemo(
     () => (values.includes(inpValue) ? 'Filters must be unique' : ''),
@@ -78,7 +80,7 @@ export const TaggedArrayInput: React.FC<Props> = (props) => {
 
   return (
     <Root onSubmit={onSubmit} className={classes.form}>
-      <Stack spacing={1}>
+      <Stack spacing={1} direction={'row'} alignItems="center">
         <input
           className={classes.inp}
           value={inpValue}
@@ -88,12 +90,12 @@ export const TaggedArrayInput: React.FC<Props> = (props) => {
         />
         <Button
           type="submit"
-          variant="outlined"
+          variant="primaryContained"
           color="primary"
           disabled={!!error || inpValue === ''}
           onClick={onSubmit}
         >
-          Add
+          <Add sx={{ color: theme.palette.neutrals.white }} />
         </Button>
       </Stack>
       {error && <span className={classes.error}>{error}</span>}
