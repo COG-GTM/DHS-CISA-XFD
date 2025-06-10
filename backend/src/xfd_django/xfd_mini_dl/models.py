@@ -4673,6 +4673,7 @@ class DomainSearchView(models.Model):
 
     class Meta:
         """Set DomainSearchView metadata."""
+
         managed = False
         db_table = "mat_vw_domain_search"
 

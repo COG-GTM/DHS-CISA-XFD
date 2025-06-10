@@ -695,6 +695,7 @@ def create_service_mat_view(database):
 
         print("Materialized view 'mat_vw_service' created.")
 
+
 def create_domain_search_mat_view(database):
     """Create mat_vw_domain_search view."""
     with connections[database].cursor() as cursor:
