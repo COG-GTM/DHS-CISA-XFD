@@ -1,7 +1,7 @@
 import { chromium, FullConfig } from '@playwright/test';
 import * as OTPAuth from 'otpauth';
 import * as dotenv from 'dotenv';
-import { determineUrl } from './utils/env'; // ✅ Now this works
+import { determineUrl } from './utils/env';
 
 dotenv.config({ path: '../.env' });
 
@@ -58,7 +58,10 @@ async function globalSetup(config: FullConfig) {
 
   //Log in with credentials.
   await waitForFrontend(baseUrl);
-  await page.goto(baseUrl);
+  await page.goto(baseUrl, {
+    waitUntil: 'domcontentloaded',
+    timeout: 60000
+  });
   await page.getByTestId('button').click();
   await page
     .getByLabel('Username (Email)')
