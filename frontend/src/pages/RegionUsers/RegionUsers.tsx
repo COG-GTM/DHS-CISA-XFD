@@ -52,8 +52,9 @@ export const RegionUsers: React.FC = () => {
   const { formattedUserType } = useUserLevel();
   const getOrgsURL = `/organizations/region_id/`;
   const getUsersURL = `/v2/users?invite_pending=`;
-  const disableButton = user?.user_type === 'globalView' || user?.user_type === 'analytics';
-  
+  const disableButton =
+    user?.user_type === 'globalView' || user?.user_type === 'analytics';
+
   const pendingCols: GridColDef[] = [
     { field: 'full_name', headerName: 'Name', minWidth: 100, flex: 1 },
     { field: 'email', headerName: 'Email', minWidth: 100, flex: 2 },
