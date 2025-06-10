@@ -290,6 +290,7 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
     );
   };
   const initialFilters = useUserTypeFilters(regions, user, userLevel);
+  console.log('initialFilters', initialFilters);
   const nonInitialFilters = filters.filter((currentFilter) => {
     // Find a matching initial filter by field
     const initial = initialFilters.find(
@@ -305,9 +306,16 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
       ? initial.values
       : [initial.values];
 
-    // Check if every value in currentVals is in initialVals and vice versa
-    if (currentVals.length !== initialVals.length) return true;
-    return !currentVals.every((val: any) => initialVals.includes(val));
+    // If the filter is for organizations, compare by id or name
+    if (currentFilter.field === 'organization_id') {
+      const currentIds = currentVals.map((org: any) => org.id);
+      const initialIds = initialVals.map((org: any) => org.id);
+      if (currentIds.length !== initialIds.length) return true;
+      return !currentIds.every((id: any) => initialIds.includes(id));
+    } else {
+      if (currentVals.length !== initialVals.length) return true;
+      return !currentVals.every((val: any) => initialVals.includes(val));
+    }
   });
 
   console.log('nonInitialFilters', nonInitialFilters);
