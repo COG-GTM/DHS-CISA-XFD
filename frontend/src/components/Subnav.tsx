@@ -57,6 +57,7 @@ export const Subnav = ({ items }: NavTabsProps) => {
           label={item.title}
           value={item.path}
           sx={{
+            minWidth: 'fit-content',
             px: 0,
             py: 1,
             mr: 3,

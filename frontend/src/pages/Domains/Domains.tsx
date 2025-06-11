@@ -204,8 +204,8 @@ export const Domains: React.FC = () => {
       <Subnav
         items={[
           { title: 'Search Results', path: '/inventory', exact: true },
-          { title: 'All Domains', path: '/inventory/domains' },
-          { title: 'All Vulnerabilities', path: '/inventory/vulnerabilities' }
+          { title: 'Domains', path: '/inventory/domains' },
+          { title: 'Vulnerabilities', path: '/inventory/vulnerabilities' }
         ]}
       />
       <Box mb={3} mt={5} display="flex" justifyContent="center">
