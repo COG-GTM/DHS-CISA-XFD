@@ -26,6 +26,7 @@ interface MenuItemType {
   path: string;
   users?: number;
   onClick?: any;
+  href?: string;
 }
 
 export const Header: React.FC = () => {
@@ -96,14 +97,14 @@ export const Header: React.FC = () => {
   ].filter(({ users }) => users <= userLevel);
 
   const supportMenuItems: MenuItemType[] = [
-    // {
-    //   menuItemTitle: 'Report Bug',
-    //   path: '#',
-    //   users: STANDARD_USER
-    // },
+    {
+      menuItemTitle: 'Report Bug',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov?subject=CyHy%20Dashboard%20Bug%20Report&body=CyHy%20Dashboard%20Bug%20Report%0A%0ASummary%3A%0A%5BBrief%20description%20of%20the%20bug%5D%0A%0ASteps%20to%20Reproduce%3A%0A1.%20%0A2.%20%0A3.%20%0A%0AExpected%20Result%3A%0A%5BWhat%20you%20expected%20to%20happen%5D%0A%0AActual%20Result%3A%0A%5BWhat%20actually%20happened%5D%0A%0AEnvironment%3A%0A-%20Browser%3A%0A-%20OS%3A%0A-%20User%20role%3A%0A%0AAdditional%20Information%20%2F%20Screenshots%3A%0A%5BAny%20other%20details%5D',
+      users: STANDARD_USER
+    },
     {
       menuItemTitle: 'Send Feedback',
-      path: 'mailto:vulnerability@mail.cisa.dhs.gov',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov?subject=Feedback%20for%20the%20CyHy%20Dashboard&body=Thank%20you%20for%20taking%20the%20time%20to%20share%20your%20feedback%20with%20us%21%20Your%20insights%20are%20incredibly%20valuable%2C%20and%20they%20help%20us%20make%20the%20CyHy%20Dashboard%20better%20for%20you.%20To%20get%20the%20most%20out%20of%20your%20feedback%2C%20here%20are%20a%20few%20questions%20to%20consider%20as%20you%20reflect%20on%20your%20experience%3A%0A%0A%E2%80%A2%20What%20worked%20well%20for%20you%3F%0A%20%20%20%20Were%20there%20any%20features%20or%20aspects%20of%20the%20dashboard%20that%20really%20stood%20out%20or%20made%20your%20experience%20easier%3F%0A%0A%E2%80%A2%20What%20could%20be%20improved%3F%0A%20%20%20%20Did%20you%20run%20into%20any%20challenges%20or%20notice%20something%20that%20could%20work%20better%3F%0A%0A%E2%80%A2%20Was%20it%20easy%20to%20use%3F%0A%20%20%20%20How%20intuitive%20did%20you%20find%20the%20dashboard%3F%20Was%20it%20simple%20to%20navigate%20and%20accomplish%20your%20goals%3F%0A%0A%E2%80%A2%20Any%20additional%20suggestions%3F%0A%20%20%20%20Is%20there%20anything%20specific%20you%E2%80%99d%20love%20to%20see%20added%20or%20changed%20to%20make%20the%20dashboard%20more%20useful%3F',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
