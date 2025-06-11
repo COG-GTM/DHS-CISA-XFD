@@ -160,14 +160,14 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
 # Awaiting implementation of Matomo CSP, uncomment when ready
-# MATOMO_CSP_POLICY = {
-#     "default-src": ["*", "'unsafe-inline'", "'unsafe-eval'"],
-#     "connect-src": ["*"],
-#     "img-src": ["*"],
-#     "style-src": ["*", "'unsafe-inline'"],
-#     "frame-ancestors": ["*"],
-#     "frame-src": ["*"],
-# }
+MATOMO_CSP_POLICY = {
+    "default-src": ["*", "'unsafe-inline'", "'unsafe-eval'"],
+    "connect-src": ["*"],
+    "img-src": ["*"],
+    "style-src": ["*", "'unsafe-inline'"],
+    "frame-ancestors": ["*"],
+    "frame-src": ["*"],
+}
 
 # SameSite policy to prevent CSRF via cross-origin requests
 SESSION_COOKIE_SAMESITE = "Lax"
