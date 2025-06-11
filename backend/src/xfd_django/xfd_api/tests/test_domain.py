@@ -281,7 +281,10 @@ def test_search_domains_multiple_criteria(user, domain, refresh_vuln_views):
         "/domain/search",
         json={
             "page": 1,
-            "filters": {"ip": search_fields["ip"], "organization_name": search_fields["organization_name"]},
+            "filters": {
+                "ip": search_fields["ip"],
+                "organization_name": search_fields["organization_name"],
+            },
             "page_size": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
