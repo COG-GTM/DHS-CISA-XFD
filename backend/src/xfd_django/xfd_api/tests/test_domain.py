@@ -218,6 +218,7 @@ def test_search_domain_by_ip(user, domain, refresh_vuln_views):
             search_fields["ip"], result["ip"]
         )
 
+
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domain_by_organization(user, domain, refresh_vuln_views):
     """Test domain by org."""
@@ -270,6 +271,7 @@ def test_search_domain_by_organization_name(user, domain, refresh_vuln_views):
         ), "Domain with ID {} did not contain Organization Id {}".format(
             result["id"], search_fields["organization_name"]
         )
+
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_search_domains_multiple_criteria(user, domain, refresh_vuln_views):
