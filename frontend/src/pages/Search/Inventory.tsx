@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { classes, Root } from './Styling/dashboardStyle';
-import { Subnav } from 'components';
 import { ResultCard } from './ResultCard';
 import {
   Button,
@@ -23,15 +22,7 @@ import { exportCSV } from 'components/ImportExport';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
-import InfoLabel from 'components/Dashboard/InfoLabel';
-
-const tooltipContentJson = [
-  {
-    id: 'Findings Library',
-    content:
-      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
-  }
-];
+import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
 
 export const DashboardUI: React.FC<ContextType & { location: any }> = (
   props
@@ -135,33 +126,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     return filters;
   }, [filters, searchTerm, setSearchTerm]);
 
-  const mobileMargin = {
-    px: {
-      xs: 1,
-      sm: 1,
-      md: 1,
-      lg: 1,
-      xl: 0
-    }
-  };
-
   return (
-    <Box maxWidth="1152px" width="100%" margin="auto" sx={mobileMargin}>
-      <Box sx={{ my: '40px' }}>
-        <InfoLabel
-          label="Findings Library"
-          typographyVariant="h1"
-          viewDetails
-          tooltipContentJson={tooltipContentJson}
-        />
-      </Box>
-      <Subnav
-        items={[
-          { title: 'Search Results', path: '/inventory', exact: true },
-          { title: 'Domains', path: '/inventory/domains' },
-          { title: 'Vulnerabilities', path: '/inventory/vulnerabilities' }
-        ]}
-      />
+    <FindingsHeader>
       <Stack
         direction="row"
         alignItems="flex-end"
@@ -299,7 +265,7 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
           </Button>
         </Paper>
       </Root>
-    </Box>
+    </FindingsHeader>
   );
 };
 

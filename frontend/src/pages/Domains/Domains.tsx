@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Query } from 'types';
-import { Subnav } from 'components';
 import { Domain } from 'types';
 import { useAuthContext } from 'context';
 import { useDomainApi } from 'hooks';
@@ -12,15 +11,7 @@ import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import CustomNoRowsOverlay from 'components/DataGrid/CustomNoRowsOverlay';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import InfoLabel from 'components/Dashboard/InfoLabel';
-
-const tooltipContentJson = [
-  {
-    id: 'Findings Library',
-    content:
-      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
-  }
-];
+import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
 
 const PAGE_SIZE = 15;
 
@@ -170,44 +161,16 @@ export const Domains: React.FC = () => {
     }
   ];
 
-  const outerSpacing = {
-    mt: '56px',
-    px: {
-      xs: 1,
-      sm: 1,
-      md: 1,
-      lg: 1,
-      xl: 0
-    }
-  };
-
   const noRowsOverlay = (
-    <Box maxWidth="1152px" width="100%" margin="auto" sx={outerSpacing}>
-      <Paper>
-        <Alert severity="warning">
-          No Results Found. Please adjust your filters.
-        </Alert>
-      </Paper>
-    </Box>
+    <Paper>
+      <Alert severity="warning">
+        No Results Found. Please adjust your filters.
+      </Alert>
+    </Paper>
   );
 
   return (
-    <Box maxWidth="1152px" width="100%" margin="auto" sx={outerSpacing}>
-      <Box sx={{ my: '40px' }}>
-        <InfoLabel
-          label="Findings Library"
-          typographyVariant="h1"
-          viewDetails
-          tooltipContentJson={tooltipContentJson}
-        />
-      </Box>
-      <Subnav
-        items={[
-          { title: 'Search Results', path: '/inventory', exact: true },
-          { title: 'Domains', path: '/inventory/domains' },
-          { title: 'Vulnerabilities', path: '/inventory/vulnerabilities' }
-        ]}
-      />
+    <FindingsHeader>
       <Box mb={3} mt={5} display="flex" justifyContent="center">
         {isLoading ? (
           <Paper elevation={2}>
@@ -275,6 +238,6 @@ export const Domains: React.FC = () => {
           </Paper>
         ) : null}
       </Box>
-    </Box>
+    </FindingsHeader>
   );
 };

@@ -2,15 +2,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
-import { Subnav } from 'components';
 import {
   Alert,
   Box,
   Button,
   IconButton,
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // MenuItem,
-  // Menu,
   Link,
   Paper,
   Stack,
@@ -25,8 +21,6 @@ import {
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import CustomNoRowsOverlay from 'components/DataGrid/CustomNoRowsOverlay';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-// To-do: Re-enable this as part of Status dropdown once the feature is approved.
-// import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getSeverityColor } from 'pages/Risk/utils';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { truncateString } from 'utils/dataTransformUtils';
@@ -41,15 +35,7 @@ import {
 } from 'types/vulnerabilities';
 import { formatSeverity } from 'utils/vulnerabilitiesTableUtils';
 import { normalizeFilters } from 'utils/vulnerabilitiesTableUtils';
-import InfoLabel from 'components/Dashboard/InfoLabel';
-
-const tooltipContentJson = [
-  {
-    id: 'Findings Library',
-    content:
-      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
-  }
-];
+import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
 
 const PAGE_SIZE = 15;
 
@@ -58,6 +44,7 @@ interface VulnerabilitiesProps {
 }
 
 const extractInitialFilters = (state: LocationState): GridFilterItem[] => {
+  console.log('Extracting initial filters from state:', state);
   if (state?.title)
     return [{ field: 'title', value: state.title, operator: 'contains' }];
   if (state?.domain)
@@ -71,8 +58,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   group_by
 }) => {
   const { currentOrganization, apiPost, user } = useAuthContext();
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // const { apiPut } = useAuthContext();
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [loadingError, setLoadingError] = useState(false);
@@ -99,29 +84,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
       operator: filter.operator
     }))
   });
-  // TO-DO
-  // Implement regional rollup for vulnerabilities view to allow for proper vunl drilldown from dashboard
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // const updateVulnerability = useCallback(
-  //   async (index: number, body: { [key: string]: string }) => {
-  //     try {
-  //       const updatedVulns = await apiPut<Vulnerability>(
-  //         '/vulnerabilities/' + vulnerabilities[index].id,
-  //         {
-  //           body: body
-  //         }
-  //       );
-  //       setVulnerabilities((prevState) =>
-  //         prevState.map((orgVulns, targetIndex) =>
-  //           targetIndex === index ? updatedVulns : orgVulns
-  //         )
-  //       );
-  //     } catch (e) {
-  //       console.error(e);
-  //     }
-  //   },
-  //   [setVulnerabilities, apiPut, vulnerabilities]
-  // );
 
   const vulnerabilitiesSearch = useCallback(
     async ({
@@ -198,43 +160,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     [vulnerabilitiesSearch, group_by]
   );
 
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // Row scoped menu state management for vulnerability status updates
-  // interface MenuState {
-  //   [key: string]: {
-  //     anchorEl: HTMLElement | null;
-  //     open: boolean;
-  //   };
-  // }
-
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // const [menuState, setMenuState] = useState<MenuState>({});
-
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // const handleMenuClick = (
-  //   event: React.MouseEvent<HTMLButtonElement>,
-  //   rowId: any
-  // ) => {
-  //   setMenuState((prev) => ({
-  //     ...prev,
-  //     [rowId]: {
-  //       anchorEl: event.currentTarget,
-  //       open: true
-  //     }
-  //   }));
-  // };
-
-  // To-do: Re-enable this as part of Status dropdown once the feature is approved.
-  // const handleClose = (rowId: any) => {
-  //   setMenuState((prev) => ({
-  //     ...prev,
-  //     [rowId]: {
-  //       ...prev[rowId],
-  //       open: false
-  //     }
-  //   }));
-  // };
-
   const resetVulnerabilities = useCallback(() => {
     setInitialFilters([]);
     fetchVulnerabilities({
@@ -304,8 +229,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   );
 
   const vulRows: VulnerabilityRow[] = vulnerabilities.map((vuln) => {
-    //The following logic is to format irregular severity levels to match those used in VulnerabilityBarChart.tsx
-
     const severity = formatSeverity(vuln.severity ?? 'N/A');
 
     return {
@@ -457,64 +380,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
       headerName: 'Status',
       minWidth: 100,
       flex: 1
-      // To-do: Re-enable this Status dropdown once the feature is approved.
-      // Summary: Per CRASM-1090, the status dropdown was removed in favor of static text.
-      // renderCell: (cellValues: GridRenderCellParams) => {
-      //   const handleUpdate = (id: string, substate: string) => {
-      //     const index = vulnerabilities.findIndex((v) => v.id === id);
-      //     updateVulnerability(index, {
-      //       substate: substate
-      //     });
-      //   };
-
-      //   return (
-      //     <div>
-      //       <Button
-      //         id={`basic-button-${cellValues.row.id}`}
-      //         style={{ textDecorationLine: 'underline' }}
-      //         aria-controls={
-      //           menuState[cellValues.row.id]?.open
-      //             ? `basic-menu-${cellValues.row.id}`
-      //             : undefined
-      //         }
-      //         aria-haspopup="true"
-      //         aria-expanded={
-      //           menuState[cellValues.row.id]?.open ? 'true' : undefined
-      //         }
-      //         tabIndex={cellValues.tabIndex}
-      //         endIcon={<ExpandMoreIcon />}
-      //         onClick={(event) => handleMenuClick(event, cellValues.row.id)}
-      //       >
-      //         {cellValues.row.state}
-      //       </Button>
-      //       <Menu
-      //         id={`basic-menu-${cellValues.row.id}`}
-      //         anchorEl={menuState[cellValues.row.id]?.anchorEl}
-      //         open={menuState[cellValues.row.id]?.open}
-      //         onClose={() => handleClose(cellValues.row.id)}
-      //         MenuListProps={{
-      //           'aria-labelledby': `basic-button-${cellValues.row.id}`
-      //         }}
-      //       >
-      //         {Object.keys(stateMap).map((substate) => (
-      //           <MenuItem
-      //             key={`${cellValues.row.id}-${substate}`}
-      //             id={`menu-item-${cellValues.row.id}-${substate}`}
-      //             onClick={() => {
-      //               handleUpdate(cellValues.row.id, substate);
-      //               handleClose(cellValues.row.id);
-      //             }}
-      //           >
-      //             {substate === 'unconfirmed' || substate === 'exploitable'
-      //               ? 'Open'
-      //               : 'Closed'}
-      //             {` (${substate})`}
-      //           </MenuItem>
-      //         ))}
-      //       </Menu>
-      //     </div>
-      //   );
-      // }
     },
     {
       field: 'viewDetails',
@@ -539,34 +404,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     }
   ];
 
-  const outerSpacing = {
-    mt: '56px',
-    px: {
-      xs: 1,
-      sm: 1,
-      md: 1,
-      lg: 1,
-      xl: 0
-    }
-  };
-
   return (
-    <Box maxWidth="1152px" width="100%" margin="auto" sx={outerSpacing}>
-      <Box sx={{ my: '40px' }}>
-        <InfoLabel
-          label="Findings Library"
-          typographyVariant="h1"
-          viewDetails
-          tooltipContentJson={tooltipContentJson}
-        />
-      </Box>
-      <Subnav
-        items={[
-          { title: 'Search Results', path: '/inventory', exact: true },
-          { title: 'Domains', path: '/inventory/domains' },
-          { title: 'Vulnerabilities', path: '/inventory/vulnerabilities' }
-        ]}
-      ></Subnav>
+    <FindingsHeader>
       <Box mb={3} mt={5} display="flex" justifyContent="center">
         {isLoading ? (
           <Paper elevation={2}>
@@ -639,7 +478,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           </Paper>
         ) : null}
       </Box>
-    </Box>
+    </FindingsHeader>
   );
 };
 
