@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Query } from 'types';
 import { Subnav } from 'components';
-import { Domain } from 'types';
+import { DomainSearchApiResponse } from 'types';
 import { useAuthContext } from 'context';
 import { useDomainApi } from 'hooks';
 import { Box, Stack } from '@mui/system';
@@ -20,20 +20,23 @@ export interface DomainRow {
   organization_name: string;
   name: string;
   ip: string;
-  ports: string[];
-  service: string[];
-  vulnerabilities: (string | null)[];
+  ports_preview: string;
+  services_preview: string;
+  services_count: number;
+  vulnerabilities_count: number;
   updated_at: string;
   created_at: string;
 }
 
 export const Domains: React.FC = () => {
   const { showAllOrganizations } = useAuthContext();
-  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domains, setDomains] = useState<DomainSearchApiResponse[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const { listDomains } = useDomainApi(showAllOrganizations);
   const history = useHistory();
-  const [filters, setFilters] = useState<Query<Domain>['filters']>([]);
+  const [filters, setFilters] = useState<
+    Query<DomainSearchApiResponse>['filters']
+  >([]);
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [filterModel, setFilterModel] = useState({
@@ -47,7 +50,7 @@ export const Domains: React.FC = () => {
   // TO-DO
   // Implement regional rollup on domains view to allow for proper domain drilldown from dashboard
   const fetchDomains = useCallback(
-    async (q: Query<Domain>) => {
+    async (q: Query<DomainSearchApiResponse>) => {
       try {
         const { domains, count } = await listDomains(q);
         if (domains.length === 0) {
@@ -82,6 +85,22 @@ export const Domains: React.FC = () => {
     [listDomains]
   );
 
+  function formatPreview(
+    preview: string,
+    totalCount: number,
+    maxFullCount = 3,
+    maxPreviewCount = 2
+  ) {
+    if (totalCount <= maxFullCount) {
+      // Show full preview as-is
+      return preview;
+    } else {
+      // Show first N preview, add (X total)
+      const previewItems = preview.split(',').map((item) => item.trim());
+      const limitedPreview = previewItems.slice(0, maxPreviewCount).join(', ');
+      return `${limitedPreview} (${totalCount} total)`;
+    }
+  }
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: PAGE_SIZE,
@@ -103,11 +122,13 @@ export const Domains: React.FC = () => {
     organization_name: domain.organization.name,
     name: domain.name,
     ip: domain.ip,
-    ports: [domain.services.map((service) => service.port).join(', ')],
-    service: domain.services.map((service) =>
-      service.products.map((p) => p.name).join(', ')
+    ports_preview: formatPreview(domain.ports_preview, domain.services_count),
+    services_preview: formatPreview(
+      domain.services_preview,
+      domain.services_count
     ),
-    vulnerabilities: domain.vulnerabilities.map((vuln) => vuln.title),
+    services_count: domain.services_count,
+    vulnerabilities_count: domain.vulnerabilities_count,
     updated_at: `${differenceInCalendarDays(
       Date.now(),
       parseISO(domain.updated_at)
@@ -127,13 +148,18 @@ export const Domains: React.FC = () => {
     },
     { field: 'name', headerName: 'Domain', minWidth: 100, flex: 2 },
     { field: 'ip', headerName: 'IP', minWidth: 50, flex: 1 },
-    { field: 'ports', headerName: 'Ports', minWidth: 100, flex: 1 },
-    { field: 'service', headerName: 'Services', minWidth: 100, flex: 2 },
+    { field: 'ports_preview', headerName: 'Ports', minWidth: 100, flex: 1 },
     {
-      field: 'vulnerabilities',
-      headerName: 'Vulnerabilities',
+      field: 'services_preview',
+      headerName: 'Services',
       minWidth: 100,
       flex: 2
+    },
+    {
+      field: 'vulnerabilities_count',
+      headerName: 'Vulnerabilities',
+      minWidth: 50,
+      flex: 1
     },
     { field: 'updated_at', headerName: 'Updated At', minWidth: 50, flex: 1 },
     { field: 'created_at', headerName: 'Created At', minWidth: 50, flex: 1 },

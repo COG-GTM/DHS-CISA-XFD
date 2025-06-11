@@ -87,22 +87,6 @@ def apply_domain_filters(domains, filters):
     if filters.organization_name:
         q &= Q(organization_name__icontains=filters.organization_name)
 
-    # Vulnerabilities partial match
-    if filters.vulnerabilities:
-        q &= Q(vulnerabilities__icontains=filters.vulnerabilities)
-
-    # Ports
-    if hasattr(filters, "ports") and filters.ports:
-        try:
-            port_int = int(filters.ports)
-            q &= Q(services__icontains="{}".format(port_int))
-        except ValueError:
-            q &= Q(pk__in=[])
-
-    # Service partial match
-    if filters.service:
-        q &= Q(services__icontains=filters.service)
-
     # Apply the final Q object filter
     filtered = domains.filter(q)
 

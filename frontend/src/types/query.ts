@@ -8,5 +8,6 @@ export interface Query<T extends object> {
   page: number;
   filters: CustomGridFilterItem<T>[];
   pageSize?: number;
+  page_size?: number;
   showAll?: boolean;
 }

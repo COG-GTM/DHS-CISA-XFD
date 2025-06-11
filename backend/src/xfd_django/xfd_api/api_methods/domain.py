@@ -115,6 +115,7 @@ def search_domains(domain_search: DomainSearch, current_user):
             paginator = Paginator(domains, page_size)
             page_obj = paginator.get_page(domain_search.page)
 
+        # Build result
         result = []
         for d in page_obj:
             result.append(
@@ -130,12 +131,15 @@ def search_domains(domain_search: DomainSearch, current_user):
                         "id": d.organization_id,
                         "name": d.organization_name,
                     },
-                    "vulnerabilities": d.vulnerabilities,
-                    "services": d.services,
-                    "webpages": [],
+                    "ports_preview": d.ports_preview,
+                    "services_preview": d.services_preview,
+                    "services_count": d.services_count,
+                    "vulnerabilities_count": d.vulnerabilities_count,
+                    "webpages": 0,
                 }
             )
 
+        # Return
         if page_size == -1:
             return result, len(result)
         else:
@@ -158,7 +162,7 @@ def export_domains(domain_search: DomainSearch, current_user):
 
         # If no domains, generate empty CSV
         if not domains:
-            csv_content = "name,ip,id,ports,products,createdAt,updatedAt,organization\n"
+            csv_content = "name,ip,id,createdAt,updatedAt,organization\n"
         else:
             # Process domains to flatten organization name,
             # ports as string, products as unique string
@@ -167,30 +171,12 @@ def export_domains(domain_search: DomainSearch, current_user):
                 organization_name = (
                     domain.organization.name if domain.organization else ""
                 )
-                ports = ", ".join(
-                    [str(service.port) for service in domain.services.all()]
-                )
-
-                # Collect unique products
-                products_set = set()
-                for service in domain.services.all():
-                    for product in service.products.all():
-                        if product.name:
-                            product_entry = (
-                                "{} {}".format(product.name, product.version)
-                                if product.version
-                                else product.name
-                            )
-                            products_set.add(product_entry)
-                products = ", ".join(sorted(products_set))
 
                 processed_domains.append(
                     {
                         "name": domain.name,
                         "ip": domain.ip,
                         "id": str(domain.id),
-                        "ports": ports,
-                        "products": products,
                         "created_at": domain.created_at.isoformat()
                         if domain.created_at
                         else "",
@@ -206,8 +192,6 @@ def export_domains(domain_search: DomainSearch, current_user):
                 "name",
                 "ip",
                 "id",
-                "ports",
-                "products",
                 "created_at",
                 "updated_at",
                 "organization",
