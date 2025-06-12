@@ -99,7 +99,7 @@ export const Header: React.FC = () => {
   const supportMenuItems: MenuItemType[] = [
     {
       menuItemTitle: 'Report Bug',
-      path: 'mailto:vulnerability@mail.cisa.dhs.gov?subject=CyHy%20Dashboard%20Bug%20Report&body=CyHy%20Dashboard%20Bug%20Report%0A%0ASummary%3A%0A%5BBrief%20description%20of%20the%20bug%5D%0A%0ASteps%20to%20Reproduce%3A%0A1.%20%0A2.%20%0A3.%20%0A%0AExpected%20Result%3A%0A%5BWhat%20you%20expected%20to%20happen%5D%0A%0AActual%20Result%3A%0A%5BWhat%20actually%20happened%5D%0A%0AEnvironment%3A%0A-%20Browser%3A%0A-%20OS%3A%0A-%20User%20role%3A%0A%0AAdditional%20Information%20%2F%20Screenshots%3A%0A%5BAny%20other%20details%5D',
+      path: 'mailto:vulnerability@mail.cisa.dhs.gov?subject=CyHy%20Dashboard%20Bug%20Report&body=1.%20What%20issue%20did%20you%20experience%3F%20Briefly%20describe%20the%20bug.%0A%0A2.%20What%20actions%20did%20you%20take%20before%20the%20bug%20happened%3F%20List%20each%20step%20clearly%20and%20in%20order.%0A%0A3.%20What%20did%20you%20expect%20to%20happen%3F%20Tell%20us%20what%20you%20thought%20should%20happen.%0A%0A4.%20What%20happened%20instead%3F%20Explain%20what%20actually%20happened.%0A%0A5.%20What%20environment%20and%20permissions%20were%20you%20using%3F%20Include%20your%20browser%2C%20operating%20system%2C%20and%20CyHy%20dashboard%20user%20role.%0A%0A6.%20Is%20there%20anything%20else%20we%20should%20know%3F%20Attach%20or%20list%20screenshots%2C%20errors%20messages%2C%20or%20additional%20content.%0A%0ANote%3A%20Please%20try%20refreshing%20the%20browser%2C%20clearing%20cookies%2Fcache%2C%20and%2For%20rebooting%20the%20system%20to%20mitigate%20any%20bugs%20before%20you%20submit.%20Thank%20you%21',
       users: STANDARD_USER
     },
     {
