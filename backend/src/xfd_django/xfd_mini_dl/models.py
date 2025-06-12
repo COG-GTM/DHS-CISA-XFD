@@ -4893,7 +4893,6 @@ class PshttResults(models.Model):
         db_column="data_source_uid",
         help_text="",
     )
-    sub_domain = models.TextField(help_text="")
     date_scanned = models.DateField(blank=True, null=True, help_text="")
     base_domain = models.TextField(blank=True, null=True, help_text="")
     base_domain_hsts_preloaded = models.BooleanField(
@@ -4906,11 +4905,15 @@ class PshttResults(models.Model):
     domain_supports_https = models.BooleanField(blank=True, null=True, help_text="")
     domain_uses_strong_hsts = models.BooleanField(blank=True, null=True, help_text="")
     downgrades_https = models.BooleanField(blank=True, null=True, help_text="")
-    htss = models.BooleanField(blank=True, null=True, help_text="")
+    hsts = models.BooleanField(blank=True, null=True, help_text="")
     hsts_entire_domain = models.BooleanField(blank=True, null=True, help_text="")
     hsts_header = models.TextField(blank=True, null=True, help_text="")
     hsts_max_age = models.DecimalField(
-        max_digits=1000, decimal_places=1000, blank=True, null=True, help_text=""
+        max_digits=10,
+        decimal_places=0,
+        blank=True,
+        null=True,
+        help_text="Max age for HSTS in seconds",
     )
     hsts_preload_pending = models.BooleanField(blank=True, null=True, help_text="")
     hsts_preload_ready = models.BooleanField(blank=True, null=True, help_text="")
@@ -4948,24 +4951,24 @@ class PshttResults(models.Model):
     strictly_forces_https = models.BooleanField(blank=True, null=True, help_text="")
     unknown_error = models.BooleanField(blank=True, null=True, help_text="")
     valid_https = models.BooleanField(blank=True, null=True, help_text="")
-    ep_http_headers = models.TextField(
+    ep_http_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_http_server_header = models.TextField(blank=True, null=True, help_text="")
     ep_http_server_version = models.TextField(blank=True, null=True, help_text="")
-    ep_https_headers = models.TextField(
+    ep_https_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_https_hsts_header = models.TextField(blank=True, null=True, help_text="")
     ep_https_server_header = models.TextField(blank=True, null=True, help_text="")
     ep_https_server_version = models.TextField(blank=True, null=True, help_text="")
-    ep_httpswww_headers = models.TextField(
+    ep_httpswww_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_httpswww_hsts_header = models.TextField(blank=True, null=True, help_text="")
     ep_httpswww_server_header = models.TextField(blank=True, null=True, help_text="")
     ep_httpswww_server_version = models.TextField(blank=True, null=True, help_text="")
-    ep_httpwww_headers = models.TextField(
+    ep_httpwww_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_httpwww_server_header = models.TextField(blank=True, null=True, help_text="")

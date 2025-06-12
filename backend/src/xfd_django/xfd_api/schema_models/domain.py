@@ -72,13 +72,6 @@ class DomainSearch(BaseModel):
         from_attributes = True
 
 
-class DomainSearchResponse(BaseModel):
-    """List of Domain objects."""
-
-    result: List["GetDomainResponse"]
-    count: int
-
-
 class TotalDomainsResponse(BaseModel):
     """Total domain response."""
 
@@ -209,3 +202,10 @@ class GetDomainResponse(BaseModel):
         if hasattr(v, "all"):
             return list(v.all())
         return v
+
+
+class DomainSearchResponse(BaseModel):
+    """List of Domain objects."""
+
+    result: List[GetDomainResponse]
+    count: int
