@@ -1,6 +1,7 @@
 import { GridFilterItem } from '@mui/x-data-grid';
 import { ORGANIZATION_EXCLUSIONS } from 'hooks/useUserTypeFilters';
 import { UserOrganization } from 'types';
+import { LocationState } from 'types/vulnerabilities';
 
 const titleCase = (str: string) =>
   str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -29,10 +30,72 @@ export const formatSeverity = (severity?: any) => {
   }
 };
 
+export const extractInitialFilters = (state: LocationState) => {
+  const hiddenFilters: GridFilterItem[] = [];
+  if (state?.title) {
+    hiddenFilters.push({
+      field: 'title',
+      value: state.title,
+      operator: 'contains'
+    });
+  }
+  if (state?.domain) {
+    hiddenFilters.push({
+      field: 'domain',
+      value: state.domain,
+      operator: 'contains'
+    });
+  }
+  if (state?.severity) {
+    hiddenFilters.push({
+      field: 'severity',
+      value: state.severity,
+      operator: 'contains'
+    });
+  }
+  if (state?.kev) {
+    hiddenFilters.push({
+      field: 'is_kev',
+      value: state.kev,
+      operator: 'equals'
+    });
+  }
+  if (state?.orgId) {
+    hiddenFilters.push({
+      field: 'organization',
+      value: state.orgId,
+      operator: 'equals'
+    });
+  }
+  if (state?.startDate) {
+    hiddenFilters.push({
+      field: 'earliest_date',
+      value: state.startDate,
+      operator: 'equals'
+    });
+  }
+  if (state?.endDate) {
+    hiddenFilters.push({
+      field: 'latest_date',
+      value: state.endDate,
+      operator: 'equals'
+    });
+  }
+  if (state?.dateRange) {
+    hiddenFilters.push({
+      field: 'date_range',
+      value: state.dateRange,
+      operator: 'equals'
+    });
+  }
+  return hiddenFilters;
+};
+
 export const normalizeFilters = (
   filters: GridFilterItem[],
   currentOrganization?: UserOrganization | null | undefined,
-  userType?: string
+  userType?: string,
+  orgId?: string
 ) => {
   const result = filters
     .filter((f) => Boolean(f.value))
@@ -40,7 +103,6 @@ export const normalizeFilters = (
       acc[cur.field] = cur.value as string;
       return acc;
     }, {});
-
   if (
     result['state'] &&
     !['open', 'closed'].includes(result['state'] as string)
@@ -57,7 +119,7 @@ export const normalizeFilters = (
   }
 
   if (result['is_kev']) {
-    result['is_kev'] = result['is_kev'] === 'true';
+    result['is_kev'] = 'true';
   }
 
   const isExcludedOrg = ORGANIZATION_EXCLUSIONS.some((exc) =>
@@ -66,6 +128,10 @@ export const normalizeFilters = (
 
   if (currentOrganization && !isExcludedOrg && userType === 'standard') {
     result['organization'] = currentOrganization.id;
+  }
+
+  if (result['severity']) {
+    result['severity'] = formatSeverity(result['severity']);
   }
 
   return result;

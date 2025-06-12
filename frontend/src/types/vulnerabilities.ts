@@ -34,9 +34,15 @@ type Nullable<T> = {
 export type VulnerabilityRow = Nullable<LooseVulnerabilityRow>;
 
 export interface LocationState {
-  domain: any;
-  severity: string;
-  title: string;
+  domain?: any;
+  severity?: string;
+  title?: string;
+  kev?: boolean;
+  orgName?: string;
+  orgId?: string;
+  startDate?: string;
+  endDate?: string;
+  dateRange?: string;
 }
 
 export type SearchParams = {
@@ -46,4 +52,6 @@ export type SearchParams = {
   doExport?: boolean;
   group_by?: string;
   showAll?: boolean;
+  is_kev?: boolean;
+  organization?: string;
 };
