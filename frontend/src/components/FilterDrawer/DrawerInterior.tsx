@@ -467,7 +467,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography>Saved Searches</Typography>
+          <Typography>Saved Filters</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <SaveSearchModal
@@ -512,7 +512,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           ) : (
             <List>
               <ListItem sx={{ alignItems: 'center', justifyContent: 'center' }}>
-                No Saved Searches
+                No Saved Filters
               </ListItem>
             </List>
           )}

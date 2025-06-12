@@ -625,7 +625,7 @@ const OrgCheckboxLabel: React.FC<OrganizationCheckboxLabelProps> = ({
 }) => {
   return (
     <>
-      <Typography>{org.name}</Typography>
+      <Typography variant="body1">{org.name}</Typography>
       <Typography variant="uiElementsIII">{`Region ${org.region_id}`}</Typography>
     </>
   );
