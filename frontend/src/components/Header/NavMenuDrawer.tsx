@@ -12,7 +12,8 @@ import {
 
 interface MenuItemType {
   menuItemTitle: string;
-  path: string;
+  path?: string;
+  objectStoreParams?: { bucket_name: string; object_key: string };
   users?: number;
   onClick?: () => void;
 }
@@ -21,11 +22,13 @@ interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
   openDrawer: boolean;
   menuItems: { [section: string]: MenuItemType[] }[];
+  onMenuItemClick?: (item: MenuItemType) => void;
 }
 export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   toggleDrawer,
   openDrawer,
-  menuItems
+  menuItems,
+  onMenuItemClick
 }) => {
   const DrawerList = (
     <Box
@@ -74,8 +77,27 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                     role="none"
                   >
                     <ListItemButton
-                      component={NavLink}
-                      to={item.path}
+                      onClick={() => {
+                        if (item.objectStoreParams && onMenuItemClick) {
+                          onMenuItemClick(item);
+                        }
+                      }}
+                      component={
+                        item.objectStoreParams
+                          ? 'button'
+                          : item.path?.startsWith('http')
+                            ? 'a'
+                            : NavLink
+                      }
+                      {...(item.objectStoreParams
+                        ? {}
+                        : item.path?.startsWith('http')
+                          ? {
+                              href: item.path,
+                              target: '_blank',
+                              rel: 'noopener noreferrer'
+                            }
+                          : { to: item.path ?? '#' })}
                       role="menuitem"
                       aria-label={item.menuItemTitle}
                     >
