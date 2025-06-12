@@ -18,7 +18,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
 
-export const drawerWidth = 300;
+export const drawerWidth = 278;
 
 export const FilterDrawer: FC<
   ContextType & {
@@ -75,7 +75,7 @@ export const FilterDrawer: FC<
           height={63}
           px={2}
         >
-          <Typography variant="h6" component="h3">
+          <Typography variant="h3" component="h3">
             Filter
           </Typography>
 

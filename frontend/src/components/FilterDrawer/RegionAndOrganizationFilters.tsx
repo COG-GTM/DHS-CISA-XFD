@@ -281,7 +281,7 @@ export const RegionAndOrganizationFilters: React.FC<
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography>Regions</Typography>
+            <Typography variant="largeBody">Regions</Typography>
             {nonInitialRegionFilter?.values.length > 0 && <FiltersApplied />}
           </Stack>
         </AccordionSummary>
@@ -448,7 +448,7 @@ export const RegionAndOrganizationFilters: React.FC<
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography>Organizations</Typography>
+            <Typography variant="largeBody">Organizations</Typography>
             {nonInitialOrgFilter?.values.length > 0 && <FiltersApplied />}
           </Stack>
         </AccordionSummary>

@@ -256,7 +256,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography>IP</Typography>
+            <Typography variant="largeBody">IP</Typography>
             {filtersByColumn['ip']?.length > 0 && <FiltersApplied />}
           </Stack>
         </AccordionSummary>
@@ -288,7 +288,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography>Domain</Typography>
+            <Typography variant="largeBody">Domain</Typography>
             {filtersByColumn['name']?.length > 0 && <FiltersApplied />}
           </Stack>
         </AccordionSummary>
@@ -321,7 +321,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography>Root Domains</Typography>
+              <Typography variant="largeBody">Root Domains</Typography>
               {filtersByColumn['from_root_domain']?.length > 0 && (
                 <FiltersApplied />
               )}
@@ -359,7 +359,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography>Ports</Typography>
+              <Typography variant="largeBody">Ports</Typography>
               {filtersByColumn['services.port']?.length > 0 && (
                 <FiltersApplied />
               )}
@@ -397,7 +397,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography>CVEs</Typography>
+              <Typography variant="largeBody">CVEs</Typography>
               {filtersByColumn['vulnerabilities.cve']?.length > 0 && (
                 <FiltersApplied />
               )}
@@ -437,7 +437,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography>Severity</Typography>
+              <Typography variant="largeBody">Severity</Typography>
               {filtersByColumn['vulnerabilities.severity']?.length > 0 && (
                 <FiltersApplied />
               )}
@@ -459,7 +459,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography>Saved Filters</Typography>
+          <Typography variant="largeBody">Saved Filters</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <SaveSearchModal
