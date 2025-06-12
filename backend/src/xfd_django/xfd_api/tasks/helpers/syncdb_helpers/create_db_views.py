@@ -7,6 +7,7 @@ from django.db import connections
 VW_SERVICE_VERSION = "20250609"
 MAT_VW_COMBINED_VULNS_VERSION = "20250609"
 DOMAIN_MAT_VIEW_VERSION = "20250609"
+DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250610"
 
 
 def create_vuln_normal_views(database):
@@ -524,6 +525,9 @@ def create_domain_materialized_view(database):
         cursor.execute(
             "CREATE INDEX idx_vw_domain_updated_at ON mat_vw_domain (updated_at);"
         )
+        cursor.execute(
+            "CREATE INDEX CONCURRENTLY idx_vw_domain_org_id_id ON mat_vw_domain (organization_id, id);"
+        )
 
         print("Domain Indexes created.")
 
@@ -533,7 +537,6 @@ def create_service_mat_view(database):
     with connections[database].cursor() as cursor:
         print("Creating 'service' view from ShodanAssets...")
         cursor.execute("DROP MATERIALIZED VIEW IF EXISTS mat_vw_service CASCADE;")
-        cursor.execute("DROP VIEW IF EXISTS vw_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_shodan_service CASCADE;")
         cursor.execute("DROP VIEW IF EXISTS vw_portscan_service CASCADE;")
 
@@ -691,3 +694,114 @@ def create_service_mat_view(database):
         )
 
         print("Materialized view 'mat_vw_service' created.")
+
+
+def create_domain_search_mat_view(database):
+    """Create mat_vw_domain_search view."""
+    with connections[database].cursor() as cursor:
+        print("Creating domain details materialized view...")
+        cursor.execute("DROP MATERIALIZED VIEW IF EXISTS mat_vw_domain_search;")
+
+        # Create materialized view
+        cursor.execute(
+            """
+            CREATE MATERIALIZED VIEW mat_vw_domain_search AS
+
+            SELECT
+                d.id AS domain_id,
+                d.name,
+                d.ip,
+                d.organization_id,
+                o.name AS organization_name,
+                d.source,
+                d.country,
+                d.cloud_hosted,
+                d.reverse_name,
+                d.created_at,
+                d.updated_at,
+
+                COALESCE(
+                    jsonb_agg(DISTINCT jsonb_build_object(
+                        'id', s.id,
+                        'port', s.port,
+                        'products', s.products,
+                        'last_seen', s.last_seen,
+                        'banner', s.banner
+                    )) FILTER (WHERE s.id IS NOT NULL),
+                    '[]'::jsonb
+                ) AS services,
+
+                COALESCE(
+                    jsonb_agg(DISTINCT jsonb_build_object(
+                        'id', v.vuln_id,
+                        'scan_source', v.scan_source,
+                        'title', v.title,
+                        'severity', v.severity,
+                        'state', v.state,
+                        'created_at', v.created_at,
+                        'cve', v.cve
+                    )) FILTER (WHERE v.vuln_id IS NOT NULL),
+                    '[]'::jsonb
+                ) AS vulnerabilities
+            FROM
+                mat_vw_domain d
+
+            LEFT JOIN organization o
+                ON o.id = d.organization_id
+
+            LEFT JOIN mat_vw_service s
+                ON s.domain_id = d.id
+
+            LEFT JOIN mat_vw_combined_vulns v
+                ON v.domain_id = d.id
+
+            GROUP BY
+                d.id,
+                d.name,
+                d.ip,
+                d.organization_id,
+                o.name,
+                d.source,
+                d.country,
+                d.cloud_hosted,
+                d.reverse_name,
+                d.created_at,
+                d.updated_at;
+            """
+        )
+
+        # Add unique index for CONCURRENTLY refresh
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_mat_vw_domain_search_id
+            ON mat_vw_domain_search(domain_id);
+            """
+        )
+
+        # Add useful indexes for filtering and ordering
+        print("Creating indexes on mat_vw_domain_search...")
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_mat_vw_domain_search_org_id_id
+            ON mat_vw_domain_search (organization_id, domain_id);
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_mat_vw_domain_search_name
+            ON mat_vw_domain_search (name);
+            """
+        )
+
+        # Add version comment for tracking
+        cursor.execute(
+            """
+            COMMENT ON MATERIALIZED VIEW mat_vw_domain_search
+            IS 'version:{}';
+            """.format(
+                DOMAIN_SEARCH_MAT_VIEW_VERSION
+            )
+        )
+
+        print("Domain details materialized view created.")
