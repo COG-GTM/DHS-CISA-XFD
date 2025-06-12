@@ -15,11 +15,12 @@ exports[`Layout component matches snapshot 1`] = `
     <div>
       HEADER
     </div>
-    <div
-      class="MuiStack-root css-11qrn76-MuiStack-root"
+    <header
+      class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionSticky css-14rdmww-MuiPaper-root-MuiAppBar-root"
+      style="--Paper-shadow: none;"
     >
       <div
-        class="MuiStack-root css-1a41st4-MuiStack-root"
+        class="MuiToolbar-root MuiToolbar-regular css-78voab-MuiToolbar-root"
       >
         <button
           class="MuiButtonBase-root MuiButton-root MuiButton-primaryContained MuiButton-primaryContainedPrimary MuiButton-sizeMedium MuiButton-primaryContainedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-primaryContained MuiButton-primaryContainedPrimary MuiButton-sizeMedium MuiButton-primaryContainedSizeMedium MuiButton-colorPrimary css-1vd37re-MuiButtonBase-root-MuiButton-root"
@@ -44,7 +45,7 @@ exports[`Layout component matches snapshot 1`] = `
           Filter
         </button>
       </div>
-    </div>
+    </header>
     <div
       class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-xos5wa-MuiDrawer-docked"
     >
@@ -66,7 +67,7 @@ exports[`Layout component matches snapshot 1`] = `
               class="MuiToolbar-root MuiToolbar-gutters MuiToolbar-regular css-t4299j-MuiToolbar-root"
             />
             <div
-              class="MuiStack-root css-1ltujv-MuiStack-root"
+              class="MuiStack-root css-6ehs1v-MuiStack-root"
             >
               <h3
                 class="MuiTypography-root MuiTypography-h6 css-w2lrrs-MuiTypography-root"
@@ -92,6 +93,9 @@ exports[`Layout component matches snapshot 1`] = `
                 </svg>
               </button>
             </div>
+            <hr
+              class="MuiDivider-root MuiDivider-fullWidth css-1jpc804-MuiDivider-root"
+            />
             <div
               class="MuiBox-root css-19midj6"
             >
