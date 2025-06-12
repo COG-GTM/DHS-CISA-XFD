@@ -543,7 +543,7 @@ export const RegionAndOrganizationFilters: React.FC<
                     <FormGroup>
                       <FormControlLabel
                         sx={{ padding: '0px' }}
-                        label={org?.name}
+                        label={<OrgCheckboxLabel org={org} />}
                         control={
                           <Checkbox
                             sx={{
@@ -614,5 +614,19 @@ const RegionItem: React.FC<RegionItemProps> = ({
         />
       </FormGroup>
     </ListItem>
+  );
+};
+
+interface OrganizationCheckboxLabelProps {
+  org: OrganizationShallow;
+}
+const OrgCheckboxLabel: React.FC<OrganizationCheckboxLabelProps> = ({
+  org
+}) => {
+  return (
+    <>
+      <Typography>{org.name}</Typography>
+      <Typography variant="uiElementsIII">{`Region ${org.region_id}`}</Typography>
+    </>
   );
 };
