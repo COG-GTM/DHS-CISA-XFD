@@ -8,7 +8,7 @@ import io
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 from fastapi import HTTPException
-from xfd_mini_dl.models import Domain, DomainSearchView, Service
+from xfd_mini_dl.models import Domain, DomainSearchView, Organization, Service
 
 from ..auth import get_org_memberships, is_global_view_admin
 from ..helpers.filter_helpers import apply_domain_filters, sort_direction
@@ -107,9 +107,13 @@ def search_domains(domain_search: DomainSearch, current_user):
 
         # Regional Admins can only view vulnerabilities in their region
         if current_user.user_type == "regionalAdmin" and current_user.region_id:
-            domains = domains.filter(
-                domain__organization__region_id=current_user.region_id
+            # Get all organization IDs in this region
+            region_org_ids = list(
+                Organization.objects.filter(region_id=current_user.region_id)
+                .values_list("id", flat=True)
             )
+
+            domains = domains.filter(organization_id__in=region_org_ids)
 
         # Apply filters if provided
         if domain_search.filters:
