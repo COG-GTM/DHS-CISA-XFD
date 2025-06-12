@@ -15,8 +15,9 @@ exports[`Layout component matches snapshot 1`] = `
     <div>
       HEADER
     </div>
-    <div
-      class="MuiStack-root css-1njubla-MuiStack-root"
+    <header
+      class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionSticky css-1duqi3m-MuiPaper-root-MuiAppBar-root"
+      style="--Paper-shadow: none;"
     >
       <div
         class="MuiToolbar-root MuiToolbar-regular css-78voab-MuiToolbar-root"
@@ -46,7 +47,7 @@ exports[`Layout component matches snapshot 1`] = `
       </div>
     </header>
     <div
-      class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-xos5wa-MuiDrawer-docked"
+      class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-17tm3pi-MuiDrawer-docked"
     >
       <div
         class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiDrawer-paper MuiDrawer-paperAnchorLeft MuiDrawer-paperAnchorDockedLeft css-1lwhjos-MuiPaper-root-MuiDrawer-paper"
@@ -56,7 +57,7 @@ exports[`Layout component matches snapshot 1`] = `
           class="MuiStack-root css-ioj9fa-MuiStack-root"
         >
           <div
-            class="MuiBox-root css-1v5z18m"
+            class="MuiBox-root css-1wi9kp8"
             role="presentation"
           >
             <div
@@ -69,7 +70,7 @@ exports[`Layout component matches snapshot 1`] = `
               class="MuiStack-root css-6ehs1v-MuiStack-root"
             >
               <h3
-                class="MuiTypography-root MuiTypography-h6 css-w2lrrs-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-h3 css-wariq0-MuiTypography-root"
               >
                 Filter
               </h3>
