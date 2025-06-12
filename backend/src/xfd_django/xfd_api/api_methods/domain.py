@@ -96,11 +96,20 @@ def search_domains(domain_search: DomainSearch, current_user):
         )
 
         # Apply global user permission filters
-        if not is_global_view_admin(current_user):
+        if (
+            not is_global_view_admin(current_user)
+            and not current_user.user_type == "regionalAdmin"
+        ):
             orgs = get_org_memberships(current_user)
             if not orgs:
                 return [], 0
             domains = domains.filter(organization_id__in=orgs)
+
+        # Regional Admins can only view vulnerabilities in their region
+        if current_user.user_type == "regionalAdmin" and current_user.region_id:
+            domains = domains.filter(
+                domain__organization__region_id=current_user.region_id
+            )
 
         # Apply filters if provided
         if domain_search.filters:

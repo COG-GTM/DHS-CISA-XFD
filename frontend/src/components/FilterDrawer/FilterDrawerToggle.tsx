@@ -21,8 +21,8 @@ const FilterDrawerToggle: React.FC = () => {
         margin: 'auto',
         paddingTop: 2,
         px: {
-          xs: 0,
-          sm: 0,
+          xs: 1,
+          sm: 1,
           md: 1,
           lg: 1,
           xl: 0
