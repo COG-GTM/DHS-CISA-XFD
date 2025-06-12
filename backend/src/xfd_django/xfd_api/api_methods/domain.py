@@ -109,8 +109,9 @@ def search_domains(domain_search: DomainSearch, current_user):
         if current_user.user_type == "regionalAdmin" and current_user.region_id:
             # Get all organization IDs in this region
             region_org_ids = list(
-                Organization.objects.filter(region_id=current_user.region_id)
-                .values_list("id", flat=True)
+                Organization.objects.filter(
+                    region_id=current_user.region_id
+                ).values_list("id", flat=True)
             )
 
             domains = domains.filter(organization_id__in=region_org_ids)
