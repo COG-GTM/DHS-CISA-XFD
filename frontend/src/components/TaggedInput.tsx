@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
-import { Box, Button, Chip, Stack } from '@mui/material';
+import { Box, Button, Chip } from '@mui/material';
 import { Check } from '@mui/icons-material';
 
 const PREFIX = 'TaggedArrayInput';
@@ -20,14 +20,6 @@ const Root = styled('form')(({ theme }) => ({
     width: '100%',
     background: 'none'
   },
-
-  // [`& .${classes.inp}`]: {
-  //   border: 'none',
-  //   backgroundColor: '#fff',
-  //   width: '100%',
-  //   padding: '1rem',
-  //   boxShadow: 'inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF'
-  // },
 
   [`& .${classes.inner}`]: {
     flex: '1',
@@ -54,13 +46,8 @@ const Root = styled('form')(({ theme }) => ({
   },
 
   [`& .${classes.icon}`]: {
-    // position: 'absolute',
-    // right: '0.8rem',
-    // top: '50%',
-    // transform: 'translateY(-50%)',
     fontSize: '1.5rem',
     color: theme.palette.neutrals.white
-    // backgroundColor: 'yellow'
   },
 
   [`& .${classes.chip}`]: {
@@ -117,7 +104,6 @@ export const TaggedArrayInput: React.FC<Props> = (props) => {
   return (
     <Root onSubmit={onSubmit} className={classes.form}>
       <Box className={classes.inner}>
-        {/* <Stack spacing={1} direction={'row'} alignItems="center"> */}
         <input
           className={classes.inp}
           value={inpValue}
