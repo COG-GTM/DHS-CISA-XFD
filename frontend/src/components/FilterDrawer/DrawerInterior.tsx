@@ -237,14 +237,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     <Box>
       {/* Gives space for accordion divider to render*/}
       <Box></Box>
-      {/* {selectedFiltersAndSearch.length > 0 && (
-        <>
-          <Divider />
-          <Box marginY={1} display="flex" width="100%" justifyContent="center">
-            <Button onClick={clearFiltersAndSearch}>Clear Filters</Button>
-          </Box>
-        </>
-      )} */}
       <Accordion
         elevation={0}
         square
