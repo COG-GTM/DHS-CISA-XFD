@@ -1,17 +1,11 @@
 import React, { useMemo } from 'react';
 import { classes, Root } from './Styling/filterTagsStyle';
 import { ContextType } from '../../context/SearchProvider';
-import { Chip, Stack, Typography, useTheme } from '@mui/material';
+import { Chip } from '@mui/material';
 import { REGIONAL_ADMIN, useUserLevel } from 'hooks/useUserLevel';
 import { STANDARD_USER } from 'context/userStateUtils';
-import {
-  REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS,
-  useUserTypeFilters
-} from 'hooks/useUserTypeFilters';
+import { REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS } from 'hooks/useUserTypeFilters';
 import { useLocation } from 'react-router-dom';
-import { FiberManualRecordRounded } from '@mui/icons-material';
-import { useAuthContext } from 'context';
-import { useStaticsContext } from 'context/StaticsContext';
 
 interface Props {
   filters: ContextType['filters'];
@@ -203,11 +197,7 @@ const sortFiltersByOrder = (filters: FlatFilters) => {
 
 export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
   const { pathname } = useLocation();
-  const { regions } = useStaticsContext();
-  const { user } = useAuthContext();
-
   const { userLevel } = useUserLevel();
-  const initialFiltersForUser = useUserTypeFilters(regions, user, userLevel);
 
   const disabledFilters = useMemo(() => {
     if (userLevel === STANDARD_USER) {
@@ -245,85 +235,10 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
     return sortFiltersByOrder(processedFilters);
   }, [filters]);
 
-  // New code for handling more complex filters
-  // 1. Find all region and org filters
-  const regionFilter = filters.find(
-    (f) => f.field === 'organization.region_id'
-  );
-  const orgFilter = filters.find((f) => f.field === 'organization_id');
-
-  const portFilter = filters.find((f) => f.field === 'services.port');
-  const cveFilter = filters.find((f) => f.field === 'vulnerabilities.cve');
-  const severityFilter = filters.find(
-    (f) => f.field === 'vulnerabilities.severity'
-  );
-  console.log('regionFilter', regionFilter);
-  console.log('orgFilter', orgFilter);
-  console.log('portFilter', portFilter);
-  console.log('cveFilter', cveFilter);
-  console.log('severityFilter', severityFilter);
-
-  // 2. Group orgs by region
-  let regionOrgMap: Record<string, string[]> = {};
-  if (regionFilter && orgFilter && Array.isArray(orgFilter.values)) {
-    // orgFilter.values should be array of org objects with .region_id and .name
-    regionOrgMap = orgFilter.values.reduce(
-      (
-        acc: { [x: string]: any[] },
-        org: { region_id: string | number; name: any }
-      ) => {
-        if (!acc[org.region_id]) acc[org.region_id] = [];
-        acc[org.region_id].push(org.name);
-        return acc;
-      },
-      {} as Record<string, string[]>
-    );
-  }
-
-  const FiltersApplied: React.FC = () => {
-    const theme = useTheme();
-    return (
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <FiberManualRecordRounded sx={{ color: theme.palette.success.main }} />
-        <Typography color="textSecondary">Filters Applied</Typography>
-      </Stack>
-    );
-  };
-  const initialFilters = useUserTypeFilters(regions, user, userLevel);
-  console.log('initialFilters', initialFilters);
-  const nonInitialFilters = filters.filter((currentFilter) => {
-    // Find a matching initial filter by field
-    const initial = initialFilters.find(
-      (initFilter) => initFilter.field === currentFilter.field
-    );
-    if (!initial) return true; // No initial filter for this field
-
-    // Compare values (assuming arrays of primitives or use a deep equality check for objects)
-    const currentVals = Array.isArray(currentFilter.values)
-      ? currentFilter.values
-      : [currentFilter.values];
-    const initialVals = Array.isArray(initial.values)
-      ? initial.values
-      : [initial.values];
-
-    // If the filter is for organizations, compare by id or name
-    if (currentFilter.field === 'organization_id') {
-      const currentIds = currentVals.map((org: any) => org.id);
-      const initialIds = initialVals.map((org: any) => org.id);
-      if (currentIds.length !== initialIds.length) return true;
-      return !currentIds.every((id: any) => initialIds.includes(id));
-    } else {
-      if (currentVals.length !== initialVals.length) return true;
-      return !currentVals.every((val: any) => initialVals.includes(val));
-    }
-  });
-
-  console.log('nonInitialFilters', nonInitialFilters);
   return (
     <Root aria-live="polite" aria-atomic="true">
       <>
-        {nonInitialFilters.length > 0 && <FiltersApplied />}
-        {/* {filtersByColumn.length === 0 && pathname === '/inventory' ? (
+        {filtersByColumn.length === 0 && pathname === '/inventory' ? (
           <Chip
             color="primary"
             classes={{ root: classes.chip }}
@@ -350,70 +265,7 @@ export const FilterTags: React.FC<Props> = ({ filters, removeFilter }) => {
               }
             />
           ))
-        )} */}
-        {/* Uncomment this section if you want to display grouped region/org chips*/}
-        {/* {regionFilter &&
-          Object.entries(regionOrgMap).map(([regionId, orgNames]) => (
-            <Chip
-              key={regionId}
-              color="primary"
-              classes={{ root: classes.chip }}
-              label={`Region ${regionId}: ${orgNames.join(', ')}`}
-              onDelete={() => {
-                // Remove both the region and all orgs in that region
-                removeFilter(
-                  'organization.region_id',
-                  regionId,
-                  regionFilter.type
-                );
-                orgNames.forEach((orgName) => {
-                  const org = orgFilter.values.find(
-                    (o: any) => o.name === orgName
-                  );
-                  if (org) removeFilter('organization_id', org, orgFilter.type);
-                });
-              }}
-            />
-          ))}*/}
-        {/* <Stack direction={'row'} alignItems="center" spacing={1}>
-          <Typography color="textSecondary">Filters Applied:</Typography> */}
-        {/* <Typography>Filters Applied:</Typography> */}
-        {/*{regionFilter &&
-            Object.entries(regionOrgMap).map(([regionId, orgNames]) => {
-              return (
-                <>
-                  <Typography
-                    key={regionId}
-                    variant="body2"
-                    color="textSecondary"
-                    // className={classes.regionOrgLabel}
-                  >{`Region ${regionId}- ${orgNames.join(', ')}`}</Typography> */}
-
-        {/* <Chip
-              //   key={regionId}
-              //   color="primary"
-              //   classes={{ root: classes.chip }}
-              //   label={`Region ${regionId}: ${orgNames.join(', ')}`}
-              //   onDelete={() => {
-              //     // Remove both the region and all orgs in that region
-              //     removeFilter(
-              //       'organization.region_id',
-              //       regionId,
-              //       regionFilter.type
-              //     );
-              //     orgNames.forEach((orgName) => {
-              //       const org = orgFilter.values.find(
-              //         (o: any) => o.name === orgName
-              //       );
-              //       if (org)
-              //         removeFilter('organization_id', org, orgFilter.type);
-              //     });
-              //   }}
-              // />*/}
-        {/* </>
-              );
-            })}
-        </Stack> */}
+        )}
       </>
     </Root>
   );
