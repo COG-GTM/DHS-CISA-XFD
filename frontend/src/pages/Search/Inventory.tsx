@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { classes, Root } from './Styling/dashboardStyle';
-import { Subnav } from 'components';
 import { ResultCard } from './ResultCard';
 import {
   Button,
@@ -24,6 +23,7 @@ import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
 import { FiberManualRecordRounded } from '@mui/icons-material';
+import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
 
 export const DashboardUI: React.FC<ContextType & { location: any }> = (
   props
@@ -149,23 +149,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
   });
 
   return (
-    <Root className={classes.root}>
-      <Subnav
-        items={[
-          { title: 'Search Results', path: '/inventory', exact: true },
-          { title: 'All Domains', path: '/inventory/domains' },
-          { title: 'All Vulnerabilities', path: '/inventory/vulnerabilities' }
-        ]}
-        styles={{
-          paddingLeft: '0%'
-        }}
-      />
-      <Stack
-        spacing={2}
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-      >
+    <FindingsHeader>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
         {nonInitialFilters.length > 0 && <FiltersApplied />}
         {/* Keeps SortBar fixed to the right side of the screen */}
         <Box sx={{ flexGrow: 1 }} />
@@ -230,64 +215,68 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
           )}
         </Box>
       </Box>
-      <Paper className={classes.pagination}>
-        <span>
-          <strong>
-            {(totalResults === 0
-              ? 0
-              : (current - 1) * resultsPerPage + 1
-            ).toLocaleString()}{' '}
-            -{' '}
-            {Math.min(
-              (current - 1) * resultsPerPage + resultsPerPage,
-              totalResults
-            ).toLocaleString()}
-          </strong>{' '}
-          of <strong>{totalResults.toLocaleString()}</strong>
-        </span>
-        <Pagination
-          count={totalPages}
-          page={current}
-          onChange={(_, page) => setCurrent(page)}
-          color="primary"
-          size="small"
-        />
-        <FormControl
-          variant="outlined"
-          className={classes.pageSize}
-          size="small"
-        >
-          <Typography id="results-per-page-label">Results per page:</Typography>
-          <Select
-            id="teststa"
-            labelId="results-per-page-label"
-            value={resultsPerPage}
-            onChange={(e) => setResultsPerPage(e.target.value as number)}
+      <Root className={classes.root}>
+        <Paper className={classes.pagination}>
+          <span>
+            <strong>
+              {(totalResults === 0
+                ? 0
+                : (current - 1) * resultsPerPage + 1
+              ).toLocaleString()}{' '}
+              -{' '}
+              {Math.min(
+                (current - 1) * resultsPerPage + resultsPerPage,
+                totalResults
+              ).toLocaleString()}
+            </strong>{' '}
+            of <strong>{totalResults.toLocaleString()}</strong>
+          </span>
+          <Pagination
+            count={totalPages}
+            page={current}
+            onChange={(_, page) => setCurrent(page)}
+            color="primary"
+            size="small"
+          />
+          <FormControl
+            variant="outlined"
+            className={classes.pageSize}
+            size="small"
           >
-            {[15, 45, 90].map((perPage) => (
-              <MenuItem key={perPage} value={perPage}>
-                {perPage}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Button
-          variant="outlined"
-          className={classes.exportButton}
-          onClick={() =>
-            exportCSV(
-              {
-                name: 'domains',
-                getDataToExport: fetchDomainsExport
-              },
-              setLoading
-            )
-          }
-        >
-          Export Results
-        </Button>
-      </Paper>
-    </Root>
+            <Typography id="results-per-page-label">
+              Results per page:
+            </Typography>
+            <Select
+              id="teststa"
+              labelId="results-per-page-label"
+              value={resultsPerPage}
+              onChange={(e) => setResultsPerPage(e.target.value as number)}
+            >
+              {[15, 45, 90].map((perPage) => (
+                <MenuItem key={perPage} value={perPage}>
+                  {perPage}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button
+            variant="outlined"
+            className={classes.exportButton}
+            onClick={() =>
+              exportCSV(
+                {
+                  name: 'domains',
+                  getDataToExport: fetchDomainsExport
+                },
+                setLoading
+              )
+            }
+          >
+            Export Results
+          </Button>
+        </Paper>
+      </Root>
+    </FindingsHeader>
   );
 };
 

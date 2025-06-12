@@ -62,7 +62,7 @@ class DomainSearch(BaseModel):
 
     page: int = 1
     sort: Optional[str] = "ASC"
-    order: Optional[str] = "id"
+    order: Optional[str] = "domain_id"
     filters: Optional[DomainFilters] = None
     page_size: Optional[int] = 25
 

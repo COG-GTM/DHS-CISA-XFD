@@ -16,6 +16,16 @@ const FilterDrawerToggle: React.FC = () => {
       position="sticky"
       elevation={0}
       sx={{
+        maxWidth: '1152px',
+        margin: 'auto',
+        paddingTop: 2,
+        px: {
+          xs: 1,
+          sm: 1,
+          md: 1,
+          lg: 1,
+          xl: 0
+        },
         backgroundColor: 'neutrals.white',
         borderBottom: '0.5px solid',
         borderColor: 'neutrals.light',

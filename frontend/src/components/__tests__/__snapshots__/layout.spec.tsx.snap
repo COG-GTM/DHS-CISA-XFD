@@ -15,9 +15,8 @@ exports[`Layout component matches snapshot 1`] = `
     <div>
       HEADER
     </div>
-    <header
-      class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionSticky css-14rdmww-MuiPaper-root-MuiAppBar-root"
-      style="--Paper-shadow: none;"
+    <div
+      class="MuiStack-root css-1njubla-MuiStack-root"
     >
       <div
         class="MuiToolbar-root MuiToolbar-regular css-78voab-MuiToolbar-root"
