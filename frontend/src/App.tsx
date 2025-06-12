@@ -12,6 +12,7 @@ import {
   createInstance,
   useMatomo
 } from '@jonkoops/matomo-tracker-react';
+import { MatomoTracker } from 'components/MatomoTracker/MatomoTracker';
 import {
   AdminTools,
   AuthCreateAccount,
@@ -87,6 +88,7 @@ const LinkTracker = () => {
 
 const App: React.FC = () => (
   <MatomoProvider value={instance}>
+    <MatomoTracker />
     <Router>
       <CFThemeProvider>
         <AuthContextProvider>
