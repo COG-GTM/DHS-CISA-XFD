@@ -65,7 +65,7 @@ const FiltersApplied: React.FC = () => {
   const theme = useTheme();
   return (
     <FiberManualRecordRounded
-      sx={{ color: theme.palette.primary.main, height: '.5em', width: '.5em' }}
+      sx={{ color: theme.palette.primary.main, height: '1rem', width: '1rem' }}
     />
   );
 };

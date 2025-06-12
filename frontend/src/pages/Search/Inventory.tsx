@@ -118,7 +118,13 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     const theme = useTheme();
     return (
       <Stack direction="row" alignItems="center" spacing={1}>
-        <FiberManualRecordRounded sx={{ color: theme.palette.primary.main }} />
+        <FiberManualRecordRounded
+          sx={{
+            color: theme.palette.primary.main,
+            height: '1rem',
+            width: '1rem'
+          }}
+        />
         <Typography color="textSecondary">Filters Applied</Typography>
       </Stack>
     );
@@ -150,7 +156,12 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
 
   return (
     <FindingsHeader>
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        pb={2}
+      >
         {nonInitialFilters.length > 0 && <FiltersApplied />}
         {/* Keeps SortBar fixed to the right side of the screen */}
         <Box sx={{ flexGrow: 1 }} />
