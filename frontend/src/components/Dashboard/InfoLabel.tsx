@@ -58,10 +58,9 @@ const InfoLabel: React.FC<InfoLabelProps> = ({
         </Typography>
         <InfoTooltipIcon label={label} tooltipContent={tooltipContent(label)} />
       </Box>
-
       {viewDetails && link && (
         <MuiLink href="#" onClick={handleClick}>
-          <Typography variant="link" component="p" fontWeight="bold">
+          <Typography variant="link" component="span" fontWeight="bold">
             View Details
           </Typography>
         </MuiLink>
