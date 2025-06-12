@@ -1,14 +1,14 @@
-import { Query, Domain } from 'types';
+import { Query, Domain, DomainSearchApiResponse } from 'types';
 import { useAuthContext } from 'context';
 import { useCallback } from 'react';
 import { ORGANIZATION_EXCLUSIONS } from './useUserTypeFilters';
 
-export interface DomainQuery extends Query<Domain> {
+export interface DomainQuery extends Query<DomainSearchApiResponse> {
   showAll?: boolean;
 }
 
 interface ApiResponse {
-  result: Domain[];
+  result: DomainSearchApiResponse[];
   count: number;
   url?: string;
 }
@@ -19,7 +19,7 @@ export const useDomainApi = (showAll?: boolean, orgId?: string) => {
   const { currentOrganization, apiPost, apiGet, user } = useAuthContext();
   const listDomains = useCallback(
     async (query: DomainQuery, doExport = false) => {
-      const { page, filters, pageSize = PAGE_SIZE } = query;
+      const { page, filters, page_size = PAGE_SIZE } = query;
       const tableFilters: any = filters
         .filter((f) => Boolean(f.value))
         .reduce(
@@ -48,7 +48,7 @@ export const useDomainApi = (showAll?: boolean, orgId?: string) => {
         doExport ? '/domain/export' : '/domain/search',
         {
           body: {
-            pageSize,
+            page_size,
             page,
             filters: tableFilters
           }
@@ -59,7 +59,7 @@ export const useDomainApi = (showAll?: boolean, orgId?: string) => {
         domains: result,
         count,
         url,
-        pageCount: Math.ceil(count / pageSize)
+        pageCount: Math.ceil(count / page_size)
       };
     },
     [apiPost, currentOrganization, user, orgId]

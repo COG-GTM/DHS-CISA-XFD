@@ -4667,9 +4667,10 @@ class DomainSearchView(models.Model):
     reverse_name = models.TextField(null=True)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-
-    services = models.JSONField()
-    vulnerabilities = models.JSONField()
+    ports_preview = models.TextField(null=True)
+    services_preview = models.TextField(null=True)
+    services_count = models.IntegerField(null=True)
+    vulnerabilities_count = models.IntegerField(null=True)
 
     class Meta:
         """Set DomainSearchView metadata."""
