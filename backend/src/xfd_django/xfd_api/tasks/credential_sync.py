@@ -108,7 +108,7 @@ def main(command_options):
                 if response:
                     LOGGER.info(response.json())
                     result = process_response(response, org)
-                    data_saved = (result.get("data_saved", data_saved),)
+                    data_saved = result.get("data_saved", data_saved)
                     total_pages = result.get("total_pages", 1)
 
                 else:
@@ -126,14 +126,14 @@ def main(command_options):
 
             update_query_timestamp(org, "credential_sync", start_pulling_time)
         if data_saved:
+            LOGGER.info(
+                "Credential sync updated exposures and breaches for %s.",
+                organization_name,
+            )
             upsert_scan_result(scan_id, organization_id)
-            return {
-                "statusCode": 200,
-                "body": "Credential sync completed successfully.",
-            }
         return {
-            "statusCode": 204,
-            "body": "Credential sync completed successfully but saved no results to database.",
+            "statusCode": 200,
+            "body": "Credential sync completed successfully.",
         }
 
     except Exception as e:

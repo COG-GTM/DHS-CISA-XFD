@@ -34,6 +34,7 @@ def handler(command_options):
     organization = orgs_to_sync.first()
     org_uid = organization.id
     org_name = organization.name
+    org_acronym = organization.acronym
 
     print("Running Shodan on organization: {}".format(organization_name))
 
@@ -76,11 +77,18 @@ def handler(command_options):
 
     # Log all failures for this thread
     if len(failed) > 0:
+        if type(failed) is list:
+            LOGGER.info(
+                "Shodan encountered an error while scanning %s (%s).",
+                org_name,
+                org_acronym,
+            )
         return {
             "status_code": 500,
             "body": failed,
         }
     upsert_scan_result(scan_id, organization_id)
+    LOGGER.info("Shodan completed successfully for %s (%s).", org_name, org_acronym)
     return {"status_code": 200, "body": "Success running Shodan."}
 
 

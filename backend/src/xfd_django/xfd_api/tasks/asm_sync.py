@@ -15,6 +15,7 @@ import requests
 from xfd_api.helpers.link_ips_from_subs import connect_ips_from_subs
 from xfd_api.helpers.link_subs_from_ips import connect_subs_from_ips
 from xfd_api.helpers.shodan_dedupe import dedupe
+from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
 from xfd_mini_dl.models import (
     Cidr,
     CidrOrgs,
@@ -62,15 +63,31 @@ def handler(event):
 def main(event):
     """Identify assets owned by each stakeholder."""
     try:
-        flag_cidr_changes()
-
         organization_id = event.get("organizationId")
-
+        scan_id = event.get("scanId")
+        subdomain_found = False
+        cidr_found = False
         orgs_to_sync = Organization.objects.filter(id__in=[organization_id])
         for org in orgs_to_sync:
             LOGGER.info("Running ASM Sync on organization %s", org.name)
-        # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
-        enumerate_subs(orgs_to_sync)
+
+        # Process CIDRs
+        try:
+            flag_cidr_changes()
+            cidr_found = Cidr.objects.filter(
+                cidrorgs__organization__in=orgs_to_sync, cidrorgs__current=True
+            ).exists()
+        except Exception as e:
+            LOGGER.warning("Error processing CIDRs: %s", e)
+
+        # Process subdomains
+        try:
+            enumerate_subs(orgs_to_sync)
+            subdomain_found = SubDomains.objects.filter(
+                organization__in=orgs_to_sync, current=True
+            ).exists()
+        except Exception as e:
+            LOGGER.warning("Error processing subdomains: %s", e)
 
         LOGGER.info("Identifying subdomains from ips...")
         connect_subs_from_ips(orgs_to_sync)
@@ -85,13 +102,19 @@ def main(event):
         LOGGER.info("Running Shodan dedupe...")
         dedupe(orgs_to_sync)
         LOGGER.info("Finished running Shodan dedupe")
+        if cidr_found and subdomain_found:
+            LOGGER.info(
+                "ASM Sync completed successfully for %s. Running upsert_scan_result...",
+                organization_id,
+            )
+            upsert_scan_result(scan_id, organization_id)
+
     except Exception as e:
         LOGGER.warning("Error running ASM %s", e)
-    # quit()
 
 
 def flag_asset_changes():
-    """Mark Ips and Subdomains that are were not seen in the last scan as not current."""
+    """Mark Ips and Subdomains that were not seen in the last scan as not current."""
     cutoff_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
         days=15
     )
@@ -103,11 +126,6 @@ def flag_asset_changes():
     IpsSubs.objects.filter(last_seen__lt=cutoff_date).update(current=False)
 
     Ip.objects.filter(last_seen_timestamp__lt=cutoff_date).update(current=False)
-
-    # Ip.objects.filter(
-    #     (Q(sub_domains__current=False) | Q(sub_domains__isnull=True)) &  # No current subdomains or no subdomains at all
-    #     Q(origin_cidr__current=False)  # The associated origin_cidr is not current
-    # ).update(current=False)
 
 
 def flag_cidr_changes():

@@ -21,9 +21,9 @@ def list_scans(current_user, window_days: Optional[int]):
         # Check if the user is a GlobalViewAdmin
         if not is_global_view_admin(current_user):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
-
+        window_days = window_days or default_window
         # Fetch scans, prefetch related orgs/tags, and annotate with metrics
-        scans = query_scans(None, window_days or default_window)
+        scans = query_scans(None, window_days)
 
         # Fetch all organizations
         organizations = Organization.objects.values("id", "name")
@@ -64,6 +64,7 @@ def list_scans(current_user, window_days: Optional[int]):
             "scans": scan_list,
             "schema": SCAN_SCHEMA,
             "organizations": list(organizations),
+            "metrics_window_days": window_days,
         }
 
         return response
@@ -181,7 +182,8 @@ def get_scan(scan_id: str, current_user, window_days: Optional[int]):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
 
         # Fetch scans, prefetch related orgs/tags, and annotate with metrics
-        scan = query_scans(scan_id, window_days or default_window)
+        window_days = window_days or default_window
+        scan = query_scans(scan_id, window_days)
 
         # Fetch all organizations
         all_organizations = Organization.objects.values("id", "name")
@@ -217,6 +219,7 @@ def get_scan(scan_id: str, current_user, window_days: Optional[int]):
             "scan": scan_data,
             "schema": dict(SCAN_SCHEMA[scan.name]),
             "organizations": list(all_organizations),
+            "metrics_window_days": window_days,
         }
 
     except Scan.DoesNotExist:
