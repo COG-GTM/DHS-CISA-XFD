@@ -103,7 +103,6 @@
     "helmet": "^7.0.0",
     "jest-date-mock": "^1.0.8",
     "patch-package": "^8.0.0",
-    "postinstall-postinstall": "^2.1.0",
     "prettier": "^3.4.2",
     "sass": "^1.55.0",
     "serverless": "^3.30",
