@@ -70,7 +70,9 @@ export const transformVulnScanData = (
           ' - ' +
           formatShortDate(latestVulnSummary?.end_date),
         assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
-        assetsScanned: latestVulnSummary?.scanned_asset_count ?? 0
+        assetsScanned: latestVulnSummary?.scanned_asset_count ?? 0,
+        startDate: latestVulnSummary?.start_date ?? '',
+        endDate: latestVulnSummary?.end_date ?? ''
       }
     ],
     vulnScanKeyMetrics: [
@@ -80,7 +82,14 @@ export const transformVulnScanData = (
           (latestVulnSummary?.low_kev_count ?? 0) +
           (latestVulnSummary?.medium_kev_count ?? 0) +
           (latestVulnSummary?.high_kev_count ?? 0) +
-          (latestVulnSummary?.critical_kev_count ?? 0)
+          (latestVulnSummary?.critical_kev_count ?? 0),
+        hasLink: true,
+        startDate: latestVulnSummary?.start_date ?? '',
+        endDate: latestVulnSummary?.end_date ?? '',
+        dateRange:
+          formatShortDate(latestVulnSummary?.start_date) +
+          ' - ' +
+          formatShortDate(latestVulnSummary?.end_date)
       },
       {
         title: 'Detected Vulnerabilities',
@@ -88,7 +97,14 @@ export const transformVulnScanData = (
           (latestVulnSummary?.low_severity_count ?? 0) +
           (latestVulnSummary?.medium_severity_count ?? 0) +
           (latestVulnSummary?.high_severity_count ?? 0) +
-          (latestVulnSummary?.critical_severity_count ?? 0)
+          (latestVulnSummary?.critical_severity_count ?? 0),
+        hasLink: true,
+        startDate: latestVulnSummary?.start_date ?? '',
+        endDate: latestVulnSummary?.end_date ?? '',
+        dateRange:
+          formatShortDate(latestVulnSummary?.start_date) +
+          ' - ' +
+          formatShortDate(latestVulnSummary?.end_date)
       },
       {
         title: 'Distinct Vulnerabilities',
