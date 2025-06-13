@@ -104,7 +104,6 @@ def get_application() -> FastAPI:
     async def security_headers_middleware(request: Request, call_next):
         response = await call_next(request)
         isMatomo = bool(request.url.path.startswith("/matomo"))
-        # isMatomo = False  # Uncomment this line to disable Matomo-specific CSP
         return set_security_headers(response, isMatomo)
 
     app.add_middleware(LoggingMiddleware)
