@@ -1184,7 +1184,7 @@ class Service(models.Model):
 
         app_label = app_label_name
         managed = False
-        db_table = "vw_service"
+        db_table = "mat_vw_service"
         unique_together = (("port", "domain"),)
 
 
@@ -4642,7 +4642,7 @@ class Domain(models.Model):
     class Meta:
         """The meta class for Domain."""
 
-        db_table = "vw_domain"
+        db_table = "mat_vw_domain"
         managed = False
         unique_together = (("name", "organization"),)  # Unique constraint
 
@@ -4651,6 +4651,32 @@ class Domain(models.Model):
         self.name = self.name.lower()
         self.reverse_name = ".".join(reversed(self.name.split(".")))
         super().save(*args, **kwargs)
+
+
+class DomainSearchView(models.Model):
+    """Domain Search Material View Model."""
+
+    domain_id = models.UUIDField(primary_key=True)
+    name = models.TextField()
+    ip = models.TextField()
+    organization_id = models.UUIDField()
+    organization_name = models.TextField()
+    source = models.TextField()
+    country = models.TextField(null=True)
+    cloud_hosted = models.BooleanField(null=True)
+    reverse_name = models.TextField(null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    ports_preview = models.TextField(null=True)
+    services_preview = models.TextField(null=True)
+    services_count = models.IntegerField(null=True)
+    vulnerabilities_count = models.IntegerField(null=True)
+
+    class Meta:
+        """Set DomainSearchView metadata."""
+
+        managed = False
+        db_table = "mat_vw_domain_search"
 
 
 class DotgovDomains(models.Model):
@@ -4773,17 +4799,17 @@ class Mentions(models.Model):
     tags = models.TextField(
         blank=True, null=True, help_text="Tags associated with mention alert"
     )
-    organization_uid = models.ForeignKey(
-        Organization,
+    organization = models.ForeignKey(
+        "Organization",
         on_delete=models.CASCADE,
         db_column="organization_uid",
-        help_text="FK: Foreign Key to organizations",
+        help_text="Foreign Key to the related organization",
     )
     data_source = models.ForeignKey(
-        DataSource,
+        "DataSource",
         on_delete=models.CASCADE,
         db_column="data_source_uid",
-        help_text="FK: Foreign Key to data_source",
+        help_text="Foreign Key to the data_source.",
     )
     title_translated = models.TextField(
         blank=True, null=True, help_text="Title of mention post translated to english"
