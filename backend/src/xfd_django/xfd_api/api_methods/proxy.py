@@ -22,7 +22,6 @@ async def proxy_request(
 
     # Include specified cookie in the headers if present
     if cookie_name:
-        print("Cookie name: {}".format(cookie_name))
         cookies = request.cookies.get(cookie_name)
         if cookies:
             headers["Cookie"] = "{}={}".format(cookie_name, cookies)
