@@ -36,7 +36,7 @@ class User(BaseModel):
     full_name: str
     email: str
     invite_pending: bool
-    first_login: Optional[bool]
+    first_login: Optional[bool] = None
     login_blocked_by_maintenance: bool
     cognito_use_case_description: Optional[str] = None
     date_approved: Optional[datetime] = None
@@ -62,7 +62,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     invite_pending: bool
-    first_login: Optional[bool]
+    first_login: Optional[bool] = None
     login_blocked_by_maintenance: bool
     date_accepted_terms: Optional[datetime]
     accepted_terms_version: Optional[str]
