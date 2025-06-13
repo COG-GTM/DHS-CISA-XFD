@@ -17,7 +17,6 @@ async def proxy_request(
     cookie_name: Optional[str] = None,
 ):
     """Proxy requests to the specified target URL with optional cookie handling."""
-    print("Proxying request to target URL: {}".format(target_url))
     headers = dict(request.headers)
 
     # Include specified cookie in the headers if present
