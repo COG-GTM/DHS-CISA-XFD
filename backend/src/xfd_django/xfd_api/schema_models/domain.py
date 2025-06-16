@@ -69,13 +69,6 @@ class DomainSearch(BaseModel):
         from_attributes = True
 
 
-class DomainSearchResponse(BaseModel):
-    """List of Domain objects."""
-
-    result: List["DomainSearchResult"]
-    count: int
-
-
 class DomainSearchResult(BaseModel):
     """Domain search result."""
 
@@ -92,6 +85,13 @@ class DomainSearchResult(BaseModel):
     ports_preview: Optional[str]
     services_preview: Optional[str]
     webpages: Optional[int] = None
+
+
+class DomainSearchResponse(BaseModel):
+    """List of Domain objects."""
+
+    result: List["DomainSearchResult"]
+    count: int
 
 
 class TotalDomainsResponse(BaseModel):
