@@ -63,7 +63,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   const [initialFilters, setInitialFilters] = useState(() =>
     extractInitialFilters(state)
   );
-  console.log('state', state);
+
   const filters = initialFilters.length > 0 ? initialFilters : [];
 
   const [paginationModel, setPaginationModel] = useState({
