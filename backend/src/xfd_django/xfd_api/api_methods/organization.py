@@ -122,10 +122,10 @@ def get_organization(organization_id, current_user):
     try:
         # Authorization checks
         if not (
-            is_analytics_user(current_user),
-            is_org_admin(current_user, organization_id)
+            is_analytics_user(current_user)
+            or is_org_admin(current_user, organization_id)
             or is_global_view_admin(current_user)
-            or is_regional_admin_for_organization(current_user, organization_id),
+            or is_regional_admin_for_organization(current_user, organization_id)
         ):
             raise HTTPException(status_code=403, detail="Unauthorized")
 
