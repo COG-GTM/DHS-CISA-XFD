@@ -224,10 +224,3 @@ class GetDomainResponse(BaseModel):
         if hasattr(v, "all"):
             return list(v.all())
         return v
-
-
-class DomainSearchResponse(BaseModel):
-    """List of Domain objects."""
-
-    result: List[GetDomainResponse]
-    count: int
