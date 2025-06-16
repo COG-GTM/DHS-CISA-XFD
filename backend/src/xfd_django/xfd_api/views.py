@@ -21,6 +21,8 @@ from fastapi import (
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
+import xfd_api.api_methods.dmz_sync as cybersix_module
+from xfd_api.auth import is_global_write_admin
 from xfd_mini_dl.models import User
 
 # from .schemas import Cpe
@@ -31,6 +33,7 @@ from .api_methods import organization, proxy, scan, scan_tasks, user
 from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
+from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.object_store import get_object_store_presigned_url
 from .api_methods.queue_monitoring import list_queues
@@ -88,6 +91,7 @@ from .schema_models.dmz_sync import (
     AsmSyncResponse,
     CensysSyncResponse,
     CredSyncResponse,
+    CybersixSyncResponse,
     DataSource,
     ShodanSyncResponse,
     SyncRequest,
@@ -1549,6 +1553,66 @@ async def get_blocklist(
 # ========================================
 #   DMZ Sync Endpoints
 # ========================================
+
+
+# --- Cybersixgill Sync endpoint, CRASM-2433 ---
+@api_router.post(
+    "/dmz_sync/cybersix_sync",
+    response_model=CybersixSyncResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["Cybersix sync to LZ mdl"],
+)
+async def get_call_all_cybersixgill(
+    response: Response,
+    current_user: User = Depends(get_current_active_user),
+    params: CybersixSyncParams = Body(default_factory=CybersixSyncParams),
+):
+    """
+    Get all Cybersixgill data, paginated.
+
+    - Only global write-admins may call this.
+    - Returns a JSON payload plus an X-Salted-Checksum header.
+    """
+    # enforce write-admin access
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
+        )
+
+    try:
+        try:
+            raw_json, checksum = await cybersix_module.fetch_cybersix_data(
+                params, current_user
+            )
+        except TypeError:
+            # pylint: disable=no-value-for-parameter
+            raw_json, checksum = await cybersix_module.fetch_cybersix_data()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Sync error: {e}"
+        )
+
+    # attach checksum header
+    response.headers["X-Salted-Checksum"] = checksum
+
+    if isinstance(raw_json, dict) and "payload" in raw_json and "status" in raw_json:
+        wrapper = raw_json
+    else:
+        # Otherwise wrap raw_json (which in tests is just the six lists) with default pagination fields
+        payload = raw_json.copy()
+        payload.setdefault("total_pages", 1)
+        payload.setdefault("current_page", params.page)
+        wrapper = {
+            "status": "ok",
+            "payload": payload,
+        }
+
+    return CybersixSyncResponse(**wrapper)
+
+
 @api_router.get(
     "/dmz_sync/data_sources",
     dependencies=[Depends(get_current_active_user)],

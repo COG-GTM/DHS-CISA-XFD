@@ -29,8 +29,16 @@ export const NavMenuButton: React.FC<Props> = ({
   const isLink = !!menuItems?.[0]?.path || '';
   const open = Boolean(anchorEl);
 
+  const findingsLibraryPaths = [
+    '/inventory',
+    '/inventory/domains',
+    '/inventory/vulnerabilities'
+  ];
+
   const isActive = isLink
-    ? menuItems?.some((item) => item.path === location.pathname)
+    ? title === 'Findings Library'
+      ? findingsLibraryPaths.includes(location.pathname)
+      : menuItems?.some((item) => item.path === location.pathname)
     : open;
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) =>

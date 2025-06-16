@@ -39,37 +39,17 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
         if (e.key === 'Escape') toggleDrawer(false)();
       }}
     >
+      <Box sx={{ height: '100px' }} />
       <nav aria-label="Main navigation">
         <List>
           {menuItems.map((section, index) => {
             const entries = Object.entries(section);
             if (entries.length === 0) return null;
 
-            const [sectionTitle, items] = entries[0];
-            const menuTitle = (
-              <ListItem role="presentation">
-                <ListItemText
-                  primary={
-                    sectionTitle === 'Vulnerability Scanning'
-                      ? 'Scanning Results'
-                      : sectionTitle === 'Findings Library'
-                        ? 'Inventory'
-                        : sectionTitle
-                  }
-                  slotProps={{
-                    primary: {
-                      id: `drawer-section-${index}`,
-                      sx: {
-                        fontWeight: 'bold'
-                      }
-                    }
-                  }}
-                />
-              </ListItem>
-            );
+            const [, items] = entries[0];
+
             return (
               <React.Fragment key={index}>
-                {menuTitle}
                 {items.map((item, subIndex) => (
                   <ListItem
                     key={`${index}-${subIndex}`}
@@ -105,7 +85,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                     </ListItemButton>
                   </ListItem>
                 ))}
-
                 <Divider />
               </React.Fragment>
             );
