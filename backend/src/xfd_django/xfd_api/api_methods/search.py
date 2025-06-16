@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from xfd_api.auth import (
     get_org_memberships,
     get_tag_organizations,
+    is_analytics_user,
     is_global_view_admin,
 )
 from xfd_api.helpers.elastic_search import build_request
@@ -22,7 +23,7 @@ async def get_options(search_body, user) -> Dict[str, Any]:
     """Get Elastic Search options."""
     if search_body.organization_id and (
         search_body.organization_id in get_org_memberships(user)
-        or is_global_view_admin(user)
+        or (is_global_view_admin(user) | is_analytics_user(user))
     ):
         return {
             "organization_ids": [search_body.organization_id],
@@ -36,7 +37,7 @@ async def get_options(search_body, user) -> Dict[str, Any]:
 
     return {
         "organization_ids": get_org_memberships(user),
-        "match_all_organizations": is_global_view_admin(user),
+        "match_all_organizations": is_global_view_admin(user) | is_analytics_user(user),
     }
 
 

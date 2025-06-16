@@ -12,6 +12,7 @@ import {
   createInstance,
   useMatomo
 } from '@jonkoops/matomo-tracker-react';
+import { MatomoTracker } from 'components/MatomoTracker/MatomoTracker';
 import {
   AdminTools,
   AuthCreateAccount,
@@ -87,6 +88,7 @@ const LinkTracker = () => {
 
 const App: React.FC = () => (
   <MatomoProvider value={instance}>
+    <MatomoTracker />
     <Router>
       <CFThemeProvider>
         <AuthContextProvider>
@@ -126,6 +128,7 @@ const App: React.FC = () => (
                           path="/inventory"
                           component={SearchPage}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -135,6 +138,7 @@ const App: React.FC = () => (
                           path="/inventory/domain/:domainId"
                           component={Domain}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -157,6 +161,7 @@ const App: React.FC = () => (
                           exact
                           component={Vulnerabilities}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -168,6 +173,7 @@ const App: React.FC = () => (
                             <Vulnerabilities {...props} group_by="title" />
                           )}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -177,6 +183,7 @@ const App: React.FC = () => (
                           path="/inventory/vulnerability/:vulnerabilityId"
                           component={Vulnerability}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -191,6 +198,7 @@ const App: React.FC = () => (
                           path="/reports"
                           component={Reports}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -203,12 +211,17 @@ const App: React.FC = () => (
                         <RouteGuard
                           path="/organizations/:organizationId"
                           component={Organization}
-                          permissions={['globalView', 'regionalAdmin']}
+                          permissions={[
+                            'globalView',
+                            'regionalAdmin',
+                            'analytics'
+                          ]}
                         />
                         <RouteGuard
                           path="/organizations"
                           component={Organizations}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -217,12 +230,17 @@ const App: React.FC = () => (
                         <RouteGuard
                           path="/users"
                           component={Users}
-                          permissions={['globalView', 'regionalAdmin']}
+                          permissions={[
+                            'globalView',
+                            'regionalAdmin',
+                            'analytics'
+                          ]}
                         />
                         <RouteGuard
                           path="/settings"
                           component={Settings}
                           permissions={[
+                            'analytics',
                             'globalView',
                             'regionalAdmin',
                             'standard'
@@ -231,7 +249,11 @@ const App: React.FC = () => (
                         <RouteGuard
                           path="/region-admin-dashboard"
                           component={RegionUsers}
-                          permissions={['regionalAdmin', 'globalView']}
+                          permissions={[
+                            'regionalAdmin',
+                            'globalView',
+                            'analytics'
+                          ]}
                         />
                       </Switch>
                     </LayoutWithSearch>
