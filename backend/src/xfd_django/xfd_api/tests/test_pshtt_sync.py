@@ -1,15 +1,16 @@
+"""Test Pshtt Sync Endpoint"""
 from datetime import datetime
 import secrets
 
 # Third-Party Libraries
 from fastapi.testclient import TestClient
+import hashlib
+import json
+import os
 import pytest
 from xfd_api.auth import create_jwt_token
 from xfd_django.asgi import app
 from xfd_mini_dl.models import User, UserType
-import hashlib
-import os
-import json
 
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
@@ -62,18 +63,18 @@ dummy_pshtt_data = [
         "strictly_forces_https": True,
         "unknown_error": False,
         "valid_https": True,
-        "ep_http_headers": { "status": "301 Moved Permanently" },
+        "ep_http_headers": {"status": "301 Moved Permanently"},
         "ep_http_server_header": "Apache",
         "ep_http_server_version": "2.4",
-        "ep_https_headers": { "strict-transport-security": "max-age=31536000" },
+        "ep_https_headers": {"strict-transport-security": "max-age=31536000"},
         "ep_https_hsts_header": "max-age=31536000; includeSubDomains; preload",
         "ep_https_server_header": "Apache",
         "ep_https_server_version": "2.4",
-        "ep_httpswww_headers": { "cache-control": "no-cache" },
+        "ep_httpswww_headers": {"cache-control": "no-cache"},
         "ep_httpswww_hsts_header": "max-age=31536000",
         "ep_httpswww_server_header": "Apache",
         "ep_httpswww_server_version": "2.4",
-        "ep_httpwww_headers": { "status": "200 OK" },
+        "ep_httpwww_headers": {"status": "200 OK"},
         "ep_httpwww_server_header": "Apache",
         "ep_httpwww_server_version": "2.4"
     },
@@ -124,7 +125,7 @@ dummy_pshtt_data = [
         "strictly_forces_https": None,
         "unknown_error": None,
         "valid_https": None,
-        "ep_http_headers": { "status": "200 OK" },
+        "ep_http_headers": {"status": "200 OK"},
         "ep_http_server_header": "nginx",
         "ep_http_server_version": "1.25",
         "ep_https_headers": None,
@@ -135,16 +136,20 @@ dummy_pshtt_data = [
         "ep_httpswww_hsts_header": None,
         "ep_httpswww_server_header": None,
         "ep_httpswww_server_version": None,
-        "ep_httpwww_headers": { "status": "404 Not Found" },
+        "ep_httpwww_headers": {"status": "404 Not Found"},
         "ep_httpwww_server_header": "nginx",
         "ep_httpwww_server_version": "1.25"
     }
 ]
 
+
 def create_checksum(data):
+    """Create a SHA-256 checksum for the given data."""
     return hashlib.sha256((SALT + data).encode()).hexdigest()
 
+
 client = TestClient(app)
+
 
 # Test: post valid data with invalid checksum should return 500
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -184,7 +189,7 @@ def test_sync_missing_checksum_should_return_500():
     )
     headers = {"Authorization": "Bearer {}".format(create_jwt_token(user))}
     response = client.post("/pshtt_sync", data=json.dumps({"data": dummy_pshtt_data}), headers=headers)
-    print("Response status code:", response.status_code)
+
     assert response.status_code == 500
 
 
@@ -205,5 +210,4 @@ def test_sync_missing_data_should_return_422():
         "x-checksum": create_checksum(json.dumps(dummy_pshtt_data)),
     }
     response = client.post("/pshtt_sync", headers=headers)
-    print("Response status code:", response.status_code)
     assert response.status_code == 422
