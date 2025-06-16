@@ -1,17 +1,17 @@
-"""Test Pshtt Sync Endpoint"""
+"""Test Pshtt Sync Endpoint."""
+# Standard Python Libraries
 from datetime import datetime
+import hashlib
+import json
+import os
 import secrets
 
 # Third-Party Libraries
 from fastapi.testclient import TestClient
-import hashlib
-import json
-import os
 import pytest
 from xfd_api.auth import create_jwt_token
 from xfd_django.asgi import app
 from xfd_mini_dl.models import User, UserType
-
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 
@@ -76,7 +76,7 @@ dummy_pshtt_data = [
         "ep_httpswww_server_version": "2.4",
         "ep_httpwww_headers": {"status": "200 OK"},
         "ep_httpwww_server_header": "Apache",
-        "ep_httpwww_server_version": "2.4"
+        "ep_httpwww_server_version": "2.4",
     },
     {
         "pshtt_results_uid": "8d819797-5e45-428b-a3e2-6acd65f96489",
@@ -138,8 +138,8 @@ dummy_pshtt_data = [
         "ep_httpswww_server_version": None,
         "ep_httpwww_headers": {"status": "404 Not Found"},
         "ep_httpwww_server_header": "nginx",
-        "ep_httpwww_server_version": "1.25"
-    }
+        "ep_httpwww_server_version": "1.25",
+    },
 ]
 
 
@@ -188,7 +188,9 @@ def test_sync_missing_checksum_should_return_500():
         updated_at=datetime.now(),
     )
     headers = {"Authorization": "Bearer {}".format(create_jwt_token(user))}
-    response = client.post("/pshtt_sync", data=json.dumps({"data": dummy_pshtt_data}), headers=headers)
+    response = client.post(
+        "/pshtt_sync", data=json.dumps({"data": dummy_pshtt_data}), headers=headers
+    )
 
     assert response.status_code == 500
 
