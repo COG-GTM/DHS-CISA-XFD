@@ -65,7 +65,8 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       component={
                         item.objectStoreParams
                           ? 'button'
-                          : item.path?.startsWith('http')
+                          : item.path?.startsWith('http') ||
+                              item.path?.startsWith('mailto:')
                             ? 'a'
                             : NavLink
                       }
