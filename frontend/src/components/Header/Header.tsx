@@ -32,7 +32,7 @@ interface MenuItemType {
 
 // TODO: Update bucket/key names when provided.
 const LEARNING_CENTER_DOC_BUCKET_NAME = process.env
-  .LEARNING_CENTER_DOC_BUCKET_NAME as string;
+  .REACT_APP_LEARNING_CENTER_DOC_BUCKET_NAME as string;
 
 const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'vs_glossary.pdf',
