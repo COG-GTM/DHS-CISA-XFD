@@ -69,6 +69,19 @@ class DomainSearch(BaseModel):
         from_attributes = True
 
 
+class OrganizationResponse(BaseModel):
+    """Organization response."""
+
+    id: UUID
+    name: str
+
+    class Config:
+        """Config."""
+
+        orm_mode = True
+        from_attributes = True
+
+
 class DomainSearchResult(BaseModel):
     """Domain search result."""
 
@@ -102,19 +115,6 @@ class TotalDomainsResponse(BaseModel):
     class Config:
         """Config."""
 
-        from_attributes = True
-
-
-class OrganizationResponse(BaseModel):
-    """Organization response."""
-
-    id: UUID
-    name: str
-
-    class Config:
-        """Config."""
-
-        orm_mode = True
         from_attributes = True
 
 
