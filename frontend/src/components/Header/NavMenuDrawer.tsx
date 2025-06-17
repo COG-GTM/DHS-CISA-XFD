@@ -72,7 +72,8 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       }
                       {...(item.objectStoreParams
                         ? {}
-                        : item.path?.startsWith('http')
+                        : item.path?.startsWith('http') ||
+                            item.path?.startsWith('mailto:')
                           ? {
                               href: item.path,
                               target: '_blank',
