@@ -13,7 +13,8 @@ import {
   Divider,
   IconButton,
   Toolbar,
-  Typography
+  Typography,
+  useTheme
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
@@ -44,6 +45,7 @@ export const FilterDrawer: FC<
     results
   } = props;
   const { pathname } = useLocation();
+  const theme = useTheme();
 
   const restoreInitialFilters = () => {
     if (matchPath(['/inventory'], pathname)) {
@@ -72,7 +74,7 @@ export const FilterDrawer: FC<
 
   const DrawerList = (
     <Stack justifyContent={'space-between'} height="100vh">
-      <Box sx={{ width: drawerWidth }} role="presentation">
+      <Box role="presentation">
         <Toolbar />
         <Toolbar />
         <Stack
@@ -175,6 +177,7 @@ export const FilterDrawer: FC<
           '&::-webkit-scrollbar': {
             display: 'none'
           }
+          // border: `1px solid ${theme.palette.neutrals.main}`
         }
       }}
     >

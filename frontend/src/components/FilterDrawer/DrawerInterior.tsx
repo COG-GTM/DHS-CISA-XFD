@@ -245,7 +245,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       <Accordion
         expanded={expanded === 'panel3'}
         onChange={handleExpanded ? handleExpanded('panel3') : undefined}
-        sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -265,7 +265,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       <Accordion
         expanded={expanded === 'panel4'}
         onChange={handleExpanded ? handleExpanded('panel4') : undefined}
-        sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
+        elevation={0}
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -286,7 +287,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         <Accordion
           expanded={expanded === 'panel5'}
           onChange={handleExpanded ? handleExpanded('panel5') : undefined}
-          sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -312,7 +313,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         <Accordion
           expanded={expanded === 'panel6'}
           onChange={handleExpanded ? handleExpanded('panel6') : undefined}
-          sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
+          elevation={0}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -338,7 +340,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         <Accordion
           expanded={expanded === 'panel7'}
           onChange={handleExpanded ? handleExpanded('panel7') : undefined}
-          sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -366,7 +368,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         <Accordion
           expanded={expanded === 'panel8'}
           onChange={handleExpanded ? handleExpanded('panel8') : undefined}
-          sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -394,7 +396,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         square
         expanded={expanded === 'panel9'}
         onChange={handleExpanded ? handleExpanded('panel9') : undefined}
-        sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="largeBody">Saved Filters</Typography>
