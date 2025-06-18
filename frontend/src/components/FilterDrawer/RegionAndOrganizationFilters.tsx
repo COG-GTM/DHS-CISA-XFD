@@ -290,10 +290,11 @@ export const RegionAndOrganizationFilters: React.FC<
 
   return (
     <>
-      <Divider />
+      {/* <Divider /> */}
       <Accordion
         expanded={expanded === 'panel1'}
         onChange={handleExpanded ? handleExpanded('panel1') : undefined}
+        sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -464,6 +465,7 @@ export const RegionAndOrganizationFilters: React.FC<
       <Accordion
         expanded={expanded === 'panel2'}
         onChange={handleExpanded ? handleExpanded('panel2') : undefined}
+        sx={{ borderTop: `1px solid ${theme.palette.neutrals.main}` }}
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
