@@ -241,6 +241,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
   return (
     <Box>
       <Accordion
+        elevation={0}
         expanded={expanded === 'panel3'}
         onChange={handleExpanded ? handleExpanded('panel3') : undefined}
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
@@ -366,6 +367,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {sortedSeverityFacets.length > 0 && (
         <Accordion
+          elevation={0}
           expanded={expanded === 'panel8'}
           onChange={handleExpanded ? handleExpanded('panel8') : undefined}
           sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
