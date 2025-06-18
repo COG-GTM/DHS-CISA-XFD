@@ -37,8 +37,7 @@ const LEARNING_CENTER_DOC_BUCKET_NAME = process.env
 const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'vs_glossary.pdf',
   faq: 'vs_faq.pdf',
-  methodology: 'vs_methodology.pdf',
-  userGuide: 'user_guide.pdf'
+  methodology: 'vs_methodology.pdf'
 };
 
 export const Header: React.FC = () => {
@@ -155,14 +154,6 @@ export const Header: React.FC = () => {
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
         object_key: LEARNING_CENTER_DOC_KEYS.methodology
-      },
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'User Guide',
-      objectStoreParams: {
-        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
-        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
       },
       users: STANDARD_USER
     },
