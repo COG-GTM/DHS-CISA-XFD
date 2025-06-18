@@ -59,6 +59,11 @@ interface RegionAndOrganizationFiltersProps {
   autocompletedSuggestions: any;
   results: any[];
   initialFilters: any[];
+  expanded?: string | false;
+
+  handleExpanded?: (
+    panel: string
+  ) => (event: React.SyntheticEvent, newExpanded: boolean) => void;
 }
 
 const FiltersApplied: React.FC = () => {
@@ -72,7 +77,15 @@ const FiltersApplied: React.FC = () => {
 
 export const RegionAndOrganizationFilters: React.FC<
   RegionAndOrganizationFiltersProps
-> = ({ addFilter, removeFilter, filters, initialFilters }) => {
+> = ({
+  addFilter,
+  removeFilter,
+  filters,
+  initialFilters,
+  expanded,
+
+  handleExpanded
+}) => {
   const { setShowMaps, user, apiPost } = useAuthContext();
   const { regions } = useStaticsContext();
   const [search_term, setSearchTerm] = useState<string>('');
@@ -278,7 +291,10 @@ export const RegionAndOrganizationFilters: React.FC<
   return (
     <>
       <Divider />
-      <Accordion>
+      <Accordion
+        expanded={expanded === 'panel1'}
+        onChange={handleExpanded ? handleExpanded('panel1') : undefined}
+      >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Typography variant="largeBody">Regions</Typography>
@@ -445,7 +461,10 @@ export const RegionAndOrganizationFilters: React.FC<
 
       {/* Need to reconcile type issues caused by adding freeSolo prop */}
 
-      <Accordion>
+      <Accordion
+        expanded={expanded === 'panel2'}
+        onChange={handleExpanded ? handleExpanded('panel2') : undefined}
+      >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Typography variant="largeBody">Organizations</Typography>

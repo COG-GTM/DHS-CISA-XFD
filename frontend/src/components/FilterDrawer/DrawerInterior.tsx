@@ -36,6 +36,10 @@ interface Props {
   setSearchTerm: ContextType['setSearchTerm'];
   totalResults?: ContextType['totalResults'];
   initialFilters: any[];
+  expanded?: string | false;
+  handleExpanded?: (
+    panel: string
+  ) => (event: React.SyntheticEvent, newExpanded: boolean) => void;
 }
 
 interface SeverityData {
@@ -68,7 +72,9 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     searchTerm,
     setSearchTerm,
     totalResults = 0, // Default to 0 if not provided
-    initialFilters
+    initialFilters,
+    expanded,
+    handleExpanded
   } = props;
   const { apiGet, apiDelete } = useAuthContext();
 
@@ -245,6 +251,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           disabled: classes.disabled,
           expanded: classes.expanded
         }}
+        expanded={expanded === 'panel3'}
+        onChange={handleExpanded ? handleExpanded('panel3') : undefined}
       >
         <AccordionSummary
           expandIcon={<ExpandMore />}
@@ -277,6 +285,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           disabled: classes.disabled,
           expanded: classes.expanded
         }}
+        expanded={expanded === 'panel4'}
+        onChange={handleExpanded ? handleExpanded('panel4') : undefined}
       >
         <AccordionSummary
           expandIcon={<ExpandMore />}
@@ -294,7 +304,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         </AccordionSummary>
         <AccordionDetails classes={{ root: classes.details }}>
           <TaggedArrayInput
-            placeholder="Domain"
+            placeholder="Domain Name"
             values={filtersByColumn.name ?? []}
             onAddTag={(value) => addFilter('name', value, 'any')}
             onRemoveTag={(value) => removeFilter('name', value, 'any')}
@@ -310,6 +320,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             disabled: classes.disabled,
             expanded: classes.expanded
           }}
+          expanded={expanded === 'panel5'}
+          onChange={handleExpanded ? handleExpanded('panel5') : undefined}
         >
           <AccordionSummary
             expandIcon={<ExpandMore />}
@@ -348,6 +360,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             disabled: classes.disabled,
             expanded: classes.expanded
           }}
+          expanded={expanded === 'panel6'}
+          onChange={handleExpanded ? handleExpanded('panel6') : undefined}
         >
           <AccordionSummary
             expandIcon={<ExpandMore />}
@@ -386,6 +400,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             disabled: classes.disabled,
             expanded: classes.expanded
           }}
+          expanded={expanded === 'panel7'}
+          onChange={handleExpanded ? handleExpanded('panel7') : undefined}
         >
           <AccordionSummary
             expandIcon={<ExpandMore />}
@@ -426,6 +442,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             disabled: classes.disabled,
             expanded: classes.expanded
           }}
+          expanded={expanded === 'panel8'}
+          onChange={handleExpanded ? handleExpanded('panel8') : undefined}
         >
           <AccordionSummary
             expandIcon={<ExpandMore />}
@@ -457,7 +475,10 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           </AccordionDetails>
         </Accordion>
       )}
-      <Accordion>
+      <Accordion
+        expanded={expanded === 'panel9'}
+        onChange={handleExpanded ? handleExpanded('panel9') : undefined}
+      >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="largeBody">Saved Filters</Typography>
         </AccordionSummary>

@@ -63,6 +63,13 @@ export const FilterDrawer: FC<
     restoreInitialFilters();
   };
 
+  const [expanded, setExpanded] = React.useState<string | false>('panel1');
+
+  const handleExpanded =
+    (panel: string) => (event: React.SyntheticEvent, newExpanded: boolean) => {
+      setExpanded(newExpanded ? panel : false);
+    };
+
   const DrawerList = (
     <Stack justifyContent={'space-between'} height="100vh">
       <Box sx={{ width: drawerWidth }} role="presentation">
@@ -104,6 +111,8 @@ export const FilterDrawer: FC<
             autocompletedSuggestions={autocompletedSuggestions}
             results={results}
             initialFilters={initialFilters}
+            expanded={expanded}
+            handleExpanded={handleExpanded}
           />
         )}
         {matchPath(['/', '/VSDashboard'], pathname) && (
@@ -125,6 +134,8 @@ export const FilterDrawer: FC<
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             initialFilters={initialFilters}
+            expanded={expanded}
+            handleExpanded={handleExpanded}
           />
         )}
       </Box>
