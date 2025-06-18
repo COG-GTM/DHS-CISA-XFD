@@ -290,6 +290,7 @@ export const RegionAndOrganizationFilters: React.FC<
   return (
     <>
       <Accordion
+        square
         elevation={0}
         expanded={expanded === 'panel1'}
         onChange={handleExpanded ? handleExpanded('panel1') : undefined}
@@ -462,6 +463,7 @@ export const RegionAndOrganizationFilters: React.FC<
       {/* Need to reconcile type issues caused by adding freeSolo prop */}
 
       <Accordion
+        square
         elevation={0}
         expanded={expanded === 'panel2'}
         onChange={handleExpanded ? handleExpanded('panel2') : undefined}

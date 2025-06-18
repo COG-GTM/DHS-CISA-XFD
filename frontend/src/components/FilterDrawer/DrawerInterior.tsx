@@ -239,8 +239,9 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     });
 
   return (
-    <Box>
+    <Box sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}>
       <Accordion
+        square
         elevation={0}
         expanded={expanded === 'panel3'}
         onChange={handleExpanded ? handleExpanded('panel3') : undefined}
@@ -262,6 +263,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         </AccordionDetails>
       </Accordion>
       <Accordion
+        square
         elevation={0}
         expanded={expanded === 'panel4'}
         onChange={handleExpanded ? handleExpanded('panel4') : undefined}
@@ -284,6 +286,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       </Accordion>
       {fromDomainFacet.length > 0 && (
         <Accordion
+          square
           elevation={0}
           expanded={expanded === 'panel5'}
           onChange={handleExpanded ? handleExpanded('panel5') : undefined}
@@ -311,6 +314,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {portFacet.length > 0 && (
         <Accordion
+          square
           elevation={0}
           expanded={expanded === 'panel6'}
           onChange={handleExpanded ? handleExpanded('panel6') : undefined}
@@ -338,6 +342,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {cveFacet.length > 0 && (
         <Accordion
+          square
           elevation={0}
           expanded={expanded === 'panel7'}
           onChange={handleExpanded ? handleExpanded('panel7') : undefined}
@@ -367,6 +372,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {sortedSeverityFacets.length > 0 && (
         <Accordion
+          square
           elevation={0}
           expanded={expanded === 'panel8'}
           onChange={handleExpanded ? handleExpanded('panel8') : undefined}
@@ -395,8 +401,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         </Accordion>
       )}
       <Accordion
-        elevation={0}
         square
+        elevation={0}
         expanded={expanded === 'panel9'}
         onChange={handleExpanded ? handleExpanded('panel9') : undefined}
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}

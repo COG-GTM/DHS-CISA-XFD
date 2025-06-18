@@ -13,8 +13,7 @@ import {
   Divider,
   IconButton,
   Toolbar,
-  Typography,
-  useTheme
+  Typography
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
@@ -45,7 +44,6 @@ export const FilterDrawer: FC<
     results
   } = props;
   const { pathname } = useLocation();
-  const theme = useTheme();
 
   const restoreInitialFilters = () => {
     if (matchPath(['/inventory'], pathname)) {
@@ -101,7 +99,7 @@ export const FilterDrawer: FC<
             <CloseIcon />
           </IconButton>
         </Stack>
-        {matchPath(['/', '/VSDashboard'], pathname) && <Divider />}
+
         {matchPath(['/overview', '/inventory'], pathname) && (
           <RegionAndOrganizationFilters
             addFilter={addFilter}
@@ -177,7 +175,6 @@ export const FilterDrawer: FC<
           '&::-webkit-scrollbar': {
             display: 'none'
           }
-          // border: `1px solid ${theme.palette.neutrals.main}`
         }
       }}
     >
