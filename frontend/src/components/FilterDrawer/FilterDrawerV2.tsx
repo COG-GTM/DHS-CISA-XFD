@@ -8,13 +8,7 @@ import { RegionAndOrganizationFilters } from './RegionAndOrganizationFilters';
 import { matchPath } from 'utils/matchPath';
 import { useLocation } from 'react-router-dom';
 import { Stack } from '@mui/system';
-import {
-  Button,
-  Divider,
-  IconButton,
-  Toolbar,
-  Typography
-} from '@mui/material';
+import { Button, IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
 
