@@ -240,8 +240,6 @@ export const DrawerInterior: React.FC<Props> = (props) => {
 
   return (
     <Box>
-      {/* Gives space for accordion divider to render*/}
-      <Box></Box>
       <Accordion
         expanded={expanded === 'panel3'}
         onChange={handleExpanded ? handleExpanded('panel3') : undefined}
@@ -263,10 +261,10 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         </AccordionDetails>
       </Accordion>
       <Accordion
+        elevation={0}
         expanded={expanded === 'panel4'}
         onChange={handleExpanded ? handleExpanded('panel4') : undefined}
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
-        elevation={0}
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -285,6 +283,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       </Accordion>
       {fromDomainFacet.length > 0 && (
         <Accordion
+          elevation={0}
           expanded={expanded === 'panel5'}
           onChange={handleExpanded ? handleExpanded('panel5') : undefined}
           sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
@@ -311,10 +310,10 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {portFacet.length > 0 && (
         <Accordion
+          elevation={0}
           expanded={expanded === 'panel6'}
           onChange={handleExpanded ? handleExpanded('panel6') : undefined}
           sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
-          elevation={0}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -338,6 +337,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {cveFacet.length > 0 && (
         <Accordion
+          elevation={0}
           expanded={expanded === 'panel7'}
           onChange={handleExpanded ? handleExpanded('panel7') : undefined}
           sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
@@ -393,6 +393,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         </Accordion>
       )}
       <Accordion
+        elevation={0}
         square
         expanded={expanded === 'panel9'}
         onChange={handleExpanded ? handleExpanded('panel9') : undefined}

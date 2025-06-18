@@ -7,7 +7,6 @@ import {
   Autocomplete,
   Button,
   Checkbox,
-  Divider,
   FormControlLabel,
   FormGroup,
   List,
@@ -291,6 +290,7 @@ export const RegionAndOrganizationFilters: React.FC<
   return (
     <>
       <Accordion
+        elevation={0}
         expanded={expanded === 'panel1'}
         onChange={handleExpanded ? handleExpanded('panel1') : undefined}
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
@@ -462,6 +462,7 @@ export const RegionAndOrganizationFilters: React.FC<
       {/* Need to reconcile type issues caused by adding freeSolo prop */}
 
       <Accordion
+        elevation={0}
         expanded={expanded === 'panel2'}
         onChange={handleExpanded ? handleExpanded('panel2') : undefined}
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
