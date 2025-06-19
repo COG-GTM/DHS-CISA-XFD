@@ -128,7 +128,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acting User Name',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         const p =
           params.row.payload?.user_performed_assignment ||
           params.row.payload?.user_performed_removal ||
@@ -142,7 +142,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acting User Email',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         const p =
           params.row.payload?.user_performed_assignment ||
           params.row.payload?.user_performed_removal ||
@@ -156,7 +156,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acted-on User Name',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         const u =
           params.row.payload?.user ||
           params.row.payload?.removal_result?.role_deleted?.user ||
@@ -170,7 +170,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acted-on User Email',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         const u =
           params.row.payload?.user ||
           params.row.payload?.removal_result?.role_deleted?.user ||
@@ -184,7 +184,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Organization',
       minWidth: 100,
       flex: 1,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         return (
           params.row.payload?.organization?.name ||
           params.row.payload?.from_organization?.name ||
@@ -197,7 +197,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Region',
       minWidth: 100,
       flex: 0.75,
-      valueGetter: (params: any) =>
+      renderCell: (params: any) =>
         params.row.payload?.user_performed_assignment?.region_id ||
         params.row.payload?.user_performed_removal?.region_id ||
         params.row.payload?.user_performed_approval?.region_id ||
@@ -209,14 +209,16 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Role',
       minWidth: 100,
       flex: 0.75,
-      valueGetter: (params: any) => params.row.payload?.role || 'N/A'
+      renderCell: (params: any) => {
+        return params.row.payload?.role || 'N/A';
+      }
     },
     {
       field: 'state',
       headerName: 'State',
       minWidth: 100,
       flex: 1,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         return (
           params.row.payload?.state ||
           params.row.payload?.user_performed_assignment?.state ||
@@ -233,7 +235,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'User Type',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params: any) => {
+      renderCell: (params: any) => {
         return (
           params.row.payload?.user?.user_type ||
           params.row.payload?.user_to_approve?.user_type ||
@@ -244,16 +246,21 @@ export const Logs: FC<LogsProps> = () => {
     {
       field: 'created_at',
       headerName: 'Timestamp',
-      type: 'dateTime',
       minWidth: 100,
       flex: 1.25,
-      valueFormatter: (e: any) => {
-        const utcDate = parseISO(e.value);
-        const localDate = toZonedTime(
-          utcDate,
-          Intl.DateTimeFormat().resolvedOptions().timeZone
-        );
-        return format(localDate, 'MM/dd/yyyy hh:mm a');
+      renderCell: (params: any) => {
+        const value = params.value;
+        if (!value) return 'N/A';
+        try {
+          const utcDate = parseISO(value);
+          const localDate = toZonedTime(
+            utcDate,
+            Intl.DateTimeFormat().resolvedOptions().timeZone
+          );
+          return format(localDate, 'MM/dd/yyyy hh:mm a');
+        } catch {
+          return 'N/A';
+        }
       }
     },
     {
