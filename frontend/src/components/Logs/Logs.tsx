@@ -227,8 +227,8 @@ export const Logs: FC<LogsProps> = () => {
           params.row.payload?.user?.state ||
           'N/A'
         );
-      },
-    {
+      }
+    },
       field: 'user_type',
       headerName: 'User Type',
       minWidth: 100,
