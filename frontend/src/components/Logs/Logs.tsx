@@ -21,7 +21,6 @@ import React, { FC, useCallback, useEffect, useState } from 'react';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 
 import { toZonedTime } from 'date-fns-tz';
-import { act } from 'react-dom/test-utils';
 
 interface LogsProps {}
 
@@ -129,7 +128,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acting User Name',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         const p =
           params.row.payload?.user_performed_assignment ||
           params.row.payload?.user_performed_removal ||
@@ -143,7 +142,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acting User Email',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         const p =
           params.row.payload?.user_performed_assignment ||
           params.row.payload?.user_performed_removal ||
@@ -157,7 +156,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acted-on User Name',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         const u =
           params.row.payload?.user ||
           params.row.payload?.removal_result?.role_deleted?.user ||
@@ -171,7 +170,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Acted-on User Email',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         const u =
           params.row.payload?.user ||
           params.row.payload?.removal_result?.role_deleted?.user ||
@@ -185,7 +184,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Organization',
       minWidth: 100,
       flex: 1,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         return (
           params.row.payload?.organization?.name ||
           params.row.payload?.from_organization?.name ||
@@ -198,7 +197,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Region',
       minWidth: 100,
       flex: 0.75,
-      valueGetter: (params) =>
+      valueGetter: (params: any) =>
         params.row.payload?.user_performed_assignment?.region_id ||
         params.row.payload?.user_performed_removal?.region_id ||
         params.row.payload?.user_performed_approval?.region_id ||
@@ -210,14 +209,14 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Role',
       minWidth: 100,
       flex: 0.75,
-      valueGetter: (params) => params.row.payload?.role || 'N/A'
+      valueGetter: (params: any) => params.row.payload?.role || 'N/A'
     },
     {
       field: 'state',
       headerName: 'State',
       minWidth: 100,
       flex: 1,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         return (
           params.row.payload?.state ||
           params.row.payload?.user_performed_assignment?.state ||
@@ -234,7 +233,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'User Type',
       minWidth: 100,
       flex: 1.5,
-      valueGetter: (params) => {
+      valueGetter: (params: any) => {
         return (
           params.row.payload?.user?.user_type ||
           params.row.payload?.user_to_approve?.user_type ||
@@ -248,7 +247,7 @@ export const Logs: FC<LogsProps> = () => {
       type: 'dateTime',
       minWidth: 100,
       flex: 1.25,
-      valueFormatter: (e) => {
+      valueFormatter: (e: any) => {
         const utcDate = parseISO(e.value);
         const localDate = toZonedTime(
           utcDate,
@@ -262,7 +261,7 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Result',
       minWidth: 100,
       flex: 1,
-      renderCell: (params) => {
+      renderCell: (params: any) => {
         const isSuccess = params.row.result === 'success';
         return (
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -307,7 +306,7 @@ export const Logs: FC<LogsProps> = () => {
           slots={{
             toolbar: CustomToolbar
           }}
-          slotProps={{ toolbar: { multifilter: true } }}
+          slotProps={{ toolbar: {} }}
           onFilterModelChange={(model) => {
             setFilters(model.items);
           }}
