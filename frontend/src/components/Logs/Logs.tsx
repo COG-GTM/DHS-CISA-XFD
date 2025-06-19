@@ -138,6 +138,7 @@ export const Logs: FC<LogsProps> = () => {
       }
     },
     {
+// <<<<<<< Fixed-Admin-Tool-User-Logs-CRASM-2559
       field: 'acting_user_email',
       headerName: 'Acting User Email',
       minWidth: 100,
@@ -226,8 +227,7 @@ export const Logs: FC<LogsProps> = () => {
           params.row.payload?.user?.state ||
           'N/A'
         );
-      }
-    },
+      },
     {
       field: 'user_type',
       headerName: 'User Type',
@@ -307,6 +307,7 @@ export const Logs: FC<LogsProps> = () => {
             toolbar: CustomToolbar
           }}
           slotProps={{ toolbar: {} }}
+
           onFilterModelChange={(model) => {
             setFilters(model.items);
           }}
