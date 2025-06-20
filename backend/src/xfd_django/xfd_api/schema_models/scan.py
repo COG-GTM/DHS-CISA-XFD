@@ -388,6 +388,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Updates blocked ip records against blocklist.de global IP blocklist",
     ),
+    "was": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Populate was info at commercial mdl",
+    ),
     "was_sync": ScanSchema(
         type="fargate",
         is_passive=True,

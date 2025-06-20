@@ -5,8 +5,6 @@ import os
 # Third-Party Libraries
 from django.core.management.base import BaseCommand
 from django.db import connections
-
-from xfd_api.api_methods.queue_monitoring import is_local
 from xfd_api.tasks.searchSync import handler as sync_es_domains
 from xfd_api.tasks.syncdb_helpers import (
     create_dev_user,
@@ -124,9 +122,6 @@ class Command(BaseCommand):
         if populate:
             self.stdout.write("Populating the database with sample data...")
             populate_sample_data()
-            if is_local:
-                create_dev_user()
-
 
             self.stdout.write("Sample data population complete.")
 

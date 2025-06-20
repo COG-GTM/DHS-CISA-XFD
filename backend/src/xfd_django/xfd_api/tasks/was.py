@@ -31,21 +31,20 @@ import sys
 # import qualys_redact
 # from pdfrw import PdfReader, PdfWriter, PageMerge
 # import pe_reports
-from pe_reports.data.config import staging_config
 import requests
-from retry import retry
 
-# from data.pe_db.db_query_source  import api_was_report_insert, api_was_finding_insert
-from ..helpers import api_was_finding_insert
 
-API_DIC = staging_config(section="was")
-username = API_DIC.get("username")
-password = API_DIC.get("password")
+from ..helpers.was_helpers import api_was_finding_insert_or_update, qualys_call, qualys_post_call
+
+
+username = "dhscs3cd"
+password = "34Ai*%TYHNM*IKL<drtgh"
 credentials = f"{username}:{password}"
 auth_string = "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
 
 LOGGER = logging.getLogger(__name__)
 
+logging.info("Here are your login creds{}".format(credentials))
 
 def handler(event):
     """Identify credential breaches associated with stakeholder's root domains."""
@@ -79,37 +78,6 @@ class InvalidApiCall(Exception):
     pass
 
 
-def qualys_post_call(link, header, data, validate=True):
-    """Make a call to Qualys API."""
-    response = requests.request("POST", link, headers=header, data=json.dumps(data))
-    if not validate:
-        return json.loads(response.json())
-    if response.status_code != 200:
-        LOGGER.error("Error Code: %s", response.status_code)
-        LOGGER.error(f"Request Headers: {response.request.headers}")
-        LOGGER.error(response.text)
-        raise InvalidQualysCall
-    responseJson = json.loads(response.text)
-    if responseJson["ServiceResponse"]["responseCode"] != "SUCCESS":
-        LOGGER.info(responseJson["ServiceResponse"]["responseCode"])
-        raise InvalidApiCall
-    return responseJson
-
-
-@retry((InvalidApiCall, InvalidQualysCall), tries=3, delay=2, backoff=2)
-def qualys_call(link, header, data):
-    """Make a call to Qualys API."""
-    response = requests.post(link, headers=header, data=json.dumps(data))
-    if response.status_code != 200:
-        LOGGER.error("Error Code: %s", response.status_code)
-        raise InvalidQualysCall
-    responseJson = json.loads(response.text)
-    if responseJson["ServiceResponse"]["responseCode"] != "SUCCESS":
-        LOGGER.error(responseJson["ServiceResponse"]["responseCode"])
-        raise InvalidApiCall
-    return responseJson
-
-
 def get_recently_completed_scans(days_back=2):
     """
     Retrieve scans completed within the last `days_back` days from Qualys.
@@ -124,8 +92,6 @@ def get_recently_completed_scans(days_back=2):
         "Content-Type": "application/json",
         "accept": "application/json",
         "Authorization": auth_string
-        # 'user' : username,
-        # 'password' : password
     }
     LOGGER.info(header)
     status_url = (
@@ -188,7 +154,7 @@ def get_recently_completed_scans(days_back=2):
         has_more_records = (
             True
             if status_response.get("ServiceResponse", {}).get("hasMoreRecords", False)
-            == "true"
+               == "true"
             else False
         )
 
@@ -336,7 +302,7 @@ def getFindingsFromId(idStr, block=0):
         )
 
     for finding in findingsList:
-        api_was_finding_insert(finding)
+        api_was_finding_insert_or_update(finding)
         findingCount += 1
 
     if we["ServiceResponse"]["hasMoreRecords"] == "true":
@@ -361,7 +327,7 @@ def main():
         LOGGER.info("Saved " + str(findingCount) + " findings for " + acronym)
         # if findingList != []:
         #     for finding in findingList:
-        #         api_was_finding_insert(finding)
+        #         api_was_finding_insert_or_update(finding)
 
 
 if __name__ == "__main__":

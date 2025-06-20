@@ -766,25 +766,6 @@ def create_sample_user(organization):
     organization.save()
     return user
 
-def create_dev_user():
-    """Create a sample user linked to an organization."""
-
-    dev_user = os.environ.get("LOCAL_MDL_USERNAME")
-
-    user = User.objects.create(
-        first_name=dev_user.split(".")[0],
-        last_name=dev_user.split(".")[1].split("@")[0],
-        email=dev_user,
-        user_type=UserType.GLOBAL_ADMIN,
-        state=random.choice(SAMPLE_STATES),
-        region_id=random.choice(SAMPLE_REGION_IDS),
-    )
-
-    create_key = create_api_key_for_user(user)
-    write_api_key_to_env_file(create_key)
-    return user
-
-
 def create_test_user(organization):
     """Create a test user linked to an organization."""
     email = os.environ.get("PW_XFD_USERNAME")
@@ -832,64 +813,6 @@ def create_api_key_for_user(user):
         )
     )
     return key
-
-# def locate_env_file(filename: str = ".env") -> Path:
-#     """
-#     Walk up from the current working directory until we find `filename`.
-#     - If found, return its Path.
-#     - Otherwise, return Path.cwd() / filename (so it can be created there).
-#     """
-#     current_directory = Path.cwd()
-#     for candidate in [current_directory] + list(current_directory.parents):
-#         candidate_env_path = candidate / filename
-#         if candidate_env_path.exists():
-#             return candidate_env_path
-#
-#     # No existing .env found; assume we’ll create it in the current working directory
-#     return current_directory / filename
-
-
-def write_api_key_to_env_file(key):
-    """
-    In the app/xfd_api/tasks directory, replace or append CF_API_KEY=<key>
-    in .env. If .env does not exist there, create it.
-    """
-    # 1) Construct the path to app/xfd_api/tasks relative to the container’s /app cwd
-    tasks_directory = Path.cwd() / "xfd_api" / "tasks"
-    env_path = tasks_directory / ".env"
-
-    # 2) Ensure the tasks directory exists
-    if not tasks_directory.exists() or not tasks_directory.is_dir():
-        print(
-            f"Error: tasks directory does not exist at {tasks_directory}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # 3) If .env exists in that directory, read + replace or append CF_API_KEY
-    key_prefix = "CF_API_KEY="
-    if env_path.exists() and env_path.is_file():
-        existing_lines = env_path.read_text(encoding="utf-8").splitlines()
-        updated_lines = []
-        did_replace = False
-
-        for line in existing_lines:
-            if line.startswith(key_prefix):
-                updated_lines.append(f"{key_prefix}{key}")
-                did_replace = True
-            else:
-                updated_lines.append(line)
-
-        if not did_replace:
-            # No existing CF_API_KEY line → append it
-            updated_lines.append(f"{key_prefix}{key}")
-
-        env_path.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
-
-    # 4) If .env doesn’t exist, create it and write CF_API_KEY
-    else:
-        env_path.write_text(f"{key_prefix}{key}\n", encoding="utf-8")
-
 
 def generate_random_name():
     """Generate a random organization name using an adjective and entity noun."""
