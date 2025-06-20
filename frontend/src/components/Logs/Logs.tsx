@@ -246,18 +246,28 @@ export const Logs: FC<LogsProps> = () => {
     {
       field: 'created_at',
       headerName: 'Timestamp',
+      type: 'dateTime',
       minWidth: 100,
       flex: 1.25,
-      renderCell: (params: any) => {
-        const value = params.value;
-        if (!value) return 'N/A';
+      valueGetter: (params: any) => {
+        const value = params;
+        if (!value) return null;
         try {
           const utcDate = parseISO(value);
-          const localDate = toZonedTime(
-            utcDate,
-            Intl.DateTimeFormat().resolvedOptions().timeZone
-          );
-          return format(localDate, 'MM/dd/yyyy hh:mm a');
+          const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          return toZonedTime(utcDate, timeZone);
+        } catch (error) {
+          console.error('Error parsing date:', error);
+          return null;
+        }
+      },
+
+      // Return formatted string for display
+      valueFormatter: (params: any) => {
+        const value = params;
+        if (!(value instanceof Date)) return 'N/A';
+        try {
+          return format(value, 'MM/dd/yyyy hh:mm a');
         } catch {
           return 'N/A';
         }
