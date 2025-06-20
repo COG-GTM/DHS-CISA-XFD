@@ -87,6 +87,10 @@ export const VSDashRegionAndOrgFilters: React.FC<
           }
         });
 
+        const body = results?.body?.hits;
+        if (!Array.isArray(body)) {
+          return [];
+        }
         const orgs = results.body.hits.hits.map((hit) => hit._source);
         // Filter out organizations that match the exclusions
         const refinedOrgs = orgs.filter((org) => {
