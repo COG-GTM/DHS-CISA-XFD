@@ -9,26 +9,25 @@ import {
   ListItemButton,
   ListItemText
 } from '@mui/material';
+import { MenuItemType } from './Header'; // Adjust path if Header.tsx is in a different directory
 
-interface MenuItemType {
-  menuItemTitle: string;
-  path?: string;
-  objectStoreParams?: { bucket_name: string; object_key: string };
-  users?: number;
-  onClick?: () => void;
-}
+// interface MenuItemType {
+//   menuItemTitle: string;
+//   path: string;
+//   users?: number;
+//   onClick?: () => void;
+// }
 
 interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
   openDrawer: boolean;
   menuItems: { [section: string]: MenuItemType[] }[];
-  onMenuItemClick?: (item: MenuItemType) => void;
+  onMenuItemClick: (item: MenuItemType) => Promise<void>;
 }
 export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   toggleDrawer,
   openDrawer,
-  menuItems,
-  onMenuItemClick
+  menuItems
 }) => {
   const DrawerList = (
     <Box
@@ -50,41 +49,67 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
 
             return (
               <React.Fragment key={index}>
-                {items.map((item, subIndex) => (
-                  <ListItem
-                    key={`${index}-${subIndex}`}
-                    disablePadding
-                    role="none"
-                  >
-                    <ListItemButton
-                      onClick={() => {
-                        if (item.objectStoreParams && onMenuItemClick) {
-                          onMenuItemClick(item);
-                        }
-                      }}
-                      component={
-                        item.objectStoreParams
-                          ? 'button'
-                          : item.path?.startsWith('http')
-                            ? 'a'
-                            : NavLink
-                      }
-                      {...(item.objectStoreParams
-                        ? {}
-                        : item.path?.startsWith('http')
-                          ? {
-                              href: item.path,
-                              target: '_blank',
-                              rel: 'noopener noreferrer'
+                {/* {menuTitle} */}
+                {items &&
+                  items.length > 0 &&
+                  items.map((item, subIndex) => {
+                    const isExternalLink =
+                      item.path?.startsWith('http') ||
+                      item.path?.startsWith('mailto');
+                    return (
+                      <ListItem
+                        key={`${index}-${subIndex}`}
+                        disablePadding
+                        role="none"
+                      >
+                        {item.onClick ? (
+                          //Used for buttons with onClick handlers
+                          <ListItemButton
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={() => {
+                              item.onClick && item.onClick();
+                              toggleDrawer(false)();
+                            }}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        ) : isExternalLink ? (
+                          // Used for external links
+                          <ListItemButton
+                            component="a"
+                            href={item.path}
+                            target={
+                              item.path?.startsWith('http')
+                                ? '_blank'
+                                : undefined
                             }
-                          : { to: item.path ?? '#' })}
-                      role="menuitem"
-                      aria-label={item.menuItemTitle}
-                    >
-                      <ListItemText primary={item.menuItemTitle} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
+                            rel={
+                              item.path?.startsWith('http')
+                                ? 'noopener noreferrer'
+                                : undefined
+                            }
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={toggleDrawer(false)}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        ) : // Used for internal links
+                        item.path ? (
+                          <ListItemButton
+                            component={NavLink}
+                            to={item.path}
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={toggleDrawer(false)}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        ) : null}
+                      </ListItem>
+                    );
+                  })}
                 <Divider />
               </React.Fragment>
             );
