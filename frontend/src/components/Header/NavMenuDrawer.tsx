@@ -2,17 +2,18 @@ import * as React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Box,
+  Divider,
   Drawer,
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
-  Divider
+  ListItemText
 } from '@mui/material';
 
 interface MenuItemType {
   menuItemTitle: string;
-  path: string;
+  path?: string;
+  objectStoreParams?: { bucket_name: string; object_key: string };
   users?: number;
   onClick?: () => void;
 }
@@ -21,11 +22,13 @@ interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
   openDrawer: boolean;
   menuItems: { [section: string]: MenuItemType[] }[];
+  onMenuItemClick?: (item: MenuItemType) => void;
 }
 export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   toggleDrawer,
   openDrawer,
-  menuItems
+  menuItems,
+  onMenuItemClick
 }) => {
   const DrawerList = (
     <Box
@@ -36,26 +39,17 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
         if (e.key === 'Escape') toggleDrawer(false)();
       }}
     >
+      <Box sx={{ height: '100px' }} />
       <nav aria-label="Main navigation">
         <List>
           {menuItems.map((section, index) => {
             const entries = Object.entries(section);
             if (entries.length === 0) return null;
 
-            const [sectionTitle, items] = entries[0];
+            const [, items] = entries[0];
 
             return (
               <React.Fragment key={index}>
-                <ListItem role="presentation">
-                  <ListItemText
-                    primary={sectionTitle}
-                    primaryTypographyProps={{
-                      fontWeight: 'bold',
-                      id: `drawer-section-${index}`
-                    }}
-                  />
-                </ListItem>
-
                 {items.map((item, subIndex) => (
                   <ListItem
                     key={`${index}-${subIndex}`}
@@ -63,8 +57,27 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                     role="none"
                   >
                     <ListItemButton
-                      component={NavLink}
-                      to={item.path}
+                      onClick={() => {
+                        if (item.objectStoreParams && onMenuItemClick) {
+                          onMenuItemClick(item);
+                        }
+                      }}
+                      component={
+                        item.objectStoreParams
+                          ? 'button'
+                          : item.path?.startsWith('http')
+                            ? 'a'
+                            : NavLink
+                      }
+                      {...(item.objectStoreParams
+                        ? {}
+                        : item.path?.startsWith('http')
+                          ? {
+                              href: item.path,
+                              target: '_blank',
+                              rel: 'noopener noreferrer'
+                            }
+                          : { to: item.path ?? '#' })}
                       role="menuitem"
                       aria-label={item.menuItemTitle}
                     >
@@ -72,7 +85,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                     </ListItemButton>
                   </ListItem>
                 ))}
-
                 <Divider />
               </React.Fragment>
             );
