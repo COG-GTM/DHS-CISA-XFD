@@ -9,7 +9,7 @@ import {
   ListItemButton,
   ListItemText
 } from '@mui/material';
-import { MenuItemType } from './Header'; // Adjust path as needed
+import { MenuItemType } from './Header';
 
 interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
@@ -156,8 +156,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                         </ListItem>
                       );
                     }
-
-                    // 6. Fallback: nothing
                     return null;
                   })}
                 <Divider />
