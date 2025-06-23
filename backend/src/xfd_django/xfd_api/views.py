@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import pprint
 from typing import List, Optional, Union
 from uuid import UUID
 
@@ -51,6 +52,7 @@ from .api_methods.stats import (
     get_stats,
     get_user_ports_count,
     get_user_services_count,
+    get_v2_trending_data,
     get_vs_condensed_trending_data,
     get_vs_trending_data,
     stats_latest_vulns,
@@ -1090,6 +1092,24 @@ async def get_vs_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/v2/stats/trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.V2TrendResponse,
+    response_model_exclude_none=True,
+    tags=["Stats"],
+)
+async def get_v2_trending_stats(
+    filter_data: stat_schema.V2TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve Summary data filtered by the user - V2."""
+    result = get_v2_trending_data(filter_data, current_user)
+    print("DEBUG Response:")
+    pprint.pprint(result)
+    return result
 
 
 @api_router.post(
