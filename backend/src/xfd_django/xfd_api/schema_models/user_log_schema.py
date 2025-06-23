@@ -163,6 +163,8 @@ class LogSearchFilter(BaseModel):
             "isempty",
             "isnotempty",
             "isanyof",
+            "doesnotcontain",
+            "doesnotequal",
         ]
         allowed_date_operators = [
             "is empty",

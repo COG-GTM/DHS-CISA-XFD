@@ -151,6 +151,13 @@ def matches_string_filter(log_value: str, operator: str, value: str) -> bool:
         return (log_value or "").lower().startswith((value or "").lower())
     elif op in ("endswith", "endswith", "ends with"):
         return (log_value or "").lower().endswith((value or "").lower())
+
+    elif op in ("doesnotcontain", "does not contain"):
+        return value.lower() not in (log_value or "").lower()
+
+    elif op in ("doesnotequal", "does not equal", "isnot", "is not"):
+        return (log_value or "").lower() != (value or "").lower()
+
     elif op in ("isempty", "is empty"):
         return log_value is None or log_value == ""
     elif op in ("isnotempty", "is not empty"):

@@ -446,7 +446,7 @@ async def call_search_logs(
 @api_router.post(
     "/logs/filtered-search",
     dependencies=[Depends(get_current_active_user)],
-    response_model=LogSearchResponseFilters,  # <-- CORRECTED
+    response_model=LogSearchResponseFilters,
     tags=["Logs"],
 )
 async def call_search_logs_filtered(
