@@ -46,11 +46,10 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                 {items &&
                   items.length > 0 &&
                   items.map((item, subIndex) => {
-                    const isExternalLink =
-                      item.path?.startsWith('http') ||
-                      item.path?.startsWith('mailto');
+                    const isHttpLink = item.path?.startsWith('http');
+                    const isMailtoLink = item.path?.startsWith('mailto:');
 
-                    // 1. Custom action (logout, etc)
+                    // 1. onClick handler
                     if (item.onClick) {
                       return (
                         <ListItem
@@ -94,8 +93,8 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       );
                     }
 
-                    // 3. External link (http/mailto)
-                    if (isExternalLink) {
+                    // 3. External http link
+                    if (isHttpLink) {
                       return (
                         <ListItem
                           key={`${index}-${subIndex}`}
@@ -105,16 +104,8 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                           <ListItemButton
                             component="a"
                             href={item.path}
-                            target={
-                              item.path?.startsWith('http')
-                                ? '_blank'
-                                : undefined
-                            }
-                            rel={
-                              item.path?.startsWith('http')
-                                ? 'noopener noreferrer'
-                                : undefined
-                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
                             role="menuitem"
                             aria-label={item.menuItemTitle}
                             onClick={toggleDrawer(false)}
@@ -125,7 +116,27 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       );
                     }
 
-                    // 4. Internal link
+                    // 4. External mailto link
+                    if (isMailtoLink) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
+                          <ListItemButton
+                            component="a"
+                            href={item.path}
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
+
+                    // 5. Internal link
                     if (item.path) {
                       return (
                         <ListItem
@@ -146,7 +157,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       );
                     }
 
-                    // 5. Fallback: nothing
+                    // 6. Fallback: nothing
                     return null;
                   })}
                 <Divider />
