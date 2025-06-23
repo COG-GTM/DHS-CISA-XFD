@@ -9,20 +9,13 @@ import {
   ListItemButton,
   ListItemText
 } from '@mui/material';
-
-interface MenuItemType {
-  menuItemTitle: string;
-  path?: string;
-  objectStoreParams?: { bucket_name: string; object_key: string };
-  users?: number;
-  onClick?: () => void; // For logout or custom actions
-}
+import { MenuItemType } from './Header'; // Adjust path as needed
 
 interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
   openDrawer: boolean;
   menuItems: { [section: string]: MenuItemType[] }[];
-  onMenuItemClick?: (item: MenuItemType) => void;
+  onMenuItemClick?: (item: MenuItemType) => Promise<void>;
 }
 
 export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
@@ -31,21 +24,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   menuItems,
   onMenuItemClick
 }) => {
-  const handleMenuItemClick = (item: MenuItemType) => {
-    if (item.onClick) {
-      item.onClick();
-      toggleDrawer(false)();
-      return;
-    }
-    if (item.objectStoreParams && onMenuItemClick) {
-      onMenuItemClick(item);
-      toggleDrawer(false)();
-      return;
-    }
-    // For links, just close the drawer (navigation handled by NavLink or <a>)
-    toggleDrawer(false)();
-  };
-
   const DrawerList = (
     <Box
       sx={{ width: 250 }}
@@ -65,87 +43,112 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
 
             return (
               <React.Fragment key={index}>
-                {items.map((item, subIndex) => {
-                  // If the item has an onClick (e.g., logout), use it directly
-                  if (item.onClick) {
-                    return (
-                      <ListItem
-                        key={`${index}-${subIndex}`}
-                        disablePadding
-                        role="none"
-                      >
-                        <ListItemButton
-                          onClick={() => handleMenuItemClick(item)}
-                          role="menuitem"
-                          aria-label={item.menuItemTitle}
-                        >
-                          <ListItemText primary={item.menuItemTitle} />
-                        </ListItemButton>
-                      </ListItem>
-                    );
-                  }
+                {items &&
+                  items.length > 0 &&
+                  items.map((item, subIndex) => {
+                    const isExternalLink =
+                      item.path?.startsWith('http') ||
+                      item.path?.startsWith('mailto');
 
-                  // If the item is an object store link
-                  if (item.objectStoreParams) {
-                    return (
-                      <ListItem
-                        key={`${index}-${subIndex}`}
-                        disablePadding
-                        role="none"
-                      >
-                        <ListItemButton
-                          onClick={() => handleMenuItemClick(item)}
-                          role="menuitem"
-                          aria-label={item.menuItemTitle}
+                    // 1. Custom action (logout, etc)
+                    if (item.onClick) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
                         >
-                          <ListItemText primary={item.menuItemTitle} />
-                        </ListItemButton>
-                      </ListItem>
-                    );
-                  }
+                          <ListItemButton
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={() => {
+                              item.onClick && item.onClick();
+                              toggleDrawer(false)();
+                            }}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
 
-                  // External link
-                  if (item.path?.startsWith('http')) {
-                    return (
-                      <ListItem
-                        key={`${index}-${subIndex}`}
-                        disablePadding
-                        role="none"
-                      >
-                        <ListItemButton
-                          component="a"
-                          href={item.path}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          role="menuitem"
-                          aria-label={item.menuItemTitle}
-                          onClick={toggleDrawer(false)}
+                    // 2. Object store handler
+                    if (item.objectStoreParams && onMenuItemClick) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
                         >
-                          <ListItemText primary={item.menuItemTitle} />
-                        </ListItemButton>
-                      </ListItem>
-                    );
-                  }
+                          <ListItemButton
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={async () => {
+                              await onMenuItemClick(item);
+                              toggleDrawer(false)();
+                            }}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
 
-                  // Internal link (default)
-                  return (
-                    <ListItem
-                      key={`${index}-${subIndex}`}
-                      disablePadding
-                      role="none"
-                    >
-                      <ListItemButton
-                        component={NavLink}
-                        to={item.path ?? '#'}
-                        role="menuitem"
-                        aria-label={item.menuItemTitle}
-                        onClick={toggleDrawer(false)}
-                      >
-                        <ListItemText primary={item.menuItemTitle} />
-                      </ListItemButton>
-                    </ListItem>
-                  );
-                })}
+                    // 3. External link (http/mailto)
+                    if (isExternalLink) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
+                          <ListItemButton
+                            component="a"
+                            href={item.path}
+                            target={
+                              item.path?.startsWith('http')
+                                ? '_blank'
+                                : undefined
+                            }
+                            rel={
+                              item.path?.startsWith('http')
+                                ? 'noopener noreferrer'
+                                : undefined
+                            }
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={toggleDrawer(false)}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
+
+                    // 4. Internal link
+                    if (item.path) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
+                          <ListItemButton
+                            component={NavLink}
+                            to={item.path}
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={toggleDrawer(false)}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
+
+                    // 5. Fallback: nothing
+                    return null;
+                  })}
                 <Divider />
               </React.Fragment>
             );
