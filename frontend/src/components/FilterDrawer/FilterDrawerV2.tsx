@@ -137,12 +137,23 @@ export const FilterDrawer: FC<
         <Box>
           {filters.length > 0 && (
             <Box
-              paddingBottom={3}
+              paddingBottom={5}
               display="flex"
               width="100%"
               justifyContent="center"
             >
-              <Button onClick={clearFiltersAndSearch}>Reset</Button>
+              <Button
+                onClick={clearFiltersAndSearch}
+                sx={{
+                  color: 'primary.dark',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  lineHeight: '20px',
+                  letterSpacing: '0.1em'
+                }}
+              >
+                Reset
+              </Button>
             </Box>
           )}
         </Box>
