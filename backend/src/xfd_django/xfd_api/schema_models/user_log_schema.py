@@ -1,6 +1,7 @@
 """User event log schema."""
 
 # Standard Python Libraries
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 # Third-Party Libraries
@@ -77,14 +78,6 @@ class LogSearchResponse(BaseModel):
 
     result: List[Any]
     count: int
-
-
-# Standard Python Libraries
-from datetime import datetime
-from typing import Optional
-
-# Third-Party Libraries
-from pydantic import BaseModel
 
 
 class LogFilterCondition(BaseModel):
