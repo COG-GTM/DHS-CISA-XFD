@@ -1,12 +1,14 @@
 """
 Process recent WAS scans and insert findings.
+
  Retrieve recent scans and, for each scan ID, fetch findings and insert them.
 """
 # Standard Python Libraries
+import base64
+from datetime import datetime, timedelta
 import json
 import logging
 import os
-from datetime import datetime, timedelta, timezone
 
 # Third-Party Libraries
 import requests
@@ -14,21 +16,35 @@ from retry import retry
 
 # Setup logging
 LOGGER = logging.getLogger(__name__)
+DEFAULT_REQUEST_TIMEOUT_SECONDS = 10
 
+username = os.environ.get("QUALYS_USERNAME")
+password = os.environ.get("QUALYS_PASSWORD")
+credentials = f"{username}:{password}"
+auth_string = "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+
+# Third-Party Libraries
 from xfd_mini_dl.models import WasFindings as MDL_WasFindings
+
 
 class InvalidQualysCall(Exception):
     """Raise When qualys returns an error."""
+
     pass
+
+
 class InvalidApiCall(Exception):
     """Raise when the API call is invalid or no data is returned."""
+
     pass
+
 
 def convert_timestamp_to_date(timestamp: str) -> str:
     """Convert an ISO 8601 timestamp to a date string in YYYY-MM-DD format."""
     date_object = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
     formatted_date = date_object.strftime("%Y-%m-%d")
     return formatted_date
+
 
 def api_was_finding_insert_or_update(finding_dict):
     """
@@ -44,62 +60,76 @@ def api_was_finding_insert_or_update(finding_dict):
     """
     try:
         was_remediated_flag = finding_dict.get("fstatus") == "FIXED"
-        potential_flag     = str(finding_dict.get("potential", False)).lower() == "true"
-        ignored_flag       = str(finding_dict.get("is_ignored", False)).lower() == "true"
+        potential_flag = str(finding_dict.get("potential", False)).lower() == "true"
+        ignored_flag = str(finding_dict.get("is_ignored", False)).lower() == "true"
 
         defaults = {
-            "finding_uid":         finding_dict.get("finding_uid"),
-            "finding_type":        finding_dict.get("finding_type"),
-            "webapp_id":           finding_dict.get("webapp_id"),
-            "webapp_url":          finding_dict.get("webapp_url"),
-            "webapp_name":         finding_dict.get("webapp_name"),
-            "was_org_id":          finding_dict.get("was_org_id"),
-            "name":                finding_dict.get("name"),
-            "owasp_category":      finding_dict.get("owasp_category"),
-            "severity":            finding_dict.get("severity"),
-            "times_detected":      finding_dict.get("times_detected"),
+            "finding_uid": finding_dict.get("finding_uid"),
+            "finding_type": finding_dict.get("finding_type"),
+            "webapp_id": finding_dict.get("webapp_id"),
+            "webapp_url": finding_dict.get("webapp_url"),
+            "webapp_name": finding_dict.get("webapp_name"),
+            "was_org_id": finding_dict.get("was_org_id"),
+            "name": finding_dict.get("name"),
+            "owasp_category": finding_dict.get("owasp_category"),
+            "severity": finding_dict.get("severity"),
+            "times_detected": finding_dict.get("times_detected"),
             "cvss_v3_attack_vector": finding_dict.get("cvss_v3_attack_vector"),
-            "base_score":          finding_dict.get("base_score"),
-            "temporal_score":      finding_dict.get("temporal_score"),
-            "fstatus":             finding_dict.get("fstatus"),
-            "last_detected":       finding_dict.get("last_detected"),
-            "first_detected":      finding_dict.get("first_detected"),
-            "potential":           potential_flag,
-            "cwe_list":            finding_dict.get("cwe_list", []),
-            "wasc_list":           finding_dict.get("wasc_list", []),
-            "last_tested":         finding_dict.get("last_tested"),
-            "fixed_date":          finding_dict.get("fixed_date"),
-            "is_ignored":          ignored_flag,
-            "is_remediated":       was_remediated_flag,
-            "url":                 finding_dict.get("url"),
-            "qid":                 finding_dict.get("qid"),
-            "response":            finding_dict.get("response"),
+            "base_score": finding_dict.get("base_score"),
+            "temporal_score": finding_dict.get("temporal_score"),
+            "fstatus": finding_dict.get("fstatus"),
+            "last_detected": finding_dict.get("last_detected"),
+            "first_detected": finding_dict.get("first_detected"),
+            "potential": potential_flag,
+            "cwe_list": finding_dict.get("cwe_list", []),
+            "wasc_list": finding_dict.get("wasc_list", []),
+            "last_tested": finding_dict.get("last_tested"),
+            "fixed_date": finding_dict.get("fixed_date"),
+            "is_ignored": ignored_flag,
+            "is_remediated": was_remediated_flag,
+            "url": finding_dict.get("url"),
+            "qid": finding_dict.get("qid"),
+            "response": finding_dict.get("response"),
         }
 
         try:
-            mdl_was_finding_object, mdl_created = MDL_WasFindings.objects.update_or_create(
+            (
+                mdl_was_finding_object,
+                mdl_created,
+            ) = MDL_WasFindings.objects.update_or_create(
                 finding_uid=finding_dict.get("finding_uid"),
                 defaults=defaults,
             )
         except Exception:
-            LOGGER.info("Failed to insert WAS finding to MDL: %s", finding_dict.get("finding_uid"))
+            LOGGER.info(
+                "Failed to insert WAS finding to MDL: %s",
+                finding_dict.get("finding_uid"),
+            )
 
         if mdl_created:
-            LOGGER.info("Created new WAS finding record for %s", finding_dict.get("was_org_id"))
+            LOGGER.info(
+                "Created new WAS finding record for %s", finding_dict.get("was_org_id")
+            )
             return {
                 "message": "New WAS finding created.",
                 "was_finding_obj": mdl_was_finding_object,
             }
         else:
-            LOGGER.info("Updated WAS finding record for %s", finding_dict.get("was_org_id"))
+            LOGGER.info(
+                "Updated WAS finding record for %s", finding_dict.get("was_org_id")
+            )
             return {
                 "message": "WAS finding updated.",
                 "was_finding_obj": mdl_was_finding_object,
             }
     except Exception as e:
         LOGGER.warning(e)
-        LOGGER.info("Failed to insert or update WAS finding for %s", finding_dict.get("was_org_id"))
+        LOGGER.info(
+            "Failed to insert or update WAS finding for %s",
+            finding_dict.get("was_org_id"),
+        )
         return {"message": "An error occurred while processing the WAS finding."}
+
 
 def getFindingsFromId(idStr, block=0):
     """Get all findings from a given ID."""
@@ -231,13 +261,29 @@ def getFindingsFromId(idStr, block=0):
         findingCount += getFindingsFromId(idStr, block + 1)
     return findingCount
 
+
 @retry((InvalidApiCall, InvalidQualysCall), tries=3, delay=2, backoff=2)
 def qualys_call(link, header, data):
     """Make a call to Qualys API."""
-    response = requests.post(link, headers=header, data=json.dumps(data))
+    try:
+        response = requests.post(
+            link,
+            headers=header,
+            data=json.dumps(data),
+            timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS,
+        )
+    except requests.exceptions.Timeout as timeout_error:
+        LOGGER.error(
+            "Qualys API request timed out after %s seconds: %s",
+            DEFAULT_REQUEST_TIMEOUT_SECONDS,
+            timeout_error,
+        )
+        raise InvalidApiCall from timeout_error
     if response.status_code == 401:
-        logging.error("Qualys returned 401 Unauthorized. "
-                      "Check your username/password and API access.")
+        logging.error(
+            "Qualys returned 401 Unauthorized. "
+            "Check your username/password and API access."
+        )
         response.raise_for_status()
 
     if response.status_code != 200:
@@ -248,6 +294,7 @@ def qualys_call(link, header, data):
         LOGGER.error(responseJson["ServiceResponse"]["responseCode"])
         raise InvalidApiCall
     return responseJson
+
 
 def qualys_post_call(link, header, data, validate=True):
     """Make a call to Qualys API."""

@@ -5,7 +5,6 @@ import os
 # Third-Party Libraries
 from django.core.management.base import BaseCommand
 from django.db import connections
-from xfd_api.tasks.searchSync import handler as sync_es_domains
 from xfd_api.tasks.helpers.syncdb_helpers.adjust_columns import adjust_column_types
 from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import populate_sample_data
 from xfd_api.tasks.helpers.syncdb_helpers.es_sync import (
@@ -44,7 +43,8 @@ class Command(BaseCommand):
         mdl_username = os.getenv("MDL_USERNAME")
         mdl_password = os.getenv("MDL_PASSWORD")
         mdl_name = os.getenv("MDL_NAME")
-        is_local = os.getenv("IS_LOCAL")
+        # TODO: Uncomment when IS_LOCAL is needed
+        # is_local = os.getenv("IS_LOCAL")
 
         if not (mdl_username and mdl_password and mdl_name):
             self.stderr.write(

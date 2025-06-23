@@ -19,32 +19,33 @@ import base64
 # import xml.etree.ElementTree as ET
 # from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-import json
 import logging
 import os
 import sys
 
-# Third-Party Libraries
+from ..helpers.was_helpers import (
+    api_was_finding_insert_or_update,
+    qualys_call,
+    qualys_post_call,
+)
+
 # from dateutil.relativedelta import relativedelta
 # import re
 # from io import BytesIO
 # import qualys_redact
 # from pdfrw import PdfReader, PdfWriter, PageMerge
 # import pe_reports
-import requests
 
 
-from ..helpers.was_helpers import api_was_finding_insert_or_update, qualys_call, qualys_post_call
-
-
-username = "dhscs3cd"
-password = "34Ai*%TYHNM*IKL<drtgh"
+username = os.environ.get("QUALYS_USERNAME")
+password = os.environ.get("QUALYS_PASSWORD")
 credentials = f"{username}:{password}"
 auth_string = "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
 
 LOGGER = logging.getLogger(__name__)
 
 logging.info("Here are your login creds{}".format(credentials))
+
 
 def handler(event):
     """Identify credential breaches associated with stakeholder's root domains."""
@@ -91,7 +92,7 @@ def get_recently_completed_scans(days_back=2):
     header = {
         "Content-Type": "application/json",
         "accept": "application/json",
-        "Authorization": auth_string
+        "Authorization": auth_string,
     }
     LOGGER.info(header)
     status_url = (
@@ -154,7 +155,7 @@ def get_recently_completed_scans(days_back=2):
         has_more_records = (
             True
             if status_response.get("ServiceResponse", {}).get("hasMoreRecords", False)
-               == "true"
+            == "true"
             else False
         )
 
@@ -312,9 +313,10 @@ def getFindingsFromId(idStr, block=0):
 
 def main():
     """
-    Main function to process recent WAS scans and insert findings.
+    Process recent WAS scans and insert findings.
 
-    It retrieves recent scans and for each scan ID, fetches findings and inserts them.
+     Retrieve recent scans, fetch findings for each scan ID,
+      and insert the results.
     """
     recently_scanned = get_recently_completed_scans(2)
 
