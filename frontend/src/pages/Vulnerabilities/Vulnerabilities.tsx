@@ -318,18 +318,19 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         },
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
           const severityText = cellValues.row.severity;
-          const severityColor = getSeverityColor({ id: severityText || '' });
+          const sevColor = getSeverityColor({ id: severityText || '' });
           return (
-            <Stack>
-              <div>{severityText}</div>
-              <Box
-                sx={{
-                  height: '.5em',
-                  width: '5em',
-                  backgroundColor: severityColor
-                }}
-              />
-            </Stack>
+            <Box
+              component="span"
+              sx={{
+                borderBottom: `4px solid ${sevColor}`,
+                display: 'inline-block',
+                lineHeight: 1,
+                pb: '2px'
+              }}
+            >
+              {severityText}
+            </Box>
           );
         }
       },
