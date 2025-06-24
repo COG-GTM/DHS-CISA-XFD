@@ -158,13 +158,13 @@ export interface SeverityByProminenceGraphData {
 }
 
 export interface ScanningSummary {
-    hostScan: string;
-    vulnerabilityScan: string;
-    assetsOwned: number;
-    assetsScanned: number;
-    startDate: string;
-    endDate: string;
-  };
+  hostScan: string;
+  vulnerabilityScan: string;
+  assetsOwned: number;
+  assetsScanned: number;
+  startDate: string;
+  endDate: string;
+}
 
 export type VulnScanDataTransformed = {
   vulnScanSummary: ScanningSummary[];
