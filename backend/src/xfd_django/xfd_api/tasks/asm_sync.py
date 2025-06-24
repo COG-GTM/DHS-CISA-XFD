@@ -43,7 +43,7 @@ def handler(event):
     """Enumerate and identify assets belonging to each stakeholder."""
     try:
         is_dmz = os.getenv("IS_DMZ")
-        is_local = os.getenv("IS_LOCAL") 
+        is_local = os.getenv("IS_LOCAL")
         if str(is_dmz).lower() not in {"true", "1"} and not is_local:
             LOGGER.warning("Scan can only be run in the DMZ or locally. Exitting now.")
             return {
