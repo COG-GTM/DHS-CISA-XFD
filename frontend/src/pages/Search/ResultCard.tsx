@@ -107,7 +107,7 @@ export const ResultCard: React.FC<Props> = (props) => {
     []
   );
 
-  const cves = vulnerabilities.raw.reduce(
+  const vulns = vulnerabilities.raw.reduce(
     (acc, nextVuln) => [...acc, nextVuln.cve],
     []
   );
@@ -127,13 +127,10 @@ export const ResultCard: React.FC<Props> = (props) => {
         products.length <= 8 ? null : expanded.products ? 'less' : 'more'
     });
   }
-  if (cves.length > 0) {
+  if (vulns.length > 0) {
     data.push({
-      label: `CVE${cves.length > 1 ? 's' : ''}`,
-      count: cves.length,
-      value: filterExpanded(cves, Boolean(expanded.vulns), 10).join(', '),
-      onExpand: () => toggleExpanded('vulns'),
-      expansionText: cves.length <= 10 ? null : expanded.vulns ? 'less' : 'more'
+      label: vulns.length > 1 ? 'Vulnerabilities' : 'Vulnerability',
+      count: vulns.length
     });
   }
   if (inner_hits?.webpage?.hits?.hits?.length! > 0) {
