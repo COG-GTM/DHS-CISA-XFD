@@ -78,7 +78,7 @@ def build_fake_host_summaries():
 
 def handler(event):
     """Retrieve and save NIST update alerts from the DMZ."""
-    is_local_value = os.getenv("IS_LOCAL", "1")
+    is_local_value = os.getenv("IS_LOCAL")
     is_local = str(is_local_value).lower() in ["1", "true"] or is_local_value is True
     LOGGER.info("IS_LOCAL equal %s", os.getenv("IS_LOCAL", "1"))
     try:
