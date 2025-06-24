@@ -292,7 +292,7 @@ def search_logs(search_data, current_user):
             value = search_dict["event_type"]["value"]
             if operator == "contains":
                 q_object &= Q(event_type__icontains=value)
-            elif operator == "equals" or operator == "is":
+            elif operator in ("equals", "is"):
                 q_object &= Q(event_type__iexact=value)
             elif operator == "doesnotcontain":
                 q_object &= ~Q(event_type__icontains=value)
@@ -308,7 +308,7 @@ def search_logs(search_data, current_user):
             value = search_dict["result"]["value"]
             if operator == "contains":
                 q_object &= Q(result__icontains=value)
-            elif operator == "equals" or operator == "is":
+            elif operator in ("equals", "is"):
                 q_object &= Q(result__iexact=value)
             elif operator == "doesnotcontain":
                 q_object &= ~Q(result__icontains=value)
@@ -376,7 +376,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                         if log_date is not None:
                             matches = False
                         continue
-                    elif operator == "is not empty":
+                    if operator == "is not empty":
                         if log_date is None:
                             matches = False
                         continue
