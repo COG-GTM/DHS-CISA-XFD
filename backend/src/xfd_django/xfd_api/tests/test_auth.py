@@ -1,7 +1,9 @@
 """Test auth API."""
 # Standard Python Libraries
+import json
 import secrets
 from unittest.mock import AsyncMock, patch
+# import uuid
 
 # Third-Party Libraries
 from fastapi.testclient import TestClient
@@ -10,6 +12,35 @@ from xfd_django.asgi import app
 from xfd_mini_dl.models import User
 
 client = TestClient(app)
+
+
+# Test utilities
+def assert_serializable(obj, label="object"):
+    """
+    Try to serialize an object to JSON. If it fails, identify which field caused it.
+    """
+    try:
+        json.dumps(obj)
+    except TypeError as e:
+
+        def walk(o, path):
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    walk(v, path + [str(k)])
+            elif isinstance(o, list):
+                for i, item in enumerate(o):
+                    walk(item, path + [f"[{i}]"])
+            else:
+                try:
+                    json.dumps(o)
+                except TypeError:
+                    path_str = ".".join(path)
+                    pytest.fail(
+                        f"{label} contains unserializable value at `{path_str}`: {repr(o)}"
+                    )
+
+        walk(obj, [])
+        pytest.fail(f"{label} failed JSON serialization: {e}")
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -90,3 +121,99 @@ def test_okta_callback_missing_code():
 
     assert response.json()["status_code"] == 400
     assert response.json()["detail"] == "Code not found in request body"
+
+
+# Test that the response is JSON serializable
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+@patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
+def test_okta_callback_user_response_is_serializable(mock_get_jwt_from_code):
+    """Ensure /auth/okta-callback user object is fully JSON serializable."""
+    email = "serialtest@example.com"
+
+    approver = User.objects.create(
+        email="approver@example.com",
+        okta_id="okta-approver-id",
+        first_name="Approver",
+        last_name="User",
+        user_type="global_admin",
+        invite_pending=False,
+    )
+
+    User.objects.create(
+        email=email,
+        okta_id="okta-user-id-456",
+        first_name="Test",
+        last_name="User",
+        user_type="standard",
+        approved_by=approver,
+        invite_pending=False,
+    )
+
+    mock_get_jwt_from_code.return_value = {
+        "decoded_token": {
+            "email": email,
+            "sub": "okta-user-id-456",
+            "given_name": "Test",
+            "family_name": "User",
+        }
+    }
+
+    payload = {"code": "test-auth-code"}
+    response = client.post("/auth/okta-callback", json=payload)
+
+    assert response.status_code == 200
+    user_data = response.json()["data"]["user"]
+    assert_serializable(user_data, label="user response")
+
+
+# @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+# @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
+# def test_okta_callback_serializes_uuid_fields(mock_get_jwt_from_code):
+#     """Ensure /auth/okta-callback returns a JSON-serializable user object (no raw UUIDs)."""
+#     email = "uuidcheck@example.com"
+
+#     approver = User.objects.create(
+#         email="approver@example.com",
+#         okta_id="okta-approver-id",
+#         first_name="Approver",
+#         last_name="User",
+#         user_type="global_admin",
+#         invite_pending=False,
+#     )
+
+#     User.objects.create(
+#         email=email,
+#         okta_id="okta-user-id-456",
+#         first_name="Test",
+#         last_name="User",
+#         user_type="standard",
+#         approved_by=approver,
+#         invite_pending=False,
+#     )
+
+#     mock_get_jwt_from_code.return_value = {
+#         "decoded_token": {
+#             "email": email,
+#             "sub": "okta-user-id-456",
+#             "given_name": "Test",
+#             "family_name": "User",
+#         }
+#     }
+
+#     payload = {"code": "test-auth-code"}
+#     response = client.post("/auth/okta-callback", json=payload)
+
+#     assert response.status_code == 200
+#     user_data = response.json()["data"]["user"]
+
+#     def assert_no_unserialized_uuids(obj, path="user"):
+#         if isinstance(obj, dict):
+#             for key, val in obj.items():
+#                 assert_no_unserialized_uuids(val, "{}.{}".format(path, key))
+#         elif isinstance(obj, list):
+#             for idx, item in enumerate(obj):
+#                 assert_no_unserialized_uuids(item, "{}[{}]".format(path, idx))
+#         else:
+#             assert not isinstance(obj, uuid.UUID), "{} contains unserialized UUID: {}".format(path, obj)
+
+#     assert_no_unserialized_uuids(user_data)
