@@ -29,7 +29,7 @@ const testContext: ContextType = {
   resultSearchTerm: 'string',
   results: [],
   resultsPerPage: 1,
-  search_term: 'string',
+  searchTerm: 'string',
   setCurrent: (current: number) => {},
   setFilter: () => {},
   setResultsPerPage: () => {},

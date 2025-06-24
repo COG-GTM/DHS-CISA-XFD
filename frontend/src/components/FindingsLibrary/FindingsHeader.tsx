@@ -7,7 +7,7 @@ const tooltipContentJson = [
   {
     id: 'Findings Library',
     content:
-      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
+      'The Findings Library is a collection of all findings, concerning your organization and its assets. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
   }
 ];
 
