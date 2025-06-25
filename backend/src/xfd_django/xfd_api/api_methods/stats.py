@@ -721,7 +721,7 @@ def filter_fields(summary_list: List[dict], selected_fields: List[str]) -> List[
     ]
 
 
-def get_v2_trending_data(payload, current_user): # pylint: disable=R0915
+def get_v2_trending_data(payload, current_user):  # pylint: disable=R0915
     """Query VS scan data based on the user filters and apply optional segment summarization."""
     filters = payload.filters
     fields_by_source = payload.fields or {}
