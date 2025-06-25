@@ -57,7 +57,7 @@ exports[`Layout component matches snapshot 1`] = `
           class="MuiStack-root css-ioj9fa-MuiStack-root"
         >
           <div
-            class="MuiBox-root css-1wi9kp8"
+            class="MuiBox-root css-0"
             role="presentation"
           >
             <div
@@ -93,11 +93,8 @@ exports[`Layout component matches snapshot 1`] = `
                 </svg>
               </button>
             </div>
-            <hr
-              class="MuiDivider-root MuiDivider-fullWidth css-1jpc804-MuiDivider-root"
-            />
             <div
-              class="MuiBox-root css-19midj6"
+              class="MuiBox-root css-shhb4o"
             >
               <div
                 class="MuiAutocomplete-root MuiAutocomplete-hasPopupIcon css-1tlcqt-MuiAutocomplete-root"

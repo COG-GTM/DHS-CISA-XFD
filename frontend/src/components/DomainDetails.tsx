@@ -415,7 +415,7 @@ export const DomainDetails: React.FC<Props> = (props) => {
                     >
                       <Typography
                         sx={{
-                          borderBottom: `6px solid ${getSeverityColor({
+                          borderBottom: `4px solid ${getSeverityColor({
                             id: formatSeverity(vuln.severity)
                           })}`
                         }}

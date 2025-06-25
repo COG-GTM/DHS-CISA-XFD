@@ -88,6 +88,13 @@ export const extractInitialFilters = (state: LocationState) => {
       operator: 'equals'
     });
   }
+  if (state?.scanType) {
+    hiddenFilters.push({
+      field: 'scan_type',
+      value: state.scanType,
+      operator: 'equals'
+    });
+  }
   return hiddenFilters;
 };
 
