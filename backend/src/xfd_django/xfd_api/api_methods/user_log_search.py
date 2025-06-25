@@ -43,127 +43,108 @@ def safe_get(d, *keys):
     return d
 
 
-def extract_log_value(field, log):
-    """Extract the relevant value from a log entry based on the field."""
-    if field == "event_type":
-        return log.get("event_type", "")
-    if field == "result":
-        return log.get("result", "")
-    if field in ("acted_on_user_name", "payload.user.full_name"):
-        payload = log.get("payload", {})
-        if isinstance(payload, str):
-            try:
-                payload = json.loads(payload)
-            except Exception:
-                payload = {}
-        sources = [
-            payload.get("user", {}),
-            safe_get(payload, "removal_result", "role_deleted", "user"),
-            payload.get("user_to_approve", {}),
-            safe_get(payload, "approval_results", "role_deleted", "user"),
-        ]
-        for source in sources:
-            if source and source.get("full_name"):
-                return source.get("full_name", "")
-        return ""
-    if field in ("acted_on_user_email", "payload.user.email"):
-        payload = log.get("payload", {})
-        if isinstance(payload, str):
-            try:
-                payload = json.loads(payload)
-            except Exception:
-                payload = {}
-        sources = [
-            payload.get("user", {}),
-            safe_get(payload, "removal_result", "role_deleted", "user"),
-            payload.get("user_to_approve", {}),
-            safe_get(payload, "approval_results", "role_deleted", "user"),
-        ]
-        for source in sources:
-            if source and source.get("email"):
-                return source.get("email", "")
-        return ""
+def _get_payload(log):
+    """Get the payload from a log, decoding from JSON if necessary."""
     payload = log.get("payload", {})
     if isinstance(payload, str):
         try:
-            payload = json.loads(payload)
-        except Exception:
-            payload = {}
-    if field == "payload.user_performed_assignment.full_name":
-        sources = [
-            payload.get("user_performed_assignment", {}),
-            payload.get("user_performed_removal", {}),
-            payload.get("user_performed_approval", {}),
-            payload.get("user_performed_invite", {}),
-        ]
-        for source in sources:
-            if source and source.get("full_name"):
-                return source.get("full_name", "")
+            return json.loads(payload)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _find_first_value(sources, key, default=""):
+    """Iterate through a list of source dicts and return the first value found for a key."""
+    for source in sources:
+        if source and source.get(key):
+            return str(source.get(key, default))
+    return default
+
+
+ACTED_ON_USER_PATHS = [
+    ("user",),
+    ("removal_result", "role_deleted", "user"),
+    ("user_to_approve",),
+    ("approval_results", "role_deleted", "user"),
+]
+
+PERFORMED_BY_USER_PATHS = [
+    ("user_performed_assignment",),
+    ("user_performed_removal",),
+    ("user_performed_approval",),
+    ("user_performed_invite",),
+]
+
+FIELD_HANDLERS = {
+    "event_type": lambda log, payload: log.get("event_type", ""),
+    "result": lambda log, payload: log.get("result", ""),
+    "payload.role": lambda log, payload: payload.get("role", ""),
+    "acted_on_user_name": {"source_paths": ACTED_ON_USER_PATHS, "key": "full_name"},
+    "payload.user.full_name": {"source_paths": ACTED_ON_USER_PATHS, "key": "full_name"},
+    "acted_on_user_email": {"source_paths": ACTED_ON_USER_PATHS, "key": "email"},
+    "payload.user.email": {"source_paths": ACTED_ON_USER_PATHS, "key": "email"},
+    "payload.user_performed_assignment.full_name": {
+        "source_paths": PERFORMED_BY_USER_PATHS,
+        "key": "full_name",
+    },
+    "payload.user_performed_assignment.email": {
+        "source_paths": PERFORMED_BY_USER_PATHS,
+        "key": "email",
+    },
+    "payload.user_performed_assignment.region_id": {
+        "source_paths": PERFORMED_BY_USER_PATHS,
+        "key": "region_id",
+    },
+    "payload.organization.name": {
+        "source_paths": [("organization",), ("from_organization",)],
+        "key": "name",
+    },
+    "payload.state": {
+        "source_paths": [
+            (),
+            ("user_performed_assignment",),
+            ("user_performed_removal",),
+            ("user_performed_approval",),
+            ("user_performed_invite",),
+            ("user",),
+        ],
+        "key": "state",
+    },
+    "payload.user.user_type": {
+        "source_paths": [("user",), ("user_to_approve",)],
+        "key": "user_type",
+    },
+    "payload.user_to_approve.user_type": {
+        "source_paths": [("user_to_approve",), ("user",)],
+        "key": "user_type",
+    },
+}
+
+
+def extract_log_value(field, log):
+    """
+    Extract the relevant value from a log entry based on the field.
+
+    This function uses a handler mapping to dispatch to the correct extraction strategy.
+    """
+    handler = FIELD_HANDLERS.get(field)
+    if not handler:
         return ""
-    if field == "payload.user_performed_assignment.email":
-        sources = [
-            payload.get("user_performed_assignment", {}),
-            payload.get("user_performed_removal", {}),
-            payload.get("user_performed_approval", {}),
-            payload.get("user_performed_invite", {}),
-        ]
-        for source in sources:
-            if source and source.get("email"):
-                return source.get("email", "")
-        return ""
-    if field == "payload.user_performed_assignment.region_id":
-        sources = [
-            payload.get("user_performed_assignment", {}),
-            payload.get("user_performed_removal", {}),
-            payload.get("user_performed_approval", {}),
-            payload.get("user_performed_invite", {}),
-        ]
-        for source in sources:
-            if source and source.get("region_id"):
-                return str(source.get("region_id", ""))
-        return ""
-    if field == "payload.organization.name":
-        sources = [
-            payload.get("organization", {}),
-            payload.get("from_organization", {}),
-        ]
-        for source in sources:
-            if source and source.get("name"):
-                return source.get("name", "")
-        return ""
-    if field == "payload.role":
-        return payload.get("role", "")
-    if field == "payload.state":
-        sources = [
-            payload,
-            payload.get("user_performed_assignment", {}),
-            payload.get("user_performed_removal", {}),
-            payload.get("user_performed_approval", {}),
-            payload.get("user_performed_invite", {}),
-            payload.get("user", {}),
-        ]
-        for source in sources:
-            if source and source.get("state"):
-                return source.get("state", "")
-        return ""
-    if field == "payload.user.user_type":
-        sources = [
-            payload.get("user", {}),
-            payload.get("user_to_approve", {}),
-        ]
-        for source in sources:
-            if source and source.get("user_type"):
-                return source.get("user_type", "")
-        return ""
-    if field == "payload.user_to_approve.user_type":
-        sources = [
-            payload.get("user_to_approve", {}),
-            payload.get("user", {}),
-        ]
-        for source in sources:
-            if source and source.get("user_type"):
-                return source.get("user_type", "")
-        return ""
+
+    payload = _get_payload(log)
+
+    if callable(handler):
+        return handler(log, payload)
+
+    if isinstance(handler, dict):
+        source_paths = handler["source_paths"]
+        key = handler["key"]
+
+        sources = [safe_get(payload, *path) for path in source_paths]
+
+        return _find_first_value(sources, key)
+
     return ""
 
 
@@ -224,7 +205,6 @@ def generate_date_condition(filter_obj: Dict[str, Any]) -> Q:
         .strip()
     )
     value = filter_obj.get("value", "")
-    # Exclude string-only operators from date logic
     if operator in ["doesnotcontain", "doesnotequal"]:
         raise ValueError("Operator not supported for date fields.")
     if operator in ["empty", "is empty"]:
