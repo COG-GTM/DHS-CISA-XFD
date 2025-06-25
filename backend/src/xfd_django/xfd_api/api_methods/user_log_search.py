@@ -380,7 +380,7 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
                         if log_date is None:
                             matches = False
                         continue
-                    elif operator in ["doesnotcontain", "doesnotequal"]:
+                    if operator in ["doesnotcontain", "doesnotequal"]:
                         matches = False
                         continue
                     filter_criteria_date = None
