@@ -1,7 +1,7 @@
 import {
   SeverityByProminenceGraphData,
   StatsTrendsRawData,
-  vulnScanDataTransformed
+  VulnScanDataTransformed
 } from 'types/vuln-scan-stats';
 
 export function formatShortDate(
@@ -39,7 +39,7 @@ function getLatestSummary<T extends { summary_date?: string | null }>(
 
 export const transformVulnScanData = (
   data: StatsTrendsRawData
-): vulnScanDataTransformed => {
+): VulnScanDataTransformed => {
   const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
   const latestHostSummary = getLatestSummary(data.host_summaries);
   const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);

@@ -25,7 +25,7 @@ type ColumnConfig<T> = {
 type RoundedTableProps<T> = {
   columns: ColumnConfig<T>[];
   data: T[];
-  noDataMessage?: string;
+  noDataMessage?: string | React.ReactNode;
   tableStyles?: SxProps;
   rowHeadStyles?: SxProps;
   rowBodyStyles?: SxProps;

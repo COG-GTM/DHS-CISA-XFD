@@ -320,16 +320,17 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           const severityText = cellValues.row.severity;
           const severityColor = getSeverityColor({ id: severityText || '' });
           return (
-            <Stack>
-              <div>{severityText}</div>
-              <Box
-                sx={{
-                  height: '.5em',
-                  width: '5em',
-                  backgroundColor: severityColor
-                }}
-              />
-            </Stack>
+            <Box
+              component="span"
+              sx={{
+                borderBottom: `4px solid ${severityColor}`,
+                display: 'inline-block',
+                lineHeight: 1,
+                pb: '2px'
+              }}
+            >
+              {severityText}
+            </Box>
           );
         }
       },

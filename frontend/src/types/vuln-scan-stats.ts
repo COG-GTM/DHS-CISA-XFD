@@ -156,15 +156,18 @@ export interface SeverityByProminenceGraphData {
   highMaxAge?: number;
   criticalMaxAge?: number;
 }
-export type vulnScanDataTransformed = {
-  vulnScanSummary: {
-    hostScan: string;
-    vulnerabilityScan: string;
-    assetsOwned: number;
-    assetsScanned: number;
-    startDate: string;
-    endDate: string;
-  }[];
+
+export interface ScanningSummary {
+  hostScan: string;
+  vulnerabilityScan: string;
+  assetsOwned: number;
+  assetsScanned: number;
+  startDate: string;
+  endDate: string;
+}
+
+export type VulnScanDataTransformed = {
+  vulnScanSummary: ScanningSummary[];
   vulnScanKeyMetrics: KeyMetrics[];
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];
