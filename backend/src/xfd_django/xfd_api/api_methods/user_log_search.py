@@ -5,7 +5,7 @@ from datetime import timedelta
 import json
 import re
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 
 # Third-Party Libraries
 from dateutil.parser import parse  # type: ignore
@@ -326,96 +326,103 @@ def search_logs(search_data, current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def search_logs_filtered(search_data: LogSearchFilter, current_user):
-    """Apply advanced filters to logs and return paginated results."""
-    try:
-        if not is_global_view_admin(current_user):
-            raise HTTPException(status_code=403, detail="Unauthorized access.")
+def _normalize_operator(operator: str) -> str:
+    """Clean up the operator string for consistent matching."""
+    op = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
+    return op.replace("_", " ").replace("-", " ").lower().strip()
 
+
+def _matches_timestamp_filter(
+    log: Dict[str, Any], operator: str, filter_value: Any
+) -> bool:
+    """Check if a log's timestamp matches the given filter criteria."""
+    log_value_str = log.get("created_at", "")
+    try:
+        log_date = parse(log_value_str) if log_value_str else None
+    except (ValueError, TypeError):
+        log_date = None
+
+    if operator == "is empty":
+        return log_date is None
+    if operator == "is not empty":
+        return log_date is not None
+
+    if not isinstance(filter_value, str) or not filter_value:
+        return False
+
+    try:
+        filter_date = parse(filter_value)
+    except (ValueError, TypeError):
+        return False
+
+    if not log_date:
+        return False
+
+    log_date = log_date.replace(second=0, microsecond=0)
+    filter_date = filter_date.replace(second=0, microsecond=0)
+
+    if timezone.is_naive(log_date):
+        log_date = timezone.make_aware(log_date, timezone.get_current_timezone())
+    if timezone.is_naive(filter_date):
+        filter_date = timezone.make_aware(filter_date, timezone.get_current_timezone())
+
+    return matches_date_filter(log_date, operator, filter_date)
+
+
+def _log_matches_all_filters(
+    log: Dict[str, Any], processed_filters: List[Dict[str, Any]]
+) -> bool:
+    """Check if a single log entry matches all provided filters."""
+    for filt in processed_filters:
+        field, operator, value = filt["field"], filt["operator"], filt["value"]
+
+        is_match = False
+        if field == "timestamp":
+            is_match = _matches_timestamp_filter(log, operator, value)
+        else:
+            log_value = extract_log_value(field, log)
+            is_match = matches_string_filter(log_value, operator, value)
+
+        if not is_match:
+            return False
+
+    return True
+
+
+def search_logs_filtered(
+    search_data: LogSearchFilter, current_user: Any
+) -> Tuple[List[Dict], int]:
+    """Apply advanced filters to logs and return paginated results."""
+    if not is_global_view_admin(current_user):
+        raise HTTPException(status_code=403, detail="Unauthorized access.")
+
+    try:
         base_search = LogSearch()
         all_logs, _ = search_logs(base_search, current_user)
 
-        filtered_logs = []
-        for log in all_logs:
-            matches = True
-            for field, condition in search_data.filters.items():
-                value = getattr(condition, "value", "") or ""
-                operator = getattr(condition, "operator", "")
-                operator = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
-                operator = operator.replace("_", " ").replace("-", " ").lower().strip()
+        processed_filters = []
+        for field, condition in search_data.filters.items():
+            processed_filters.append(
+                {
+                    "field": field,
+                    "operator": _normalize_operator(getattr(condition, "operator", "")),
+                    "value": getattr(condition, "value", ""),
+                }
+            )
 
-                if field == "timestamp":
-                    log_value = log.get("created_at", "")
-                    log_date = None
-                    if log_value:
-                        try:
-                            log_date = parse(log_value)
-                        except (ValueError, TypeError):
-                            log_date = None
-                    if operator == "is empty":
-                        if log_date is not None:
-                            matches = False
-                        continue
-                    if operator == "is not empty":
-                        if log_date is None:
-                            matches = False
-                        continue
-                    if operator in ["doesnotcontain", "doesnotequal"]:
-                        matches = False
-                        continue
-                    filter_criteria_date = None
-                    valid_filter_value_for_comparison = False
-                    if isinstance(value, str) and value:
-                        try:
-                            filter_criteria_date = parse(value)
-                            valid_filter_value_for_comparison = True
-                        except (ValueError, TypeError):
-                            matches = False
-                    else:
-                        matches = False
-                    if (
-                        log_date
-                        and filter_criteria_date
-                        and matches
-                        and valid_filter_value_for_comparison
-                    ):
-                        log_date = log_date.replace(second=0, microsecond=0)
-                        filter_criteria_date = filter_criteria_date.replace(
-                            second=0, microsecond=0
-                        )
-                        if timezone.is_naive(log_date):
-                            log_date = timezone.make_aware(
-                                log_date, timezone.get_current_timezone()
-                            )
-                        if timezone.is_naive(filter_criteria_date):
-                            filter_criteria_date = timezone.make_aware(
-                                filter_criteria_date, timezone.get_current_timezone()
-                            )
-                        if not matches_date_filter(
-                            log_date, operator, filter_criteria_date
-                        ):
-                            matches = False
-                    elif not (log_date and filter_criteria_date):
-                        matches = False
-                    continue
-
-                log_value = extract_log_value(field, log)
-                if not matches_string_filter(log_value, operator, value):
-                    matches = False
-                    break
-
-            if matches:
-                filtered_logs.append(log)
+        filtered_logs = [
+            log for log in all_logs if _log_matches_all_filters(log, processed_filters)
+        ]
 
         page = search_data.page
         page_size = search_data.page_size
         start = (page - 1) * page_size
         end = start + page_size
+
         return filtered_logs[start:end], len(filtered_logs)
 
     except ValueError as ve:
-        raise HTTPException(status_code=500, detail=str(ve))
+        raise HTTPException(status_code=400, detail=f"Invalid filter value: {ve}")
     except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"An unexpected error occurred: {e}")
+        return [], 0
