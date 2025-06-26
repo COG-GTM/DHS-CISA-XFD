@@ -11,15 +11,11 @@ import {
 } from '@trussworks/react-uswds';
 import { ModalToggleButton } from 'components';
 import { ImportExport } from 'components';
-// import { Column, CellProps } from 'react-table';
 import { Scan, Organization, ScanSchema, OrganizationTag } from 'types';
-// import { FaTimes, FaEdit } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
 import { FaPlayCircle } from 'react-icons/fa';
 import { useAuthContext } from 'context';
-// @ts-ignore:next-line
 import { formatDistanceToNow, parseISO } from 'date-fns';
-// import { Link } from 'react-router-dom';
 import { setFrequency } from 'pages/Scan/Scan';
 import { ScanForm, ScanFormValues } from 'components/ScanForm';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
@@ -36,9 +32,6 @@ import {
   DialogTitle,
   Tooltip
 } from '@mui/material';
-//Needed for the CustomToolbar:
-// import CustomToolbar from 'components/DataGrid/CustomToolbar';
-// import { Add, Publish } from '@mui/icons-material';
 
 interface Errors extends Partial<Scan> {
   global?: string;
@@ -68,6 +61,7 @@ const ScansView: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>('');
   const [selectedName, setSelectedName] = useState<string>('');
   const [scans, setScans] = useState<Scan[]>([]);
+  const [metricsWindowDays, setMetricsWindowDays] = useState<number>(0);
   const [organizationOptions, setOrganizationOptions] = useState<
     OrganizationOption[]
   >([]);
@@ -92,17 +86,20 @@ const ScansView: React.FC = () => {
 
   const fetchScans = useCallback(async () => {
     try {
-      const { scans, organizations, schema } = await apiGet<{
-        scans: Scan[];
-        organizations: Organization[];
-        schema: ScanSchema;
-      }>(`/scans`);
+      const { scans, organizations, schema, metrics_window_days } =
+        await apiGet<{
+          scans: Scan[];
+          organizations: Organization[];
+          schema: ScanSchema;
+          metrics_window_days: number;
+        }>(`/scans`);
       const tags = await apiGet<OrganizationTag[]>(`/organizations/tags`);
       setScans(scans);
       setScanSchema(schema);
       setOrganizationOptions(
         organizations.map((e) => ({ label: e.name, value: e.id }))
       );
+      setMetricsWindowDays(metrics_window_days);
       setTags(tags);
     } catch (e) {
       console.error(e);
@@ -309,6 +306,19 @@ const ScansView: React.FC = () => {
       flex: 1,
       align: 'right',
       headerAlign: 'right',
+      renderHeader: () => (
+        <Tooltip
+          title={
+            <>
+              <div>Organizations with Results / Organizations Scanned</div>
+              <div>Calculated over the last {metricsWindowDays} days</div>
+            </>
+          }
+          placement="top"
+        >
+          <span>Success Rate</span>
+        </Tooltip>
+      ),
       renderCell: (params: GridRenderCellParams) => {
         const total = params.row.total_orgs as number;
         const succeeded = params.row.orgs_with_results as number;
@@ -321,6 +331,7 @@ const ScansView: React.FC = () => {
               <>
                 <div>Organizations Scanned: {total}</div>
                 <div>Organizations with Results: {succeeded}</div>
+                <div>Window: {metricsWindowDays} Days</div>
               </>
             }
             placement="top"
@@ -333,33 +344,7 @@ const ScansView: React.FC = () => {
   ];
 
   //To-do: Add a button to toolbar to import scans
-  // const importScanButton = (
-  //   <MuiButton
-  //     size="small"
-  //     sx={{ '& .MuiButton-startIcon': { mr: '2px', mb: '2px' } }}
-  //     startIcon={<Publish />}
-  //     onClick={() => {
-  //       setDialogOpen(true);
-  //     }}
-  //   >
-  //     Import
-  //   </MuiButton>
-  // );
-
   //To-do: Add a button to toolbar to add scans
-  // const addScanButton = (
-  //   <MuiButton
-  //     size="small"
-  //     sx={{ '& .MuiButton-startIcon': { mr: '2px', mb: '2px' } }}
-  //     startIcon={<Add />}
-  //     onClick={() => {
-  //       addScanModalRef.current?.toggleModal(undefined, true);
-  //     }}
-  //   >
-  //     Add Scan
-  //   </MuiButton>
-  // );
-
   //To-do: Dialogs/Modals need to be built for Import and Add Scan. Export is already handled by MUI DataGrid.
 
   return (
@@ -401,10 +386,6 @@ const ScansView: React.FC = () => {
               rows={scansRows}
               columns={scansCols}
               //To-do: re-enable Custom Toolbar to handle scan Create, Export, Import,
-              // slots={{ toolbar: CustomToolbar }}
-              // slotProps={{
-              //   toolbar: { children: [importScanButton, addScanButton] }
-              // }}
             />
           )}
         </Paper>

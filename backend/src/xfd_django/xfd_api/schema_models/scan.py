@@ -75,6 +75,7 @@ class GetScansResponseModel(BaseModel):
     scans: List[Scan]
     schema: Dict[str, Any]
     organizations: List[Dict[str, Any]]
+    metrics_window_days: int
 
 
 class GetGranularScansResponseModel(BaseModel):
@@ -126,6 +127,7 @@ class GetScanResponseModel(BaseModel):
     scan: Scan
     schema: Dict[str, Any]
     organizations: List[Dict[str, Any]]
+    metrics_window_days: int
 
 
 class GenericMessageResponseModel(BaseModel):
