@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { classes, Root } from './Styling/dashboardStyle';
 import { ResultCard } from './ResultCard';
 import {
   Button,
@@ -155,7 +154,15 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
   });
 
   return (
-    <FindingsHeader>
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <FindingsHeader />
       <Stack
         direction="row"
         alignItems="center"
@@ -173,121 +180,112 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
           advancedFiltersReq={advanceFiltersReq}
         />
       </Stack>
-      <Box
-        position="relative"
-        height="calc(100% - 32px - 32px - 46px - 10px)"
-        maxHeight="100%"
-        width="100%"
-        display="flex"
-        flexWrap="nowrap"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        overflow="auto"
-      >
-        <Box
-          height="100%"
-          width="100%"
-          flexDirection="column"
-          flexWrap="nowrap"
-          gap="1rem"
-          alignItems="stretch"
-          display="flex"
-          position="relative"
-          padding="0 0 2rem 0"
-        >
-          {noResults ? (
-            <Box
-              display="flex"
-              flex="1"
-              alignItems="center"
-              justifyContent="center"
-              height="100%"
-            >
-              <Stack spacing={2} alignItems="center" direction={'column'}>
-                <NoResults
-                  message={"We don't see any results that match your criteria."}
-                ></NoResults>
-                <Button variant="primaryContained" onClick={resetFilters}>
-                  {' '}
-                  Reset Filters
-                </Button>
-              </Stack>
-            </Box>
-          ) : (
-            results.map((result) => (
-              <ResultCard
-                key={result.id.raw}
-                {...result}
-                onDomainSelected={(id) => setSelectedDomain(id)}
-                selected={result.id.raw === selectedDomain}
-              />
-            ))
-          )}
-        </Box>
+      <Box flexGrow={1} display="flex" flexDirection="column">
+        {noResults ? (
+          <Box
+            display="flex"
+            flex="1"
+            alignItems="center"
+            justifyContent="center"
+            height="100%"
+          >
+            <Stack spacing={3} alignItems="center" direction={'column'}>
+              <NoResults
+                message={"We don't see any results that match your criteria."}
+              ></NoResults>
+              <Button variant="primaryContained" onClick={resetFilters}>
+                Reset Filters
+              </Button>
+            </Stack>
+          </Box>
+        ) : (
+          results.map((result) => (
+            <ResultCard
+              key={result.id.raw}
+              {...result}
+              onDomainSelected={(id) => setSelectedDomain(id)}
+              selected={result.id.raw === selectedDomain}
+            />
+          ))
+        )}
       </Box>
-      <Root className={classes.root}>
-        <Paper className={classes.pagination}>
-          <span>
-            <strong>
-              {(totalResults === 0
-                ? 0
-                : (current - 1) * resultsPerPage + 1
-              ).toLocaleString()}{' '}
-              -{' '}
-              {Math.min(
-                (current - 1) * resultsPerPage + resultsPerPage,
-                totalResults
-              ).toLocaleString()}
-            </strong>{' '}
-            of <strong>{totalResults.toLocaleString()}</strong>
-          </span>
-          <Pagination
-            count={totalPages}
-            page={current}
-            onChange={(_, page) => setCurrent(page)}
-            color="primary"
-            size="small"
-          />
-          <FormControl
-            variant="outlined"
-            className={classes.pageSize}
-            size="small"
+      <Box
+        sx={{
+          position: 'sticky',
+          bottom: 0,
+          width: '100%',
+          zIndex: 100,
+          backgroundColor: 'background.paper',
+          borderTop: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Paper elevation={3} sx={{ px: 2, py: 1.5 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
           >
-            <Typography id="results-per-page-label">
-              Results per page:
+            <Typography variant="body2">
+              <strong>
+                {(totalResults === 0
+                  ? 0
+                  : (current - 1) * resultsPerPage + 1
+                ).toLocaleString()}{' '}
+                -{' '}
+                {Math.min(
+                  (current - 1) * resultsPerPage + resultsPerPage,
+                  totalResults
+                ).toLocaleString()}
+              </strong>{' '}
+              of <strong>{totalResults.toLocaleString()}</strong>
             </Typography>
-            <Select
-              id="teststa"
-              labelId="results-per-page-label"
-              value={resultsPerPage}
-              onChange={(e) => setResultsPerPage(e.target.value as number)}
+            <Pagination
+              count={totalPages}
+              page={current}
+              onChange={(_, page) => setCurrent(page)}
+              color="primary"
+              size="small"
+            />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography id="results-per-page-label" variant="body2">
+                Results per page:
+              </Typography>
+              <FormControl size="small" variant="outlined">
+                <Select
+                  id="results-per-page-select"
+                  labelId="results-per-page-label"
+                  value={resultsPerPage}
+                  onChange={(e) => setResultsPerPage(e.target.value as number)}
+                >
+                  {[15, 45, 90].map((perPage) => (
+                    <MenuItem key={perPage} value={perPage}>
+                      {perPage}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+            <Button
+              variant="outlined"
+              onClick={() =>
+                exportCSV(
+                  {
+                    name: 'domains',
+                    getDataToExport: fetchDomainsExport
+                  },
+                  setLoading
+                )
+              }
             >
-              {[15, 45, 90].map((perPage) => (
-                <MenuItem key={perPage} value={perPage}>
-                  {perPage}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Button
-            variant="outlined"
-            className={classes.exportButton}
-            onClick={() =>
-              exportCSV(
-                {
-                  name: 'domains',
-                  getDataToExport: fetchDomainsExport
-                },
-                setLoading
-              )
-            }
-          >
-            Export Results
-          </Button>
+              Export Results
+            </Button>
+          </Stack>
         </Paper>
-      </Root>
-    </FindingsHeader>
+      </Box>
+    </Box>
   );
 };
 

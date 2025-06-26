@@ -1,11 +1,12 @@
 import React from 'react';
-import { classes, Root } from './Styling/sortBarStyle';
 import {
-  Select,
+  IconButton,
   FormControl,
   MenuItem,
+  Select,
   SelectProps,
-  IconButton
+  Stack,
+  Typography
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { ContextType } from 'context/SearchProvider';
@@ -31,48 +32,38 @@ export const SortBar: React.FC<Props> = (props) => {
   };
 
   return (
-    <Root className={classes.root}>
-      <div className={classes.sortMenu}>
-        <IconButton
-          className={classes.toggleDirection}
-          onClick={toggleDirection}
-          aria-label={`Sort ${
-            sort_direction === 'asc' ? 'Descending' : 'Ascending'
-          }`}
+    <Stack
+      direction="row"
+      spacing={2}
+      alignItems="center"
+      flexWrap="wrap"
+      sx={{ mb: 2 }}
+    >
+      <IconButton
+        onClick={toggleDirection}
+        aria-label={`Sort ${
+          sort_direction === 'asc' ? 'Descending' : 'Ascending'
+        }`}
+      >
+        {sort_direction === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
+      </IconButton>
+      <Typography id="sort-by-label" variant="body1">
+        Sort by:
+      </Typography>
+      <FormControl size="small">
+        <Select
+          labelId="sort-by-label"
+          value={sort_field ?? 'name'}
+          onChange={onSetSortField}
+          sx={{ minWidth: 160 }}
         >
-          {!sort_direction || sort_direction === 'desc' ? (
-            <ArrowDownward />
-          ) : (
-            <ArrowUpward />
-          )}
-        </IconButton>
-        <span id="sort-by-label">Sort by: </span>
-        <FormControl className={classes.openFields}>
-          <Select
-            labelId="sort-by-label"
-            value={sort_field ?? 'name'}
-            onChange={onSetSortField}
-            classes={{ select: classes.selectInp }}
-            sx={{
-              paddingLeft: 1
-            }}
-          >
-            <MenuItem classes={{ root: classes.option }} value="name">
-              Domain Name
-            </MenuItem>
-            <MenuItem classes={{ root: classes.option }} value="ip">
-              IP
-            </MenuItem>
-            <MenuItem classes={{ root: classes.option }} value="updated_at">
-              Last Seen
-            </MenuItem>
-            <MenuItem classes={{ root: classes.option }} value="created_at">
-              First Seen
-            </MenuItem>
-          </Select>
-        </FormControl>
-      </div>
+          <MenuItem value="name">Domain Name</MenuItem>
+          <MenuItem value="ip">IP</MenuItem>
+          <MenuItem value="updated_at">Last Seen</MenuItem>
+          <MenuItem value="created_at">First Seen</MenuItem>
+        </Select>
+      </FormControl>
       {children}
-    </Root>
+    </Stack>
   );
 };
