@@ -5,7 +5,7 @@ from datetime import timedelta
 import json
 import re
 import traceback
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 # Third-Party Libraries
 from dateutil.parser import parse  # type: ignore
@@ -43,108 +43,127 @@ def safe_get(d, *keys):
     return d
 
 
-def _get_payload(log):
-    """Get the payload from a log, decoding from JSON if necessary."""
+def extract_log_value(field, log):
+    """Extract the relevant value from a log entry based on the field."""
+    if field == "event_type":
+        return log.get("event_type", "")
+    if field == "result":
+        return log.get("result", "")
+    if field in ("acted_on_user_name", "payload.user.full_name"):
+        payload = log.get("payload", {})
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except Exception:
+                payload = {}
+        sources = [
+            payload.get("user", {}),
+            safe_get(payload, "removal_result", "role_deleted", "user"),
+            payload.get("user_to_approve", {}),
+            safe_get(payload, "approval_results", "role_deleted", "user"),
+        ]
+        for source in sources:
+            if source and source.get("full_name"):
+                return source.get("full_name", "")
+        return ""
+    if field in ("acted_on_user_email", "payload.user.email"):
+        payload = log.get("payload", {})
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except Exception:
+                payload = {}
+        sources = [
+            payload.get("user", {}),
+            safe_get(payload, "removal_result", "role_deleted", "user"),
+            payload.get("user_to_approve", {}),
+            safe_get(payload, "approval_results", "role_deleted", "user"),
+        ]
+        for source in sources:
+            if source and source.get("email"):
+                return source.get("email", "")
+        return ""
     payload = log.get("payload", {})
     if isinstance(payload, str):
         try:
-            return json.loads(payload)
-        except (json.JSONDecodeError, TypeError):
-            return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def _find_first_value(sources, key, default=""):
-    """Iterate through a list of source dicts and return the first value found for a key."""
-    for source in sources:
-        if source and source.get(key):
-            return str(source.get(key, default))
-    return default
-
-
-ACTED_ON_USER_PATHS = [
-    ("user",),
-    ("removal_result", "role_deleted", "user"),
-    ("user_to_approve",),
-    ("approval_results", "role_deleted", "user"),
-]
-
-PERFORMED_BY_USER_PATHS = [
-    ("user_performed_assignment",),
-    ("user_performed_removal",),
-    ("user_performed_approval",),
-    ("user_performed_invite",),
-]
-
-FIELD_HANDLERS = {
-    "event_type": lambda log, payload: log.get("event_type", ""),
-    "result": lambda log, payload: log.get("result", ""),
-    "payload.role": lambda log, payload: payload.get("role", ""),
-    "acted_on_user_name": {"source_paths": ACTED_ON_USER_PATHS, "key": "full_name"},
-    "payload.user.full_name": {"source_paths": ACTED_ON_USER_PATHS, "key": "full_name"},
-    "acted_on_user_email": {"source_paths": ACTED_ON_USER_PATHS, "key": "email"},
-    "payload.user.email": {"source_paths": ACTED_ON_USER_PATHS, "key": "email"},
-    "payload.user_performed_assignment.full_name": {
-        "source_paths": PERFORMED_BY_USER_PATHS,
-        "key": "full_name",
-    },
-    "payload.user_performed_assignment.email": {
-        "source_paths": PERFORMED_BY_USER_PATHS,
-        "key": "email",
-    },
-    "payload.user_performed_assignment.region_id": {
-        "source_paths": PERFORMED_BY_USER_PATHS,
-        "key": "region_id",
-    },
-    "payload.organization.name": {
-        "source_paths": [("organization",), ("from_organization",)],
-        "key": "name",
-    },
-    "payload.state": {
-        "source_paths": [
-            (),
-            ("user_performed_assignment",),
-            ("user_performed_removal",),
-            ("user_performed_approval",),
-            ("user_performed_invite",),
-            ("user",),
-        ],
-        "key": "state",
-    },
-    "payload.user.user_type": {
-        "source_paths": [("user",), ("user_to_approve",)],
-        "key": "user_type",
-    },
-    "payload.user_to_approve.user_type": {
-        "source_paths": [("user_to_approve",), ("user",)],
-        "key": "user_type",
-    },
-}
-
-
-def extract_log_value(field, log):
-    """
-    Extract the relevant value from a log entry based on the field.
-
-    This function uses a handler mapping to dispatch to the correct extraction strategy.
-    """
-    handler = FIELD_HANDLERS.get(field)
-    if not handler:
+            payload = json.loads(payload)
+        except Exception:
+            payload = {}
+    if field == "payload.user_performed_assignment.full_name":
+        sources = [
+            payload.get("user_performed_assignment", {}),
+            payload.get("user_performed_removal", {}),
+            payload.get("user_performed_approval", {}),
+            payload.get("user_performed_invite", {}),
+        ]
+        for source in sources:
+            if source and source.get("full_name"):
+                return source.get("full_name", "")
         return ""
-
-    payload = _get_payload(log)
-
-    if callable(handler):
-        return handler(log, payload)
-
-    if isinstance(handler, dict):
-        source_paths = handler["source_paths"]
-        key = handler["key"]
-
-        sources = [safe_get(payload, *path) for path in source_paths]
-
-        return _find_first_value(sources, key)
-
+    if field == "payload.user_performed_assignment.email":
+        sources = [
+            payload.get("user_performed_assignment", {}),
+            payload.get("user_performed_removal", {}),
+            payload.get("user_performed_approval", {}),
+            payload.get("user_performed_invite", {}),
+        ]
+        for source in sources:
+            if source and source.get("email"):
+                return source.get("email", "")
+        return ""
+    if field == "payload.user_performed_assignment.region_id":
+        sources = [
+            payload.get("user_performed_assignment", {}),
+            payload.get("user_performed_removal", {}),
+            payload.get("user_performed_approval", {}),
+            payload.get("user_performed_invite", {}),
+        ]
+        for source in sources:
+            if source and source.get("region_id"):
+                return str(source.get("region_id", ""))
+        return ""
+    if field == "payload.organization.name":
+        sources = [
+            payload.get("organization", {}),
+            payload.get("from_organization", {}),
+        ]
+        for source in sources:
+            if source and source.get("name"):
+                return source.get("name", "")
+        return ""
+    if field == "payload.role":
+        return payload.get("role", "")
+    if field == "payload.state":
+        sources = [
+            payload,
+            payload.get("user_performed_assignment", {}),
+            payload.get("user_performed_removal", {}),
+            payload.get("user_performed_approval", {}),
+            payload.get("user_performed_invite", {}),
+            payload.get("user", {}),
+        ]
+        for source in sources:
+            if source and source.get("state"):
+                return source.get("state", "")
+        return ""
+    if field == "payload.user.user_type":
+        sources = [
+            payload.get("user", {}),
+            payload.get("user_to_approve", {}),
+        ]
+        for source in sources:
+            if source and source.get("user_type"):
+                return source.get("user_type", "")
+        return ""
+    if field == "payload.user_to_approve.user_type":
+        sources = [
+            payload.get("user_to_approve", {}),
+            payload.get("user", {}),
+        ]
+        for source in sources:
+            if source and source.get("user_type"):
+                return source.get("user_type", "")
+        return ""
     return ""
 
 
@@ -205,6 +224,7 @@ def generate_date_condition(filter_obj: Dict[str, Any]) -> Q:
         .strip()
     )
     value = filter_obj.get("value", "")
+    # Exclude string-only operators from date logic
     if operator in ["doesnotcontain", "doesnotequal"]:
         raise ValueError("Operator not supported for date fields.")
     if operator in ["empty", "is empty"]:
@@ -326,103 +346,96 @@ def search_logs(search_data, current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _normalize_operator(operator: str) -> str:
-    """Clean up the operator string for consistent matching."""
-    op = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
-    return op.replace("_", " ").replace("-", " ").lower().strip()
-
-
-def _matches_timestamp_filter(
-    log: Dict[str, Any], operator: str, filter_value: Any
-) -> bool:
-    """Check if a log's timestamp matches the given filter criteria."""
-    log_value_str = log.get("created_at", "")
-    try:
-        log_date = parse(log_value_str) if log_value_str else None
-    except (ValueError, TypeError):
-        log_date = None
-
-    if operator == "is empty":
-        return log_date is None
-    if operator == "is not empty":
-        return log_date is not None
-
-    if not isinstance(filter_value, str) or not filter_value:
-        return False
-
-    try:
-        filter_date = parse(filter_value)
-    except (ValueError, TypeError):
-        return False
-
-    if not log_date:
-        return False
-
-    log_date = log_date.replace(second=0, microsecond=0)
-    filter_date = filter_date.replace(second=0, microsecond=0)
-
-    if timezone.is_naive(log_date):
-        log_date = timezone.make_aware(log_date, timezone.get_current_timezone())
-    if timezone.is_naive(filter_date):
-        filter_date = timezone.make_aware(filter_date, timezone.get_current_timezone())
-
-    return matches_date_filter(log_date, operator, filter_date)
-
-
-def _log_matches_all_filters(
-    log: Dict[str, Any], processed_filters: List[Dict[str, Any]]
-) -> bool:
-    """Check if a single log entry matches all provided filters."""
-    for filt in processed_filters:
-        field, operator, value = filt["field"], filt["operator"], filt["value"]
-
-        is_match = False
-        if field == "timestamp":
-            is_match = _matches_timestamp_filter(log, operator, value)
-        else:
-            log_value = extract_log_value(field, log)
-            is_match = matches_string_filter(log_value, operator, value)
-
-        if not is_match:
-            return False
-
-    return True
-
-
-def search_logs_filtered(
-    search_data: LogSearchFilter, current_user: Any
-) -> Tuple[List[Dict], int]:
+def search_logs_filtered(search_data: LogSearchFilter, current_user):
     """Apply advanced filters to logs and return paginated results."""
-    if not is_global_view_admin(current_user):
-        raise HTTPException(status_code=403, detail="Unauthorized access.")
-
     try:
+        if not is_global_view_admin(current_user):
+            raise HTTPException(status_code=403, detail="Unauthorized access.")
+
         base_search = LogSearch()
         all_logs, _ = search_logs(base_search, current_user)
 
-        processed_filters = []
-        for field, condition in search_data.filters.items():
-            processed_filters.append(
-                {
-                    "field": field,
-                    "operator": _normalize_operator(getattr(condition, "operator", "")),
-                    "value": getattr(condition, "value", ""),
-                }
-            )
+        filtered_logs = []
+        for log in all_logs:
+            matches = True
+            for field, condition in search_data.filters.items():
+                value = getattr(condition, "value", "") or ""
+                operator = getattr(condition, "operator", "")
+                operator = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
+                operator = operator.replace("_", " ").replace("-", " ").lower().strip()
 
-        filtered_logs = [
-            log for log in all_logs if _log_matches_all_filters(log, processed_filters)
-        ]
+                if field == "timestamp":
+                    log_value = log.get("created_at", "")
+                    log_date = None
+                    if log_value:
+                        try:
+                            log_date = parse(log_value)
+                        except (ValueError, TypeError):
+                            log_date = None
+                    if operator == "is empty":
+                        if log_date is not None:
+                            matches = False
+                        continue
+                    if operator == "is not empty":
+                        if log_date is None:
+                            matches = False
+                        continue
+                    if operator in ["doesnotcontain", "doesnotequal"]:
+                        matches = False
+                        continue
+                    filter_criteria_date = None
+                    valid_filter_value_for_comparison = False
+                    if isinstance(value, str) and value:
+                        try:
+                            filter_criteria_date = parse(value)
+                            valid_filter_value_for_comparison = True
+                        except (ValueError, TypeError):
+                            matches = False
+                    else:
+                        matches = False
+                    if (
+                        log_date
+                        and filter_criteria_date
+                        and matches
+                        and valid_filter_value_for_comparison
+                    ):
+                        log_date = log_date.replace(second=0, microsecond=0)
+                        filter_criteria_date = filter_criteria_date.replace(
+                            second=0, microsecond=0
+                        )
+                        if timezone.is_naive(log_date):
+                            log_date = timezone.make_aware(
+                                log_date, timezone.get_current_timezone()
+                            )
+                        if timezone.is_naive(filter_criteria_date):
+                            filter_criteria_date = timezone.make_aware(
+                                filter_criteria_date, timezone.get_current_timezone()
+                            )
+                        if not matches_date_filter(
+                            log_date, operator, filter_criteria_date
+                        ):
+                            matches = False
+                    elif not (log_date and filter_criteria_date):
+                        matches = False
+                    continue
+
+                log_value = extract_log_value(field, log)
+                if not matches_string_filter(log_value, operator, value):
+                    matches = False
+                    break
+
+            if matches:
+                filtered_logs.append(log)
 
         page = search_data.page
         page_size = search_data.page_size
         start = (page - 1) * page_size
         end = start + page_size
-
         return filtered_logs[start:end], len(filtered_logs)
 
     except ValueError as ve:
-        raise HTTPException(status_code=400, detail=f"Invalid filter value: {ve}")
+        raise HTTPException(status_code=500, detail=str(ve))
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return [], 0
+        print(e)
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
