@@ -313,7 +313,7 @@ def search_logs(search_data, current_user):
                 {
                     "id": str(log.id),
                     "event_type": log.event_type,
-                    "result": log.result if log.result == "success" else "failed",
+                    "result": log.result,
                     "payload": payload_dict,
                     "created_at": log.created_at.isoformat(),
                 }
