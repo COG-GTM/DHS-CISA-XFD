@@ -228,7 +228,7 @@ class IntelX:
             start_pulling_time,
         )
         if breach_saved and credential_saved:
-            upsert_scan_result(org.id, scan_id)
+            upsert_scan_result(scan_id, org.id)
         return 0
 
     def query_identity_api(self, domain, start_date, end_date):

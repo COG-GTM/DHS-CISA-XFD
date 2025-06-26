@@ -115,7 +115,7 @@ class Cybersixgill:
                 and ("%s mentions" % org_id)
                 and ("%s credentials" % org_id) not in failed
             ):
-                upsert_scan_result(org_uuid, self.scan_id)
+                upsert_scan_result(self.scan_id, org_uuid)
 
         # Save total number of organizations scanned to the Scan table
         scan = Scan.objects.get(id=self.scan_id)

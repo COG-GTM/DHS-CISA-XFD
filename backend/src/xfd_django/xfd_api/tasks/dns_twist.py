@@ -19,7 +19,7 @@ from xfd_mini_dl.models import DataSource, DomainPermutations, Organization, Sub
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
 LOGGER = logging.getLogger(__name__)
-BACKEND_DOMAIN = os.getenv("BACKEND_DOMAIN", "localhost")
+BACKEND_DOMAIN = os.getenv("BACKEND_DOMAIN", "http://backend:3000/blocklist/check")
 DMZ_API_KEY = os.getenv("DMZ_API_KEY", "local")
 
 
@@ -172,7 +172,7 @@ def check_domain_in_blocklist(
     # Query internal blocklist API
     try:
         response = requests.get(
-            f"{BACKEND_DOMAIN}?ip_address={ip_address}",
+            "{}?ip_address={}".format(BACKEND_DOMAIN, ip_address),
             timeout=60,
             headers={"Authorization": DMZ_API_KEY},
         )
@@ -258,7 +258,7 @@ def execute_dnstwist_data(domain_dict):
             dshield_attack_count=domain_dict["dshield_attack_count"],
         )
     except Exception as e:
-        LOGGER.error(f"Error adding domain permutation to data lake {str(e)}")
+        LOGGER.error("Error adding domain permutation to data lake %s", str(e))
 
 
 def process_org(org, orgs_list, data_source, failures, scan_id):
@@ -298,7 +298,7 @@ def process_org(org, orgs_list, data_source, failures, scan_id):
                     )
                 #  upsert timestamp of latest result for each organization per scan, if execute_dnstwist_data was successful and domain_list is not empty
                 if domain_list:
-                    upsert_scan_result(org_id, scan_id)
+                    upsert_scan_result(scan_id, org_id)
             except Exception:
                 # TODO: Create custom exceptions.
                 # Issue 265: https://github.com/cisagov/pe-reports/issues/265

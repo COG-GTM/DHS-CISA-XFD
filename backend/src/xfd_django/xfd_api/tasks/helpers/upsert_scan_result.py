@@ -1,23 +1,33 @@
 """Helper function that upserts the timestamp of the latest result for each scan per organization."""
+# Standard Python Libraries
+import logging
 
 # Third-Party Libraries
 from django.utils import timezone
-from xfd_mini_dl.models import ScanResult
+from xfd_mini_dl.models import Organization, Scan, ScanResult
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+LOGGER = logging.getLogger(__name__)
 
 
 def upsert_scan_result(scan_id, organization_id):
     """Upsert timestamp of latest result saved for each organization per scan."""
+    # Initialize scan and org variables for use in exception handling
+    scan = scan_id
+    org = organization_id
     try:
         scan_result = ScanResult.objects.filter(
             scan_id=scan_id, organization_id=organization_id
         ).first()
+        org = Organization.objects.filter(id=organization_id).first().name
+        scan = Scan.objects.filter(id=scan_id).first().name
 
         if scan_result:
             scan_result.latest_result_at = timezone.now()
             scan_result.save()
-            print(
-                "Updated timestamp for scan_id: {} and organization_id: {}.".format(
-                    scan_id, organization_id
+            LOGGER.info(
+                "Updated latest result timestamp for scan: {} organization: {}.".format(
+                    scan, org
                 )
             )
         else:
@@ -26,15 +36,15 @@ def upsert_scan_result(scan_id, organization_id):
                 organization_id=organization_id,
                 latest_result_at=timezone.now(),
             )
-            print(
-                "Inserted new scan result for scan_id: {} and organization_id: {}.".format(
-                    scan_id, organization_id
+            LOGGER.info(
+                "Inserted new latest result timestamp for scan: {} and organization: {}.".format(
+                    scan, org
                 )
             )
 
     except Exception as e:
-        print(
-            "Error upserting scan result for scan_id: {} and organization_id: {}: {}".format(
-                scan_id, organization_id, str(e)
+        LOGGER.error(
+            "Error upserting latest result timestamp for scan: {} and organization: {}: {}".format(
+                scan, org, str(e)
             )
         )

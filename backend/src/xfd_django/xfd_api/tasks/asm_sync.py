@@ -69,7 +69,9 @@ def main(event):
         cidr_found = False
         orgs_to_sync = Organization.objects.filter(id__in=[organization_id])
         for org in orgs_to_sync:
-            LOGGER.info("Running ASM Sync on organization %s", org.name)
+            LOGGER.info(
+                "Running ASM Sync on organization %s (%s)", org.name, org.acronym
+            )
 
         # Process CIDRs
         try:
@@ -103,10 +105,7 @@ def main(event):
         dedupe(orgs_to_sync)
         LOGGER.info("Finished running Shodan dedupe")
         if cidr_found and subdomain_found:
-            LOGGER.info(
-                "ASM Sync completed successfully for %s. Running upsert_scan_result...",
-                organization_id,
-            )
+            LOGGER.info("ASM Sync completed successfully.")
             upsert_scan_result(scan_id, organization_id)
 
     except Exception as e:
