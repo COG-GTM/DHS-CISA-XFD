@@ -5,7 +5,7 @@ from datetime import timedelta
 import json
 import re
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Third-Party Libraries
 from dateutil.parser import parse  # type: ignore
@@ -327,6 +327,62 @@ def search_logs(search_data, current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _normalize_operator(operator: str) -> str:
+    """Clean and standardizes the operator string."""
+    op = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
+    return op.replace("_", " ").replace("-", " ").lower().strip()
+
+
+def _parse_and_prepare_date(date_str: Optional[str]):
+    """Parse a date string and returns a timezone-aware datetime object."""
+    if not isinstance(date_str, str) or not date_str:
+        return None
+    try:
+        dt = parse(date_str).replace(second=0, microsecond=0)
+        if timezone.is_naive(dt):
+            return timezone.make_aware(dt, timezone.get_current_timezone())
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
+def _apply_timestamp_filter(log: dict, operator: str, filter_value: str) -> bool:
+    """Apply a filter specifically for the timestamp field."""
+    log_date = _parse_and_prepare_date(log.get("created_at"))
+
+    if operator == "is empty":
+        return log_date is None
+    if operator == "is not empty":
+        return log_date is not None
+
+    if operator in ["doesnotcontain", "doesnotequal"]:
+        return True
+
+    filter_date = _parse_and_prepare_date(filter_value)
+
+    if not log_date or not filter_date:
+        return False
+
+    return matches_date_filter(log_date, operator, filter_date)
+
+
+def _log_matches_all_filters(log: dict, filters: dict) -> bool:
+    """Check if a single log entry matches all provided filter conditions."""
+    for field, condition in filters.items():
+        value = getattr(condition, "value", "") or ""
+        operator = _normalize_operator(getattr(condition, "operator", ""))
+
+        if field == "timestamp":
+            if not _apply_timestamp_filter(log, operator, value):
+                return False
+        else:
+            log_value = extract_log_value(field, log)
+            if not matches_string_filter(log_value, operator, value):
+                return False
+
+    return True
+
+
 def search_logs_filtered(search_data: LogSearchFilter, current_user):
     """Apply advanced filters to logs and return paginated results."""
     try:
@@ -336,82 +392,17 @@ def search_logs_filtered(search_data: LogSearchFilter, current_user):
         base_search = LogSearch()
         all_logs, _ = search_logs(base_search, current_user)
 
-        filtered_logs = []
-        for log in all_logs:
-            matches = True
-            for field, condition in search_data.filters.items():
-                value = getattr(condition, "value", "") or ""
-                operator = getattr(condition, "operator", "")
-                operator = re.sub(r"([a-z])([A-Z])", r"\1 \2", operator)
-                operator = operator.replace("_", " ").replace("-", " ").lower().strip()
-
-                if field == "timestamp":
-                    log_value = log.get("created_at", "")
-                    log_date = None
-                    if log_value:
-                        try:
-                            log_date = parse(log_value)
-                        except (ValueError, TypeError):
-                            log_date = None
-                    if operator == "is empty":
-                        if log_date is not None:
-                            matches = False
-                        continue
-                    if operator == "is not empty":
-                        if log_date is None:
-                            matches = False
-                        continue
-                    if operator in ["doesnotcontain", "doesnotequal"]:
-                        matches = False
-                        continue
-                    filter_criteria_date = None
-                    valid_filter_value_for_comparison = False
-                    if isinstance(value, str) and value:
-                        try:
-                            filter_criteria_date = parse(value)
-                            valid_filter_value_for_comparison = True
-                        except (ValueError, TypeError):
-                            matches = False
-                    else:
-                        matches = False
-                    if (
-                        log_date
-                        and filter_criteria_date
-                        and matches
-                        and valid_filter_value_for_comparison
-                    ):
-                        log_date = log_date.replace(second=0, microsecond=0)
-                        filter_criteria_date = filter_criteria_date.replace(
-                            second=0, microsecond=0
-                        )
-                        if timezone.is_naive(log_date):
-                            log_date = timezone.make_aware(
-                                log_date, timezone.get_current_timezone()
-                            )
-                        if timezone.is_naive(filter_criteria_date):
-                            filter_criteria_date = timezone.make_aware(
-                                filter_criteria_date, timezone.get_current_timezone()
-                            )
-                        if not matches_date_filter(
-                            log_date, operator, filter_criteria_date
-                        ):
-                            matches = False
-                    elif not (log_date and filter_criteria_date):
-                        matches = False
-                    continue
-
-                log_value = extract_log_value(field, log)
-                if not matches_string_filter(log_value, operator, value):
-                    matches = False
-                    break
-
-            if matches:
-                filtered_logs.append(log)
+        filtered_logs = [
+            log
+            for log in all_logs
+            if _log_matches_all_filters(log, search_data.filters)
+        ]
 
         page = search_data.page
         page_size = search_data.page_size
         start = (page - 1) * page_size
         end = start + page_size
+
         return filtered_logs[start:end], len(filtered_logs)
 
     except ValueError as ve:
