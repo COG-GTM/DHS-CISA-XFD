@@ -402,7 +402,15 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   );
 
   return (
-    <FindingsHeader>
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <FindingsHeader />
       {!isLoading && !loadingError && state && hasPreloadedFilters && (
         <Box sx={{ width: '100%', mb: 1 }}>
           <Stack direction="row" alignItems="center">
@@ -529,7 +537,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           </Paper>
         ) : null}
       </Box>
-    </FindingsHeader>
+    </Box>
   );
 };
 
