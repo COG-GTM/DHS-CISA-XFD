@@ -162,7 +162,6 @@ def test_search_logs_filtered_success():
         email="{}@example.com".format(uuid.uuid4().hex),
         user_type=UserType.GLOBAL_VIEW,
     )
-
     Log.objects.create(
         payload=json.dumps({"info": "Log to be filtered out"}),
         created_at=datetime.now(tz=timezone.utc),
@@ -175,13 +174,11 @@ def test_search_logs_filtered_success():
         event_type="UserLogin",
         result="success",
     )
-
     search_payload = {
         "page": 1,
         "page_size": 10,
         "filters": {"event_type": {"value": "UserLogin", "operator": "equals"}},
     }
-
     response = client.post(
         "/logs/filtered-search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
@@ -190,9 +187,7 @@ def test_search_logs_filtered_success():
 
     assert response.status_code == 200
     data = response.json()
-
-    assert data[1] == 1
-
-    assert len(data[0]) == 1
-    assert data[0][0]["id"] == str(matching_log.id)
-    assert data[0][0]["event_type"] == "UserLogin"
+    assert data["count"] == 1
+    assert len(data["result"]) == 1
+    assert data["result"][0]["id"] == str(matching_log.id)
+    assert data["result"][0]["event_type"] == "UserLogin"
