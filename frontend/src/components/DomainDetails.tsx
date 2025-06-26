@@ -400,9 +400,12 @@ export const DomainDetails: React.FC<Props> = (props) => {
                 <Accordion
                   className={classes.accordion}
                   key={vuln.id}
+                  disabled={vuln.state === 'closed'}
                   onClick={(event) => {
                     event.stopPropagation();
-                    history.push('/inventory/vulnerability/' + vuln.id);
+                    if (vuln.state !== 'closed') {
+                      history.push('/inventory/vulnerability/' + vuln.id);
+                    }
                   }}
                 >
                   <AccordionSummary>
