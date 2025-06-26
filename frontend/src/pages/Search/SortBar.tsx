@@ -12,8 +12,8 @@ import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { ContextType } from 'context/SearchProvider';
 
 interface Props {
-  sort_field: ContextType['sort_field'];
-  sort_direction?: ContextType['sort_direction'];
+  sortField: ContextType['sortField'];
+  sortDirection?: ContextType['sortDirection'];
   setSort: ContextType['setSort'];
   isFixed: boolean;
   children?: React.ReactNode;
@@ -21,10 +21,10 @@ interface Props {
 }
 
 export const SortBar: React.FC<Props> = (props) => {
-  const { sort_field, sort_direction, setSort, children } = props;
+  const { sortField, sortDirection, setSort, children } = props;
 
   const toggleDirection = () => {
-    setSort(sort_field, sort_direction === 'asc' ? 'desc' : 'asc');
+    setSort(sortField, sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
   const onSetSortField: SelectProps['onChange'] = (e) => {
@@ -42,10 +42,10 @@ export const SortBar: React.FC<Props> = (props) => {
       <IconButton
         onClick={toggleDirection}
         aria-label={`Sort ${
-          sort_direction === 'asc' ? 'Descending' : 'Ascending'
+          sortDirection === 'asc' ? 'Descending' : 'Ascending'
         }`}
       >
-        {sort_direction === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
+        {sortDirection === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
       </IconButton>
       <Typography id="sort-by-label" variant="body1">
         Sort by:
@@ -53,7 +53,7 @@ export const SortBar: React.FC<Props> = (props) => {
       <FormControl size="small">
         <Select
           labelId="sort-by-label"
-          value={sort_field ?? 'name'}
+          value={sortField ?? 'name'}
           onChange={onSetSortField}
           sx={{ minWidth: 160 }}
         >

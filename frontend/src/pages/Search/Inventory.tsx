@@ -36,8 +36,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     addFilter,
     removeFilter,
     results,
-    sort_direction,
-    sort_field,
+    sortDirection,
+    sortField,
     setSort,
     totalPages,
     totalResults,
@@ -65,8 +65,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         filters,
         resultsPerPage,
         searchTerm,
-        sort_direction,
-        sort_field
+        sortDirection,
+        sortField
       };
       if (!showAllOrganizations && currentOrganization) {
         if ('root_domains' in currentOrganization)
@@ -173,8 +173,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         {/* Keeps SortBar fixed to the right side of the screen */}
         <Box sx={{ flexGrow: 1 }} />
         <SortBar
-          sort_field={sort_field}
-          sort_direction={sort_direction}
+          sortField={sortField}
+          sortDirection={sortDirection}
           setSort={setSort}
           isFixed={resultsScrolled}
           advancedFiltersReq={advanceFiltersReq}
@@ -301,8 +301,8 @@ export const Dashboard = withSearch(
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sort_direction,
-    sort_field,
+    sortDirection,
+    sortField,
     setSort,
     resultsPerPage,
     setResultsPerPage,
@@ -321,8 +321,8 @@ export const Dashboard = withSearch(
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sort_direction,
-    sort_field,
+    sortDirection,
+    sortField,
     setSort,
     resultsPerPage,
     setResultsPerPage,
