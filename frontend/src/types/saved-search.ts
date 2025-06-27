@@ -11,5 +11,5 @@ export interface SavedSearch {
   created_by: User;
   search_path: string;
   sortField: string;
-  sort_direction: string;
+  sortDirection: string;
 }

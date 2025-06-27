@@ -28,7 +28,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
     // initialState: {
     //   resultsPerPage: 15,
     //   sortField: 'name',
-    //   sort_direction: 'asc'
+    //   sortDirection: 'asc'
     // },
     // searchQuery: {
     //   search_fields: {

@@ -6,7 +6,7 @@ const PREFIX = 'SortBar';
 
 interface Props {
   sortField: ContextType['sortField'];
-  sort_direction?: ContextType['sortDirection'];
+  sortDirection?: ContextType['sortDirection'];
   setSort: ContextType['setSort'];
   saveSearch?(): void;
   isFixed: boolean;
