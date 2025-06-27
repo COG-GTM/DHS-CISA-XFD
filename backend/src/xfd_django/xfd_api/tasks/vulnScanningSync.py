@@ -188,7 +188,6 @@ def main():  # pylint: disable=R0915
         LOGGER.info("Setting port scans latest flag")
         enforce_latest_flag_port_scan()
 
-
     # Fill CIDR live IPs
     fill_cidr_live_ips_bulk_update()
 
@@ -223,7 +222,7 @@ def main():  # pylint: disable=R0915
             chunk_number - 1,
         )
         LOGGER.info("Finished processing tickets")
-    
+
     # 🔁 REFRESH MATERIALIZED VIEWS BEFORE CREATING SUMMARIES
     LOGGER.info("Refreshing materialized views before creating summaries...")
     refresh_materialized_views()
@@ -242,14 +241,19 @@ def main():  # pylint: disable=R0915
         create_port_scan_service_summaries()
         LOGGER.info("Finished port scan service summaries")
     except Exception as e:
-        LOGGER.error("Failed to create port scan service summaries: %s", e, exc_info=True)
+        LOGGER.error(
+            "Failed to create port scan service summaries: %s", e, exc_info=True
+        )
 
     LOGGER.info("Creating vulnerability scan summary...")
     try:
         create_vuln_scan_summary()
         LOGGER.info("Finished vulnerability scan summary")
     except Exception as e:
-        LOGGER.error("Failed to create vulnerability scan summary: %s", e, exc_info=True)
+        LOGGER.error(
+            "Failed to create vulnerability scan summary: %s", e, exc_info=True
+        )
+
 
 def detect_data_set(query):
     """Detect the data set from the query."""
