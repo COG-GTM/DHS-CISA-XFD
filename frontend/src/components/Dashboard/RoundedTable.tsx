@@ -94,9 +94,9 @@ export default function RoundedTable<T extends Record<string, any>>({
 
   return (
     <>
-      <Table sx={tableStyles}>
-        <TableHead>
-          <TableRow sx={rowHeadStyles}>
+      <Table sx={tableStyles} component="table">
+        <TableHead component="thead">
+          <TableRow sx={rowHeadStyles} component="tr">
             {columns.map((col, colIndex) => (
               <TableCell
                 key={colIndex}
@@ -105,15 +105,17 @@ export default function RoundedTable<T extends Record<string, any>>({
                   p: col.headerPadding || 0
                 }}
                 align={col.textAlign || 'left'}
+                component="th"
+                scope="col"
               >
                 {col.header}
               </TableCell>
             ))}
           </TableRow>
         </TableHead>
-        <TableBody>
+        <TableBody component="tbody">
           {data.map((row, rowIndex) => (
-            <TableRow key={rowIndex} sx={rowBodyStyles}>
+            <TableRow key={rowIndex} sx={rowBodyStyles} component="tr">
               {columns.map((col, colIndex) => (
                 <TableCell
                   key={colIndex}
@@ -122,6 +124,7 @@ export default function RoundedTable<T extends Record<string, any>>({
                   tabIndex={0}
                   role="cell"
                   aria-label={col.header + ' ' + row[col.key]}
+                  component="td"
                 >
                   {col.render ? col.render(row[col.key], row) : row[col.key]}
                 </TableCell>

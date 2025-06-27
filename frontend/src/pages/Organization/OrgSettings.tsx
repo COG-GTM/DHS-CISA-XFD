@@ -460,6 +460,12 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
                 }}
                 color="primary"
                 disabled={user?.user_type === 'globalView'}
+                slotProps={{
+                  input: {
+                    'aria-label': 'Toggle passive mode',
+                    role: 'switch'
+                  }
+                }}
               />
             </Grid>
           </Grid>
