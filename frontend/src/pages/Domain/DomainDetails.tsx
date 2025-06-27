@@ -16,7 +16,7 @@ import {
 import { ExpandLess, ExpandMore, KeyboardBackspace } from '@mui/icons-material';
 import { Domain } from 'types';
 import { useDomainApi } from 'hooks';
-import { DefinitionList } from './DefinitionList';
+import { DefinitionList } from '../../components/DefinitionList';
 // @ts-ignore:next-line
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { Webpage } from 'types';
@@ -407,6 +407,7 @@ export const DomainDetails: React.FC<Props> = (props) => {
                       history.push('/inventory/vulnerability/' + vuln.id);
                     }
                   }}
+                  aria-label={`Vulnerability: ${vuln.title} - ${formatSeverity(vuln.severity)}`}
                 >
                   <AccordionSummary>
                     <Typography className={classes.accordionHeading}>
