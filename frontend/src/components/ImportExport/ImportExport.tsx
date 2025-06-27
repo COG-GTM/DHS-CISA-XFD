@@ -93,6 +93,8 @@ export const Import = <T extends object>(props: ImportProps<T>) => {
           id="import"
           accept=".csv"
           onChange={(e) => parseCSV(e)}
+          tabIndex={0}
+          aria-label={'Import CSV file'}
         />
         {selectedFile && (
           <Paper sx={{ width: 'fit-content' }}>

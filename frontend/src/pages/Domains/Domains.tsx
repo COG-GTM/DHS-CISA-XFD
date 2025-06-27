@@ -291,7 +291,12 @@ export const Domains: React.FC = () => {
             </Button>
           </Stack>
         ) : isLoading === false && loadingError === false ? (
-          <Paper elevation={2} sx={{ width: '100%', minHeight: 500 }}>
+          <Paper
+            elevation={2}
+            sx={{ width: '100%', minHeight: 500 }}
+            role="table"
+            aria-label="Domains Table"
+          >
             <DataGrid
               rows={domRows}
               rowCount={totalResults}

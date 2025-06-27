@@ -119,6 +119,9 @@ export default function RoundedTable<T extends Record<string, any>>({
                   key={colIndex}
                   sx={cellBodyStyles}
                   align={col.textAlign || 'left'}
+                  tabIndex={0}
+                  role="cell"
+                  aria-label={col.header + ' ' + row[col.key]}
                 >
                   {col.render ? col.render(row[col.key], row) : row[col.key]}
                 </TableCell>
