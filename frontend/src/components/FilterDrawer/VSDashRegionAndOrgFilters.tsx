@@ -88,7 +88,7 @@ export const VSDashRegionAndOrgFilters: React.FC<
           }
         });
 
-        const body = results?.body?.hits;
+        const body = results?.body?.hits?.hits;
         if (!Array.isArray(body)) {
           return [];
         }
