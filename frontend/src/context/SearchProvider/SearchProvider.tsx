@@ -22,6 +22,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
       sortField: 'name',
       sortDirection: 'asc'
     },
+    //TODO: Implement or delete these queries CRASM-2819
     // debug: false,
     // alwaysSearchOnInitialLoad: false,
     // trackUrlState: false,
