@@ -35,6 +35,7 @@ export const Subnav = ({ items }: NavTabsProps) => {
     <Tabs
       value={currentTab}
       onChange={handleChange}
+      aria-label="Findings section tabs"
       slotProps={{
         indicator: {
           sx: {
@@ -45,9 +46,6 @@ export const Subnav = ({ items }: NavTabsProps) => {
       }}
       sx={{
         minHeight: 'auto',
-        '.MuiTab-root': {
-          minHeight: 'auto'
-        },
         mb: 3
       }}
     >
@@ -56,6 +54,8 @@ export const Subnav = ({ items }: NavTabsProps) => {
           key={item.title}
           label={item.title}
           value={item.path}
+          id={`tab-${item.path}`}
+          aria-controls={`tabpanel-${item.path}`}
           sx={{
             minWidth: 'fit-content',
             px: 0,
@@ -64,11 +64,14 @@ export const Subnav = ({ items }: NavTabsProps) => {
             mb: '3px',
             textTransform: 'none',
             color: 'neutrals.main',
-            fontWeight: 500,
+            fontWeight: 600,
             fontSize: '16px',
             '&.Mui-selected': {
               color: 'primary.dark',
               fontWeight: 'bold'
+            },
+            '&:hover': {
+              color: 'primary.darker'
             }
           }}
         />
