@@ -232,6 +232,9 @@ const ScansView: React.FC = () => {
       minWidth: 50,
       flex: 0.5,
       disableExport: true,
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -279,6 +282,9 @@ const ScansView: React.FC = () => {
       minWidth: 50,
       flex: 1,
       disableExport: true,
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
