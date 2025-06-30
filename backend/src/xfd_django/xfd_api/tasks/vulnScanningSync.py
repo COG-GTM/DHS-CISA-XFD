@@ -225,7 +225,9 @@ def main():  # pylint: disable=R0915
 
     # 🔁 REFRESH MATERIALIZED VIEWS BEFORE CREATING SUMMARIES
     LOGGER.info("Refreshing materialized views before creating summaries...")
-    refresh_materialized_views()
+    # Create or refresh materialized views
+    result = refresh_materialized_views({})
+    LOGGER.info(result)
     LOGGER.info("Finished refreshing materialized views")
 
     # ✅ Create summaries with individual error handling
