@@ -533,6 +533,7 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                     "host_ready_count": row["host_ready_count"],
                     "up_host_count": row["up_host_count"],
                     "down_host_count": row["down_host_count"],
+                    "scanned_asset_count": row["scanned_asset_count"],
                 },
             )
         except Organization.DoesNotExist:
