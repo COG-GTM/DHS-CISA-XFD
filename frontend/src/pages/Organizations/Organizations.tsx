@@ -69,59 +69,6 @@ export const Organizations: React.FC = () => {
             <OrganizationList></OrganizationList>
           ) : null}
         </Box>
-        {user?.user_type === 'globalAdmin' && (
-          <>
-            <ImportExport<Organization>
-              name="organizations"
-              fieldsToImport={[
-                'name',
-                'acronym',
-                'root_domains',
-                'ip_blocks',
-                'is_passive',
-                'tags',
-                'country',
-                'state',
-                'state_fips',
-                'state_name',
-                'county',
-                'county_fips'
-              ]}
-              onImport={async (results) => {
-                // TODO: use a batch call here instead.
-                const createdOrganizations = [];
-                for (const result of results) {
-                  try {
-                    createdOrganizations.push(
-                      await apiPost('/organizations_upsert/', {
-                        body: {
-                          ...result,
-                          // These fields are initially parsed as strings, so they need
-                          // to be converted to arrays.
-                          ip_blocks: (
-                            (result.ip_blocks as unknown as string) || ''
-                          ).split(','),
-                          root_domains: (
-                            (result.root_domains as unknown as string) || ''
-                          ).split(','),
-                          tags: ((result.tags as unknown as string) || '')
-                            .split(',')
-                            .map((tag) => ({
-                              name: tag
-                            }))
-                        }
-                      })
-                    );
-                  } catch (e: any) {
-                    console.error('Error uploading Entry: ' + e);
-                  }
-                }
-                setOrganizations(organizations.concat(...createdOrganizations));
-                window.location.reload();
-              }}
-            />
-          </>
-        )}
       </Box>
     </Box>
   );
