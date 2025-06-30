@@ -379,7 +379,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
             <Box
               component="span"
               aria-label={`Product ${cellValues.row.product}`}
-              // sx={{ textTransform: 'capitalize' }}
             >
               {cellValues.row.product}
             </Box>
