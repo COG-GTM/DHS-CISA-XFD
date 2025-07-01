@@ -396,7 +396,6 @@ def get_allowed_user_update_fields(current_user, target_user):
         return {
             "first_name",
             "last_name",
-            "email",
             "state",
             "region_id",
             "user_type",
@@ -413,7 +412,6 @@ def get_allowed_user_update_fields(current_user, target_user):
         return {
             "first_name",
             "last_name",
-            "email",
             "state",
             "invite_pending",
             "date_approved",
