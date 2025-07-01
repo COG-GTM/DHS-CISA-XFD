@@ -390,6 +390,40 @@ def can_access_user(current_user, target_user_id) -> bool:
     return False
 
 
+def get_allowed_user_update_fields(current_user, target_user):
+    """Get allowed user update fields."""
+    if is_global_write_admin(current_user):
+        return {
+            "first_name",
+            "last_name",
+            "email",
+            "state",
+            "region_id",
+            "user_type",
+            "invite_pending",
+            "date_approved",
+            "approved_by",
+            "accepted_terms_version",
+            "login_blocked_by_maintenance",
+        }
+    elif (
+        is_regional_admin(current_user)
+        and current_user.region_id == target_user.region_id
+    ):
+        return {
+            "first_name",
+            "last_name",
+            "email",
+            "state",
+            "invite_pending",
+            "date_approved",
+            "approved_by",
+        }
+    elif current_user.id == target_user.id:
+        return {"first_name", "last_name"}
+    return set()
+
+
 def get_org_memberships(current_user) -> list[str]:
     """Return the organization IDs that a user is a member of."""
     # Check if the user has a 'roles' attribute and it's not None

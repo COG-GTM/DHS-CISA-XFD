@@ -12,6 +12,7 @@ from xfd_mini_dl.models import Organization, Role, User
 
 from ..auth import (
     can_access_user,
+    get_allowed_user_update_fields,
     is_global_view_admin,
     is_global_write_admin,
     is_org_admin,
@@ -442,16 +443,27 @@ def update_user_v2(user_id, user_data, current_user):
                 status_code=403, detail="Only global admins can update userType."
             )
 
-        # Update fields
-        if user_data.state:
-            user.region_id = REGION_STATE_MAP.get(user_data.state)
+        # Check if allowed fields to update then execute
+        updates = user_data.dict(exclude_unset=True)
+        allowed_fields = get_allowed_user_update_fields(current_user, user)
 
-        print(user_data.dict())
-        # Check for invitePending explicitly
-        if user_data.invite_pending is not None:
-            user.invite_pending = user_data.invite_pending
-        for field, value in user_data.dict(exclude_defaults=True).items():
-            setattr(user, field, value)
+        # Check for disallowed fields before applying updates
+        disallowed_fields = set(updates.keys()) - allowed_fields
+        if disallowed_fields:
+            raise HTTPException(
+                status_code=403,
+                detail="Unauthorized to update the following fields: {}".format(
+                    ", ".join(disallowed_fields)
+                ),
+            )
+
+        # Apply only the allowed updates
+        for field, value in updates.items():
+            if field == "state":
+                user.region_id = REGION_STATE_MAP.get(value)
+                user.state = value
+            else:
+                setattr(user, field, value)
 
         # Save the updated user
         user.save()
