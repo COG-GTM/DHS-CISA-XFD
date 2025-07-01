@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
 from django.forms import model_to_dict
 from fastapi import HTTPException
-from xfd_mini_dl.models import Organization, Role, User
+from xfd_mini_dl.models import Organization, Role, User, UserType
 
 from ..auth import (
     can_access_user,
@@ -515,19 +515,32 @@ def approve_user_registration(user_id, current_user):
     if not is_valid_uuid(user_id):
         raise HTTPException(status_code=404, detail="Invalid user ID.")
 
+    if str(current_user.id) == str(user_id):
+        raise HTTPException(status_code=403, detail="Users cannot approve themselves.")
+
     try:
         # Retrieve the user by ID
         user = User.objects.get(id=user_id)
-        user.date_approved = datetime.now()
-        user.approved_by = current_user
-        user.first_login = True
-        user.save()
     except ObjectDoesNotExist:
         raise HTTPException(status_code=404, detail="User not found.")
+
+    if not (
+        is_global_write_admin(current_user)
+        or current_user.user_type == UserType.REGIONAL_ADMIN
+    ):
+        raise HTTPException(
+            status_code=403, detail="Only regional or global admins can approve users."
+        )
 
     # Ensure authorizer's region matches the user's region
     if not matches_user_region(current_user, user.region_id):
         raise HTTPException(status_code=403, detail="Unauthorized region access.")
+
+    # Approve user
+    user.date_approved = datetime.now()
+    user.approved_by = current_user
+    user.first_login = True
+    user.save()
 
     # Send email notification
     try:
@@ -565,6 +578,20 @@ def deny_user_registration(user_id: str, current_user: User):
         user = User.objects.filter(id=user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found.")
+
+        if str(current_user.id) == str(user_id):
+            raise HTTPException(
+                status_code=403, detail="Users cannot approve themselves."
+            )
+
+        if not (
+            is_global_write_admin(current_user)
+            or current_user.user_type == UserType.REGIONAL_ADMIN
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Only regional or global admins can approve users.",
+            )
 
         # Ensure authorizer's region matches the user's region
         if not matches_user_region(current_user, user.region_id):
