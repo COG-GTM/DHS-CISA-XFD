@@ -14,7 +14,7 @@ import {
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useHistory } from 'react-router-dom';
 import { CheckCircleOutline } from '@mui/icons-material';
-import { OrganizationForm } from 'components/OrganizationForm';
+import { OrganizationForm } from './OrganizationForm';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import InfoDialog from 'components/Dialog/InfoDialog';
 
