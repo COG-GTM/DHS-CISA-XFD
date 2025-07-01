@@ -1521,7 +1521,7 @@ def test_update_user_v2_regional_admin_cannot_update_user_type():
     )
 
     assert response.status_code == 403
-    assert "user_type" in response.json()["detail"]
+    assert "Only global admins can update userType." in response.json()["detail"]
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
