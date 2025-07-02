@@ -234,19 +234,19 @@ async def process_user(decoded_token):
         # update_login_block_status(user)
 
         # user.save()
-    else:
-        # Update user oktaId (legacy users) and login time
-        user.okta_id = decoded_token["sub"]
-        user.last_logged_in = datetime.now()
-        user.cognito_username = decoded_token.get("cognito:username")
-        user.cognito_use_case_description = decoded_token.get("nickname")
-        user.cognito_email_verified = decoded_token.get("email_verified")
-        user.cognito_groups = decoded_token.get("cognito:groups")
 
-        # Check for active major maintenance window and login status (Existing User)
-        update_login_block_status(user)
+    # Update user oktaId (legacy users) and login time
+    user.okta_id = decoded_token["sub"]
+    user.last_logged_in = datetime.now()
+    user.cognito_username = decoded_token.get("cognito:username")
+    user.cognito_use_case_description = decoded_token.get("nickname")
+    user.cognito_email_verified = decoded_token.get("email_verified")
+    user.cognito_groups = decoded_token.get("cognito:groups")
 
-        user.save()
+    # Check for active major maintenance window and login status (Existing User)
+    update_login_block_status(user)
+
+    user.save()
 
     if user:
         # TODO: Uncomment if we want to fully block logins during maintenance windows.
