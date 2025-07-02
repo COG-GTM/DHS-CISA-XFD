@@ -43,6 +43,7 @@ export interface LocationState {
   startDate?: string;
   endDate?: string;
   dateRange?: string;
+  scanType?: string;
 }
 
 export type SearchParams = {

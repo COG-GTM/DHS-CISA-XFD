@@ -121,7 +121,7 @@ def search_domains(domain_search: DomainSearch, current_user):
             domains = apply_domain_filters(domains, domain_search.filters)
 
         # Handle pagination
-        page_size = domain_search.page_size
+        page_size = domain_search.pageSize
         if page_size == -1:
             page_obj = domains
         else:
