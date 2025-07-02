@@ -202,6 +202,9 @@ export const Domains: React.FC = () => {
       minWidth: 100,
       flex: 0.3,
       disableExport: true,
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
