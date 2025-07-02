@@ -412,6 +412,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     [history]
   );
 
+  console.log('Vuln length: ', vulnerabilities.length);
+  console.log(paginationModel);
   return (
     <FindingsHeader>
       {!isLoading && !loadingError && filters.length > 0 && (
@@ -536,6 +538,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
                 } as any,
                 noRowsOverlay: { children: noRowsOverlay }
               }}
+              paginationMode="server"
               paginationModel={paginationModel}
               onPaginationModelChange={handlePaginationModelChange}
               pageSizeOptions={[15, 30, 50, 100]}
