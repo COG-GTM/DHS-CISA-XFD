@@ -18,9 +18,7 @@ client = TestClient(app)
 
 # Test utilities
 def assert_serializable(obj, label="object"):
-    """
-    Try to serialize an object to JSON. If it fails, identify which field caused it.
-    """
+    """Try to serialize an object to JSON. If it fails, identify which field caused it."""
     try:
         json.dumps(obj)
     except TypeError as e:
