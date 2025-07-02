@@ -564,10 +564,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
               rows={vulRows}
               rowCount={totalResults}
               columns={vulCols}
-              // columns={[
-              //   ...vulCols,
-              //   { field: 'viewDetails', filterable: false }
-              // ]}
               loading={isLoading}
               slots={{
                 toolbar: CustomToolbar,
