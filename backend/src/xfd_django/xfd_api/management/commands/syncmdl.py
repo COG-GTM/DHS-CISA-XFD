@@ -11,6 +11,10 @@ from xfd_api.tasks.helpers.syncdb_helpers.es_sync import (
     manage_elasticsearch_indices,
     sync_es_organizations,
 )
+from xfd_api.tasks.helpers.syncdb_helpers.fill_static_tables import (
+    fill_nmi_service_group_table,
+    fill_risky_service_lookup_table,
+)
 from xfd_api.tasks.searchSync import handler as sync_es_domains
 from xfd_api.tasks.syncdb_task import drop_all_tables, synchronize
 
@@ -107,6 +111,8 @@ class Command(BaseCommand):
             self.stdout.write("Dropping and recreating the database...")
             drop_all_tables(app_label="xfd_mini_dl")
         synchronize(target_app_label="xfd_mini_dl")
+        fill_risky_service_lookup_table()
+        fill_nmi_service_group_table()
 
         self.stdout.write("Running Phase 2 column type adjustments …")
         adjust_column_types(target_app_label="xfd_mini_dl")
