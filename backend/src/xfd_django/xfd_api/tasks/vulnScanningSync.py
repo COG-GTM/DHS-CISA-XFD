@@ -23,6 +23,7 @@ from django.utils import timezone
 import psycopg2
 import requests
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
+from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
@@ -187,12 +188,6 @@ def main():  # pylint: disable=R0915
         LOGGER.info("Setting port scans latest flag")
         enforce_latest_flag_port_scan()
 
-        # Create port scan summaries
-        LOGGER.info("Creating port scan summaries")
-        create_port_scan_summary()
-        create_port_scan_service_summaries()
-        LOGGER.info("Finished processing port scans")
-
     # Fill CIDR live IPs
     fill_cidr_live_ips_bulk_update()
 
@@ -227,12 +222,39 @@ def main():  # pylint: disable=R0915
             chunk_number - 1,
         )
         LOGGER.info("Finished processing tickets")
-        try:
-            create_vuln_scan_summary()
-        except Exception as e:
-            raise QueryError(
-                SCAN_NAME, str(e), "Error creating vulnerability scan summary"
-            ) from e
+
+    # 🔁 REFRESH MATERIALIZED VIEWS BEFORE CREATING SUMMARIES
+    LOGGER.info("Refreshing materialized views before creating summaries...")
+    # Create or refresh materialized views
+    result = refresh_materialized_views({})
+    LOGGER.info(result)
+    LOGGER.info("Finished refreshing materialized views")
+
+    # ✅ Create summaries with individual error handling
+    LOGGER.info("Creating port scan summary...")
+    try:
+        create_port_scan_summary()
+        LOGGER.info("Finished port scan summary")
+    except Exception as e:
+        LOGGER.error("Failed to create port scan summary: %s", e, exc_info=True)
+
+    LOGGER.info("Creating port scan service summaries...")
+    try:
+        create_port_scan_service_summaries()
+        LOGGER.info("Finished port scan service summaries")
+    except Exception as e:
+        LOGGER.error(
+            "Failed to create port scan service summaries: %s", e, exc_info=True
+        )
+
+    LOGGER.info("Creating vulnerability scan summary...")
+    try:
+        create_vuln_scan_summary()
+        LOGGER.info("Finished vulnerability scan summary")
+    except Exception as e:
+        LOGGER.error(
+            "Failed to create vulnerability scan summary: %s", e, exc_info=True
+        )
 
 
 def detect_data_set(query):
