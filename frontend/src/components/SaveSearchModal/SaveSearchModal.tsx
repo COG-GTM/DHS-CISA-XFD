@@ -53,8 +53,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         filters,
         count: totalResults,
         search_path: window.location.search,
-        sortField,
-        sortDirection
+        sort_field: sortField,
+        sort_direction: sortDirection
       }
     };
 
