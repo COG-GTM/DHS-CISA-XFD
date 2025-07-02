@@ -39,7 +39,7 @@ class Command(BaseCommand):
             help="Populate the database with sample data.",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint: disable=R0915
         """Handle method."""
         dangerouslyforce = options["dangerouslyforce"]
         populate = options["populate"]
