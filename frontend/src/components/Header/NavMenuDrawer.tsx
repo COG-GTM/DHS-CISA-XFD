@@ -127,6 +127,8 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                           <ListItemButton
                             component="a"
                             href={item.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             role="menuitem"
                             aria-label={item.menuItemTitle}
                           >
@@ -135,7 +137,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                         </ListItem>
                       );
                     }
-
                     // 5. Internal link
                     if (item.path) {
                       return (
