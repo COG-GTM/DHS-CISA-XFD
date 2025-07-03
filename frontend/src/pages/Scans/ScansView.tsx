@@ -10,7 +10,6 @@ import {
   ModalRef
 } from '@trussworks/react-uswds';
 import { ModalToggleButton } from 'components';
-import { ImportExport } from 'components';
 // import { Column, CellProps } from 'react-table';
 import { Scan, Organization, ScanSchema, OrganizationTag } from 'types';
 // import { FaTimes, FaEdit } from 'react-icons/fa';
