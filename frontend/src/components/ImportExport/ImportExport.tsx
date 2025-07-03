@@ -154,8 +154,13 @@ export const exportCSV = async <T extends object>(
   const data = await props.getDataToExport();
 
   if (typeof data === 'string') {
+    const link = document.createElement('a');
+    link.href = data;
+    link.download = `${filename}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     setLoading((l) => l - 1);
-    window.open(data);
     return;
   }
 
