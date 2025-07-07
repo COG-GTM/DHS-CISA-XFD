@@ -24,6 +24,13 @@ from xfd_mini_dl.models import WasFindings, WasScanSummary
 LOGGER = logging.getLogger(__name__)
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 10
 READ_TIMEOUT = 135
+SEVERITY_MAP: dict[str, str] = {
+    "1": "INFO",
+    "2": "LOW",
+    "3": "MEDIUM",
+    "4": "HIGH",
+    "5": "CRITICAL",
+}
 
 username = os.environ.get("QUALYS_USERNAME")
 password = os.environ.get("QUALYS_PASSWORD")
@@ -363,135 +370,12 @@ def populate_was_scan_summaries(days_back: int = 365) -> None:
         _process_day_window(window_start, window_end, severities)
 
 
-def _process_day_window(
-    window_start: date, window_end: date, severities: list[str]
-) -> None:
-    """Aggregate WasFindings in [window_start, window_end) into a WasScanSummary row."""
-    findings_qs = WasFindings.objects.filter(
-        last_detected__gte=window_start,
-        last_detected__lt=window_end,
-    )
+def _compute_host_buckets(findings_qs) -> dict[str, int]:
+    """
+    Compute host‐vuln buckets and hosts with any vuln above INFO.
 
-    LOGGER.info("Processing findings from %s to %s", window_start, window_end)
-    LOGGER.info("Here are your findings: %s", findings_qs.count())
-
-    # 1) Number of assets scanned
-    scan_identifiers = [
-        str(uid) for uid in findings_qs.values_list("finding_uid", flat=True).distinct()
-    ]
-    assets_scanned_count = findings_qs.values("webapp_id").distinct().count()
-    LOGGER.info("Found %s assets scanned", assets_scanned_count)
-    # 3) Unique & total vulnerabilities by severity
-    unique_vuln: dict[str, int] = {}
-    total_vuln: dict[str, int] = {}
-    for level in severities:
-        subset = findings_qs.filter(severity__iexact=level)
-        unique_vuln[level] = subset.values("finding_uid").distinct().count()
-        total_vuln[level] = subset.count()
-    LOGGER.info("Got to Unique Vulnerabilities: %s", unique_vuln)
-
-    # 4) Hosts with risky services
-    # TODO: Uncomment when risky services are implemented
-
-    # LOGGER.info("Got to risky services")
-    # risky_services_host_count = (
-    #     findings_qs.filter(is_risky_service=True).values("webapp_id").distinct().count()
-    # )
-    # LOGGER.info("Found %s hosts with risky services", risky_services_host_count)
-
-    # 5) Age metrics
-    LOGGER.info("Got to Age Metrics")
-    SEVERITY_MAP: dict[str, str] = {
-        "1": "INFO",
-        "2": "LOW",
-        "3": "MEDIUM",
-        "4": "HIGH",
-        "5": "CRITICAL",
-    }
-    age_lists: dict[str, list[int]] = {code: [] for code in SEVERITY_MAP}
-    try:
-        for finding in findings_qs:
-            severity_code = finding.severity
-            if finding.first_detected and severity_code in age_lists:
-                days_old = (window_end - finding.first_detected).days
-                age_lists[severity_code].append(days_old)
-            else:
-                LOGGER.warning(
-                    "Skipping age calc for finding %s: unexpected severity %r",
-                    finding.finding_uid,
-                    finding.severity,
-                )
-
-        LOGGER.info("Computed age_lists: %s", age_lists)
-
-    except Exception as exc:
-        LOGGER.exception(
-            "Error computing age metrics for window %s → %s: %s",
-            window_start,
-            window_end,
-            exc,
-        )
-        # fallback to empty numeric buckets
-        age_lists = {code: [] for code in SEVERITY_MAP}
-
-    LOGGER.info("The Age Lists: %s", age_lists)
-    max_age_days_critical = max(age_lists.get("CRITICAL", [0]), default=0)
-    max_age_days_high = max(age_lists.get("HIGH", [0]), default=0)
-    median_age_days_by_severity: dict[str, float] = {
-        severity_label.lower(): (
-            median(values) if (values := age_lists.get(code)) else 0
-        )
-        for code, severity_label in SEVERITY_MAP.items()
-    }
-    LOGGER.info("Max age (CRITICAL): %s", max_age_days_critical)
-    LOGGER.info("Max age (HIGH):     %s", max_age_days_high)
-    LOGGER.info("Median age by severity: %s", median_age_days_by_severity)
-
-    # 6) KEV metrics
-    kev_counts_by_severity: dict[str, int] = {code: 0 for code in SEVERITY_MAP}
-    max_age_days_kevs = None
-
-    try:
-        kev_qs = findings_qs.filter(is_kev=True)
-
-        # per‐severity loop with its own try/except
-        for code, label in SEVERITY_MAP.items():
-            try:
-                kev_counts_by_severity[code] = kev_qs.filter(
-                    severity__iexact=label
-                ).count()
-            except Exception as exc:
-                LOGGER.warning(
-                    "Skipping KEV count for severity code %r (%s): %s", code, label, exc
-                )
-
-        # compute max age of any KEV vuln
-        if kev_qs.exists():
-            oldest = kev_qs.order_by("first_detected").first().first_detected
-            if oldest:
-                max_age_days_kevs = (window_end - oldest).days
-
-    except Exception as exc:
-        LOGGER.exception(
-            "Error computing KEV metrics for window %s →  %s: %s",
-            window_start,
-            window_end,
-            exc,
-        )
-        # on total failure, leave everything at zero/None
-        kev_counts_by_severity = {code: 0 for code in SEVERITY_MAP}
-        max_age_days_kevs = None
-
-    # finally, if you need human‐readable keys instead of numeric codes:
-    kev_counts_by_severity = {
-        SEVERITY_MAP[code].lower(): count
-        for code, count in kev_counts_by_severity.items()
-    }
-
-    LOGGER.info("KEV counts by severity: %s", kev_counts_by_severity)
-    LOGGER.info("Max age days KEVs: %s", max_age_days_kevs)
-
-    # 7) Host-vuln buckets
+    Returns a dict with the four counts.
+    """
     host_counts = findings_qs.values("webapp_id").annotate(
         vuln_count=Count("finding_uid")
     )
@@ -504,8 +388,6 @@ def _process_day_window(
     hosts_with_10_or_more_vulns_count = sum(
         1 for h in host_counts if h["vuln_count"] >= 10
     )
-
-    # 8) Hosts with any vuln above INFO
     hosts_with_vulnerability_above_info_count = (
         findings_qs.exclude(severity__iexact="INFO")
         .values("webapp_id")
@@ -513,73 +395,186 @@ def _process_day_window(
         .count()
     )
 
-    # 9) OWASP category counts
-    owasp_category_counts = dict(
-        findings_qs.values_list("owasp_category").annotate(count=Count("finding_uid"))
-    )
+    return {
+        "hosts_with_1_to_5_vulns_count": hosts_with_1_to_5_vulns_count,
+        "hosts_with_6_to_9_vulns_count": hosts_with_6_to_9_vulns_count,
+        "hosts_with_10_or_more_vulns_count": hosts_with_10_or_more_vulns_count,
+        "hosts_with_vulnerability_above_info_count": (
+            hosts_with_vulnerability_above_info_count
+        ),
+    }
 
-    # 10) Vulnerability type counts
-    vulnerability_type_counts = dict(
-        findings_qs.values_list("finding_type").annotate(count=Count("finding_uid"))
-    )
 
-    # 11) Special types
+def _compute_owasp_counts(findings_qs) -> dict[str, int]:
+    """
+    Count findings per OWASP category.
+
+    Returns a mapping category -> count.
+    """
+    aggregated = findings_qs.values("owasp_category").annotate(
+        count=Count("finding_uid")
+    )
+    return {item["owasp_category"]: item["count"] for item in aggregated}
+
+
+def _compute_vulnerability_type_counts(findings_qs) -> dict[str, int]:
+    """
+    Count findings per vulnerability type.
+
+    Returns a mapping finding_type -> count.
+    """
+    aggregated = findings_qs.values("finding_type").annotate(count=Count("finding_uid"))
+    return {item["finding_type"]: item["count"] for item in aggregated}
+
+
+def _compute_special_types(findings_qs) -> tuple[int, int]:
+    """
+    Count the two special types.
+
+      - INFORMATION_GATHERED
+      - SENSITIVE_CONTENT
+    Returns (information_gathered_count, sensitive_content_count).
+    """
     information_gathered_count = findings_qs.filter(
         finding_type="INFORMATION_GATHERED"
     ).count()
     sensitive_content_count = findings_qs.filter(
         finding_type="SENSITIVE_CONTENT"
     ).count()
+    return information_gathered_count, sensitive_content_count
+
+
+def _fetch_findings(window_start: date, window_end: date):
+    return WasFindings.objects.filter(
+        last_detected__gte=window_start,
+        last_detected__lt=window_end,
+    )
+
+
+def _compute_scan_assets(findings_qs):
+    scan_identifiers = [
+        str(uid) for uid in findings_qs.values_list("finding_uid", flat=True).distinct()
+    ]
+    assets_scanned_count = findings_qs.values("webapp_id").distinct().count()
+    LOGGER.info("Found %s assets scanned", assets_scanned_count)
+    return assets_scanned_count, scan_identifiers
+
+
+def _compute_vulnerability_counts(findings_qs, severities):
+    unique_vuln: dict[str, int] = {}
+    total_vuln: dict[str, int] = {}
+    for level in severities:
+        subset = findings_qs.filter(severity__iexact=level)
+        unique_vuln[level] = subset.values("finding_uid").distinct().count()
+        total_vuln[level] = subset.count()
+    LOGGER.info("Got to Unique Vulnerabilities: %s", unique_vuln)
+    return unique_vuln, total_vuln
+
+
+def _compute_age_metrics(findings_qs, window_end):
+    age_lists: dict[str, list[int]] = {code: [] for code in SEVERITY_MAP}
     try:
-        LOGGER.info(
-            "I got to the TRY: Upserting WasScanSummary for %s to %s",
-            window_start,
+        for finding in findings_qs:
+            code = finding.severity
+            if finding.first_detected and code in age_lists:
+                age_lists[code].append((window_end - finding.first_detected).days)
+            else:
+                LOGGER.warning(
+                    "Skipping age calc for finding %s: unexpected severity %r",
+                    finding.finding_uid,
+                    finding.severity,
+                )
+    except Exception as exc:
+        LOGGER.exception(
+            "Error computing age metrics for window: %s → %s: %s",
             window_end,
+            exc,
         )
-        unique_by_label: dict[str, int] = {
-            severity_label.lower(): unique_vuln.get(code, 0)
-            for code, severity_label in SEVERITY_MAP.items()
-        }
-        total_by_label: dict[str, int] = {
-            severity_label.lower(): total_vuln.get(code, 0)
-            for code, severity_label in SEVERITY_MAP.items()
-        }
+        age_lists = {code: [] for code in SEVERITY_MAP}
+    return age_lists
+
+
+def _summarize_age_lists(age_lists):
+    max_age_days_critical = max(age_lists.get("CRITICAL", [0]), default=0)
+    max_age_days_high = max(age_lists.get("HIGH", [0]), default=0)
+    median_age_days_by_severity: dict[str, float] = {
+        label.lower(): (median(vals) if (vals := age_lists.get(code)) else 0)
+        for code, label in SEVERITY_MAP.items()
+    }
+    LOGGER.info("Computed age summary")
+    return max_age_days_critical, max_age_days_high, median_age_days_by_severity
+
+
+def _compute_kev_metrics(findings_qs, window_end):
+    kev_counts_by_severity = {code: 0 for code in SEVERITY_MAP}
+    max_age_days_kevs = None
+    try:
+        kev_qs = findings_qs.filter(is_kev=True)
+        for code, label in SEVERITY_MAP.items():
+            kev_counts_by_severity[code] = kev_qs.filter(severity__iexact=label).count()
+        if kev_qs.exists():
+            oldest = kev_qs.order_by("first_detected").first().first_detected
+            max_age_days_kevs = (window_end - oldest).days if oldest else None
+    except Exception as exc:
+        LOGGER.exception("Error computing KEV metrics: %s", exc)
+    # convert keys to labels
+    kev_counts_by_severity = {
+        label.lower(): count
+        for code, count in kev_counts_by_severity.items()
+        for label in [SEVERITY_MAP[code]]
+    }
+    return kev_counts_by_severity, max_age_days_kevs
+
+
+# …and so on for host buckets, OWASP, vuln types, special types…
+
+
+def _upsert_summary(
+    window_start,
+    window_end,
+    findings_qs,
+    assets_scanned_count,
+    scan_identifiers,
+    unique_by_label,
+    total_by_label,
+    max_age_days_critical,
+    max_age_days_high,
+    median_age_days_by_severity,
+    kev_counts_by_severity,
+    max_age_days_kevs,
+    host_buckets,
+    owasp_category_counts,
+    vulnerability_type_counts,
+    information_gathered_count,
+    sensitive_content_count,
+):
+    defaults = {
+        "assets_scanned_count": assets_scanned_count,
+        "scan_identifier": scan_identifiers,
+        **{f"unique_vulnerabilities_{k}": v for k, v in unique_by_label.items()},
+        **{f"total_vulnerabilities_{k}": v for k, v in total_by_label.items()},
+        "max_age_days_critical": max_age_days_critical,
+        "max_age_days_high": max_age_days_high,
+        "median_age_days_by_severity": median_age_days_by_severity,
+        "kev_counts_by_severity": kev_counts_by_severity,
+        "max_age_days_kevs": max_age_days_kevs,
+        # flatten host_buckets dict into individual counts…
+        **host_buckets,
+        "owasp_category_counts": owasp_category_counts,
+        "vulnerability_type_counts": vulnerability_type_counts,
+        "information_gathered_count": information_gathered_count,
+        "sensitive_content_count": sensitive_content_count,
+    }
+    try:
         summary_record, was_created = WasScanSummary.objects.update_or_create(
             start_date=window_start,
             end_date=window_end,
             was_org_id=(findings_qs.first().was_org_id if findings_qs.exists() else ""),
-            defaults={
-                "assets_scanned_count": assets_scanned_count,
-                "scan_identifier": scan_identifiers,
-                **{
-                    f"unique_vulnerabilities_{lbl}": cnt
-                    for lbl, cnt in unique_by_label.items()
-                },
-                **{
-                    f"total_vulnerabilities_{lbl}": cnt
-                    for lbl, cnt in total_by_label.items()
-                },
-                # TODO: Uncomment when risky services are implemented
-                # "risky_services_host_count": risky_services_host_count,
-                "max_age_days_critical": max_age_days_critical,
-                "max_age_days_high": max_age_days_high,
-                "median_age_days_by_severity": median_age_days_by_severity,
-                "kev_counts_by_severity": kev_counts_by_severity,
-                "max_age_days_kevs": max_age_days_kevs,
-                "hosts_with_1_to_5_vulns_count": hosts_with_1_to_5_vulns_count,
-                "hosts_with_6_to_9_vulns_count": hosts_with_6_to_9_vulns_count,
-                "hosts_with_10_or_more_vulns_count": hosts_with_10_or_more_vulns_count,
-                "hosts_with_vulnerability_above_info_count": hosts_with_vulnerability_above_info_count,
-                "owasp_category_counts": owasp_category_counts,
-                "vulnerability_type_counts": vulnerability_type_counts,
-                "information_gathered_count": information_gathered_count,
-                "sensitive_content_count": sensitive_content_count,
-            },
+            defaults=defaults,
         )
     except Exception as exc:
         LOGGER.exception("Error upserting WasScanSummary: %s", exc)
         raise
-
     LOGGER.info(
         "%s WasScanSummary %s→%s (created=%s, pk=%s)",
         "Created" if was_created else "Updated",
@@ -587,4 +582,62 @@ def _process_day_window(
         window_end,
         was_created,
         summary_record.pk,
+    )
+
+
+def _process_day_window(
+    window_start: date, window_end: date, severities: list[str]
+) -> None:
+    """Aggregate WasFindings in [window_start, window_end) into a WasScanSummary row."""
+    findings_qs = _fetch_findings(window_start, window_end)
+    LOGGER.info("Processing findings from %s to %s", window_start, window_end)
+
+    assets_scanned_count, scan_identifiers = _compute_scan_assets(findings_qs)
+    unique_vuln, total_vuln = _compute_vulnerability_counts(findings_qs, severities)
+
+    age_lists = _compute_age_metrics(findings_qs, window_end)
+    (
+        max_age_days_critical,
+        max_age_days_high,
+        median_age_days_by_severity,
+    ) = _summarize_age_lists(age_lists)
+
+    kev_counts_by_severity, max_age_days_kevs = _compute_kev_metrics(
+        findings_qs, window_end
+    )
+
+    host_buckets = _compute_host_buckets(findings_qs)
+    owasp_category_counts = _compute_owasp_counts(findings_qs)
+    vulnerability_type_counts = _compute_vulnerability_type_counts(findings_qs)
+    information_gathered_count, sensitive_content_count = _compute_special_types(
+        findings_qs
+    )
+
+    unique_by_label = {
+        severity_label.lower(): unique_vuln.get(code, 0)
+        for code, severity_label in SEVERITY_MAP.items()
+    }
+    total_by_label = {
+        severity_label.lower(): total_vuln.get(code, 0)
+        for code, severity_label in SEVERITY_MAP.items()
+    }
+
+    _upsert_summary(
+        window_start,
+        window_end,
+        findings_qs,
+        assets_scanned_count,
+        scan_identifiers,
+        unique_by_label,
+        total_by_label,
+        max_age_days_critical,
+        max_age_days_high,
+        median_age_days_by_severity,
+        kev_counts_by_severity,
+        max_age_days_kevs,
+        host_buckets,
+        owasp_category_counts,
+        vulnerability_type_counts,
+        information_gathered_count,
+        sensitive_content_count,
     )
