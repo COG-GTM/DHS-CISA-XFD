@@ -1037,6 +1037,10 @@ class ScanResult(models.Model):
     latest_result_at = models.DateTimeField(
         help_text="Timestamp of latest result.",
     )
+    http_status = models.IntegerField(
+        db_column="http_status",
+        help_text="HTTP status code of the scan result.",
+    )
     scan = models.ForeignKey(
         Scan,
         on_delete=models.CASCADE,
@@ -1058,9 +1062,12 @@ class ScanResult(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "scan_result"
-        unique_together = (("scan", "organization"),)
+        unique_together = (("scan", "organization", "http_status"),)
         indexes = [
-            models.Index(fields=["scan", "organization"], name="scan_org_idx"),
+            models.Index(
+                fields=["scan", "organization", "http_status", "latest_result_at"],
+                name="scan_org_status_time_idx",
+            ),
         ]
 
 
