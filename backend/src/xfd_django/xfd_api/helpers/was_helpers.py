@@ -35,13 +35,9 @@ auth_string = "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("u
 class InvalidQualysCall(Exception):
     """Raise When qualys returns an error."""
 
-    pass
-
 
 class InvalidApiCall(Exception):
     """Raise when the API call is invalid or no data is returned."""
-
-    pass
 
 
 def convert_timestamp_to_date(timestamp: str) -> str:
@@ -161,7 +157,6 @@ def getFindingsFromId(idStr, block=0):
         offset = 1
     else:
         offset = block * 1000
-    """Get all findings from a given ID."""
     endPoint = "https://qualysapi.qg3.apps.qualys.com/qps/rest/3.0/search/was/finding"
     headers = {
         "Content-Type": "application/json",
@@ -371,11 +366,7 @@ def populate_was_scan_summaries(days_back: int = 365) -> None:
 def _process_day_window(
     window_start: date, window_end: date, severities: list[str]
 ) -> None:
-    """
-    Aggregate WasFindings in [window_start, window_end).
-
-     into a WasScanSummary row.
-    """
+    """Aggregate WasFindings in [window_start, window_end) into a WasScanSummary row."""
     findings_qs = WasFindings.objects.filter(
         last_detected__gte=window_start,
         last_detected__lt=window_end,

@@ -65,13 +65,9 @@ def handler(event):
 class InvalidQualysCall(Exception):
     """Raise When qualys returns an error."""
 
-    pass
-
 
 class InvalidApiCall(Exception):
     """Raise when the API call is invalid or no data is returned."""
-
-    pass
 
 
 def get_recently_completed_scans(days_back=2):
