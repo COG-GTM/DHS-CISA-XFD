@@ -11,21 +11,16 @@ Expose a Lambda-compatible handler for event-driven execution.
 
 # Standard Python Libraries
 import base64
-
-# from lxml import objectify
-# import pandas as pd
-# import time
-# import base64
-# import xml.etree.ElementTree as ET
-# from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 import logging
 import os
 import sys
 
 from ..helpers.was_helpers import (
-    api_was_finding_insert_or_update,
-    qualys_call,
+    check_qualys_alive,
+    fetch_for,
+    populate_was_scan_summaries,
     qualys_post_call,
 )
 
@@ -180,137 +175,6 @@ def convert_timestamp_to_date(timestamp: str) -> str:
     return formatted_date
 
 
-def getFindingsFromId(idStr, block=0):
-    """Get all findings from a given ID."""
-    end_date = datetime.utcnow()
-    start_date = end_date - timedelta(days=14)
-    start_date_str = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-    if block == 0:
-        offset = 1
-    else:
-        offset = block * 1000
-    """Get all findings from a given ID."""
-    endPoint = "https://qualysapi.qg3.apps.qualys.com/qps/rest/3.0/search/was/finding"
-    headers = {
-        "Content-Type": "application/json",
-        "accept": "application/json",
-        "Authorization": auth_string
-        # 'user' : username,
-        # 'password' : password
-    }
-    data = {
-        "ServiceRequest": {
-            "preferences": {
-                "limitResults": 1000,
-                "startFromOffset": offset,
-                "verbose": "true",
-            },
-            "filters": {
-                "Criteria": [
-                    {"field": "webApp.tags.name", "operator": "EQUALS", "value": idStr},
-                    # {
-                    #     "field" : "type",
-                    #     "operator" : "EQUALS",
-                    #     "value" : "VULNERABILITY"
-                    # },
-                    {
-                        "field": "lastTestedDate",
-                        "operator": "GREATER",
-                        "value": start_date_str,
-                    },
-                ]
-            },
-        }
-    }
-    we = qualys_call(endPoint, headers, data)
-    try:
-        findings = we["ServiceResponse"]["data"]
-    except KeyError:
-        LOGGER.info("No Findings Found for: " + idStr)
-        return []
-    findingsList = []
-    findingCount = 0
-    for x in findings:
-        if x["Finding"].get("lastDetectedDate", None):
-            last_detected = convert_timestamp_to_date(
-                x["Finding"].get("lastDetectedDate", None)
-            )
-        else:
-            last_detected = None
-        if x["Finding"].get("firstDetectedDate", None):
-            first_detected = convert_timestamp_to_date(
-                x["Finding"].get("firstDetectedDate", None)
-            )
-        else:
-            first_detected = None
-        if x["Finding"].get("lastTestedDate", None):
-            last_tested = convert_timestamp_to_date(
-                x["Finding"].get("lastTestedDate", None)
-            )
-        else:
-            last_tested = None
-        if x["Finding"].get("fixedDate", None):
-            fixed_date = convert_timestamp_to_date(x["Finding"].get("fixedDate", None))
-        else:
-            fixed_date = None
-
-        findingsList.append(
-            {
-                "finding_uid": x["Finding"].get("uniqueId", None),
-                "finding_type": x["Finding"].get("type", None),
-                "webapp_id": int(x["Finding"].get("webApp", {}).get("id", 0)),
-                "webapp_url": x["Finding"].get("webApp", {}).get("url", None),  # new
-                "webapp_name": x["Finding"].get("webApp", {}).get("name", None),  # new
-                "was_org_id": idStr,
-                "name": x["Finding"]["name"],
-                "owasp_category": x["Finding"]
-                .get("owasp", {})
-                .get("list", [{}])[0]
-                .get("OWASP", {})
-                .get("name", "None"),
-                "severity": x["Finding"].get("severity", None),
-                "times_detected": x["Finding"].get("timesDetected", None),
-                "cvss_v3_attack_vector": x["Finding"]
-                .get("cvssV3", {})
-                .get("attackVector", None),  # new
-                "base_score": x["Finding"].get("cvssV3", {}).get("base", 0),
-                "temporal_score": x["Finding"].get("cvssV3", {}).get("temporal", 0),
-                "fstatus": x["Finding"].get("status", None),
-                "last_detected": last_detected,
-                "first_detected": first_detected,
-                "potential": x["Finding"].get("potential", False),
-                "cwe_list": x["Finding"].get("cwe", {}).get("list", []),  # new
-                "wasc_list": list(
-                    map(
-                        lambda d: d.get("WASC", {}),
-                        x["Finding"].get("wasc", {}).get("list", []),
-                    )
-                ),  # new
-                "last_tested": last_tested,
-                "fixed_date": fixed_date,
-                "is_ignored": x["Finding"].get("isIgnored", None),
-                "url": x["Finding"].get("url", None),
-                "qid": x["Finding"].get("qid", None),
-                "response": x["Finding"]
-                .get("resultList", {})
-                .get("list", [{}])[0]
-                .get("Result", {})
-                .get("payloads", {})
-                .get("list", [{}])[0]
-                .get("PayloadInstance", {})
-                .get("response", None),
-            }
-        )
-
-    for finding in findingsList:
-        api_was_finding_insert_or_update(finding)
-        findingCount += 1
-
-    if we["ServiceResponse"]["hasMoreRecords"] == "true":
-        findingCount += getFindingsFromId(idStr, block + 1)
-    return findingCount
-
-
 def main():
     """
     Process recent WAS scans and insert findings.
@@ -323,13 +187,35 @@ def main():
     acronym_list = list(recently_scanned.keys())
     LOGGER.info(acronym_list)
     LOGGER.info(len(acronym_list))
-    for acronym in acronym_list:
-        LOGGER.info("Getting Data for " + acronym)
-        findingCount = getFindingsFromId(acronym)
-        LOGGER.info("Saved " + str(findingCount) + " findings for " + acronym)
-        # if findingList != []:
-        #     for finding in findingList:
-        #         api_was_finding_insert_or_update(finding)
+    if check_qualys_alive(username, password):
+        # spin up a small pool of workers
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            # schedule all the fetches
+            futures = {pool.submit(fetch_for, acr): acr for acr in acronym_list}
+            LOGGER.info("Waiting for all futures to complete... \n")
+            # as each one finishes, log the result
+            for fut in as_completed(futures):
+                acronym, count, elapsed, error = fut.result()
+                if error:
+                    LOGGER.error(
+                        "Error ingesting findings for %s after %.2fs",
+                        acronym,
+                        elapsed,
+                        exc_info=error,
+                    )
+                else:
+                    LOGGER.info(
+                        "Saved %d findings for %s in %.2fs", count, acronym, elapsed
+                    )
+    else:
+        LOGGER.error("Qualys WAS API health‐check failed. Skipping ingestion.")
+
+    LOGGER.info("All acronyms processed, starting WAS scan")
+    # Populate WAS scan summaries, comment out if troubleshooting the qualys api call
+    try:
+        populate_was_scan_summaries(days_back=365)
+    except Exception as exc:
+        LOGGER.exception("Error populating WAS scan summaries: %s", exc)
 
 
 if __name__ == "__main__":
