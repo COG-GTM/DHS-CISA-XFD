@@ -60,11 +60,16 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [onlyOpenVulns, setOnlyOpenVulns] = useState(true);
-  const [initialFilters, setInitialFilters] = useState(() =>
-    extractInitialFilters(state)
-  );
+  const [filters, setFilters] = useState(() => extractInitialFilters(state));
+  const [hasPreloadedFilters, setPreloadedFiltersActive] = useState(false);
 
-  const filters = initialFilters.length > 0 ? initialFilters : [];
+  useEffect(() => {
+    if (state) {
+      const extracted = extractInitialFilters(state);
+      setFilters(extracted);
+      setPreloadedFiltersActive(extracted.length > 0);
+    }
+  }, [state]);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -152,26 +157,33 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   );
 
   const resetVulnerabilities = useCallback(() => {
-    setInitialFilters([]);
+    history.replace({ ...location, state: null });
+    setPreloadedFiltersActive(false);
+    setFilters([]);
+    setPaginationModel((prev) => ({
+      ...prev,
+      page: 0,
+      filters: []
+    }));
     fetchVulnerabilities({
       page: 1,
       pageSize: PAGE_SIZE,
       filters: []
     });
-  }, [fetchVulnerabilities]);
+  }, [fetchVulnerabilities, history, location]);
 
   useEffect(() => {
     fetchVulnerabilities({
       page: paginationModel.page + 1,
       pageSize: paginationModel.pageSize,
-      filters: initialFilters || [],
+      filters: filters || [],
       showAll: !onlyOpenVulns
     });
   }, [
     fetchVulnerabilities,
     paginationModel.page,
     paginationModel.pageSize,
-    initialFilters,
+    filters,
     onlyOpenVulns
   ]);
 
@@ -192,10 +204,9 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
       startIcon={<DynamicFeed />}
       onClick={() => {
         setOnlyOpenVulns(false);
-        // fetchVulnerabilities will be triggered by useEffect due to onlyOpenVulns change
       }}
     >
-      Show All Vulnerabilities
+      Include Closed Vulnerabilities
     </Button>
   );
 
@@ -206,7 +217,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
       startIcon={<Checklist />}
       onClick={() => {
         setOnlyOpenVulns(true);
-        // fetchVulnerabilities will be triggered by useEffect due to onlyOpenVulns change
       }}
     >
       Show Open Vulnerabilities
@@ -392,7 +402,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
 
   return (
     <FindingsHeader>
-      {!isLoading && !loadingError && filters.length > 0 && (
+      {!isLoading && !loadingError && state && hasPreloadedFilters && (
         <Box sx={{ width: '100%', mb: 1 }}>
           <Stack direction="row" alignItems="center">
             <FiberManualRecordRounded sx={{ color: 'primary.main' }} />
@@ -443,7 +453,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
             ) : (
               ''
             )}
-            &nbsp;&nbsp;&nbsp;
             <Divider
               orientation="vertical"
               flexItem
@@ -461,8 +470,10 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
               sx={{
                 color: 'primary.dark',
                 fontSize: '14px',
-                letterSpacing: '3px',
-                ml: 2
+                fontWeight: 'bold',
+                lineHeight: '20px',
+                letterSpacing: '0.1em',
+                ml: 1
               }}
             >
               Reset

@@ -1,4 +1,5 @@
 import {
+  SeverityByProminenceGraphData,
   StatsTrendsRawData,
   vulnScanDataTransformed
 } from 'types/vuln-scan-stats';
@@ -236,3 +237,20 @@ export const transformVulnScanData = (
     ]
   };
 };
+
+export function shouldSkipVulnType(
+  data: SeverityByProminenceGraphData[],
+  typeToCheck: string
+): boolean {
+  const entry = data.find((item) => item.vulnType === typeToCheck);
+  if (!entry) return true;
+
+  const { lowSeverity, mediumSeverity, highSeverity, criticalSeverity } = entry;
+
+  return (
+    lowSeverity === 0 &&
+    mediumSeverity === 0 &&
+    highSeverity === 0 &&
+    criticalSeverity === 0
+  );
+}

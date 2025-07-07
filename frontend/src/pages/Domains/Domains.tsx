@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { DomainSearchApiResponse } from 'types';
@@ -50,18 +50,21 @@ export const Domains: React.FC = () => {
     state?.orgId ?? ''
   );
   const history = useHistory();
-  const [initialFilters, setInitialFilters] = useState<
+  const [filters, setFilters] = useState<
     Query<DomainSearchApiResponse>['filters']
-  >(() => extractInitialFilters(state ?? {}));
-  const filters = useMemo(() => {
-    return initialFilters.length > 0 ? initialFilters : [];
-  }, [initialFilters]);
-
+  >([]);
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasPreloadedFilters, setPreloadedFiltersActive] = useState(false);
 
-  // TO-DO
-  // Implement regional rollup on domains view to allow for proper domain drilldown from dashboard
+  useEffect(() => {
+    if (state) {
+      const extracted = extractInitialFilters(state);
+      setFilters(extracted);
+      setPreloadedFiltersActive(extracted.length > 0);
+    }
+  }, [state]);
+
   const fetchDomains = useCallback(
     async (q: Query<DomainSearchApiResponse>) => {
       try {
@@ -126,27 +129,25 @@ export const Domains: React.FC = () => {
     fetchDomains({
       page: 1,
       pageSize: PAGE_SIZE,
-      filters: filters
+      filters
     });
   }, [fetchDomains, filters]);
 
   const resetDomains = useCallback(() => {
-    const clearedFilters: Query<DomainSearchApiResponse>['filters'] = [];
-
-    setInitialFilters(clearedFilters);
-    setPaginationModel({
+    history.replace({ ...location, state: null });
+    setPreloadedFiltersActive(false);
+    setFilters([]);
+    setPaginationModel((prev) => ({
+      ...prev,
       page: 0,
-      pageSize: PAGE_SIZE,
-      pageCount: 0,
-      filters: clearedFilters
-    });
-
+      filters: []
+    }));
     fetchDomains({
       page: 1,
       pageSize: PAGE_SIZE,
-      filters: clearedFilters
+      filters: []
     });
-  }, [fetchDomains]);
+  }, [fetchDomains, history, location]);
 
   const domRows: DomainRow[] = domains.map((domain) => ({
     id: domain.id,
@@ -228,7 +229,7 @@ export const Domains: React.FC = () => {
 
   return (
     <FindingsHeader>
-      {!isLoading && !loadingError && state && filters.length > 0 && (
+      {!isLoading && !loadingError && state && hasPreloadedFilters && (
         <Box sx={{ width: '100%', mb: 1 }}>
           <Stack direction="row" alignItems="center">
             <FiberManualRecordRounded sx={{ color: 'primary.main' }} />
@@ -242,7 +243,6 @@ export const Domains: React.FC = () => {
             ) : (
               ''
             )}
-            &nbsp;&nbsp;&nbsp;
             <Divider
               orientation="vertical"
               flexItem
@@ -260,8 +260,10 @@ export const Domains: React.FC = () => {
               sx={{
                 color: 'primary.dark',
                 fontSize: '14px',
-                letterSpacing: '3px',
-                ml: 2
+                fontWeight: 'bold',
+                lineHeight: '20px',
+                letterSpacing: '0.1em',
+                ml: 1
               }}
             >
               Reset
@@ -308,20 +310,6 @@ export const Domains: React.FC = () => {
                 fetchDomains({
                   page: model.page + 1,
                   pageSize: model.pageSize,
-                  filters: filters
-                });
-              }}
-              onFilterModelChange={(model) => {
-                const filters = model.items.map((item) => ({
-                  id: item.field,
-                  field: item.field,
-                  value: item.value,
-                  operator: item.operator
-                }));
-                setInitialFilters(filters);
-                fetchDomains({
-                  page: paginationModel.page + 1,
-                  pageSize: paginationModel.pageSize,
                   filters: filters
                 });
               }}

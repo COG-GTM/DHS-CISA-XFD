@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Button, TextField, useTheme } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useAuthContext } from 'context';
 import { useStaticsContext } from 'context/StaticsContext';
@@ -43,6 +43,7 @@ export const VSDashRegionAndOrgFilters: React.FC<
   const [selectedRegion, setSelectedRegion] = useState<string | undefined>(
     undefined
   );
+  const theme = useTheme();
 
   const shallowCurrentOrg = (currentOrganization: Organization | null) => {
     if (!currentOrganization) {
@@ -87,6 +88,10 @@ export const VSDashRegionAndOrgFilters: React.FC<
           }
         });
 
+        const body = results?.body?.hits;
+        if (!Array.isArray(body)) {
+          return [];
+        }
         const orgs = results.body.hits.hits.map((hit) => hit._source);
         // Filter out organizations that match the exclusions
         const refinedOrgs = orgs.filter((org) => {
@@ -197,7 +202,10 @@ export const VSDashRegionAndOrgFilters: React.FC<
 
   return (
     <>
-      <Box padding={2}>
+      <Box
+        padding={2}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
+      >
         <Autocomplete
           defaultValue={user?.region_id || ''}
           value={selectedRegion}
