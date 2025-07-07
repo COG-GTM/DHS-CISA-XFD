@@ -486,7 +486,7 @@ def _compute_age_metrics(findings_qs, window_end):
                 )
     except Exception as exc:
         LOGGER.exception(
-            "Error computing age metrics for window: %s → %s: %s",
+            "Error computing age metrics for window: %s: %s",
             window_end,
             exc,
         )
@@ -530,41 +530,12 @@ def _compute_kev_metrics(findings_qs, window_end):
 
 
 def _upsert_summary(
-    window_start,
-    window_end,
+    window_start: date,
+    window_end: date,
     findings_qs,
-    assets_scanned_count,
-    scan_identifiers,
-    unique_by_label,
-    total_by_label,
-    max_age_days_critical,
-    max_age_days_high,
-    median_age_days_by_severity,
-    kev_counts_by_severity,
-    max_age_days_kevs,
-    host_buckets,
-    owasp_category_counts,
-    vulnerability_type_counts,
-    information_gathered_count,
-    sensitive_content_count,
-):
-    defaults = {
-        "assets_scanned_count": assets_scanned_count,
-        "scan_identifier": scan_identifiers,
-        **{f"unique_vulnerabilities_{k}": v for k, v in unique_by_label.items()},
-        **{f"total_vulnerabilities_{k}": v for k, v in total_by_label.items()},
-        "max_age_days_critical": max_age_days_critical,
-        "max_age_days_high": max_age_days_high,
-        "median_age_days_by_severity": median_age_days_by_severity,
-        "kev_counts_by_severity": kev_counts_by_severity,
-        "max_age_days_kevs": max_age_days_kevs,
-        # flatten host_buckets dict into individual counts…
-        **host_buckets,
-        "owasp_category_counts": owasp_category_counts,
-        "vulnerability_type_counts": vulnerability_type_counts,
-        "information_gathered_count": information_gathered_count,
-        "sensitive_content_count": sensitive_content_count,
-    }
+    defaults: dict[str, object],
+) -> None:
+    """Upsert a WasScanSummary for the given window using the pre-built defaults dict."""
     try:
         summary_record, was_created = WasScanSummary.objects.update_or_create(
             start_date=window_start,
@@ -575,6 +546,7 @@ def _upsert_summary(
     except Exception as exc:
         LOGGER.exception("Error upserting WasScanSummary: %s", exc)
         raise
+
     LOGGER.info(
         "%s WasScanSummary %s→%s (created=%s, pk=%s)",
         "Created" if was_created else "Updated",
@@ -622,22 +594,28 @@ def _process_day_window(
         for code, severity_label in SEVERITY_MAP.items()
     }
 
+    defaults: dict[str, object] = {
+        "assets_scanned_count": assets_scanned_count,
+        "scan_identifier": scan_identifiers,
+        **{
+            f"unique_vulnerabilities_{lbl}": cnt for lbl, cnt in unique_by_label.items()
+        },
+        **{f"total_vulnerabilities_{lbl}": cnt for lbl, cnt in total_by_label.items()},
+        "max_age_days_critical": max_age_days_critical,
+        "max_age_days_high": max_age_days_high,
+        "median_age_days_by_severity": median_age_days_by_severity,
+        "kev_counts_by_severity": kev_counts_by_severity,
+        "max_age_days_kevs": max_age_days_kevs,
+        **host_buckets,
+        "owasp_category_counts": owasp_category_counts,
+        "vulnerability_type_counts": vulnerability_type_counts,
+        "information_gathered_count": information_gathered_count,
+        "sensitive_content_count": sensitive_content_count,
+    }
+
     _upsert_summary(
         window_start,
         window_end,
         findings_qs,
-        assets_scanned_count,
-        scan_identifiers,
-        unique_by_label,
-        total_by_label,
-        max_age_days_critical,
-        max_age_days_high,
-        median_age_days_by_severity,
-        kev_counts_by_severity,
-        max_age_days_kevs,
-        host_buckets,
-        owasp_category_counts,
-        vulnerability_type_counts,
-        information_gathered_count,
-        sensitive_content_count,
+        defaults,
     )
