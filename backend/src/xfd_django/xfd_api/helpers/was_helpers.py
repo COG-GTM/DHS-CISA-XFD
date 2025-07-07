@@ -417,7 +417,7 @@ def _process_day_window(
         "4": "HIGH",
         "5": "CRITICAL",
     }
-    age_lists: dict[str, list[int]] = {code: [] for code in SEVERITY_MAP.keys()}
+    age_lists: dict[str, list[int]] = {code: [] for code in SEVERITY_MAP}
     try:
         for finding in findings_qs:
             severity_code = finding.severity
@@ -446,18 +446,18 @@ def _process_day_window(
     LOGGER.info("The Age Lists: %s", age_lists)
     max_age_days_critical = max(age_lists.get("CRITICAL", [0]), default=0)
     max_age_days_high = max(age_lists.get("HIGH", [0]), default=0)
-    median_age_days_by_severity = {
-        SEVERITY_MAP[code].lower(): (
-            median(vals) if (vals := age_lists.get(code)) else 0
+    median_age_days_by_severity: dict[str, float] = {
+        severity_label.lower(): (
+            median(values) if (values := age_lists.get(code)) else 0
         )
-        for code in SEVERITY_MAP
+        for code, severity_label in SEVERITY_MAP.items()
     }
     LOGGER.info("Max age (CRITICAL): %s", max_age_days_critical)
     LOGGER.info("Max age (HIGH):     %s", max_age_days_high)
     LOGGER.info("Median age by severity: %s", median_age_days_by_severity)
 
     # 6) KEV metrics
-    kev_counts_by_severity: dict[str, int] = {code: 0 for code in SEVERITY_MAP.keys()}
+    kev_counts_by_severity: dict[str, int] = {code: 0 for code in SEVERITY_MAP}
     max_age_days_kevs = None
 
     try:
@@ -488,7 +488,7 @@ def _process_day_window(
             exc,
         )
         # on total failure, leave everything at zero/None
-        kev_counts_by_severity = {code: 0 for code in SEVERITY_MAP.keys()}
+        kev_counts_by_severity = {code: 0 for code in SEVERITY_MAP}
         max_age_days_kevs = None
 
     # finally, if you need human‐readable keys instead of numeric codes:
@@ -545,12 +545,13 @@ def _process_day_window(
             window_start,
             window_end,
         )
-        unique_by_label = {
-            SEVERITY_MAP[code].lower(): unique_vuln.get(code, 0)
-            for code in SEVERITY_MAP
+        unique_by_label: dict[str, int] = {
+            severity_label.lower(): unique_vuln.get(code, 0)
+            for code, severity_label in SEVERITY_MAP.items()
         }
-        total_by_label = {
-            SEVERITY_MAP[code].lower(): total_vuln.get(code, 0) for code in SEVERITY_MAP
+        total_by_label: dict[str, int] = {
+            severity_label.lower(): total_vuln.get(code, 0)
+            for code, severity_label in SEVERITY_MAP.items()
         }
         summary_record, was_created = WasScanSummary.objects.update_or_create(
             start_date=window_start,
