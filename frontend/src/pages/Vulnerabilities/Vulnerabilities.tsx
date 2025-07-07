@@ -61,9 +61,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [onlyOpenVulns, setOnlyOpenVulns] = useState(true);
-  const [initialFilters, setInitialFilters] = useState(() =>
-    extractInitialFilters(state)
-  );
   const [sortModel, setSortModel] = useState<GridSortModel>([
     {
       field: 'created_at',
