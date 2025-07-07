@@ -198,7 +198,7 @@ def getFindingsFromId(idStr, block=0):
     try:
         findings = we["ServiceResponse"]["data"]
     except KeyError:
-        LOGGER.info("No Findings Found for: " + idStr)
+        LOGGER.info("No Findings Found for: %s", idStr)
         return []
     findingsList = []
     findingCount = 0
@@ -332,7 +332,13 @@ def qualys_call(link, header, data):
 
 def qualys_post_call(link, header, data, validate=True):
     """Make a call to Qualys API."""
-    response = requests.request("POST", link, headers=header, data=json.dumps(data))
+    response = requests.request(
+        "POST",
+        link,
+        headers=header,
+        data=json.dumps(data),
+        timeout=(DEFAULT_REQUEST_TIMEOUT_SECONDS, READ_TIMEOUT),
+    )
     if not validate:
         return json.loads(response.json())
     if response.status_code != 200:
