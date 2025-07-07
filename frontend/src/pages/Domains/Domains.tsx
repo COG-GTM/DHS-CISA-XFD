@@ -202,6 +202,9 @@ export const Domains: React.FC = () => {
       minWidth: 100,
       flex: 0.3,
       disableExport: true,
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -228,7 +231,15 @@ export const Domains: React.FC = () => {
   );
 
   return (
-    <FindingsHeader>
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <FindingsHeader />
       {!isLoading && !loadingError && state && hasPreloadedFilters && (
         <Box sx={{ width: '100%', mb: 1 }}>
           <Stack direction="row" alignItems="center">
@@ -291,7 +302,12 @@ export const Domains: React.FC = () => {
             </Button>
           </Stack>
         ) : isLoading === false && loadingError === false ? (
-          <Paper elevation={2} sx={{ width: '100%', minHeight: 500 }}>
+          <Paper
+            elevation={2}
+            sx={{ width: '100%', minHeight: 500 }}
+            role="table"
+            aria-label="Domains Table"
+          >
             <DataGrid
               rows={domRows}
               rowCount={totalResults}
@@ -318,6 +334,6 @@ export const Domains: React.FC = () => {
           </Paper>
         ) : null}
       </Box>
-    </FindingsHeader>
+    </Box>
   );
 };

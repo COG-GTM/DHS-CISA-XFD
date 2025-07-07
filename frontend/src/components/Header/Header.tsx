@@ -21,7 +21,7 @@ import cisaLogo from 'assets/cisaSeal.svg';
 import { NavMenuButton } from './NavMenuButton';
 import { NavMenuDrawer } from './NavMenuDrawer';
 
-interface MenuItemType {
+export interface MenuItemType {
   menuItemTitle: string;
   path?: string;
   objectStoreParams?: { bucket_name: string; object_key: string };
