@@ -21,7 +21,7 @@ import cisaLogo from 'assets/cisaSeal.svg';
 import { NavMenuButton } from './NavMenuButton';
 import { NavMenuDrawer } from './NavMenuDrawer';
 
-interface MenuItemType {
+export interface MenuItemType {
   menuItemTitle: string;
   path?: string;
   objectStoreParams?: { bucket_name: string; object_key: string };
@@ -32,13 +32,12 @@ interface MenuItemType {
 
 // TODO: Update bucket/key names when provided.
 const LEARNING_CENTER_DOC_BUCKET_NAME = process.env
-  .LEARNING_CENTER_DOC_BUCKET_NAME as string;
+  .REACT_APP_LEARNING_CENTER_DOC_BUCKET_NAME as string;
 
 const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'vs_glossary.pdf',
   faq: 'vs_faq.pdf',
-  methodology: 'vs_methodology.pdf',
-  userGuide: 'user_guide.pdf'
+  methodology: 'vs_methodology.pdf'
 };
 
 export const Header: React.FC = () => {
@@ -155,14 +154,6 @@ export const Header: React.FC = () => {
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
         object_key: LEARNING_CENTER_DOC_KEYS.methodology
-      },
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'User Guide',
-      objectStoreParams: {
-        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
-        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
       },
       users: STANDARD_USER
     },

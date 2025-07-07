@@ -1,6 +1,7 @@
 import {
+  SeverityByProminenceGraphData,
   StatsTrendsRawData,
-  vulnScanDataTransformed
+  VulnScanDataTransformed
 } from 'types/vuln-scan-stats';
 
 export function formatShortDate(
@@ -38,7 +39,7 @@ function getLatestSummary<T extends { summary_date?: string | null }>(
 
 export const transformVulnScanData = (
   data: StatsTrendsRawData
-): vulnScanDataTransformed => {
+): VulnScanDataTransformed => {
   const latestVulnSummary = getLatestSummary(data.vuln_scan_summaries);
   const latestHostSummary = getLatestSummary(data.host_summaries);
   const latestPortScanSummary = getLatestSummary(data.port_scan_summaries);
@@ -236,3 +237,20 @@ export const transformVulnScanData = (
     ]
   };
 };
+
+export function shouldSkipVulnType(
+  data: SeverityByProminenceGraphData[],
+  typeToCheck: string
+): boolean {
+  const entry = data.find((item) => item.vulnType === typeToCheck);
+  if (!entry) return true;
+
+  const { lowSeverity, mediumSeverity, highSeverity, criticalSeverity } = entry;
+
+  return (
+    lowSeverity === 0 &&
+    mediumSeverity === 0 &&
+    highSeverity === 0 &&
+    criticalSeverity === 0
+  );
+}
