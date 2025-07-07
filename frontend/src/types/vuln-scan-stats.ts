@@ -76,6 +76,7 @@ export interface HostSummaries {
   host_ready_count?: number | null;
   up_host_count?: number | null;
   down_host_count?: number | null;
+  scanned_asset_count?: number | null;
 }
 
 export interface PortScanSummaries {

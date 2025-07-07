@@ -71,7 +71,7 @@ export const transformVulnScanData = (
           ' - ' +
           formatShortDate(latestVulnSummary?.end_date),
         assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
-        assetsScanned: latestVulnSummary?.scanned_asset_count ?? 0,
+        assetsScanned: latestHostSummary?.scanned_asset_count ?? 0,
         startDate: latestVulnSummary?.start_date ?? '',
         endDate: latestVulnSummary?.end_date ?? ''
       }
