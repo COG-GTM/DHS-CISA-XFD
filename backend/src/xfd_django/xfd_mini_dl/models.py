@@ -3660,13 +3660,6 @@ class WasReport(models.Model):
         managed = manage_db
 
 
-# Standard Python Libraries
-import uuid
-
-# Third-Party Libraries
-from django.db import models
-
-
 class WasScanSummary(models.Model):
     """Holds a 24-hour summary of WAS scan data for an organization."""
 
