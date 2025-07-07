@@ -39,7 +39,7 @@ auth_string = "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("u
 
 LOGGER = logging.getLogger(__name__)
 
-logging.info("Here are your login creds{}".format(credentials))
+logging.info("Here are your login creds %s", credentials)
 
 
 def handler(event):
@@ -148,10 +148,8 @@ def get_recently_completed_scans(days_back=2):
             )
 
         has_more_records = (
-            True
-            if status_response.get("ServiceResponse", {}).get("hasMoreRecords", False)
+            status_response.get("ServiceResponse", {}).get("hasMoreRecords", False)
             == "true"
-            else False
         )
 
         if has_more_records:

@@ -31,9 +31,6 @@ password = os.environ.get("QUALYS_PASSWORD")
 credentials = f"{username}:{password}"
 auth_string = "Basic " + base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
 
-# Third-Party Libraries
-from xfd_mini_dl.models import WasFindings as MDL_WasFindings
-
 
 class InvalidQualysCall(Exception):
     """Raise When qualys returns an error."""
@@ -104,7 +101,7 @@ def api_was_finding_insert_or_update(finding_dict):
             (
                 mdl_was_finding_object,
                 mdl_created,
-            ) = MDL_WasFindings.objects.update_or_create(
+            ) = WasFindings.objects.update_or_create(
                 finding_uid=finding_dict.get("finding_uid"),
                 defaults=defaults,
             )
