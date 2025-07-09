@@ -128,7 +128,7 @@ jobs:
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
           AUTOMATED_TEST_REPORTS_BUCKET_NAME: ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
           PW_XFD_URL: http://xfd-frontend-1:3000/
-          PW_XFD_USERNAME: pe_automation@hq.dhs.gov
+          PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
           PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
           PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
           PW_XFD_LOGIN: ${{ secrets.PW_XFD_USERNAME }} # or hardcode if needed
