@@ -1,6 +1,5 @@
 """Test auth API."""
 # Standard Python Libraries
-import json
 import secrets
 from unittest.mock import AsyncMock, patch
 
