@@ -7,12 +7,6 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y git awscli
 
-# Clone Playwright test repo and install dependencies
-RUN git clone https://github.com/cisagov/xfd.git /app/xfd \
- && cd /app/xfd/playwright \
- && npm ci \
- && npx playwright install --with-deps
-
 # Set working directory to where tests are located
 WORKDIR /app/xfd/playwright
 
