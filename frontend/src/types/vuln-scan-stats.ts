@@ -76,6 +76,7 @@ export interface HostSummaries {
   host_ready_count?: number | null;
   up_host_count?: number | null;
   down_host_count?: number | null;
+  scanned_asset_count?: number | null;
 }
 
 export interface PortScanSummaries {
@@ -156,15 +157,18 @@ export interface SeverityByProminenceGraphData {
   highMaxAge?: number;
   criticalMaxAge?: number;
 }
-export type vulnScanDataTransformed = {
-  vulnScanSummary: {
-    hostScan: string;
-    vulnerabilityScan: string;
-    assetsOwned: number;
-    assetsScanned: number;
-    startDate: string;
-    endDate: string;
-  }[];
+
+export interface ScanningSummary {
+  hostScan: string;
+  vulnerabilityScan: string;
+  assetsOwned: number;
+  assetsScanned: number;
+  startDate: string;
+  endDate: string;
+}
+
+export type VulnScanDataTransformed = {
+  vulnScanSummary: ScanningSummary[];
   vulnScanKeyMetrics: KeyMetrics[];
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];
