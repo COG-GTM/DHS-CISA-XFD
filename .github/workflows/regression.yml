@@ -51,12 +51,17 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GIT_BRANCH: develop
-          AUTOMATED_TEST_REPORTS_BUCKET_NAME:
-            ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_SUBNET: ${{ secrets.AWS_SUBNET }}
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
+          AUTOMATED_TEST_REPORTS_BUCKET_NAME: ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
+          PW_XFD_URL: http://xfd-frontend-1:3000/
+          PW_XFD_USERNAME: pe_automation@hq.dhs.gov
+          PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
+          PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
+          PW_XFD_LOGIN: ${{ secrets.PW_XFD_USERNAME }}
+          ENVIRONMENT: staging
+          GIT_BRANCH: develop
         run: |
          chmod +x run_playwright_tests.sh
          CLUSTER_NAME=crossfeed-playwright-staging-cd-ecs-cluster \
@@ -118,11 +123,17 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GIT_BRANCH: integration
-          AUTOMATED_TEST_REPORTS_BUCKET_NAME: ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_SUBNET: ${{ secrets.AWS_SUBNET }}
           AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
+          AUTOMATED_TEST_REPORTS_BUCKET_NAME: ${{ vars.AUTOMATED_TEST_REPORTS_BUCKET_NAME }}
+          PW_XFD_URL: http://xfd-frontend-1:3000/
+          PW_XFD_USERNAME: pe_automation@hq.dhs.gov
+          PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
+          PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
+          PW_XFD_LOGIN: ${{ secrets.PW_XFD_USERNAME }} # or hardcode if needed
+          ENVIRONMENT: integrationx
+          GIT_BRANCH: integration
         run: |
           chmod +x run_playwright_tests.sh
           CLUSTER_NAME=crossfeed-playwright-integration-ecs-cluster \
