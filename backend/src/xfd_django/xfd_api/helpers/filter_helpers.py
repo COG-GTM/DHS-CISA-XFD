@@ -99,7 +99,7 @@ def apply_domain_filters(domains, filters):
 
 def apply_vuln_filters(
     vulnerabilities: QuerySet, vulnerability_filters: VulnerabilityFilters
-) -> QuerySet:
+) -> QuerySet:  # pylint: disable=R0912
     """Filter vulnerabilities using Q objects for partial matches and exact matches."""
     q = Q()
 
