@@ -31,7 +31,6 @@ frontend/build
 frontend/docs-build
 
 # misc
-.env
 tmp/*
 .DS_STORE
 */.DS_STORE
