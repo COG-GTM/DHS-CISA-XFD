@@ -105,7 +105,7 @@ def test_okta_callback_missing_code():
 # Test that the response is JSON serializable
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
-def test_okta_callback_user_response_is_serializable(mock_get_jwt_from_code):
+def test_okta_callback_user_approved_by_admin(mock_get_jwt_from_code):
     """Ensure /auth/okta-callback user object is fully JSON serializable."""
     approver_user_email = "{}@example.com".format(secrets.token_hex(4))
     approved_user_email = "{}@example.com".format(secrets.token_hex(4))
