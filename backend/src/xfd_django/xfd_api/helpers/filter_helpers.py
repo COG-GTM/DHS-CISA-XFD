@@ -161,8 +161,16 @@ def apply_vuln_filters(
         q &= Q(domain__organization_id=vulnerability_filters.organization)
 
     # Boolean flag for KEV
+    if vulnerability_filters.false_positive is not None:
+        q &= Q(false_positive=vulnerability_filters.false_positive)
+
+    # Boolean flag for KEV
     if vulnerability_filters.is_kev is not None:
         q &= Q(is_kev=vulnerability_filters.is_kev)
+
+    # Boolean flag for KEV Ransomware
+    if vulnerability_filters.is_kev_ransomware is not None:
+        q &= Q(is_kev_ransomware=vulnerability_filters.is_kev_ransomware)
 
     # Filter by earliest date (discovery window lower bound)
     if vulnerability_filters.earliest_date:
