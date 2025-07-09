@@ -16,33 +16,6 @@ from xfd_mini_dl.models import User
 client = TestClient(app)
 
 
-# Test utilities
-def assert_serializable(obj, label="object"):
-    """Try to serialize an object to JSON. If it fails, identify which field caused it."""
-    try:
-        json.dumps(obj)
-    except TypeError as e:
-
-        def walk(o, path):
-            if isinstance(o, dict):
-                for k, v in o.items():
-                    walk(v, path + [str(k)])
-            elif isinstance(o, list):
-                for i, item in enumerate(o):
-                    walk(item, path + [f"[{i}]"])
-            else:
-                try:
-                    json.dumps(o)
-                except TypeError:
-                    path_str = ".".join(path)
-                    pytest.fail(
-                        f"{label} contains unserializable value at `{path_str}`: {repr(o)}"
-                    )
-
-        walk(obj, [])
-        pytest.fail(f"{label} failed JSON serialization: {e}")
-
-
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_okta_callback_success(mock_get_jwt_from_code):
@@ -163,5 +136,4 @@ def test_okta_callback_user_response_is_serializable(mock_get_jwt_from_code):
     response = client.post("/auth/okta-callback", json=payload)
 
     assert response.status_code == 200
-    user_data = response.json()["data"]["user"]
-    assert_serializable(user_data, label="user response")
+    assert response.json()["data"]["user"]

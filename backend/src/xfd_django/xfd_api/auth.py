@@ -65,8 +65,10 @@ def assert_serializable(user_object, label="user_object"):
                             label, path_str
                         )
                     )
+
         traverse_data(user_object, [])
         raise ValueError("{} failed JSON serialization: {}".format(label, e))
+
 
 def user_to_dict(user):
     """Take a user model object from django and sanitize fields for output."""
