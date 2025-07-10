@@ -67,8 +67,9 @@ jobs:
             ./playwright-report/html/ --recursive
 
           aws s3 cp \
-            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/latest/results.json \
+            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/latest/results.json" \
             ./playwright-report/results.json
+
 
       - name: Upload Playwright HTML report
         uses: actions/upload-artifact@v4
@@ -127,8 +128,9 @@ jobs:
           ./playwright-report/html/ --recursive
 
           aws s3 cp \
-          "s3://${AUTOMATED_TEST_REPORTS_BUCKET_NAME}/integration/playwright-reports/results.json" \
-          ./playwright-report/results.json
+            "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/integration/playwright-reports/latest/results.json" \
+            ./playwright-report/results.json
+
 
       - name: Upload Playwright HTML report
         uses: actions/upload-artifact@v4
