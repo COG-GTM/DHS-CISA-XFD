@@ -752,6 +752,7 @@ def process_tickets(tickets, org_id_dict):
                 else None,
                 "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
+                "is_kev_ransomware": details.get("kev_ransomware"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
                 "operating_system": get_latest_os_type(ticket.get("ip"))
