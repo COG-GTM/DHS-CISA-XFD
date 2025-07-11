@@ -85,24 +85,7 @@ def apply_domain_filters(domains, filters):
 
     # Organization_name partial match
     if filters.organization_name:
-        q &= Q(organization__name__icontains=filters.organization_name)
-
-    # Vulnerabilities partial match by title
-    if filters.vulnerabilities:
-        q &= Q(vulnerabilities__title__icontains=filters.vulnerabilities)
-
-    # Ports filtering:
-    if hasattr(filters, "ports") and filters.ports:
-        try:
-            port_int = int(filters.ports)
-            q &= Q(services__port=port_int)
-        except ValueError:
-            # If not a valid integer, no match
-            q &= Q(pk__in=[])
-
-    # Service partial match in products or service field:
-    if filters.service:
-        q &= Q(services__products__icontains=filters.service)
+        q &= Q(organization_name__icontains=filters.organization_name)
 
     # Apply the final Q object filter
     filtered = domains.filter(q)
@@ -117,6 +100,7 @@ def apply_domain_filters(domains, filters):
 def apply_vuln_filters(
     vulnerabilities: QuerySet, vulnerability_filters: VulnerabilityFilters
 ) -> QuerySet:
+    # pylint: disable=R0912
     """Filter vulnerabilities using Q objects for partial matches and exact matches."""
     q = Q()
 
@@ -178,8 +162,16 @@ def apply_vuln_filters(
         q &= Q(domain__organization_id=vulnerability_filters.organization)
 
     # Boolean flag for KEV
+    if vulnerability_filters.false_positive is not None:
+        q &= Q(false_positive=vulnerability_filters.false_positive)
+
+    # Boolean flag for KEV
     if vulnerability_filters.is_kev is not None:
         q &= Q(is_kev=vulnerability_filters.is_kev)
+
+    # Boolean flag for KEV Ransomware
+    if vulnerability_filters.is_kev_ransomware is not None:
+        q &= Q(is_kev_ransomware=vulnerability_filters.is_kev_ransomware)
 
     # Filter by earliest date (discovery window lower bound)
     if vulnerability_filters.earliest_date:
@@ -192,7 +184,7 @@ def apply_vuln_filters(
         q &= Q(created_at__lte=vulnerability_filters.latest_date)
 
     # Filter  by OS
-    if vulnerability_filters.os and vulnerability_filters.os.lower() != "any":
+    if vulnerability_filters.os and str(vulnerability_filters.os).lower() != "any":
         q &= Q(os__icontains=vulnerability_filters.os)
 
     # Filter by public ID (CVE or CWE)
@@ -205,12 +197,19 @@ def apply_vuln_filters(
             | Q(cwe__icontains=vulnerability_filters.public_id)
         )
 
-    # Filter by scan type (scan_source with case-insensitive match)
+    # Filter by scan type (source with case-insensitive match)
     if (
-        vulnerability_filters.scan_type
-        and vulnerability_filters.scan_type.lower() != "any"
+        vulnerability_filters.scan_type is not None
+        and str(vulnerability_filters.scan_type).lower() != "any"
     ):
         q &= Q(source__iexact=vulnerability_filters.scan_type)
+
+    # Filter by scan source (scan_source with case-insensitive match)
+    if (
+        getattr(vulnerability_filters, "scan_source", None) is not None
+        and str(getattr(vulnerability_filters, "scan_source")).lower() != "any"
+    ):
+        q &= Q(scan_source__iexact=vulnerability_filters.scan_source)
 
     # Filter by IP or hostname
     if (

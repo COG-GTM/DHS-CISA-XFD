@@ -17,25 +17,26 @@ import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
-from django.core.management import call_command
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
 from django.db.models.functions import Power
 from django.utils import timezone
 import psycopg2
 import requests
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
-from xfd_api.tasks.syncdb_helpers import (
-    create_domain_view,
-    create_service_view,
-    create_vuln_materialized_views,
-    create_vuln_normal_views,
-)
+from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
+from xfd_api.utils.scan_utils.alerting import (
+    IngestionError,
+    QueryError,
+    ScanExecutionError,
+    SyncError,
+)
+from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (  # fill_cidr_live_ips,
     enforce_latest_flag_port_scan,
     fetch_orgs_and_relations,
+    fill_cidr_live_ips_bulk_update,
     get_latest_os_type,
     load_test_data,
     save_cve_to_datalake,
@@ -67,6 +68,7 @@ logging.basicConfig(
 )
 LOGGER = logging.getLogger(__name__)
 IS_LOCAL = os.getenv("IS_LOCAL")
+SCAN_NAME = "VulnScanningSync"
 
 VS_PULL_DATE_RANGE = os.getenv("VS_PULL_DATE_RANGE", "2")
 
@@ -89,8 +91,9 @@ def handler(event):
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
-        LOGGER.info("Error occurred: %s", e)
-        return {"status_code": 500, "body": str(e)}
+        raise ScanExecutionError(SCAN_NAME, str(e), event) from e
+        # LOGGER.info("Error occurred: %s", e)
+        # return {"status_code": 500, "body": str(e)}
 
 
 def query_redshift(query, params=None):
@@ -111,6 +114,8 @@ def query_redshift(query, params=None):
             cursor.execute(query)  # <-- this avoids the IndexError
         results = cursor.fetchall()
         return [dict(row) for row in results]
+    except Exception as e:
+        raise QueryError(SCAN_NAME, str(e)) from e
     finally:
         cursor.close()
         conn.close()
@@ -128,20 +133,15 @@ def fetch_in_chunks(base_query: str, chunk_size: int = 5000):
         offset += chunk_size
 
 
-def main():
+def main():  # pylint: disable=R0915
     """Execute the vulnerability scanning synchronization task."""
     LOGGER.info("Started VulnScanningSync scan...")
-
-    call_command("syncmdl", dangerouslyforce=False)
 
     # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
     LOGGER.info("Fetched %d requests from Redshift", len(request_list))
     org_id_dict = process_orgs(request_list)
     LOGGER.info("Completed saving organizations to the LZ MDL.")
-
-    # Process Organizations & Relations
-    send_organizations_to_dmz()
 
     # Process Vulnerability Scans
     LOGGER.info("Started processing vulnerability scans...")
@@ -184,10 +184,15 @@ def main():
             total_processed,
             chunk_number - 1,
         )
+        # Set latest flag
+        LOGGER.info("Setting port scans latest flag")
         enforce_latest_flag_port_scan()
-        create_port_scan_summary()
-        create_port_scan_service_summaries()
-        LOGGER.info("Finished processing port scans")
+
+    # Fill CIDR live IPs
+    fill_cidr_live_ips_bulk_update()
+
+    # Send organizations to the DMZ MDL
+    send_organizations_to_dmz()
 
     # Process Tickets (Chunked)
     LOGGER.info("Started processing tickets...")
@@ -217,12 +222,39 @@ def main():
             chunk_number - 1,
         )
         LOGGER.info("Finished processing tickets")
-        create_vuln_scan_summary()
 
-    create_domain_view("mini_data_lake")
-    create_service_view("mini_data_lake")
-    create_vuln_normal_views("mini_data_lake")
-    create_vuln_materialized_views("mini_data_lake")
+    # 🔁 REFRESH MATERIALIZED VIEWS BEFORE CREATING SUMMARIES
+    LOGGER.info("Refreshing materialized views before creating summaries...")
+    # Create or refresh materialized views
+    result = refresh_materialized_views({})
+    LOGGER.info(result)
+    LOGGER.info("Finished refreshing materialized views")
+
+    # ✅ Create summaries with individual error handling
+    LOGGER.info("Creating port scan summary...")
+    try:
+        create_port_scan_summary()
+        LOGGER.info("Finished port scan summary")
+    except Exception as e:
+        LOGGER.error("Failed to create port scan summary: %s", e, exc_info=True)
+
+    LOGGER.info("Creating port scan service summaries...")
+    try:
+        create_port_scan_service_summaries()
+        LOGGER.info("Finished port scan service summaries")
+    except Exception as e:
+        LOGGER.error(
+            "Failed to create port scan service summaries: %s", e, exc_info=True
+        )
+
+    LOGGER.info("Creating vulnerability scan summary...")
+    try:
+        create_vuln_scan_summary()
+        LOGGER.info("Finished vulnerability scan summary")
+    except Exception as e:
+        LOGGER.error(
+            "Failed to create vulnerability scan summary: %s", e, exc_info=True
+        )
 
 
 def detect_data_set(query):
@@ -291,6 +323,7 @@ def send_organizations_to_dmz():
             traceback.format_exc(),
         )
         print(e)
+        raise SyncError(SCAN_NAME, str(e), "Error sending organizations to dmz") from e
 
 
 def send_csv_to_sync(csv_data, bounds):
@@ -311,7 +344,10 @@ def send_csv_to_sync(csv_data, bounds):
 
     try:
         response = requests.post(
-            os.getenv("DMZ_SYNC_ENDPOINT"), json=body, headers=headers, timeout=60
+            os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
+            json=body,
+            headers=headers,
+            timeout=60,
         )
         response.raise_for_status()
         LOGGER.info("Successfully sent chunk to sync API")
@@ -330,6 +366,10 @@ def send_csv_to_sync(csv_data, bounds):
         )
     except Exception as e:
         LOGGER.error("Unexpected error sending chunk: %s", str(e))
+        raise SyncError(
+            SCAN_NAME,
+            str(e),
+        ) from e
 
 
 def process_vulnerability_scans(vuln_scans, org_id_dict):
@@ -357,18 +397,28 @@ def process_vulnerability_scans(vuln_scans, org_id_dict):
             except Exception as e:
                 LOGGER.error("Error saving vulnerability scan: %s", e)
                 print(traceback.format_exc())
+                # Raise to catch in the outer block
+                raise e
         except Exception as e:
             LOGGER.error("Error processing Vulnerability Scan: %s", e)
             print(traceback.format_exc())
+            raise IngestionError(
+                SCAN_NAME, str(e), "Failed processing vulnerability scans"
+            ) from e
 
 
 def safe_fromisoformat(date_input) -> datetime.datetime | None:
-    """Safely convert input to datetime, or return None if invalid."""
+    """Safely convert input to timezone-aware datetime, or return None if invalid."""
     if isinstance(date_input, datetime.datetime):
-        return date_input
+        return (
+            timezone.make_aware(date_input)
+            if timezone.is_naive(date_input)
+            else date_input
+        )
     if isinstance(date_input, str):
         try:
-            return parser.isoparse(date_input)
+            parsed = parser.parse(date_input)
+            return timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
         except Exception as e:
             LOGGER.warning(
                 "Failed to parse datetime from string: %s | Error: %s", date_input, e
@@ -464,9 +514,9 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
             SUM(CASE WHEN status = 'WAITING' THEN 1 ELSE 0 END) AS host_waiting_count,
             SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
             SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END) AS host_ready_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'true' THEN 1 ELSE 0 END) AS up_host_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'false' THEN 1 ELSE 0 END) AS down_host_count,
-            COUNT(ip) AS scanned_asset_count,
+            SUM(CASE WHEN POSITION('\"up\":true' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS up_host_count,
+            SUM(CASE WHEN POSITION('\"up\":false' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS down_host_count,
+            COUNT(DISTINCT ip) AS scanned_asset_count
         FROM vmtableau.hosts
         WHERE last_change >= GETDATE() - INTERVAL '100 days'
         GROUP BY owner;
@@ -505,6 +555,7 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                     "host_ready_count": row["host_ready_count"],
                     "up_host_count": row["up_host_count"],
                     "down_host_count": row["down_host_count"],
+                    "scanned_asset_count": row["scanned_asset_count"],
                 },
             )
         except Organization.DoesNotExist:
@@ -518,6 +569,9 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                 owner_id,
                 e,
             )
+            raise QueryError(
+                SCAN_NAME, str(e), "Error creating daily host summary"
+            ) from e
 
     LOGGER.info("Completed host summary creation from Redshift.")
 
@@ -581,6 +635,7 @@ def create_port_scan_summary(summary_date=None):
 
     except Exception as e:
         print("Error creating port scan summary: {}".format(e))
+        raise QueryError(SCAN_NAME, str(e), "Error creating port scan summary") from e
 
 
 def create_port_scan_service_summaries(summary_date=None):
@@ -633,6 +688,9 @@ def create_port_scan_service_summaries(summary_date=None):
                 )
     except Exception as e:
         print("Error creating port scan service summary: {}".format(e))
+        raise QueryError(
+            SCAN_NAME, str(e), "Error creating port scan service summary"
+        ) from e
 
 
 def process_tickets(tickets, org_id_dict):
@@ -694,6 +752,7 @@ def process_tickets(tickets, org_id_dict):
                 else None,
                 "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
+                "is_kev_ransomware": details.get("kev_ransomware"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
                 "operating_system": get_latest_os_type(ticket.get("ip"))
@@ -706,6 +765,7 @@ def process_tickets(tickets, org_id_dict):
             print(
                 f"Error processing ticket data: {e} - {owner_id} - {ticket.get('owner')}"
             )
+            raise IngestionError(SCAN_NAME, str(e), "Failed processing tickets") from e
 
 
 def get_asset_owned_count(org):
@@ -800,7 +860,15 @@ def create_vuln_scan_summary(summary_date=None):
 
         critical_max = max_ticket_life(included.filter(cvss_severity=4))
         high_max = max_ticket_life(included.filter(cvss_severity=3))
+        medium_max = max_ticket_life(included.filter(cvss_severity=2))
+        low_max = max_ticket_life(included.filter(cvss_severity=1))
         kev_max = max_ticket_life(included.filter(is_kev=True))
+        critical_kev_max = max_ticket_life(
+            included.filter(is_kev=True, cvss_severity=4)
+        )
+        high_kev_max = max_ticket_life(included.filter(is_kev=True, cvss_severity=3))
+        medium_kev_max = max_ticket_life(included.filter(is_kev=True, cvss_severity=2))
+        low_kev_max = max_ticket_life(included.filter(is_kev=True, cvss_severity=1))
 
         # Host vuln distribution
         ip_counts = Counter(included.values_list("ip_string", flat=True))
@@ -957,7 +1025,13 @@ def create_vuln_scan_summary(summary_date=None):
                 **kev_counts,
                 "critical_max_age": critical_max,
                 "high_max_age": high_max,
+                "medium_max_age": medium_max,
+                "low_max_age": low_max,
                 "kev_max_age": kev_max,
+                "critical_kev_max_age": critical_kev_max,
+                "high_kev_max_age": high_kev_max,
+                "medium_kev_max_age": medium_kev_max,
+                "low_kev_max_age": low_kev_max,
                 "one_to_five_vulns_count": one_to_five,
                 "six_to_nine_vulns_count": six_to_nine,
                 "ten_plus_vulns_count": ten_plus,
@@ -1034,6 +1108,9 @@ def process_port_scans(port_scans, org_id_dict):
             save_port_scan_to_datalake(port_scan_dict)
         except Exception as e:
             print(f"Error processing port scan data: {e}")
+            raise IngestionError(
+                SCAN_NAME, str(e), "Failed processing port scans"
+            ) from e
 
 
 def process_orgs(request_list):
@@ -1044,16 +1121,23 @@ def process_orgs(request_list):
     parent_child_dict = {}
 
     # Process the request data
-    if request_list and isinstance(request_list, list):
-        process_request(request_list, sector_child_dict, parent_child_dict, org_id_dict)
+    try:
+        if request_list and isinstance(request_list, list):
+            process_request(
+                request_list, sector_child_dict, parent_child_dict, org_id_dict
+            )
 
-        # Link parent-child organizations
-        link_parent_child_organizations(parent_child_dict, org_id_dict)
+            # Link parent-child organizations
+            link_parent_child_organizations(parent_child_dict, org_id_dict)
 
-        # Assign organizations to sectors
-        assign_organizations_to_sectors(sector_child_dict, org_id_dict)
+            # Assign organizations to sectors
+            assign_organizations_to_sectors(sector_child_dict, org_id_dict)
 
-    return org_id_dict
+        return org_id_dict
+    except Exception as e:
+        raise IngestionError(
+            SCAN_NAME, str(e), "Failed processing organizations"
+        ) from e
 
 
 def link_parent_child_organizations(
@@ -1108,6 +1192,7 @@ def assign_organizations_to_sectors(
     except Exception as e:
         print("Error assigning organization to sectors:")
         print(e)
+        raise e
 
 
 def process_request(request_list, sector_child_dict, parent_child_dict, org_id_dict):
@@ -1253,7 +1338,7 @@ def process_organization(request, network_list, location_dict, org_id_dict):
             request.get("agency", {}).get("location", {}).get("state_name"), None
         ),
         "stakeholder": bool(request.get("stakeholder", False)),
-        "enrolled_in_vs_timestamp": request.get("enrolled") or datetime.datetime.now(),
+        "enrolled_in_vs_timestamp": request.get("enrolled") or timezone.now(),
         "period_start_vs_timestamp": request.get("period_start"),
         "report_types": json.dumps(request.get("report_types", [])),
         "scan_types": json.dumps(request.get("scan_types", [])),
@@ -1264,6 +1349,9 @@ def process_organization(request, network_list, location_dict, org_id_dict):
         org_id_dict[request["_id"]] = org_record.id
     except Exception as e:
         LOGGER.info("Error saving organization: %s - %s", e, request["_id"])
+        raise IngestionError(
+            SCAN_NAME, str(e), "Failed processing organizations"
+        ) from e
 
 
 if __name__ == "__main__":
