@@ -9,9 +9,6 @@ import pytest
 from xfd_django.asgi import app
 from xfd_mini_dl.models import User
 
-# import uuid
-
-
 client = TestClient(app)
 
 
