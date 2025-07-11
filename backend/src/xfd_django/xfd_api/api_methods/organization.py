@@ -4,7 +4,6 @@
 import json
 import re
 from typing import Any, Dict, List
-import uuid
 
 # Third-Party Libraries
 from django.db.models import Q
@@ -21,20 +20,10 @@ from ..auth import (
     matches_user_region,
 )
 from ..helpers.regionStateMap import REGION_STATE_MAP
+from ..helpers.uuid_helpers import is_valid_uuid
 from ..schema_models import organization_schema
 from ..tasks.es_client import ESClient
 from ..tools.serializers import serialize_role
-
-
-def is_valid_uuid(val: str) -> bool:
-    """Check if the given string is a valid UUID."""
-    try:
-        uuid_obj = uuid.UUID(val)
-        # TODO: Uncomment to re-enable v4 uuid checks
-        # uuid_obj = uuid.UUID(val, version=4)
-    except ValueError:
-        return False
-    return str(uuid_obj) == val
 
 
 # GET: /organizations
@@ -1016,9 +1005,9 @@ def list_organizations_v2(state, region_id, current_user):
 
         # Fetch organizations with related userRoles and tags
         organizations = (
-            Organization.objects.filter(filter_criteria)
+            Organization.objects.filter(filter_criteria).order_by("created_at")
             if filter_criteria
-            else Organization.objects.all()
+            else Organization.objects.all().order_by("created_at")
         )
 
         # Serialize organizations using list comprehension

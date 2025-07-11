@@ -400,12 +400,6 @@ variable "ssm_lg_workspace_name" {
   default     = "/crossfeed/staging/LG_WORKSPACE_NAME"
 }
 
-variable "ssm_https_proxy" {
-  description = "ssm_https_proxy"
-  type        = string
-  default     = "/crossfeed/staging/HTTPS_PROXY"
-}
-
 variable "db_group_name" {
   description = "db_group_name"
   type        = string
@@ -898,4 +892,10 @@ variable "xpanse_org_sync_bucket_name" {
   type        = string
   description = "The name of the S3 bucket for Crossfeed Xpanse Org sync"
   default     = "crossfeed-xpanse-org-sync"
+}
+
+variable "playwright_worker_repository_name" {
+  description = "playwright_worker_repository_name"
+  type        = string
+  default     = "crossfeed-playwright-staging-worker"
 }

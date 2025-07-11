@@ -6,7 +6,7 @@ import logging
 import os
 import re
 import time
-from uuid import uuid1, uuid4
+from uuid import uuid4
 
 # Third-Party Libraries
 import django
@@ -241,7 +241,7 @@ def insert_xpanse_alert(alert, org_record, business_unit):
         xpanse_alert, _ = XpanseAlerts.objects.update_or_create(
             alert_id=alert["alert_id"],
             defaults={
-                "xpanse_alert_uid": uuid1(),
+                "xpanse_alert_uid": uuid4(),
                 "time_pulled_from_xpanse": parse_possible_datetime(
                     alert["time_pulled_from_xpanse"]
                 ),
@@ -716,9 +716,9 @@ def main(event):
 def handler(event):
     """Xpanse Alert Pull scan handler."""
     try:
-        is_dmz = os.getenv("IS_DMZ", "0") == "1"
-        is_local = os.getenv("IS_LOCAL", "1") == "1"
-        if not is_dmz and not is_local:
+        is_dmz = os.getenv("IS_DMZ")
+        is_local = os.getenv("IS_LOCAL")
+        if str(is_dmz).lower() not in {"true", "1"} and not is_local:
             LOGGER.warning("Scan can only be run in the DMZ or locally. Exiting now.")
             return {
                 "statusCode": 200,

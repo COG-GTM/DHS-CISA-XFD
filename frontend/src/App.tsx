@@ -35,11 +35,11 @@ import {
 import { LayoutWithSearch, RouteGuard } from 'components';
 import './styles.scss';
 import { Authenticator } from '@aws-amplify/ui-react';
-import { RiskWithSearch } from 'pages/Risk/Risk';
+//import { RiskWithSearch } from 'pages/Risk/Risk';
 import { StaticsContextProvider } from 'context/StaticsContextProvider';
 import { SavedSearchContextProvider } from 'context/SavedSearchContextProvider';
 import { FilterDrawerContextProvider } from 'context/FilterDrawerContextProvider';
-// import VulnerabilityScan from 'pages/VulnerabilityScanDash/VulnerabilityScan';
+import { VulnerabilityScanWithSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
 
 API.configure({
   endpoints: [
@@ -102,7 +102,8 @@ const App: React.FC = () => (
                           exact
                           path="/"
                           unauth={AuthLogin}
-                          component={RiskWithSearch}
+                          // component={VulnerabilityScan}
+                          component={VulnerabilityScanWithSearch}
                         />
                         <Route
                           exact
@@ -144,9 +145,13 @@ const App: React.FC = () => (
                           component={Domains}
                         />
                         {/* <RouteGuard
-                          path="/VSDashboard"
-                          component={VulnerabilityScan}
+                          path="/overview"
+                          component={RiskWithSearch}
                         /> */}
+                        <RouteGuard
+                          path="/VSDashboard"
+                          component={VulnerabilityScanWithSearch}
+                        />
                         <RouteGuard
                           path="/inventory/vulnerabilities"
                           exact

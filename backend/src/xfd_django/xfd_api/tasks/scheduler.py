@@ -14,6 +14,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
+from xfd_api.helpers.email import _setup_proxy
 from xfd_api.helpers.getScanOrganizations import get_scan_organizations
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_api.tasks.scanExecution import handler as scan_execution_handler
@@ -41,7 +42,6 @@ class Scheduler:
         scan_schema = SCAN_SCHEMA.get(scan.name, {})
         global_scan = getattr(scan_schema, "global_scan", False)
         if global_scan:
-            print("This is a global scan.")
             if not self.should_run_scan(scan):
                 print(
                     "Skipping global scan execution due to recent activity or constraints."
@@ -243,6 +243,8 @@ class Scheduler:
 def handler(event, context):
     """Handle invoking the scheduler to run scans."""
     print("Running scheduler...")
+
+    _setup_proxy()  # Setup proxy if LZ_PROXY_URL is defined
 
     scan_ids = event.get("scanIds", [])
     if "scanId" in event:

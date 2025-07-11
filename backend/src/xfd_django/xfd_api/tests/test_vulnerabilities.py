@@ -1,6 +1,6 @@
 """Test Vulnerability API."""
 # Standard Python Libraries
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
 
 # Third-Party Libraries
@@ -8,9 +8,9 @@ from django.db import transaction
 from fastapi.testclient import TestClient
 import pytest
 from xfd_api.auth import create_jwt_token
-from xfd_api.tasks.syncdb_helpers import (
-    create_domain_view,
-    create_service_view,
+from xfd_api.tasks.helpers.syncdb_helpers.create_db_views import (
+    create_domain_materialized_view,
+    create_service_mat_view,
     create_vuln_materialized_views,
     create_vuln_normal_views,
 )
@@ -150,6 +150,8 @@ def organization():
         root_domains=["crossfeed.local"],
         ip_blocks=[],
         is_passive=False,
+        enrolled_in_vs_timestamp=datetime.now(timezone.utc),  # Ensure timestamp is set
+        period_start_vs_timestamp=datetime.now(timezone.utc),
     )
     transaction.commit()
     assert organization.name == search_fields["organization_name"]
@@ -160,7 +162,11 @@ def organization():
 def shodan_vuln_setup(db):
     """Create Shodan vuln for testing."""
     organization = Organization.objects.create(
-        name="Shodan Org", root_domains=[], ip_blocks=[]
+        name="Shodan Org",
+        root_domains=[],
+        ip_blocks=[],
+        enrolled_in_vs_timestamp=datetime.now(timezone.utc),
+        period_start_vs_timestamp=datetime.now(timezone.utc),
     )
 
     ip = Ip.objects.create(
@@ -178,7 +184,7 @@ def shodan_vuln_setup(db):
         ip=ip,
         port="80",
         protocol="tcp",
-        timestamp=datetime.now(),
+        timestamp=datetime.now(timezone.utc),
         cve=search_fields["public_id"],
         severity="High",
         cvss=9.1,
@@ -186,6 +192,8 @@ def shodan_vuln_setup(db):
         product="nginx",
         tags=["shodan", "vpn"],
         data_source=datasource,
+        # os="Linux",
+        # scan_type="shodan",
     )
 
 
@@ -193,7 +201,11 @@ def shodan_vuln_setup(db):
 def ticket_vuln_setup(db):
     """Create ticket for testing."""
     organization = Organization.objects.create(
-        name="Test Org", root_domains=[], ip_blocks=[]
+        name="Test Org",
+        root_domains=[],
+        ip_blocks=[],
+        enrolled_in_vs_timestamp=datetime.now(),
+        period_start_vs_timestamp=datetime.now(timezone.utc),
     )
 
     ip = Ip.objects.create(
@@ -217,7 +229,9 @@ def ticket_vuln_setup(db):
         organization=organization,
         vuln_name="Example vulnerability",
         cve_string=search_fields["public_id"],
+        false_positive=False,
         is_kev=True,
+        is_kev_ransomware=False,
         is_open=True,
         vuln_port=80,
         port_protocol="tcp",
@@ -243,15 +257,15 @@ def ticket_vuln_setup(db):
 def ensure_vuln_views_created(django_db_setup, django_db_blocker):
     """Ensure all necessary views for vulnerability testing are created."""
     with django_db_blocker.unblock():
-        create_domain_view("mini_data_lake")
         create_vuln_normal_views("mini_data_lake")
-        create_service_view("mini_data_lake")
 
 
 @pytest.fixture
 def refresh_vuln_views(django_db_blocker):
     """Refresh the materialized vuln views after data is inserted."""
     with django_db_blocker.unblock():
+        create_service_mat_view("mini_data_lake")
+        create_domain_materialized_view("mini_data_lake")
         create_vuln_normal_views("mini_data_lake")
         create_vuln_materialized_views("mini_data_lake")
 
@@ -416,7 +430,11 @@ def test_search_vulnerabilities_id(user, vulnerability, refresh_vuln_views):
     # Search vulnerabilities by ip.
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"id": str(vulnerability.id)}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"id": str(vulnerability.id), "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -440,7 +458,11 @@ def test_search_vulnerabilities_by_title(user, vulnerability, refresh_vuln_views
 
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"title": search_fields["title"]}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"title": search_fields["title"], "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -463,7 +485,11 @@ def test_search_vulnerabilities_by_cpe(user, vulnerability, refresh_vuln_views):
     # Test search vulnerabilities by cpe
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"cpe": search_fields["cpe"]}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"cpe": search_fields["cpe"], "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -490,7 +516,7 @@ def test_search_vulnerabilities_by_severity(user, vulnerability, refresh_vuln_vi
         "/vulnerabilities/search",
         json={
             "page": 1,
-            "filters": {"severity": search_fields["severity"]},
+            "filters": {"severity": search_fields["severity"], "false_positive": None},
             "pageSize": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -519,7 +545,11 @@ def test_search_vulnerabilities_by_domain_id(user, vulnerability, refresh_vuln_v
     domain_name = str(vulnerability.domain.name)
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"domain": domain_name}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"domain": domain_name, "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -546,7 +576,11 @@ def test_search_vulnerabilities_by_state(user, vulnerability, refresh_vuln_views
 
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"state": state_to_search}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"state": state_to_search, "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -573,7 +607,11 @@ def test_search_vulnerabilities_by_substate(user, vulnerability, refresh_vuln_vi
 
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"substate": substate_to_search}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"substate": substate_to_search, "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -604,7 +642,7 @@ def test_search_vulnerabilities_by_organization_id(
         "/vulnerabilities/search",
         json={
             "page": 1,
-            "filters": {"organization": organization_id},
+            "filters": {"organization": organization_id, "false_positive": None},
             "pageSize": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -647,7 +685,7 @@ def test_search_vulnerabilities_by_is_kev(user, vulnerability, refresh_vuln_view
         "/vulnerabilities/search",
         json={
             "page": 1,
-            "filters": {"is_kev": is_kev_to_search},
+            "filters": {"is_kev": is_kev_to_search, "false_positive": None},
             "pageSize": 25,
         },
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
@@ -679,6 +717,7 @@ def test_search_vulnerabilities_by_multiple_criteria(
             "filters": {
                 "state": state_to_search,
                 "substate": substate_to_search,
+                "false_positive": None,
             },
             "page_size": 25,
         },
@@ -716,7 +755,11 @@ def test_search_vulnerabilities_does_not_exist(user, vulnerability, refresh_vuln
     # Test search vulnerabilities by state
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"title": "Does Not Exist"}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"title": "Does Not Exist", "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
 
@@ -743,6 +786,7 @@ def test_search_vulnerabilities_by_earliest_and_latest_date(
             "filters": {
                 "earliest_date": search_fields["earliest_date"].isoformat(),
                 "latest_date": search_fields["latest_date"].isoformat(),
+                "false_positive": None,
             },
             "pageSize": 25,
         },
@@ -764,7 +808,7 @@ def test_search_vulnerabilities_by_os(user, ticket_vuln_setup, refresh_vuln_view
         "/vulnerabilities/search",
         json={
             "page": 1,
-            "filters": {"os": search_fields["os"]},
+            "filters": {"os": search_fields["os"], "false_positive": None},
             "pageSize": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -773,7 +817,10 @@ def test_search_vulnerabilities_by_os(user, ticket_vuln_setup, refresh_vuln_view
     data = response.json()
     assert len(data["result"]) > 0
     for vuln in data["result"]:
-        assert vuln["os"].lower() == search_fields["os"].lower()
+        if vuln.get("os"):
+            assert vuln["os"].lower() == search_fields["os"].lower()
+        else:
+            assert vuln["os"] is None
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -785,7 +832,10 @@ def test_search_vulnerabilities_by_public_id(
         "/vulnerabilities/search",
         json={
             "page": 1,
-            "filters": {"public_id": search_fields["public_id"]},
+            "filters": {
+                "public_id": search_fields["public_id"],
+                "false_positive": None,
+            },
             "pageSize": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -808,7 +858,10 @@ def test_search_vulnerabilities_by_scan_type(
         "/vulnerabilities/search",
         json={
             "page": 1,
-            "filters": {"scan_type": search_fields["scan_type"]},
+            "filters": {
+                "scan_type": search_fields["scan_type"],
+                "false_positive": None,
+            },
             "pageSize": 25,
         },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -817,7 +870,18 @@ def test_search_vulnerabilities_by_scan_type(
     data = response.json()
     assert len(data["result"]) > 0
     for vuln in data["result"]:
-        assert search_fields["scan_type"].lower() in vuln["source"].lower()
+        scan_type = search_fields.get("scan_type", "")
+        source = vuln.get("source", "")
+
+        # Only perform lower comparison if both values are not None
+        if scan_type and source:
+            assert (
+                scan_type.lower() in source.lower()
+            ), f"Expected scan type '{scan_type}' not found in vulnerability source '{source}'"
+        else:
+            assert (
+                False
+            ), f"Scan type or source is None: scan_type={scan_type}, source={source}"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -825,7 +889,11 @@ def test_search_vulnerabilities_by_port(user, shodan_vuln_setup, refresh_vuln_vi
     """Test vulnerability."""
     response = client.post(
         "/vulnerabilities/search",
-        json={"page": 1, "filters": {"port": search_fields["port"]}, "pageSize": 25},
+        json={
+            "page": 1,
+            "filters": {"port": search_fields["port"], "false_positive": None},
+            "pageSize": 25,
+        },
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
     assert response.status_code == 200

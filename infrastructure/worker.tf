@@ -83,7 +83,6 @@ resource "aws_iam_role_policy" "worker_task_execution_role_policy" {
         "${data.aws_ssm_parameter.checksum_salt.arn}",
         "${data.aws_ssm_parameter.db_password.arn}",
         "${data.aws_ssm_parameter.db_username.arn}",
-        "${data.aws_ssm_parameter.https_proxy.arn}",
         "${data.aws_ssm_parameter.intelx_api_key.arn}",
         "${data.aws_ssm_parameter.lg_api_key.arn}",
         "${data.aws_ssm_parameter.lg_workspace_name.arn}",
@@ -258,6 +257,10 @@ resource "aws_ecs_task_definition" "worker" {
         "value": "${var.db_port}"
       },
       {
+        "name": "IS_DMZ",
+        "value": "${var.is_dmz}"
+      },
+      {
         "name": "XPANSE_ORG_SYNC_BUCKET_NAME",
         "value": "${var.xpanse_org_sync_bucket_name}"
       }
@@ -306,10 +309,6 @@ resource "aws_ecs_task_definition" "worker" {
       {
         "name": "ELASTICSEARCH_ENDPOINT",
         "valueFrom": "${aws_ssm_parameter.es_endpoint.arn}"
-      },
-      {
-        "name": "HTTPS_PROXY",
-        "valueFrom": "${data.aws_ssm_parameter.https_proxy.arn}"
       },
       {
         "name": "INTELX_API_KEY",
@@ -492,8 +491,6 @@ data "aws_ssm_parameter" "lg_workspace_name" { name = var.ssm_lg_workspace_name 
 data "aws_ssm_parameter" "worker_signature_public_key" { name = var.ssm_worker_signature_public_key }
 
 data "aws_ssm_parameter" "worker_signature_private_key" { name = var.ssm_worker_signature_private_key }
-
-data "aws_ssm_parameter" "https_proxy" { name = var.ssm_https_proxy }
 
 data "aws_ssm_parameter" "pe_api_key" { name = var.ssm_pe_api_key }
 
