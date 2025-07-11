@@ -11,11 +11,7 @@ const tooltipContentJson = [
   }
 ];
 
-interface FLHeaderProps {
-  children?: React.ReactNode;
-}
-
-export const FindingsHeader: React.FC<FLHeaderProps> = ({ children }) => {
+export const FindingsHeader: React.FC = () => {
   const mobileMargin = {
     px: {
       xs: 1,
@@ -27,7 +23,7 @@ export const FindingsHeader: React.FC<FLHeaderProps> = ({ children }) => {
   };
 
   return (
-    <Box maxWidth="1152px" width="100%" margin="auto" sx={mobileMargin}>
+    <Box width="100%" sx={mobileMargin}>
       <Box sx={{ my: '40px' }}>
         <InfoLabel
           label="Findings Library"
@@ -43,7 +39,6 @@ export const FindingsHeader: React.FC<FLHeaderProps> = ({ children }) => {
           { title: 'Vulnerabilities', path: '/inventory/vulnerabilities' }
         ]}
       />
-      {children}
     </Box>
   );
 };

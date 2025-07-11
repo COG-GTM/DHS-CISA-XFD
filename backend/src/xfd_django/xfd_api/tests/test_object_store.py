@@ -17,6 +17,7 @@ client = TestClient(app)
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.api_methods.object_store.S3Client")
+@patch("xfd_api.api_methods.object_store.ALLOWED_BUCKETS", new=["ignored-bucket"])
 def test_get_presigned_url_basic(mock_s3_client):
     """Basic test for /v1/object-store/presigned-url that skips bucket checks."""
     # Create a test user

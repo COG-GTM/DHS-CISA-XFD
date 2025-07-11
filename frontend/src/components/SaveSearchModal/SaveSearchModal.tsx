@@ -18,8 +18,8 @@ interface SaveSearchModalProps {
   searchTerm: string;
   filters: any;
   totalResults: number;
-  sort_field: string;
-  sort_direction: string;
+  sortField: string;
+  sortDirection: string;
   advancedFiltersReq?: boolean;
 }
 
@@ -28,8 +28,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
     searchTerm,
     filters,
     totalResults,
-    sort_field,
-    sort_direction,
+    sortField,
+    sortDirection,
     advancedFiltersReq
   } = props;
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -53,8 +53,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         filters,
         count: totalResults,
         search_path: window.location.search,
-        sort_field,
-        sort_direction
+        sort_field: sortField,
+        sort_direction: sortDirection
       }
     };
 

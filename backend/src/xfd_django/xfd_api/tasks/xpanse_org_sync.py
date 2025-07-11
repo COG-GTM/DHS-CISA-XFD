@@ -94,9 +94,9 @@ def main(_event):
 def handler(event):
     """Xpanse Organizations sync handler."""
     try:
-        is_dmz = os.getenv("IS_DMZ", "0") == "1"
-        is_local = os.getenv("IS_LOCAL", "1") == "1"
-        if not is_dmz and not is_local:
+        is_dmz = os.getenv("IS_DMZ")
+        is_local = os.getenv("IS_LOCAL")
+        if str(is_dmz).lower() not in {"true", "1"} and not is_local:
             LOGGER.warning("Scan can only be run in the DMZ or locally. Exiting now.")
             return {
                 "statusCode": 200,

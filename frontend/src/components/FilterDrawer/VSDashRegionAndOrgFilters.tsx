@@ -88,11 +88,13 @@ export const VSDashRegionAndOrgFilters: React.FC<
           }
         });
 
-        const body = results?.body?.hits;
+        const body = results?.body?.hits?.hits;
         if (!Array.isArray(body)) {
           return [];
         }
+
         const orgs = results.body.hits.hits.map((hit) => hit._source);
+
         // Filter out organizations that match the exclusions
         const refinedOrgs = orgs.filter((org) => {
           let exlude = false;
@@ -149,19 +151,26 @@ export const VSDashRegionAndOrgFilters: React.FC<
     const regionFilter = filters.find(
       (filter) => filter.field === REGION_FILTER_KEY
     );
-    if (regionFilter !== undefined) {
-      return regionFilter.values as string[];
+    const userRegion = user?.region_id;
+    //Applies user's region id on initial load
+    if (
+      !regionFilter ||
+      !Array.isArray(regionFilter.values) ||
+      (regionFilter.values.length === 10 &&
+        regionFilter.values.includes(userRegion))
+    ) {
+      return userRegion ? [userRegion] : [];
     }
-    return null;
-  }, [filters]);
-
-  const handleTextChange = (v: string) => {
-    setSearchTerm(v);
-  };
+    return regionFilter.values as string[];
+  }, [filters, user?.region_id]);
 
   useEffect(() => {
     searchOrganizations(search_term, regionFilterValues ?? []);
   }, [searchOrganizations, search_term, regionFilterValues]);
+
+  const handleTextChange = (v: string) => {
+    setSearchTerm(v);
+  };
 
   const handleChangeRegion = (region_id: string) => {
     if (region_id) {
@@ -177,6 +186,7 @@ export const VSDashRegionAndOrgFilters: React.FC<
       existingOrgs.forEach((existingOrg: OrganizationShallow) => {
         removeFilter(ORGANIZATION_FILTER_KEY, existingOrg, 'any');
       });
+
       addFilter(REGION_FILTER_KEY, region_id, 'any');
       setSelectedRegion(region_id);
       setSelectedOrg(undefined);
@@ -207,8 +217,7 @@ export const VSDashRegionAndOrgFilters: React.FC<
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
       >
         <Autocomplete
-          defaultValue={user?.region_id || ''}
-          value={selectedRegion}
+          value={selectedRegion ?? user?.region_id ?? ''}
           onChange={(e, v) => {
             setTimeout(() => {
               handleChangeRegion(v);
