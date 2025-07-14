@@ -1,7 +1,7 @@
 import React from 'react';
 import { TermsOfUse } from '../TermsOfUse';
 import { render, fireEvent, waitFor } from 'test-utils';
-import { vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 // vi.mock('react-router-dom', () => ({
 //   ...vi.requireActual('react-router-dom'),
