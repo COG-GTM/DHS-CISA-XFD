@@ -35,9 +35,9 @@ const LEARNING_CENTER_DOC_BUCKET_NAME = process.env
   .REACT_APP_LEARNING_CENTER_DOC_BUCKET_NAME as string;
 
 const LEARNING_CENTER_DOC_KEYS = {
-  glossary: 'vs_glossary.pdf',
-  faq: 'vs_faq.pdf',
-  methodology: 'vs_methodology.pdf'
+  glossary: 'CyHy Dashboard VS Glossary.pdf',
+  faq: 'CyHy Dashboard VS FAQ.pdf',
+  methodology: 'CyHy Dashboard VS Methodology.pdf'
 };
 
 export const Header: React.FC = () => {
