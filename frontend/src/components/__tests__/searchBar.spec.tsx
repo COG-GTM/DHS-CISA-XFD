@@ -1,13 +1,14 @@
 import React from 'react';
 import { render } from 'test-utils';
 import { SearchBar } from '../FilterDrawer/SearchBar';
+import { vi } from 'vitest';
 
 it('matches snapshot', () => {
   const { asFragment } = render(
     <SearchBar
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       autocompletedResults={[]}
-      onSelectResult={jest.fn()}
+      onSelectResult={vi.fn()}
     />
   );
   expect(asFragment()).toMatchSnapshot();

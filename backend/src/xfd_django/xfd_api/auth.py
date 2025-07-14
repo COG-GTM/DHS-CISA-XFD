@@ -213,27 +213,27 @@ async def process_user(decoded_token):
     user = User.objects.filter(email=decoded_token["email"]).first()
     if not user:
         # TODO: per CRASM-2839 temporarily disable new user creation return 403.
-        raise HTTPException(
-            status_code=403, detail="Not authorized. User creation disabled."
-        )
-        # # Create a new user if they don't exist from Okta fields in SAML Response
-        # user = User(
-        #     email=decoded_token["email"],
-        #     okta_id=decoded_token["sub"],
-        #     first_name=decoded_token.get("given_name"),
-        #     last_name=decoded_token.get("family_name"),
-        #     user_type="standard",
-        #     invite_pending=True,
-        #     cognito_username=decoded_token.get("cognito:username"),
-        #     cognito_use_case_description=decoded_token.get("nickname"),
-        #     cognito_email_verified=decoded_token.get("email_verified"),
-        #     cognito_groups=decoded_token.get("cognito:groups"),
+        # raise HTTPException(
+        #     status_code=403, detail="Not authorized. User creation disabled."
         # )
+        # # Create a new user if they don't exist from Okta fields in SAML Response
+        user = User(
+            email=decoded_token["email"],
+            okta_id=decoded_token["sub"],
+            first_name=decoded_token.get("given_name"),
+            last_name=decoded_token.get("family_name"),
+            user_type="standard",
+            invite_pending=True,
+            cognito_username=decoded_token.get("cognito:username"),
+            cognito_use_case_description=decoded_token.get("nickname"),
+            cognito_email_verified=decoded_token.get("email_verified"),
+            cognito_groups=decoded_token.get("cognito:groups"),
+        )
 
-        # # Check for active major maintenance window and login status (New User)
-        # update_login_block_status(user)
+        # Check for active major maintenance window and login status (New User)
+        update_login_block_status(user)
 
-        # user.save()
+        user.save()
 
     # Update user oktaId (legacy users) and login time
     user.okta_id = decoded_token["sub"]
@@ -277,9 +277,9 @@ async def process_user(decoded_token):
 async def get_jwt_from_code(auth_code: str):
     """Exchange authorization code for JWT tokens and decode."""
     try:
-        callback_url = os.getenv("REACT_APP_COGNITO_CALLBACK_URL")
-        client_id = os.getenv("REACT_APP_COGNITO_CLIENT_ID")
-        domain = os.getenv("REACT_APP_COGNITO_DOMAIN")
+        callback_url = os.getenv("VITE_COGNITO_CALLBACK_URL")
+        client_id = os.getenv("VITE_COGNITO_CLIENT_ID")
+        domain = os.getenv("VITE_COGNITO_DOMAIN")
         proxy_url = os.getenv("LZ_PROXY_URL")
 
         scope = "openid"

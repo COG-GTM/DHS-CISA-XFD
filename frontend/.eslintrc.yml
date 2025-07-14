@@ -26,6 +26,9 @@ rules:
 settings:
   react:
     version: detect
+  import/resolver:
+    typescript:
+      project: '.frontend/tsconfig.json'
 globals:
   Atomics: readonly
   SharedArrayBuffer: readonly

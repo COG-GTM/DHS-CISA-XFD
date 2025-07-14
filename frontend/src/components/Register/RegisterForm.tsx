@@ -14,7 +14,7 @@ import {
 import { Save } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { User } from 'types';
-import { STATE_OPTIONS } from '../../constants/constants';
+import { STATE_OPTIONS } from 'constants/constants';
 
 const StyledDialog = registerFormStyles.StyledDialog;
 
@@ -52,7 +52,7 @@ export const RegisterForm: React.FC<{
         body: JSON.stringify(body)
       };
       const response = await fetch(
-        process.env.REACT_APP_API_URL + '/users/register',
+        import.meta.env.VITE_API_URL + '/users/register',
         requestOptions
       );
       const data = await response.json();
