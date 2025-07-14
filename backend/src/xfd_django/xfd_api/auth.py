@@ -413,11 +413,12 @@ def get_allowed_user_update_fields(current_user, target_user):
             "first_name",
             "last_name",
             "invite_pending",
+            "first_login",
             "date_approved",
             "approved_by",
         }
     elif current_user.id == target_user.id:
-        return {"first_name", "last_name"}
+        return set()
     return set()
 
 
