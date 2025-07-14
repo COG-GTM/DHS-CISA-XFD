@@ -123,6 +123,19 @@ async def search_post(search_body: DomainSearchBody, current_user):
     if current_user.invite_pending:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
+    if current_user.user_type == "standard":
+        search_filters: List = search_body.filters or []
+        region_id_filter = next(
+            (
+                x.get("values")
+                for x in search_filters
+                if x["field"] == "organization.region_id"
+            ),
+            None,
+        )
+        if any(x != current_user.region_id for x in region_id_filter or []):
+            raise HTTPException(status_code=403, detail="Unauthorized")
+
     options = await get_options(search_body, current_user)
     es_query = build_request(search_body, options)
 
