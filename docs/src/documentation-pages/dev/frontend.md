@@ -31,8 +31,8 @@ directory. If you need to configure the frontend for deployment, you should upda
 
 Here is a list of all environment variables:
 
-| Name                            | Description                                                               | Sample value                                  |
-| ------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------- |
+| Name                       | Description                                                               | Sample value                                  |
+| -------------------------- | ------------------------------------------------------------------------- | --------------------------------------------- |
 | `VITE_API_URL`             | URL for REST API                                                          | `https://api.staging.crossfeed.cyber.dhs.gov` |
 | `VITE_FARGATE_LOG_GROUP`   | Fargate log group (used for linking to the logs of ScanTasks)             | `crossfeed-staging-worker`                    |
 | `VITE_USE_COGNITO`         | Set to use cognito, unset to use login.gov                                | `1`                                           |
