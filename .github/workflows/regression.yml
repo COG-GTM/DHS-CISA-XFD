@@ -60,6 +60,8 @@ jobs:
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Download test report from S3
+        env:
+          AUTOMATED_TEST_REPORTS_BUCKET_NAME: cisa-crossfeed-staging-cd-automated-test-reports
         run: |
           mkdir -p ./playwright-report/html
           aws s3 cp \
@@ -121,6 +123,8 @@ jobs:
         continue-on-error: false  # Ensure it stops if the ECS task fails
 
       - name: Download test report from S3
+        env:
+          AUTOMATED_TEST_REPORTS_BUCKET_NAME: cisa-crossfeed-staging-cd-automated-test-reports
         run: |
           mkdir -p ./playwright-report/html
           aws s3 cp \
