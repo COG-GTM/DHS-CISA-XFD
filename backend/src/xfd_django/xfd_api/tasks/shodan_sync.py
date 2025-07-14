@@ -12,7 +12,7 @@ import django
 from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import DataSource, Ip, Organization, ShodanAssets, ShodanVulns
 
 # Django setup
@@ -120,7 +120,7 @@ def handler(command_options):
                 done = True
             else:
                 page += 1
-        upsert_scan_result(scan_id, organization_id)
+        log_scan_result(scan_id, organization_id)
         return {
             "statusCode": 200,
             "body": "Shodan sync completed successfully for {} ({}).".format(

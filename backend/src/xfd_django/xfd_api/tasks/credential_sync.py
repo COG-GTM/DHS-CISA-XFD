@@ -11,7 +11,7 @@ from django.utils import timezone
 from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
@@ -130,7 +130,7 @@ def main(command_options):
                 "Credential sync updated exposures and breaches for %s.",
                 organization_name,
             )
-            upsert_scan_result(scan_id, organization_id)
+            log_scan_result(scan_id, organization_id)
         return {
             "statusCode": 200,
             "body": "Credential sync completed successfully.",

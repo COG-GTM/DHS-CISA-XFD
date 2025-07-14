@@ -1041,6 +1041,11 @@ class ScanResult(models.Model):
         db_column="http_status",
         help_text="HTTP status code of the scan result.",
     )
+    message = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Error message and exception returned from the scan result.",
+    )
     scan = models.ForeignKey(
         Scan,
         on_delete=models.CASCADE,
@@ -1062,11 +1067,10 @@ class ScanResult(models.Model):
         app_label = app_label_name
         managed = manage_db
         db_table = "scan_result"
-        unique_together = (("scan", "organization", "http_status"),)
         indexes = [
             models.Index(
-                fields=["scan", "organization", "http_status", "latest_result_at"],
-                name="scan_org_status_time_idx",
+                fields=["latest_result_at", "scan", "http_status", "organization"],
+                name="time_scan_status_org_idx",
             ),
         ]
 

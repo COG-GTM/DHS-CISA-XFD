@@ -12,6 +12,7 @@ from django.utils import timezone
 import pandas as pd
 from xfd_mini_dl.models import CredentialBreaches, DataSource, Organization, Scan
 
+from .helpers.log_scan_result import log_scan_result
 from .helpers.sixgill_helpers.api import get_sixgill_organizations
 from .helpers.sixgill_helpers.db_query_source import (
     insert_sixgill_alerts,
@@ -28,7 +29,6 @@ from .helpers.sixgill_helpers.source import (
     root_domains,
     top_cves,
 )
-from .helpers.upsert_scan_result import upsert_scan_result
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
@@ -115,7 +115,7 @@ class Cybersixgill:
                 and ("%s mentions" % org_id)
                 and ("%s credentials" % org_id) not in failed
             ):
-                upsert_scan_result(self.scan_id, org_uuid)
+                log_scan_result(self.scan_id, org_uuid)
 
         # Save total number of organizations scanned to the Scan table
         scan = Scan.objects.get(id=self.scan_id)

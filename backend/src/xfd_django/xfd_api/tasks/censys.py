@@ -9,7 +9,7 @@ import time
 from django.utils import timezone
 import requests
 from xfd_api.tasks.helpers.get_root_domains import get_root_domains
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Constants controlling pagination and rate limiting
@@ -140,7 +140,7 @@ def handler(command_options):
         time.sleep(1)  # Respect rate limits
 
     if subdomains_created:
-        upsert_scan_result(scan_id, organization_id)
+        log_scan_result(scan_id, organization_id)
     print(
         "Censys saved or updated {} subdomains for organization {}, ({})".format(
             subdomains_created, organization_name, organization.acronym

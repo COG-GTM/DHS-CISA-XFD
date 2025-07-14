@@ -15,7 +15,7 @@ import requests
 from xfd_api.helpers.link_ips_from_subs import connect_ips_from_subs
 from xfd_api.helpers.link_subs_from_ips import connect_subs_from_ips
 from xfd_api.helpers.shodan_dedupe import dedupe
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import (
     Cidr,
     CidrOrgs,
@@ -57,6 +57,12 @@ def handler(event):
             "body": "DMZ Shodan Vulnerabilities and Asset sync completed successfully.",
         }
     except Exception as e:
+        log_scan_result(
+            event.get("scanId"),
+            event.get("organizationId"),
+            500,
+            "Error running handler for ASM Sync: {}".format(e),
+        )
         return {"status_code": 500, "body": str(e)}
 
 
@@ -80,7 +86,9 @@ def main(event):
                 cidrorgs__organization__in=orgs_to_sync, cidrorgs__current=True
             ).exists()
         except Exception as e:
-            LOGGER.warning("Error processing CIDRs: %s", e)
+            message = "Error processing CIDRs: {}".format(e)
+            LOGGER.warning(message)
+            log_scan_result(scan_id, organization_id, 500, message)
 
         # Process subdomains
         try:
@@ -89,7 +97,9 @@ def main(event):
                 organization__in=orgs_to_sync, current=True
             ).exists()
         except Exception as e:
-            LOGGER.warning("Error processing subdomains: %s", e)
+            message = "Error processing subdomains: {}".format(e)
+            LOGGER.warning(message)
+            log_scan_result(scan_id, organization_id, 500, message)
 
         LOGGER.info("Identifying subdomains from ips...")
         connect_subs_from_ips(orgs_to_sync)
@@ -106,10 +116,12 @@ def main(event):
         LOGGER.info("Finished running Shodan dedupe")
         if cidr_found and subdomain_found:
             LOGGER.info("ASM Sync completed successfully.")
-            upsert_scan_result(scan_id, organization_id)
+            log_scan_result(scan_id, organization_id)
 
     except Exception as e:
-        LOGGER.warning("Error running ASM %s", e)
+        message = "Error running ASM Sync: {}".format(e)
+        LOGGER.warning(message)
+        log_scan_result(event.get("scanId"), event.get("organizationId"), 500, message)
 
 
 def flag_asset_changes():

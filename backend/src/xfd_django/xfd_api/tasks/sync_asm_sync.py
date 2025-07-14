@@ -11,7 +11,7 @@ from django.utils import timezone
 import requests
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import Cidr, DataSource, Ip, IpsSubs, Organization, SubDomains
 
 # Django setup
@@ -117,7 +117,7 @@ def main(command_options):
         flag_asset_changes(organization)
         LOGGER.info("Completed pulling ASM data for %s", organization.acronym)
         if data_saved:
-            upsert_scan_result(scan_id, organization_id)
+            log_scan_result(scan_id, organization_id)
             return {"statusCode": 200, "body": "ASM sync completed successfully."}
         return {
             "statusCode": 204,

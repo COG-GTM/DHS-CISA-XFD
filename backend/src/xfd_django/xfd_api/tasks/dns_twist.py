@@ -14,7 +14,7 @@ from uuid import uuid4
 import dnstwist
 import dshield
 import requests
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import DataSource, DomainPermutations, Organization, SubDomains
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -298,7 +298,7 @@ def process_org(org, orgs_list, data_source, failures, scan_id):
                     )
                 #  upsert timestamp of latest result for each organization per scan, if execute_dnstwist_data was successful and domain_list is not empty
                 if domain_list:
-                    upsert_scan_result(scan_id, org_id)
+                    log_scan_result(scan_id, org_id)
             except Exception:
                 # TODO: Create custom exceptions.
                 # Issue 265: https://github.com/cisagov/pe-reports/issues/265

@@ -11,7 +11,7 @@ from django.utils.dateparse import parse_datetime
 import requests
 import shodan
 from xfd_api.tasks.helpers.get_ips import get_ips_by_cidr
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import DataSource, Ip, Organization, ShodanAssets, ShodanVulns
 
 # Constants controlling pagination and rate limiting
@@ -87,7 +87,7 @@ def handler(command_options):
             "status_code": 500,
             "body": failed,
         }
-    upsert_scan_result(scan_id, organization_id)
+    log_scan_result(scan_id, organization_id)
     LOGGER.info("Shodan completed successfully for %s (%s).", org_name, org_acronym)
     return {"status_code": 200, "body": "Success running Shodan."}
 

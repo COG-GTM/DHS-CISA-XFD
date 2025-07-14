@@ -9,7 +9,7 @@ import django
 from django.utils import timezone
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import DataSource, Organization, SubDomains
 
 # Django setup
@@ -78,7 +78,7 @@ def handler(command_options):
             try:
                 if subdomains:
                     save_censys_subdomains_to_db(subdomains, org, data_source)
-                    upsert_scan_result(scan_id, organization_id)
+                    log_scan_result(scan_id, organization_id)
                 else:
                     return {
                         "statusCode": 200,

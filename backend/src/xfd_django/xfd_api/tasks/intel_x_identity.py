@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import requests
 from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
-from xfd_api.tasks.helpers.upsert_scan_result import upsert_scan_result
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
@@ -228,7 +228,7 @@ class IntelX:
             start_pulling_time,
         )
         if breach_saved and credential_saved:
-            upsert_scan_result(scan_id, org.id)
+            log_scan_result(scan_id, org.id)
         return 0
 
     def query_identity_api(self, domain, start_date, end_date):
