@@ -5,7 +5,6 @@ env:
   node: true
 parser: '@typescript-eslint/parser'
 extends:
-  - react-app
   - plugin:prettier/recommended
   - plugin:react/recommended
   - plugin:@typescript-eslint/eslint-recommended
