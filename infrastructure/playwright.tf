@@ -96,8 +96,21 @@ resource "aws_ecs_task_definition" "playwright_worker" {
       environment = [
         { name = "AWS_REGION", value = var.aws_region },
         { name = "BROWSER_TYPE", value = "chromium" },
-        { name = "TEST_URL", value = var.frontend_domain }
+        { name = "TEST_URL", value = var.frontend_domain },
         // additional overrides like S3 paths can still be injected at runtime
+
+        // Required by run_playwright_tests.sh
+        { name = "PW_XFD_URL", value = "" },
+        { name = "PW_XFD_USERNAME", value = "" },
+        { name = "PW_XFD_PASSWORD", value = "" },
+        { name = "PW_XFD_2FA_SECRET", value = "" },
+        { name = "PW_XFD_LOGIN", value = "" },
+        { name = "ENVIRONMENT", value = "" },
+        { name = "DATETIME", value = "" },
+        { name = "GIT_BRANCH", value = "" },
+        { name = "AUTOMATED_TEST_REPORTS_BUCKET_NAME", value = "" },
+        { name = "S3_HTML_PATH", value = "" },
+        { name = "S3_JSON_PATH", value = "" }
       ],
 
       logConfiguration = {
