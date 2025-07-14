@@ -341,7 +341,6 @@ def send_csv_to_sync(csv_data, bounds):
         "Content-Type": "application/json",
         "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
-
     try:
         response = requests.post(
             os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
