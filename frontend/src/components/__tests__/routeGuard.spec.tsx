@@ -2,7 +2,7 @@ import React from 'react';
 import * as router from 'react-router-dom';
 import { RouteGuard } from '../RouteGuard';
 import { render, testUser } from 'test-utils';
-import { vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof router>('react-router-dom');
