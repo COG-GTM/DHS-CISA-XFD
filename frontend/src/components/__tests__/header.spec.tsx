@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, testUser, testOrganization } from 'test-utils';
-import { vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Header } from '../Header/Header';
 
 vi.mock('@elastic/react-search-ui', () => ({

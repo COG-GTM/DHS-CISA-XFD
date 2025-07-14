@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from 'test-utils';
 import { SearchBar } from '../FilterDrawer/SearchBar';
-import { vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 it('matches snapshot', () => {
   const { asFragment } = render(
