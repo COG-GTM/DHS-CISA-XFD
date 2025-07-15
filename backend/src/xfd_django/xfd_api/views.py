@@ -32,6 +32,7 @@ from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.metrics import scans_org_count_by_status
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
@@ -93,6 +94,7 @@ from .schema_models.dmz_sync import (
     SyncRequest,
 )
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
+from .schema_models.metrics import ListScansOrgCountByStatusResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
 from .schema_models.queue_monitoring import QueueListResponse, QueueSearch
@@ -427,6 +429,38 @@ async def call_search_logs(
     """Search log table."""
     log_data, count = search_logs(log_search, current_user)
     return LogSearchResponse(result=log_data, count=count)
+
+
+# ========================================
+#   Metrics Dashboard Endpoints
+# ========================================
+
+# @api_router.post(
+#     "/metrics/scan_result",
+#     dependencies=[Depends(get_current_active_user)],
+#     response_model=List[ScanResultSchema], # TODO: Define ScanResultSchema
+#     tags=["Metrics"],
+# )
+
+
+@api_router.get(
+    "/metrics/scans",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ListScansOrgCountByStatusResponse,
+    tags=["metrics"],
+)
+async def call_list_scans_org_count_by_status(
+    window_days: Optional[int] = default_window,
+    current_user: User = Depends(get_current_active_user),
+):
+    """List scans and annotate with metrics."""
+    try:
+        return scans_org_count_by_status(window_days, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching scan metrics: {}".format(e),
+        )
 
 
 # ========================================

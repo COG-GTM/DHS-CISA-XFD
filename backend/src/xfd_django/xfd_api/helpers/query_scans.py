@@ -24,7 +24,7 @@ def query_scans(scan_id: Optional[str], window_days: int = default_window):
     scan_qs = Scan.objects.prefetch_related("organizations", "tags").annotate(
         orgs_with_results=Count(
             "scan_results__organization",
-            filter=Q(scan_results__latest_result_at__gte=cutoff),
+            filter=Q(scan_results__ingested_at__gte=cutoff),
             distinct=True,
         )
     )

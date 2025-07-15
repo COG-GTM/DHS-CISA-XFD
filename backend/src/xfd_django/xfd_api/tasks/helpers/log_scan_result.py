@@ -19,7 +19,7 @@ def log_scan_result(scan_id, organization_id, http_status=200, message=""):
         ScanResult.objects.create(
             scan_id=scan_id,
             organization_id=organization_id,
-            latest_result_at=timezone.now(),
+            ingested_at=timezone.now(),
             http_status=http_status,
             message=message,
         )
