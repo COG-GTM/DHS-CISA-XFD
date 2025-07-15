@@ -9,6 +9,7 @@ it('matches snapshot', () => {
       onChange={vi.fn()}
       autocompletedResults={[]}
       onSelectResult={vi.fn()}
+      initialValue={'test'}
     />
   );
   expect(asFragment()).toMatchSnapshot();
