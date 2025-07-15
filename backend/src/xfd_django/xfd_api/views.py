@@ -36,6 +36,7 @@ from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.object_store import get_object_store_presigned_url
+from .api_methods.pshtt_sync import pshtt_sync_post
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
@@ -1095,6 +1096,26 @@ async def sync(
 # ========================================
 #   Search Endpoints
 # ========================================
+
+
+@api_router.post(
+    "/pshtt_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=SyncResponse,
+    tags=["PshttSync"],
+)
+async def pshtt_sync(
+    sync_body: SyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post Pshtt results for datalake sync."""
+    try:
+        return await pshtt_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @api_router.post(
