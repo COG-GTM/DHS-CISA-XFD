@@ -241,7 +241,7 @@ async def handle_okta_callback(request):
 
 async def process_user(decoded_token):
     """Process a user based on decoded token information."""
-    user = User.objects.filter(email=decoded_token["email"]).first()
+    user = User.objects.filter(okta_id=decoded_token["sub"]).first()
     if not user:
         # TODO: per CRASM-2839 temporarily disable new user creation return 403.
         raise HTTPException(
