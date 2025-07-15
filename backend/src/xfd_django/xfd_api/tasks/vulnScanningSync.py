@@ -341,7 +341,6 @@ def send_csv_to_sync(csv_data, bounds):
         "Content-Type": "application/json",
         "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
-
     try:
         response = requests.post(
             os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
@@ -752,6 +751,7 @@ def process_tickets(tickets, org_id_dict):
                 else None,
                 "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
+                "is_kev_ransomware": details.get("kev_ransomware"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
                 "operating_system": get_latest_os_type(ticket.get("ip"))
@@ -1036,7 +1036,13 @@ def create_vuln_scan_summary(summary_date=None):
                 "ten_plus_vulns_count": ten_plus,
                 "top_5_occurring_cves": top_5_occurring_cves,
                 "top_5_occurring_kevs": top_5_occurring_kevs,
-                "included_tickets": list(included.values_list("id", flat=True)),
+                "included_tickets": {
+                    str(ticket.id): {
+                        "severity": severity_map.get(ticket.cvss_severity, "unknown"),
+                        "is_kev": ticket.is_kev,
+                    }
+                    for ticket in included.only("id", "cvss_severity", "is_kev")
+                },
                 "top_5_risky_hosts": top_5_hosts,
             },
         )
