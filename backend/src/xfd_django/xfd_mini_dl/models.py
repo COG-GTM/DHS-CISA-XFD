@@ -1849,11 +1849,6 @@ class VulnScanSummary(models.Model):
         blank=True,
         help_text="Count of Ip addresses that have been scanned",
     )
-    unique_none_severity_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of vulnerabilities with a severity of 0",
-    )
     unique_low_severity_count = models.IntegerField(
         null=True,
         blank=True,
@@ -1888,11 +1883,6 @@ class VulnScanSummary(models.Model):
         null=True,
         blank=True,
         help_text="Count of unique operating systems identified running on org assets.",
-    )
-    none_severity_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of vulnerabilities with a severity of 0",
     )
     low_severity_count = models.IntegerField(
         null=True,
@@ -1960,11 +1950,6 @@ class VulnScanSummary(models.Model):
     #     blank=True,
     #     help_text="Median age of vulns with severity of critical.",
     # )
-    none_kev_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of Kevs with no severity.",
-    )
     low_kev_count = models.IntegerField(
         null=True,
         blank=True,
@@ -2040,8 +2025,8 @@ class VulnScanSummary(models.Model):
     included_tickets = models.JSONField(
         blank=True,
         null=True,
-        default=list,
-        help_text="List of ids for the tickets counted in this summary.",
+        default=dict,
+        help_text="Dictionary of ticket IDs to metadata (e.g., severity, is_kev) at the time of summary.",
     )
     top_5_risky_hosts = models.JSONField(
         blank=True,
