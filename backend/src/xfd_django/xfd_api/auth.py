@@ -3,6 +3,7 @@
 # Standard Python Libraries
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import json
 import os
 import re
 from typing import Optional
@@ -37,6 +38,36 @@ JWT_TIMEOUT_HOURS = settings.JWT_TIMEOUT_HOURS
 LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+
+def validate_json_serialization(user_object, label="user_object"):
+    """Try to serialize an object to JSON. If it fails, identify which field caused it."""
+    if user_object is None:
+        raise ValueError("{} is None, cannot serialize".format(label))
+    try:
+        json.dumps(user_object)
+    except TypeError as e:
+
+        def traverse_data(user_data, path):
+            if isinstance(user_data, dict):
+                for key, value in user_data.items():
+                    traverse_data(value, path + [str(key)])
+            elif isinstance(user_data, list):
+                for index, item in enumerate(user_data):
+                    traverse_data(item, path + ["[{}]".format(index)])
+            else:
+                try:
+                    json.dumps(user_data)
+                except TypeError:
+                    path_str = ".".join(path)
+                    raise TypeError(
+                        "{} contains unserializable value at `{}`".format(
+                            label, path_str
+                        )
+                    )
+
+        traverse_data(user_object, [])
+        raise TypeError("{} failed JSON serialization: {}".format(label, e))
 
 
 def user_to_dict(user):
@@ -210,7 +241,7 @@ async def handle_okta_callback(request):
 
 async def process_user(decoded_token):
     """Process a user based on decoded token information."""
-    user = User.objects.filter(email=decoded_token["email"]).first()
+    user = User.objects.filter(okta_id=decoded_token["sub"]).first()
     if not user:
         # TODO: per CRASM-2839 temporarily disable new user creation return 403.
         raise HTTPException(
@@ -269,6 +300,7 @@ async def process_user(decoded_token):
         )
 
         process_resp = {"token": signed_token, "user": user_to_dict(user)}
+        validate_json_serialization(process_resp["user"], label="User Dict")
         return process_resp
     else:
         raise HTTPException(status_code=400, detail="User not found")
@@ -392,6 +424,38 @@ def can_access_user(current_user, target_user_id) -> bool:
         return current_user.region_id == target_user.region_id
 
     return False
+
+
+def get_allowed_user_update_fields(current_user, target_user):
+    """Get allowed user update fields."""
+    if is_global_write_admin(current_user):
+        return {
+            "first_name",
+            "last_name",
+            "state",
+            "region_id",
+            "user_type",
+            "invite_pending",
+            "date_approved",
+            "approved_by",
+            "accepted_terms_version",
+            "login_blocked_by_maintenance",
+        }
+    elif (
+        is_regional_admin(current_user)
+        and current_user.region_id == target_user.region_id
+    ):
+        return {
+            "first_name",
+            "last_name",
+            "invite_pending",
+            "first_login",
+            "date_approved",
+            "approved_by",
+        }
+    elif current_user.id == target_user.id:
+        return set()
+    return set()
 
 
 def get_org_memberships(current_user) -> list[str]:
