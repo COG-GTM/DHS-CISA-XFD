@@ -327,7 +327,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         field: 'severity',
         headerName: 'Severity',
         minWidth: 100,
-        flex: 0.7,
+        flex: 0.5,
         sortComparator: (v1: any, v2: any) => {
           const severityLevels: Record<string, number> = {
             'N/A': 1,
@@ -483,8 +483,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     [history]
   );
 
-  console.log('Vuln length: ', vulnerabilities.length);
-  console.log(paginationModel);
   return (
     <Box
       display="flex"
