@@ -102,7 +102,6 @@ def test_okta_callback_existing_user(mock_get_jwt_from_code):
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_okta_callback_missing_code():
     """Test Okta callback with missing auth code (should fail)."""
-    payload = {}  # No code provided
 
     response = client.post(
         "/auth/okta-callback",
