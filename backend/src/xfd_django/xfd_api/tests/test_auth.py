@@ -112,7 +112,7 @@ def test_okta_callback_missing_code():
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Code not found in request body"
+    assert response.json()["detail"] == "Missing required OAuth parameters"
 
 
 # Test that the response is JSON serializable
