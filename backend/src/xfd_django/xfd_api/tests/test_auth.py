@@ -43,8 +43,8 @@ def test_okta_callback_success(mock_get_jwt_from_code):
         json={"code": "test-auth-code", "state": "test-state"},
         cookies={
             "oauth_state": "test-state",
-            "pkce_code_verifier": "test-code-verifier"
-        }
+            "pkce_code_verifier": "test-code-verifier",
+        },
     )
 
     assert response.status_code == 200
@@ -85,8 +85,8 @@ def test_okta_callback_existing_user(mock_get_jwt_from_code):
         json={"code": "test-auth-code", "state": "test-state"},
         cookies={
             "oauth_state": "test-state",
-            "pkce_code_verifier": "test-code-verifier"
-        }
+            "pkce_code_verifier": "test-code-verifier",
+        },
     )
 
     assert response.status_code == 200
@@ -108,8 +108,8 @@ def test_okta_callback_missing_code():
         "/auth/okta-callback",
         cookies={
             "oauth_state": "test-state",
-            "pkce_code_verifier": "test-code-verifier"
-        }
+            "pkce_code_verifier": "test-code-verifier",
+        },
     )
 
     assert response.status_code == 400
@@ -157,8 +157,8 @@ def test_okta_callback_user_approved_by_admin(mock_get_jwt_from_code):
         json={"code": "test-auth-code", "state": "test-state"},
         cookies={
             "oauth_state": "test-state",
-            "pkce_code_verifier": "test-code-verifier"
-        }
+            "pkce_code_verifier": "test-code-verifier",
+        },
     )
 
     assert response.status_code == 200
