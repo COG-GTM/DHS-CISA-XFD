@@ -95,7 +95,7 @@ def test_okta_callback_missing_code():
 
     response = client.post("/auth/okta-callback", json=payload)
 
-    assert response.json()["status_code"] == 400
+    assert response.status_code == 400
     assert response.json()["detail"] == "Code not found in request body"
 
 
