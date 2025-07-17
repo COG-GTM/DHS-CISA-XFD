@@ -15,6 +15,7 @@ from xfd_api.schema_models.metrics import (
     OrgCountByStatus,
     ScanOrgCountByStatus,
 )
+from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_mini_dl.models import Scan, ScanResult
 
 
@@ -63,13 +64,25 @@ def transform_daily_status_counts(queryset, scan_id, window_days):
 
 
 def list_scans_org_count_by_status(window_days, current_user):
-    """List scans and count distinct orgs for each http status in a given time window."""
+    """List non-global scans and count distinct orgs for each http status in a given time window."""
     cutoff = (timezone.now() - timedelta(days=window_days)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
-
+    # Generate set of non-global scan names from SCAN_SCHEMA
+    non_global_scans = {
+        name
+        for name, schema in SCAN_SCHEMA.items()
+        if hasattr(schema, "global_scan") and schema.global_scan is False
+    }
+    # Generate list of non-global scan IDs from the scan table
+    non_global_scan_ids = list(
+        Scan.objects.filter(name__in=non_global_scans).values_list("id", flat=True)
+    )
     result = (
-        ScanResult.objects.filter(logged_at__gte=cutoff)
+        ScanResult.objects.filter(
+            scan_id__in=non_global_scan_ids,
+            logged_at__gte=cutoff,
+        )
         .values("scan_id", "http_status")
         .annotate(count=Count("organization", distinct=True))
         .order_by("scan_id", "http_status")
