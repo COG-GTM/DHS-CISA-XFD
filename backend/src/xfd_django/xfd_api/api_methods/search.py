@@ -348,6 +348,7 @@ async def search_export(search_body: DomainSearchBody, current_user) -> Dict[str
             403,
             f"You are not authorized for region(s): {', '.join(unauthorized_regions)}",
         )
+    clean_and_authorize_filters(search_body, current_user)
 
     # Fetch results from Elasticsearch
     client = ESClient()
