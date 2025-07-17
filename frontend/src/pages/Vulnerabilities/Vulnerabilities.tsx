@@ -278,6 +278,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           title: vuln.title,
           severity: severity,
           kev: vuln.is_kev ? 'Yes' : 'No',
+          ransomware: vuln.is_kev_ransomware ? 'Yes' : 'No',
           domain: vuln.domain?.name,
           domainId: vuln.domain?.id,
           product: product,
@@ -326,7 +327,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         field: 'severity',
         headerName: 'Severity',
         minWidth: 100,
-        flex: 0.7,
+        flex: 0.5,
         sortComparator: (v1: any, v2: any) => {
           const severityLevels: Record<string, number> = {
             'N/A': 1,
@@ -372,6 +373,21 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
             </Box>
           );
         }
+      },
+      {
+        field: 'ransomware',
+        headerName: 'Ransomware',
+        minWidth: 100,
+        flex: 0.5,
+        filterable: true,
+        renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => (
+          <Box
+            component="span"
+            aria-label={`Ransomware status ${cellValues.row.ransomware}`}
+          >
+            {cellValues.row.ransomware}
+          </Box>
+        )
       },
       {
         field: 'domain',
@@ -467,8 +483,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     [history]
   );
 
-  console.log('Vuln length: ', vulnerabilities.length);
-  console.log(paginationModel);
   return (
     <Box
       display="flex"
