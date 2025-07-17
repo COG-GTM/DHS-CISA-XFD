@@ -81,6 +81,7 @@ from .api_methods.vulnerability import (
 from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import (
     get_current_active_user,
+    get_current_active_user_unsafe,
     handle_okta_callback,
     set_oauth_cookies_response,
 )
@@ -1365,7 +1366,7 @@ async def healthcheck():
 @api_router.post(
     "/users/me/acceptTerms",
     response_model=UserSchema,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 async def call_accept_terms(
@@ -1376,7 +1377,7 @@ async def call_accept_terms(
 
 
 @api_router.get("/users/me", tags=["Users"])
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(current_user: User = Depends(get_current_active_user_unsafe)):
     """Get current user."""
     return get_me(current_user)
 
