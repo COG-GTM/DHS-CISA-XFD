@@ -256,6 +256,14 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     </Box>
   );
 
+  const formatDays = (dateString: string) => {
+    const date = parseISO(dateString);
+    const days = differenceInCalendarDays(Date.now(), date);
+    if (days <= 1) {
+      return `${days} day ago`;
+    }
+    return `${days} days ago`;
+  };
   const vulRows: VulnerabilityRow[] = useMemo(
     () =>
       vulnerabilities.map((vuln) => {
@@ -265,9 +273,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           ? vuln.cpe
           : vuln.service?.products?.[0]?.cpe || 'N/A';
 
-        const daysOpen = vuln?.created_at
-          ? `${differenceInCalendarDays(Date.now(), parseISO(vuln?.created_at))} days`
-          : '';
+        const daysOpen = vuln?.created_at ? formatDays(vuln?.created_at) : '';
 
         const stateDisplay =
           vuln.state + (vuln.substate ? ` (${vuln.substate})` : '');
@@ -304,7 +310,10 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         },
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
           return (
-            <Box component="span">
+            <Box
+              component="span"
+              aria-label={`Vulnerability ${cellValues.row.title}`}
+            >
               {truncateString(cellValues.row.title ?? '')}
             </Box>
           );
