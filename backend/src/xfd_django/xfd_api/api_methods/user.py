@@ -447,6 +447,13 @@ def update_user_v2(user_id, user_data, current_user):
         updates = user_data.dict(exclude_unset=True)
         allowed_fields = get_allowed_user_update_fields(current_user, user)
 
+        if user.first_login and user_data.state:
+            user.state = user_data.state
+            user.region_id = REGION_STATE_MAP.get(user_data.state)
+            # Flip this to false to prevent state from being set.
+            user.first_login = False
+            user.save()
+
         # Check for disallowed fields before applying updates
         disallowed_fields = set(updates.keys()) - allowed_fields
         if disallowed_fields:
