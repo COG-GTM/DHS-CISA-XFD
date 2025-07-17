@@ -254,6 +254,7 @@ async def search_post(search_body: DomainSearchBody, current_user):
     )
     all_requested_orgs = set(extract_org_ids_from_filters(search_body.filters or []))
 
+
     # --- Explicit access check before continuing ---
     # return get_org_memberships(current_user)
 

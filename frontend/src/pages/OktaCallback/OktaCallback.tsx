@@ -10,42 +10,52 @@ type OktaCallbackResponse = {
 };
 
 export const OktaCallback: React.FC = () => {
-  const { apiPost, login } = useAuthContext();
+  const { login } = useAuthContext();
   const history = useHistory();
 
   const handleOktaCallback = useCallback(async () => {
-    const { code } = parse(window.location.search);
-    console.log('Code: ', code);
-    const nonce = localStorage.getItem('nonce');
-    console.log('Nonce: ', nonce);
+    const { code, state } = parse(window.location.search);
+
+    if (!code || !state) {
+      console.error('Missing OAuth parameters');
+      history.push('/');
+      return;
+    }
 
     try {
-      // Pass request to backend callback endpoint
-      const response = await apiPost<OktaCallbackResponse>(
-        '/auth/okta-callback',
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/auth/okta-callback`,
         {
-          body: {
-            code: code
-          }
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            code,
+            state
+          })
         }
       );
-      console.log('Response: ', response);
-      console.log('token ', response.token);
 
-      // Login
-      await login(response.token);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'OAuth callback failed');
+      }
 
-      // Storage Management
-      localStorage.setItem('token', response.token);
+      const data: OktaCallbackResponse = await response.json();
+
+      await login(data.token);
+
+      localStorage.setItem('token', data.token);
       localStorage.removeItem('nonce');
-      localStorage.removeItem('state');
+      sessionStorage.removeItem('oauth_state');
+      sessionStorage.removeItem('pkce_code_verifier');
 
       history.push('/');
     } catch (e) {
       console.error(e);
       history.push('/');
     }
-  }, [apiPost, history, login]);
+  }, [history, login]);
 
   useEffect(() => {
     handleOktaCallback();

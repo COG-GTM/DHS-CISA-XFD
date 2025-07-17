@@ -14,7 +14,7 @@ import uuid
 from django.conf import settings
 from django.forms.models import model_to_dict
 from fastapi import Depends, HTTPException, Request, Security, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.security import APIKeyHeader
 import jwt
 import requests
@@ -199,17 +199,56 @@ def update_login_block_status(user: User) -> None:
     user.save()
 
 
+# POST: /auth/set-oauth-cookies
+def set_oauth_cookies_response(state: str, code_verifier: str) -> Response:
+    """Return a Response with OAuth state and PKCE code_verifier cookies set."""
+    response = Response()
+
+    response.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        path="/",
+    )
+    response.set_cookie(
+        key="pkce_code_verifier",
+        value=code_verifier,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        path="/",
+    )
+
+    return response
+
+
 # POST: /auth/okta-callback
 async def handle_okta_callback(request):
     """POST API LOGIC."""
     body = await request.json()
-    code = body.get("code", None)
-    if code is None:
-        return HTTPException(
+    code = body.get("code")
+    state = body.get("state")
+
+    # Retrieve from cookies (not from body anymore)
+    cookie_state = request.cookies.get("oauth_state")
+    code_verifier = request.cookies.get("pkce_code_verifier")
+
+    if not code or not state or not cookie_state or not code_verifier:
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Code not found in request body",
+            detail="Missing required OAuth parameters",
         )
-    jwt_data = await get_jwt_from_code(code)
+
+    # Validate state matches the cookie
+    if state != cookie_state:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or missing OAuth state",
+        )
+
+    jwt_data = await get_jwt_from_code(code, code_verifier)
     print("JWT Data: {}".format(jwt_data))
     if jwt_data is None:
         raise HTTPException(
@@ -222,10 +261,12 @@ async def handle_okta_callback(request):
     resp = await process_user(decoded_token)
     token = resp.get("token")
 
-    # Create a JSONResponse object to return the response and set the cookie
+    # Create a JSONResponse object to return the response and clear cookies
     response = JSONResponse(
         content={"message": "User authenticated", "data": resp, "token": token}
     )
+    response.delete_cookie("oauth_state")
+    response.delete_cookie("pkce_code_verifier")
     response.set_cookie(key="token", value=token)
 
     # Set the 'crossfeed-token' cookie
@@ -241,43 +282,40 @@ async def handle_okta_callback(request):
 
 async def process_user(decoded_token):
     """Process a user based on decoded token information."""
-    user = User.objects.filter(email=decoded_token["email"]).first()
+    user = User.objects.filter(okta_id=decoded_token["sub"]).first()
     if not user:
-        # TODO: per CRASM-2839 temporarily disable new user creation return 403.
-        raise HTTPException(
-            status_code=403, detail="Not authorized. User creation disabled."
+        # Create a new user if they don't exist from Okta fields in SAML Response
+        user = User(
+            email=decoded_token["email"],
+            okta_id=decoded_token["sub"],
+            first_name=decoded_token.get("given_name"),
+            last_name=decoded_token.get("family_name"),
+            user_type="standard",
+            invite_pending=True,
+            cognito_username=decoded_token.get("cognito:username"),
+            cognito_use_case_description=decoded_token.get("nickname"),
+            cognito_email_verified=decoded_token.get("email_verified"),
+            cognito_groups=decoded_token.get("cognito:groups"),
         )
-        # # Create a new user if they don't exist from Okta fields in SAML Response
-        # user = User(
-        #     email=decoded_token["email"],
-        #     okta_id=decoded_token["sub"],
-        #     first_name=decoded_token.get("given_name"),
-        #     last_name=decoded_token.get("family_name"),
-        #     user_type="standard",
-        #     invite_pending=True,
-        #     cognito_username=decoded_token.get("cognito:username"),
-        #     cognito_use_case_description=decoded_token.get("nickname"),
-        #     cognito_email_verified=decoded_token.get("email_verified"),
-        #     cognito_groups=decoded_token.get("cognito:groups"),
-        # )
 
-        # # Check for active major maintenance window and login status (New User)
-        # update_login_block_status(user)
+        # Check for active major maintenance window and login status (New User)
+        update_login_block_status(user)
 
-        # user.save()
+        user.save()
 
-    # Update user oktaId (legacy users) and login time
-    user.okta_id = decoded_token["sub"]
-    user.last_logged_in = datetime.now()
-    user.cognito_username = decoded_token.get("cognito:username")
-    user.cognito_use_case_description = decoded_token.get("nickname")
-    user.cognito_email_verified = decoded_token.get("email_verified")
-    user.cognito_groups = decoded_token.get("cognito:groups")
+    else:
+        # Update user oktaId (legacy users) and login time
+        user.okta_id = decoded_token["sub"]
+        user.last_logged_in = datetime.now()
+        user.cognito_username = decoded_token.get("cognito:username")
+        user.cognito_use_case_description = decoded_token.get("nickname")
+        user.cognito_email_verified = decoded_token.get("email_verified")
+        user.cognito_groups = decoded_token.get("cognito:groups")
 
-    # Check for active major maintenance window and login status (Existing User)
-    update_login_block_status(user)
+        # Check for active major maintenance window and login status (Existing User)
+        update_login_block_status(user)
 
-    user.save()
+        user.save()
 
     if user:
         # TODO: Uncomment if we want to fully block logins during maintenance windows.
@@ -306,7 +344,7 @@ async def process_user(decoded_token):
         raise HTTPException(status_code=400, detail="User not found")
 
 
-async def get_jwt_from_code(auth_code: str):
+async def get_jwt_from_code(auth_code: str, code_verifier: str):
     """Exchange authorization code for JWT tokens and decode."""
     try:
         callback_url = os.getenv("REACT_APP_COGNITO_CALLBACK_URL")
@@ -314,40 +352,38 @@ async def get_jwt_from_code(auth_code: str):
         domain = os.getenv("REACT_APP_COGNITO_DOMAIN")
         proxy_url = os.getenv("LZ_PROXY_URL")
 
-        scope = "openid"
         authorize_token_url = "https://{}/oauth2/token".format(domain)
+
         authorize_token_body = {
             "grant_type": "authorization_code",
             "client_id": client_id,
             "code": auth_code,
             "redirect_uri": callback_url,
-            "scope": scope,
+            "code_verifier": code_verifier,
         }
+
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        # Set up proxies if PROXY_URL is defined
-        proxies = None
-        if proxy_url:
-            proxies = {"http": proxy_url, "https": proxy_url}
+        proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
 
         response = requests.post(
             authorize_token_url,
             headers=headers,
             data=urlencode(authorize_token_body),
             proxies=proxies,
-            timeout=20,  # Timeout in seconds
+            timeout=20,
         )
         token_response = response.json()
-        # Convert the id_token to bytes
+
         id_token = token_response["id_token"].encode("utf-8")
         access_token = token_response.get("access_token")
         refresh_token = token_response.get("refresh_token")
 
-        # Decode the token without verifying the signature (if needed)
         decoded_token = jwt.decode(id_token, options={"verify_signature": False})
         print("decoded token: {}".format(decoded_token))
+
         return {
             "refresh_token": refresh_token,
             "id_token": id_token,
@@ -424,6 +460,38 @@ def can_access_user(current_user, target_user_id) -> bool:
         return current_user.region_id == target_user.region_id
 
     return False
+
+
+def get_allowed_user_update_fields(current_user, target_user):
+    """Get allowed user update fields."""
+    if is_global_write_admin(current_user):
+        return {
+            "first_name",
+            "last_name",
+            "state",
+            "region_id",
+            "user_type",
+            "invite_pending",
+            "date_approved",
+            "approved_by",
+            "accepted_terms_version",
+            "login_blocked_by_maintenance",
+        }
+    elif (
+        is_regional_admin(current_user)
+        and current_user.region_id == target_user.region_id
+    ):
+        return {
+            "first_name",
+            "last_name",
+            "invite_pending",
+            "first_login",
+            "date_approved",
+            "approved_by",
+        }
+    elif current_user.id == target_user.id:
+        return set()
+    return set()
 
 
 def get_org_memberships(current_user) -> list[str]:
