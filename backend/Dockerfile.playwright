@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y git awscli
 WORKDIR /app/xfd/playwright
 
 # Copy the test runner script
-COPY ../worker/entrypoint.playwright.sh /entrypoint.playwright.sh
+COPY backend/worker/entrypoint.playwright.sh /entrypoint.playwright.sh
 RUN chmod +x /entrypoint.playwright.sh
 
 # Define entrypoint
