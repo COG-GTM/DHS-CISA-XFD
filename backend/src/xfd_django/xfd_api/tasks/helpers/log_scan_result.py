@@ -19,19 +19,19 @@ def log_scan_result(scan_id, organization_id, http_status=200, message=""):
         ScanResult.objects.create(
             scan_id=scan_id,
             organization_id=organization_id,
-            latest_result_at=timezone.now(),
+            scanned_at=timezone.now(),
             http_status=http_status,
             message=message,
         )
         LOGGER.info(
-            "Inserted new latest result timestamp for scan: {}, organization: {}, http status: {} and message {}.".format(
+            "Inserted scan result for scan: {}, organization: {}, http status: {} and message {}.".format(
                 scan, org, http_status, message
             )
         )
 
     except Exception as e:
         LOGGER.error(
-            "Error upserting latest result timestamp for scan: {}, organization: {}, and http status: {} and message {}:\n{}".format(
+            "Error saving scan result for scan: {}, organization: {}, and http status: {} and message {}:\n{}".format(
                 scan, org, http_status, message, str(e)
             )
         )

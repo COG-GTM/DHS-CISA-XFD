@@ -294,6 +294,12 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Active port scan of common ports",
     ),
+    "prune_scan_metrics": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        description="Prune scan metrics from scan_result table older than SCAN_METRICS_RETENTION_PERIOD or 90 days.",
+    ),
     "rootDomainSync": ScanSchema(
         type="fargate",
         is_passive=True,

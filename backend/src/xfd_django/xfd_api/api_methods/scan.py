@@ -2,26 +2,24 @@
 
 # Standard Python Libraries
 import os
-from typing import Optional
 
 # Third-Party Libraries
 from fastapi import HTTPException
 from xfd_mini_dl.models import Organization, OrganizationTag, Scan
 
 from ..auth import is_global_view_admin, is_global_write_admin
-from ..helpers.query_scans import default_window, query_scans
+from ..helpers.query_scans import query_scans
 from ..schema_models.scan import SCAN_SCHEMA, NewScan
 from ..tasks.lambda_client import LambdaClient
 
 
 # GET: /scans
-def list_scans(current_user, window_days: Optional[int]):
+def list_scans(window_days, current_user):
     """List scans, their schema/orgs, plus total_orgs and orgs_with_results in the last `window_days`."""
     try:
         # Check if the user is a GlobalViewAdmin
         if not is_global_view_admin(current_user):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
-        window_days = window_days or default_window
         # Fetch scans, prefetch related orgs/tags, and annotate with metrics
         scans = query_scans(None, window_days)
 
@@ -174,7 +172,7 @@ def create_scan(scan_data: NewScan, current_user):
 
 
 # GET: /scans/{scan_id}
-def get_scan(scan_id: str, current_user, window_days: Optional[int]):
+def get_scan(scan_id: str, window_days, current_user):
     """Get a scan by its ID."""
     try:
         # Check if the user is a GlobalViewAdmin
@@ -182,7 +180,6 @@ def get_scan(scan_id: str, current_user, window_days: Optional[int]):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
 
         # Fetch scans, prefetch related orgs/tags, and annotate with metrics
-        window_days = window_days or default_window
         scan = query_scans(scan_id, window_days)
 
         # Fetch all organizations

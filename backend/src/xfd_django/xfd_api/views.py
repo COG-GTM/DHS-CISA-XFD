@@ -32,6 +32,10 @@ from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.metrics import (
+    get_scan_daily_status_counts,
+    list_scans_org_count_by_status,
+)
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
@@ -93,6 +97,10 @@ from .schema_models.dmz_sync import (
     SyncRequest,
 )
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
+from .schema_models.metrics import (
+    GetScanDailyStatusCountsResponse,
+    ListScansOrgCountByStatusResponse,
+)
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
 from .schema_models.queue_monitoring import QueueListResponse, QueueSearch
@@ -427,6 +435,61 @@ async def call_search_logs(
     """Search log table."""
     log_data, count = search_logs(log_search, current_user)
     return LogSearchResponse(result=log_data, count=count)
+
+
+# ========================================
+#   Metrics Dashboard Endpoints
+# ========================================
+
+# @api_router.post(
+#     "/metrics/scan_result",
+#     dependencies=[Depends(get_current_active_user)],
+#     response_model=List[ScanResultSchema], # TODO: Define ScanResultSchema
+#     tags=["Metrics"],
+# )
+
+
+@api_router.get(
+    "/metrics/scans",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ListScansOrgCountByStatusResponse,
+    tags=["metrics"],
+)
+async def call_list_scans_org_count_by_status(
+    window_days: int = default_window,
+    current_user: User = Depends(get_current_active_user),
+):
+    """List scans and annotate with metrics."""
+    try:
+        return list_scans_org_count_by_status(window_days, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching scan metrics: {}".format(e),
+        )
+
+
+@api_router.get(
+    "/metrics/scans/{scan_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetScanDailyStatusCountsResponse,
+    tags=["metrics"],
+)
+async def call_get_scan_daily_status_counts(
+    scan_id: str,
+    window_days: int = default_window,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get daily http status counts for a specific scan."""
+    try:
+        return get_scan_daily_status_counts(scan_id, window_days, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching daily status counts for scan {}: {}".format(
+                scan_id, e
+            ),
+        )
 
 
 # ========================================
@@ -889,11 +952,11 @@ async def call_delete_saved_search(
     tags=["Scans"],
 )
 async def list_scans(
-    window_days: Optional[int] = default_window,
+    window_days: int = default_window,
     current_user: User = Depends(get_current_active_user),
 ):
     """List all scans and annotate with metrics."""
-    return scan.list_scans(current_user, window_days)
+    return scan.list_scans(window_days, current_user)
 
 
 @api_router.get(
@@ -928,7 +991,7 @@ async def create_scan(
 )
 async def get_scan(
     scan_id: str,
-    window_days: Optional[int] = default_window,
+    window_days: int = default_window,
     current_user: User = Depends(get_current_active_user),
 ):
     """Get a scan by its ID. User must be authenticated."""
