@@ -70,8 +70,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
       };
       if (!showAllOrganizations && currentOrganization) {
         if ('root_domains' in currentOrganization)
-          body.organization_id = currentOrganization.id;
-        else body.tagId = currentOrganization.id;
+          body.organization_id = [currentOrganization.id];
+        else body.tagId = [currentOrganization.id];
       }
       const { url } = await apiPost('/search/export', {
         body

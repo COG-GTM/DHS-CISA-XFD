@@ -37,6 +37,7 @@ class User(BaseModel):
     email: str
     invite_pending: bool
     first_login: Optional[bool] = None
+    can_select_own_state: Optional[bool] = False
     login_blocked_by_maintenance: bool
     cognito_use_case_description: Optional[str] = None
     date_approved: Optional[datetime] = None
@@ -63,6 +64,7 @@ class UserResponse(BaseModel):
     email: str
     invite_pending: bool
     first_login: Optional[bool] = None
+    can_select_own_state: Optional[bool] = False
     login_blocked_by_maintenance: bool
     date_accepted_terms: Optional[datetime]
     accepted_terms_version: Optional[str]
@@ -149,6 +151,7 @@ class UpdateUser(BaseModel):
     full_name: Optional[str]
     invite_pending: Optional[bool]
     first_login: Optional[bool]
+    can_select_own_state: Optional[bool] = False
     last_name: Optional[str]
     login_blocked_by_maintenance: Optional[bool]
     organization: Optional[str]
@@ -168,6 +171,7 @@ class UpdateUserV2(BaseModel):
     user_type: Optional[str] = None
     invite_pending: Optional[bool] = None
     first_login: Optional[bool] = None
+    can_select_own_state: Optional[bool] = False
     date_approved: Optional[datetime] = None
     approved_by: Optional[Any] = None
 
@@ -206,3 +210,4 @@ class UserResponseV2(BaseModel):
     user_type: Optional[str] = None
     roles: List[Dict[str, Optional[Any]]]
     first_login: Optional[bool] = None
+    can_select_own_state: Optional[bool] = False
