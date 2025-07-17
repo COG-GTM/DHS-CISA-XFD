@@ -6,6 +6,7 @@ echo "🔁 Cloning into Crossfeed..."
 # Clone Playwright test repo and install dependencies
 # Ensure a clean clone target
 rm -rf /app/xfd
+mkdir -p /app/xfd
 
 git clone --branch "$GIT_BRANCH" https://github.com/cisagov/xfd.git /app/xfd
 cd /app/xfd/playwright
