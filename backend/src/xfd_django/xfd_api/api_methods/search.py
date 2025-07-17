@@ -269,15 +269,9 @@ async def search_post(search_body: DomainSearchBody, current_user):
     }
 
     if unauthorized_orgs:
-        raise HTTPException(
-            403,
-            f"You are not authorized for organization(s): {', '.join(unauthorized_orgs)}",
-        )
+        raise HTTPException(status_code=403, detail="Unauthorized")
     if unauthorized_regions:
-        raise HTTPException(
-            403,
-            f"You are not authorized for region(s): {', '.join(unauthorized_regions)}",
-        )
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
     # --- Sanitize filters to enforce user scope ---
     clean_and_authorize_filters(search_body, current_user)
@@ -339,15 +333,9 @@ async def search_export(search_body: DomainSearchBody, current_user) -> Dict[str
     }
 
     if unauthorized_orgs:
-        raise HTTPException(
-            403,
-            f"You are not authorized for organization(s): {', '.join(unauthorized_orgs)}",
-        )
+        raise HTTPException(status_code=403, detail="Unauthorized")
     if unauthorized_regions:
-        raise HTTPException(
-            403,
-            f"You are not authorized for region(s): {', '.join(unauthorized_regions)}",
-        )
+        raise HTTPException(status_code=403, detail="Unauthorized")
     clean_and_authorize_filters(search_body, current_user)
 
     # Fetch results from Elasticsearch
