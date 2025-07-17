@@ -193,12 +193,14 @@ def update_saved_search(request, user):
         processed_values = []
         for value in values:
             if isinstance(value, dict):
-                processed_values.append({
-                    "id": value.get("id"),
-                    "name": value.get("name"),
-                    "region_id": value.get("region_id"),
-                    "root_domains": value.get("root_domains", []),
-                })
+                processed_values.append(
+                    {
+                        "id": value.get("id"),
+                        "name": value.get("name"),
+                        "region_id": value.get("region_id"),
+                        "root_domains": value.get("root_domains", []),
+                    }
+                )
             else:
                 processed_values.append(value)
         return processed_values

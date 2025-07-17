@@ -19,9 +19,9 @@ import django
 from django.apps import apps
 from django.conf import settings
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from mangum import Mangum
 from redis import asyncio as aioredis
 from xfd_api.tasks.scheduler import handler as scheduler_handler
