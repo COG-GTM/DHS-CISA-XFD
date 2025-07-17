@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
 import {
@@ -8,7 +8,6 @@ import {
   Button,
   Divider,
   IconButton,
-  Link,
   Paper,
   Stack,
   Typography
