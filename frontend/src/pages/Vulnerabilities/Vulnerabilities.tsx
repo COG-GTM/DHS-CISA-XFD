@@ -385,7 +385,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`Domain details for ${cellValues.row.domain}`}
+              aria-label={`Domain address ${cellValues.row.domain}`}
               tabIndex={cellValues.tabIndex}
             >
               {cellValues.row.domain}
@@ -581,7 +581,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           <Paper
             elevation={2}
             sx={{ width: '100%', minHeight: 500 }}
-            role="table"
             aria-label="Vulnerabilities Table"
           >
             <DataGrid
