@@ -453,8 +453,8 @@ def get_allowed_user_update_fields(current_user, target_user):
         }
     elif (
         current_user.id == target_user.id
-        and current_user.can_select_own_state == True
-        and current_user.invite_pending == True
+        and current_user.can_select_own_state is True
+        and current_user.invite_pending is True
     ):
         return {"can_select_own_state", "state", "region_id"}
     return set()
