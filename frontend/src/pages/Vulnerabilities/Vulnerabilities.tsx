@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
 import {
@@ -8,7 +8,6 @@ import {
   Button,
   Divider,
   IconButton,
-  Link,
   Paper,
   Stack,
   Typography
@@ -304,22 +303,10 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return collator.compare(String(v1), String(v2));
         },
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
-          if (cellValues.row.title && cellValues.row.title.startsWith('CVE')) {
-            return (
-              <Link
-                component={RouterLink}
-                to={`/inventory/vulnerability/${cellValues.row.id}`}
-                aria-label={`View NIST entry for ${cellValues.row.title}`}
-                tabIndex={cellValues.tabIndex}
-              >
-                {cellValues.row.title}
-              </Link>
-            );
-          }
           return (
-            <Typography variant="body2" pl={1}>
+            <Box component="span">
               {truncateString(cellValues.row.title ?? '')}
-            </Typography>
+            </Box>
           );
         }
       },
@@ -396,14 +383,13 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         flex: 1,
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
           return (
-            <Link
-              component={RouterLink}
-              to={`/inventory/domain/${cellValues.row.domainId}`}
+            <Box
+              component="span"
               aria-label={`Domain details for ${cellValues.row.domain}`}
               tabIndex={cellValues.tabIndex}
             >
               {cellValues.row.domain}
-            </Link>
+            </Box>
           );
         }
       },
