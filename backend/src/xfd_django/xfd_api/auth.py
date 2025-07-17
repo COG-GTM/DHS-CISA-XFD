@@ -296,6 +296,7 @@ async def process_user(decoded_token):
             cognito_use_case_description=decoded_token.get("nickname"),
             cognito_email_verified=decoded_token.get("email_verified"),
             cognito_groups=decoded_token.get("cognito:groups"),
+            can_select_own_state=True,
         )
 
         # Check for active major maintenance window and login status (New User)
@@ -489,8 +490,12 @@ def get_allowed_user_update_fields(current_user, target_user):
             "date_approved",
             "approved_by",
         }
-    elif current_user.id == target_user.id:
-        return set()
+    elif (
+        current_user.id == target_user.id
+        and current_user.can_select_own_state is True
+        and current_user.invite_pending is True
+    ):
+        return {"can_select_own_state", "state", "region_id"}
     return set()
 
 
