@@ -7,9 +7,6 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y git awscli
 
-# Set working directory to where tests are located
-WORKDIR /app/xfd/playwright
-
 # Copy the test runner script
 COPY ../worker/entrypoint.playwright.sh /entrypoint.playwright.sh
 RUN chmod +x /entrypoint.playwright.sh
