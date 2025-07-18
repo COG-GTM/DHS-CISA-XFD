@@ -5,11 +5,15 @@ import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
 interface NoDataMessageProps {
   userType: string;
 }
-const NoDataMessage: React.FC<NoDataMessageProps> = ({ userType }) => {
+const NoDataMessage: React.FC<NoDataMessageProps> = ({
+  userType = 'standard'
+}) => {
   const userTypeMessage =
-    userType === 'standard'
-      ? "Please use the 'Report a Bug' option in the Support menu to notify the CyHy team."
-      : 'Please select another region or organization from the filter options.';
+    userType === 'globalAdmin' ||
+    userType === 'regionalAdmin' ||
+    userType === 'globalView'
+      ? 'Please select another region or organization from the filter options.'
+      : "Please use the 'Report a Bug' option in the Support menu to notify the CyHy team.";
   return (
     <Paper
       sx={{
