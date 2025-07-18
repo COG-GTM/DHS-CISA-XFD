@@ -37,7 +37,7 @@ export const RegisterForm: React.FC<{
   setRegisterSuccess: Function;
 }> = ({ open, onClose, setRegisterSuccess }) => {
   // Set default Values
-  const defaultValues = () => ({
+  const defaultValues = (): RegisterFormValues => ({
     first_name: '',
     last_name: '',
     email: '',
