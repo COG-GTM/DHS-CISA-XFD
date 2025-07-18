@@ -194,7 +194,12 @@ export const Header: React.FC = () => {
 
   const headerLogo = (
     <>
-      <Box component="img" src={cisaLogo} sx={{ height: 60 }} alt="CISA Logo" />
+      <Box
+        component="img"
+        src={cisaLogo}
+        sx={{ height: 60 }}
+        alt="Cybersecurity & Infrastructure Security Agency Logo"
+      />
       <Typography
         variant="h1"
         sx={{
