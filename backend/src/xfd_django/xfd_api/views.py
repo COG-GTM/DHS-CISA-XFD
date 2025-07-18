@@ -79,7 +79,12 @@ from .api_methods.vulnerability import (
     search_vulnerabilities,
 )
 from .api_methods.xpanse_sync import xpanse_sync_post
-from .auth import get_current_active_user, handle_okta_callback
+from .auth import (
+    get_current_active_user,
+    get_current_active_user_unsafe,
+    handle_okta_callback,
+    set_oauth_cookies_response,
+)
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
@@ -280,6 +285,22 @@ async def callback_route(request: Request):
         return user_info
     except Exception as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+# Set PKCE and state cookies for OAuth
+@api_router.post("/auth/set-oauth-cookies", tags=["Auth"])
+async def set_oauth_cookies(request: Request):
+    """Set PKCE code_verifier and state cookies for OAuth flow."""
+    body = await request.json()
+    print("Received body:", body)
+    state = body.get("state")
+    code_verifier = body.get("code_verifier")
+
+    if not state or not code_verifier:
+        raise HTTPException(
+            status_code=400, detail="Missing PKCE code_verifier or state"
+        )
+    return set_oauth_cookies_response(state, code_verifier)
 
 
 # ========================================
@@ -1345,7 +1366,7 @@ async def healthcheck():
 @api_router.post(
     "/users/me/acceptTerms",
     response_model=UserSchema,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 async def call_accept_terms(
@@ -1356,7 +1377,7 @@ async def call_accept_terms(
 
 
 @api_router.get("/users/me", tags=["Users"])
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(current_user: User = Depends(get_current_active_user_unsafe)):
     """Get current user."""
     return get_me(current_user)
 

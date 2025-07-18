@@ -462,6 +462,7 @@ def update_user_v2(user_id, user_data, current_user):
             if field == "state":
                 user.region_id = REGION_STATE_MAP.get(value)
                 user.state = value
+                user.can_select_own_state = False
             else:
                 setattr(user, field, value)
 
