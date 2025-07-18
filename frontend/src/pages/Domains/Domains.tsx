@@ -117,6 +117,16 @@ export const Domains: React.FC = () => {
       return `${limitedPreview} (${totalCount} total)`;
     }
   }
+
+  const formatDays = (dateString: string) => {
+    const date = parseISO(dateString);
+    const days = differenceInCalendarDays(Date.now(), date);
+    if (days <= 1) {
+      return `${days} day ago`;
+    }
+    return `${days} days ago`;
+  };
+
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: PAGE_SIZE,
@@ -161,14 +171,8 @@ export const Domains: React.FC = () => {
     ),
     services_count: domain.services_count,
     vulnerabilities_count: domain.vulnerabilities_count,
-    updated_at: `${differenceInCalendarDays(
-      Date.now(),
-      parseISO(domain.updated_at)
-    )} days ago`,
-    created_at: `${differenceInCalendarDays(
-      Date.now(),
-      parseISO(domain.created_at)
-    )} days ago`
+    updated_at: formatDays(domain.updated_at),
+    created_at: formatDays(domain.created_at)
   }));
 
   const domCols: GridColDef[] = [
@@ -176,26 +180,127 @@ export const Domains: React.FC = () => {
       field: 'organization_name',
       headerName: 'Organization',
       minWidth: 100,
-      flex: 1.5
+      flex: 1.5,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Organization ${cellValues.row.organization_name}`}
+          >
+            {cellValues.row.organization_name}
+          </Box>
+        );
+      }
     },
-    { field: 'name', headerName: 'Domain', minWidth: 100, flex: 1 },
-    { field: 'ip', headerName: 'IP', minWidth: 50, flex: 1 },
-    { field: 'ports_preview', headerName: 'Ports', minWidth: 100, flex: 1.2 },
+    {
+      field: 'name',
+      headerName: 'Domain',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Domain address ${cellValues.row.name}`}
+          >
+            {cellValues.row.name}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'ip',
+      headerName: 'IP',
+      minWidth: 50,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box component="span" aria-label={`IP address ${cellValues.row.ip}`}>
+            {cellValues.row.ip}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'ports_preview',
+      headerName: 'Ports',
+      minWidth: 100,
+      flex: 1.2,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Ports ${cellValues.row.ports_preview}`}
+          >
+            {cellValues.row.ports_preview}
+          </Box>
+        );
+      }
+    },
     {
       field: 'services_preview',
       headerName: 'Services',
       minWidth: 100,
-      flex: 1.5
+      flex: 1.5,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Services ${cellValues.row.services_preview}`}
+          >
+            {cellValues.row.services_preview}
+          </Box>
+        );
+      }
     },
     {
       field: 'vulnerabilities_count',
       headerName: 'Vulnerabilities',
       minWidth: 50,
-      flex: 1
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Vulnerabilities count ${cellValues.row.vulnerabilities_count}`}
+          >
+            {cellValues.row.vulnerabilities_count}
+          </Box>
+        );
+      }
     },
-    { field: 'updated_at', headerName: 'Updated At', minWidth: 50, flex: 0.9 },
-    { field: 'created_at', headerName: 'Created At', minWidth: 50, flex: 0.9 },
-
+    {
+      field: 'updated_at',
+      headerName: 'Updated At',
+      minWidth: 50,
+      flex: 0.9,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Last updated ${cellValues.row.updated_at}`}
+          >
+            {cellValues.row.updated_at}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'created_at',
+      headerName: 'Created At',
+      minWidth: 50,
+      flex: 0.9,
+      renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Created ${cellValues.row.created_at}`}
+          >
+            {cellValues.row.created_at}
+          </Box>
+        );
+      }
+    },
     {
       field: 'view',
       headerName: 'Details',
@@ -305,7 +410,6 @@ export const Domains: React.FC = () => {
           <Paper
             elevation={2}
             sx={{ width: '100%', minHeight: 500 }}
-            role="table"
             aria-label="Domains Table"
           >
             <DataGrid
