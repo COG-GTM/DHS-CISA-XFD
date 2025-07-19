@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-set -x
 
 # 📅 Timestamp for report
 DATETIME=$(date +%Y-%m-%dT%H:%M:%S)
@@ -50,7 +49,6 @@ OVERRIDES=$(jq -n \
     ]
   }')
 
-echo "$OVERRIDES" | jq .
 
 # 🚀 Launch ECS task
 echo "🚀 Starting ECS task..."
@@ -93,7 +91,7 @@ EXIT_CODE=$(aws ecs describe-tasks \
   --tasks "$TASK_ARN" \
   --region "$AWS_REGION" \
   --query 'tasks[0].containers[0].exitCode' \
-  --output text)
+  --output text) || EXIT_CODE=1
 
 echo "📦 Container exit code: $EXIT_CODE"
 
