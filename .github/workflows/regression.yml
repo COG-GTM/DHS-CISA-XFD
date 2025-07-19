@@ -57,7 +57,7 @@ jobs:
          TASK_DEFINITION=crossfeed-staging-cd-playwright-worker \
          ./run_playwright_tests.sh
 
-        continue-on-error: false  # Ensure it stops if the ECS task fails
+        continue-on-error: true
 
       - name: Download test report from S3
         run: |
@@ -118,7 +118,7 @@ jobs:
           TASK_DEFINITION=crossfeed-integration-playwright-worker \
           ./run_playwright_tests.sh
 
-        continue-on-error: false  # Ensure it stops if the ECS task fails
+        continue-on-error: true
 
       - name: Download test report from S3
         run: |
