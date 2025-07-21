@@ -1444,14 +1444,14 @@ async def call_get_users_v2(
 
 @api_router.put(
     "/v2/users/{user_id}",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     response_model=UserResponseV2,
     tags=["Users"],
 )
 async def update_user_v2_view(
     user_id: str,
     user_data: UpdateUserV2,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user_unsafe),
 ):
     """Update a particular user."""
     return update_user_v2(user_id, user_data, current_user)
