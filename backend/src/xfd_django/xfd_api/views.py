@@ -1353,7 +1353,8 @@ async def healthcheck():
     tags=["Users"],
 )
 async def call_accept_terms(
-    version_data: VersionModel, current_user: User = Depends(get_current_active_user)
+    version_data: VersionModel,
+    current_user: User = Depends(get_current_active_user_unsafe),
 ):
     """Accept the latest terms of service."""
     return accept_terms(version_data, current_user)

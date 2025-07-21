@@ -670,6 +670,7 @@ def test_accept_terms_success():
         user_type=UserType.STANDARD,
         created_at=datetime.now(),
         updated_at=datetime.now(),
+        invite_pending=True,
     )
 
     version = "1.0"
