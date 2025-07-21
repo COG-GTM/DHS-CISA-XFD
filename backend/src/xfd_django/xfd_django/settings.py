@@ -43,7 +43,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 JWT_TIMEOUT_HOURS = os.getenv("JWT_TIMEOUT_HOURS")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False if IS_LOCAL == "false" else True
+DEBUG = IS_LOCAL != "false"
 
 ALLOWED_HOSTS = [
     ".execute-api.us-east-1.amazonaws.com",
