@@ -1369,7 +1369,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user_uns
 @api_router.delete(
     "/users/{user_id}",
     response_model=OrganizationSchema.DeleteUserResponseModel,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 @log_action(
