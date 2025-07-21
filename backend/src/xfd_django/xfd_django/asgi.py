@@ -111,7 +111,7 @@ def get_application() -> FastAPI:
     async def _handle_validation_errors(request: Request, exc: RequestValidationError):
         return JSONResponse(
             status_code=422,
-            content={"detail": "Invalid request parameters"},
+            content={"detail": exc.errors()},
         )
 
     @app.on_event("startup")
