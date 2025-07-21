@@ -461,6 +461,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Pull in Xpanse business units and link them to organizations",
     ),
+    "xpanse_data_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull all Xpanse data and push to /xpanse-sync in DMZ",
+    ),
     "cybersixgill": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -477,5 +485,22 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Pull DomainPermutation data and push them to the DMZ sync endpoint.",
         max_concurrent_tasks=10000,
+    ),
+    "pshtt_scan": ScanSchema(
+        type="fargate",
+        is_passive=False,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Performs HTTPS security checks on domains using the pshtt tool.",
+        max_concurrent_tasks=10,
+    ),
+    "pshtt_scan_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Syncs pshtt scan results with the database and Elasticsearch.",
     ),
 }

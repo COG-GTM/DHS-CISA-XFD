@@ -43,9 +43,7 @@ class DomainSearchBody(BaseModel):
 
     current: Optional[int] = 1
     filters: Optional[List[dict]] = []
-    results_per_page: Optional[int] = 15
+    resultsPerPage: Optional[int] = 15
     searchTerm: Optional[str] = ""
     sortDirection: Optional[str] = "asc"
     sortField: Optional[str] = "name"
-    organization_id: Optional[List[str]] = None
-    tag_id: Optional[str] = None

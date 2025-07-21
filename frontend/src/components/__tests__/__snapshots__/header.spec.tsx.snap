@@ -19,7 +19,7 @@ exports[`Header component matches snapshot 1`] = `
           tabindex="0"
         >
           <img
-            alt="CISA Logo"
+            alt="Cybersecurity & Infrastructure Security Agency Logo"
             class="MuiBox-root css-1gapyfo"
             src="cisaSeal.svg"
           />

@@ -37,6 +37,7 @@ from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.object_store import get_object_store_presigned_url
+from .api_methods.pshtt_sync import pshtt_sync_post
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
@@ -51,6 +52,7 @@ from .api_methods.stats import (
     get_num_vulns,
     get_severity_stats,
     get_stats,
+    get_stats_comparison_data,
     get_user_ports_count,
     get_user_services_count,
     get_vs_condensed_trending_data,
@@ -69,7 +71,7 @@ from .api_methods.user import (
     get_users_v2,
     update_user_v2,
 )
-from .api_methods.user_log_search import search_logs
+from .api_methods.user_log_search import search_logs, search_logs_filtered
 from .api_methods.vulnerability import (
     enrich_kev_fields,
     export_vulnerabilities,
@@ -77,7 +79,12 @@ from .api_methods.vulnerability import (
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
 )
-from .auth import get_current_active_user, handle_okta_callback
+from .api_methods.xpanse_sync import xpanse_sync_post
+from .auth import (
+    get_current_active_user,
+    get_current_active_user_unsafe,
+    handle_okta_callback,
+)
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
@@ -113,7 +120,7 @@ from .schema_models.saved_search import (
 )
 from .schema_models.saved_search import SavedSearch as SavedSearchSchema
 from .schema_models.search import DomainSearchBody, SearchResponse
-from .schema_models.sync import SyncBody, SyncResponse
+from .schema_models.sync import SyncBody, SyncResponse, XpanseSyncResponse
 from .schema_models.user import (
     NewUser,
     NewUserResponseModel,
@@ -122,7 +129,13 @@ from .schema_models.user import (
 )
 from .schema_models.user import User as UserSchema
 from .schema_models.user import UserResponseV2, VersionModel
-from .schema_models.user_log_schema import LogSearch, LogSearchResponse
+from .schema_models.user_log_schema import (
+    GetLogResponse,
+    LogSearch,
+    LogSearchFilter,
+    LogSearchResponse,
+    LogSearchResponseFilters,
+)
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
     GetVulnerabilityResponse,
@@ -437,6 +450,27 @@ async def call_search_logs(
     """Search log table."""
     log_data, count = search_logs(log_search, current_user)
     return LogSearchResponse(result=log_data, count=count)
+
+
+@api_router.post(
+    "/logs/filtered-search",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=LogSearchResponseFilters,
+    tags=["Logs"],
+)
+async def call_search_logs_filtered(
+    log_search: LogSearchFilter,
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Search logs with filtering capabilities."""
+    logs, count = search_logs_filtered(log_search, current_user)
+    try:
+        result = [GetLogResponse.model_validate(log) for log in logs]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Serialization error: {}".format(str(e))
+        )
+    return LogSearchResponseFilters(result=result, count=count)
 
 
 # ========================================
@@ -1029,9 +1063,24 @@ async def get_scan_task_logs(
     return scan_tasks.get_scan_task_logs(scan_task_id, current_user)
 
 
-# ========================================
-#   Search Endpoints
-# ========================================
+@api_router.post(
+    "/xpanse-sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=XpanseSyncResponse,
+    tags=["Sync"],
+)
+async def xpanse_sync(
+    sync_body: SyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post organizations for datalake sync."""
+    try:
+        return await xpanse_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @api_router.post(
@@ -1048,6 +1097,31 @@ async def sync(
     """Post organizations for datalake sync."""
     await sync_post(sync_body, request, current_user)
     return SyncResponse(status="OK")
+
+
+# ========================================
+#   Search Endpoints
+# ========================================
+
+
+@api_router.post(
+    "/pshtt_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=SyncResponse,
+    tags=["PshttSync"],
+)
+async def pshtt_sync(
+    sync_body: SyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post Pshtt results for datalake sync."""
+    try:
+        return await pshtt_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @api_router.post(
@@ -1132,6 +1206,20 @@ async def get_vs_condensed_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_condensed_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/stats/compare",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.StatsComparisonResponse,
+    tags=["Stats"],
+)
+async def get_stats_comparison(
+    filter_data: stat_schema.StatsComparisonPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve Summary Comparison between two dates provided by the user."""
+    return get_stats_comparison_data(filter_data, current_user)
 
 
 @api_router.post(
@@ -1284,7 +1372,7 @@ async def healthcheck():
 @api_router.post(
     "/users/me/acceptTerms",
     response_model=UserSchema,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 async def call_accept_terms(
@@ -1295,7 +1383,7 @@ async def call_accept_terms(
 
 
 @api_router.get("/users/me", tags=["Users"])
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(current_user: User = Depends(get_current_active_user_unsafe)):
     """Get current user."""
     return get_me(current_user)
 
