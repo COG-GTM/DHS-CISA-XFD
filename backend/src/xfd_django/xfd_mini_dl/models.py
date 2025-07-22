@@ -3672,7 +3672,6 @@ class WasScanSummary(models.Model):
         default=list,
         blank=True,
         help_text="The list of finding_uid values used to build this summary.",
-
     )
     was_org_id = models.CharField(
         max_length=50, help_text="Acronym of the customer who owns the scan."
