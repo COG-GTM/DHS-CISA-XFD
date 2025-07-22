@@ -1620,7 +1620,6 @@ def test_standard_user_cannot_self_approve():
         json=payload,
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
-    print("Bang bang", response.json())
     assert response.status_code == 403
     assert (
         response.json()["detail"]
