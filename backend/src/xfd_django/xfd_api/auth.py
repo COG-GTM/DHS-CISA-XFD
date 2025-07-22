@@ -3,6 +3,7 @@
 # Standard Python Libraries
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import json
 import os
 import re
 from typing import Optional
@@ -37,6 +38,36 @@ JWT_TIMEOUT_HOURS = settings.JWT_TIMEOUT_HOURS
 LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+
+def validate_json_serialization(user_object, label="user_object"):
+    """Try to serialize an object to JSON. If it fails, identify which field caused it."""
+    if user_object is None:
+        raise ValueError("{} is None, cannot serialize".format(label))
+    try:
+        json.dumps(user_object)
+    except TypeError as e:
+
+        def traverse_data(user_data, path):
+            if isinstance(user_data, dict):
+                for key, value in user_data.items():
+                    traverse_data(value, path + [str(key)])
+            elif isinstance(user_data, list):
+                for index, item in enumerate(user_data):
+                    traverse_data(item, path + ["[{}]".format(index)])
+            else:
+                try:
+                    json.dumps(user_data)
+                except TypeError:
+                    path_str = ".".join(path)
+                    raise TypeError(
+                        "{} contains unserializable value at `{}`".format(
+                            label, path_str
+                        )
+                    )
+
+        traverse_data(user_object, [])
+        raise TypeError("{} failed JSON serialization: {}".format(label, e))
 
 
 def user_to_dict(user):
@@ -210,39 +241,43 @@ async def handle_okta_callback(request):
 
 async def process_user(decoded_token):
     """Process a user based on decoded token information."""
-    user = User.objects.filter(email=decoded_token["email"]).first()
+    user = User.objects.filter(okta_id=decoded_token["sub"]).first()
     if not user:
-        # Create a new user if they don't exist from Okta fields in SAML Response
-        user = User(
-            email=decoded_token["email"],
-            okta_id=decoded_token["sub"],
-            first_name=decoded_token.get("given_name"),
-            last_name=decoded_token.get("family_name"),
-            user_type="standard",
-            invite_pending=True,
-            cognito_username=decoded_token.get("cognito:username"),
-            cognito_use_case_description=decoded_token.get("nickname"),
-            cognito_email_verified=decoded_token.get("email_verified"),
-            cognito_groups=decoded_token.get("cognito:groups"),
+        # TODO: per CRASM-2839 temporarily disable new user creation return 403.
+        raise HTTPException(
+            status_code=403, detail="Not authorized. User creation disabled."
         )
+        # # Create a new user if they don't exist from Okta fields in SAML Response
+        # user = User(
+        #     email=decoded_token["email"],
+        #     okta_id=decoded_token["sub"],
+        #     first_name=decoded_token.get("given_name"),
+        #     last_name=decoded_token.get("family_name"),
+        #     user_type="standard",
+        #     invite_pending=True,
+        #     cognito_username=decoded_token.get("cognito:username"),
+        #     cognito_use_case_description=decoded_token.get("nickname"),
+        #     cognito_email_verified=decoded_token.get("email_verified"),
+        #     cognito_groups=decoded_token.get("cognito:groups"),
+        # )
 
-        # Check for active major maintenance window and login status (New User)
-        update_login_block_status(user)
+        # # Check for active major maintenance window and login status (New User)
+        # update_login_block_status(user)
 
-        user.save()
-    else:
-        # Update user oktaId (legacy users) and login time
-        user.okta_id = decoded_token["sub"]
-        user.last_logged_in = datetime.now()
-        user.cognito_username = decoded_token.get("cognito:username")
-        user.cognito_use_case_description = decoded_token.get("nickname")
-        user.cognito_email_verified = decoded_token.get("email_verified")
-        user.cognito_groups = decoded_token.get("cognito:groups")
+        # user.save()
 
-        # Check for active major maintenance window and login status (Existing User)
-        update_login_block_status(user)
+    # Update user oktaId (legacy users) and login time
+    user.okta_id = decoded_token["sub"]
+    user.last_logged_in = datetime.now()
+    user.cognito_username = decoded_token.get("cognito:username")
+    user.cognito_use_case_description = decoded_token.get("nickname")
+    user.cognito_email_verified = decoded_token.get("email_verified")
+    user.cognito_groups = decoded_token.get("cognito:groups")
 
-        user.save()
+    # Check for active major maintenance window and login status (Existing User)
+    update_login_block_status(user)
+
+    user.save()
 
     if user:
         # TODO: Uncomment if we want to fully block logins during maintenance windows.
@@ -265,6 +300,7 @@ async def process_user(decoded_token):
         )
 
         process_resp = {"token": signed_token, "user": user_to_dict(user)}
+        validate_json_serialization(process_resp["user"], label="User Dict")
         return process_resp
     else:
         raise HTTPException(status_code=400, detail="User not found")
@@ -388,6 +424,38 @@ def can_access_user(current_user, target_user_id) -> bool:
         return current_user.region_id == target_user.region_id
 
     return False
+
+
+def get_allowed_user_update_fields(current_user, target_user):
+    """Get allowed user update fields."""
+    if is_global_write_admin(current_user):
+        return {
+            "first_name",
+            "last_name",
+            "state",
+            "region_id",
+            "user_type",
+            "invite_pending",
+            "date_approved",
+            "approved_by",
+            "accepted_terms_version",
+            "login_blocked_by_maintenance",
+        }
+    elif (
+        is_regional_admin(current_user)
+        and current_user.region_id == target_user.region_id
+    ):
+        return {
+            "first_name",
+            "last_name",
+            "invite_pending",
+            "first_login",
+            "date_approved",
+            "approved_by",
+        }
+    elif current_user.id == target_user.id:
+        return set()
+    return set()
 
 
 def get_org_memberships(current_user) -> list[str]:

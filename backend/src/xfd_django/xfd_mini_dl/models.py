@@ -1850,11 +1850,6 @@ class VulnScanSummary(models.Model):
         blank=True,
         help_text="Count of Ip addresses that have been scanned",
     )
-    unique_none_severity_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of vulnerabilities with a severity of 0",
-    )
     unique_low_severity_count = models.IntegerField(
         null=True,
         blank=True,
@@ -1889,11 +1884,6 @@ class VulnScanSummary(models.Model):
         null=True,
         blank=True,
         help_text="Count of unique operating systems identified running on org assets.",
-    )
-    none_severity_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of vulnerabilities with a severity of 0",
     )
     low_severity_count = models.IntegerField(
         null=True,
@@ -1961,11 +1951,6 @@ class VulnScanSummary(models.Model):
     #     blank=True,
     #     help_text="Median age of vulns with severity of critical.",
     # )
-    none_kev_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of Kevs with no severity.",
-    )
     low_kev_count = models.IntegerField(
         null=True,
         blank=True,
@@ -2041,8 +2026,8 @@ class VulnScanSummary(models.Model):
     included_tickets = models.JSONField(
         blank=True,
         null=True,
-        default=list,
-        help_text="List of ids for the tickets counted in this summary.",
+        default=dict,
+        help_text="Dictionary of ticket IDs to metadata (e.g., severity, is_kev) at the time of summary.",
     )
     top_5_risky_hosts = models.JSONField(
         blank=True,
@@ -2757,6 +2742,11 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         help_text="Boolean field that flags if this ticket is a KEV (Known Exploited Vulnerability) ticket",
+    )
+    is_kev_ransomware = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Boolean field that flags if this ticket is a KEV and known to be ransomware.",
     )
     is_risky = models.BooleanField(
         null=True,
@@ -3677,10 +3667,12 @@ class WasScanSummary(models.Model):
         null=False,
         help_text="End of the 24-hour summary period (based on vuln_detection timestamp).",
     )
+
     scan_identifier = models.JSONField(
         default=list,
         blank=True,
         help_text="The list of finding_uid values used to build this summary.",
+
     )
     was_org_id = models.CharField(
         max_length=50, help_text="Acronym of the customer who owns the scan."
@@ -6790,11 +6782,23 @@ class Vulnerability(models.Model):
         blank=True, null=True, max_length=255, db_column="data_source"
     )
     description = models.TextField(blank=True, null=True)
+    false_positive = models.BooleanField(
+        db_column="false_positive",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability has been reported as a false positive.",
+    )
     is_kev = models.BooleanField(
         db_column="is_kev",
         blank=True,
         null=True,
         help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
+    )
+    is_kev_ransomware = models.BooleanField(
+        db_column="is_kev_ransomware",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability is linked to a known ransomware exploit.",
     )
     service_string = models.CharField(blank=True, null=True, max_length=255)
     # service = models.ForeignKey(

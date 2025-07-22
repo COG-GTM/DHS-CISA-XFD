@@ -415,8 +415,8 @@ export const DrawerInterior: React.FC<Props> = (props) => {
             searchTerm={searchTerm}
             filters={filters}
             totalResults={totalResults}
-            sort_field={''}
-            sort_direction={''}
+            sortField={''}
+            sortDirection={''}
             advancedFiltersReq={advanceFiltersReq}
           />
           {ascendingSavedSearches.length > 0 ? (

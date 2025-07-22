@@ -17,7 +17,8 @@ import {
   DataGrid,
   GridColDef,
   GridPaginationModel,
-  GridRenderCellParams
+  GridRenderCellParams,
+  GridSortModel
 } from '@mui/x-data-grid';
 import {
   Checklist,
@@ -60,6 +61,12 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [onlyOpenVulns, setOnlyOpenVulns] = useState(true);
+  const [sortModel, setSortModel] = useState<GridSortModel>([
+    {
+      field: 'created_at',
+      sort: 'desc'
+    }
+  ]);
   const [filters, setFilters] = useState(() => extractInitialFilters(state));
   const [hasPreloadedFilters, setPreloadedFiltersActive] = useState(false);
 
@@ -83,6 +90,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
       filters,
       page,
       pageSize = PAGE_SIZE,
+      order,
+      sort,
       doExport = false,
       group_by,
       showAll = false
@@ -97,7 +106,15 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         return await apiPost<ApiResponse>(
           doExport ? '/vulnerabilities/export' : '/vulnerabilities/search',
           {
-            body: { page, filters: tableFilters, pageSize, group_by, showAll }
+            body: {
+              page,
+              filters: tableFilters,
+              pageSize,
+              group_by,
+              showAll,
+              order,
+              sort
+            }
           }
         );
       } catch (e) {
@@ -118,6 +135,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           filters: query.filters,
           page: query.page,
           pageSize: query.pageSize ?? PAGE_SIZE,
+          order: query.order,
+          sort: query.sort,
           group_by,
           showAll: query.showAll
         });
@@ -176,6 +195,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     fetchVulnerabilities({
       page: paginationModel.page + 1,
       pageSize: paginationModel.pageSize,
+      order: sortModel[0]?.field,
+      sort: sortModel[0]?.sort ?? 'desc',
       filters: filters || [],
       showAll: !onlyOpenVulns
     });
@@ -183,6 +204,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     fetchVulnerabilities,
     paginationModel.page,
     paginationModel.pageSize,
+    sortModel,
     filters,
     onlyOpenVulns
   ]);
@@ -320,16 +342,18 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           const severityText = cellValues.row.severity;
           const severityColor = getSeverityColor({ id: severityText || '' });
           return (
-            <Stack>
-              <div>{severityText}</div>
-              <Box
-                sx={{
-                  height: '.5em',
-                  width: '5em',
-                  backgroundColor: severityColor
-                }}
-              />
-            </Stack>
+            <Box
+              component="span"
+              sx={{
+                borderBottom: `4px solid ${severityColor}`,
+                display: 'inline-block',
+                lineHeight: 1,
+                pb: '2px'
+              }}
+              aria-label={`Severity ${severityText}`}
+            >
+              {severityText}
+            </Box>
           );
         }
       },
@@ -337,7 +361,17 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         field: 'kev',
         headerName: 'KEV',
         minWidth: 50,
-        flex: 0.3
+        flex: 0.3,
+        renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
+          return (
+            <Box
+              component="span"
+              aria-label={`KEV status ${cellValues.row.kev}`}
+            >
+              {cellValues.row.kev}
+            </Box>
+          );
+        }
       },
       {
         field: 'domain',
@@ -349,7 +383,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
             <Link
               component={RouterLink}
               to={`/inventory/domain/${cellValues.row.domainId}`}
-              aria-label={`View details for ${cellValues.row.domain}`}
+              aria-label={`Domain details for ${cellValues.row.domain}`}
               tabIndex={cellValues.tabIndex}
             >
               {cellValues.row.domain}
@@ -361,19 +395,49 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         field: 'product',
         headerName: 'Product',
         minWidth: 100,
-        flex: 1
+        flex: 1,
+        renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
+          return (
+            <Box
+              component="span"
+              aria-label={`Product ${cellValues.row.product}`}
+            >
+              {cellValues.row.product}
+            </Box>
+          );
+        }
       },
       {
         field: 'created_at',
         headerName: 'Days Open',
         minWidth: 100,
-        flex: 0.5
+        flex: 0.5,
+        renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
+          return (
+            <Box
+              component="span"
+              aria-label={`${cellValues.row.created_at} open`}
+            >
+              {cellValues.row.created_at}
+            </Box>
+          );
+        }
       },
       {
         field: 'state',
         headerName: 'Status',
         minWidth: 100,
-        flex: 1
+        flex: 1,
+        renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
+          return (
+            <Box
+              component="span"
+              aria-label={`Vulnerability status ${cellValues.row.state}`}
+            >
+              {cellValues.row.state}
+            </Box>
+          );
+        }
       },
       {
         field: 'viewDetails',
@@ -381,10 +445,13 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         minWidth: 75,
         flex: 0.5,
         disableExport: true,
+        filterable: false,
+        sortable: false,
+        disableColumnMenu: true,
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
           return (
             <IconButton
-              aria-label={`View details for ${cellValues.row.title}`}
+              aria-label={`Vulnerability details for ${cellValues.row.title}`}
               tabIndex={cellValues.tabIndex}
               color="primary"
               onClick={() =>
@@ -400,8 +467,18 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     [history]
   );
 
+  console.log('Vuln length: ', vulnerabilities.length);
+  console.log(paginationModel);
   return (
-    <FindingsHeader>
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <FindingsHeader />
       {!isLoading && !loadingError && state && hasPreloadedFilters && (
         <Box sx={{ width: '100%', mb: 1 }}>
           <Stack direction="row" alignItems="center">
@@ -501,12 +578,22 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
             </Button>
           </Stack>
         ) : isLoading === false && loadingError === false ? (
-          <Paper elevation={2} sx={{ width: '100%', minHeight: 500 }}>
+          <Paper
+            elevation={2}
+            sx={{ width: '100%', minHeight: 500 }}
+            role="table"
+            aria-label="Vulnerabilities Table"
+          >
             <DataGrid
               rows={vulRows}
               rowCount={totalResults}
               columns={vulCols}
               loading={isLoading}
+              sortModel={sortModel}
+              sortingMode="server"
+              onSortModelChange={(model) => {
+                setSortModel(model);
+              }}
               slots={{
                 toolbar: CustomToolbar,
                 noRowsOverlay: CustomNoRowsOverlay
@@ -528,7 +615,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           </Paper>
         ) : null}
       </Box>
-    </FindingsHeader>
+    </Box>
   );
 };
 
