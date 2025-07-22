@@ -173,6 +173,79 @@ def get_current_active_user(
             detail="Invalid authentication credentials",
         )
 
+    if user.invite_pending:
+        print("User is not active or approved")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized",
+        )
+
+    # Attach email to request state for logging
+    request.state.user_email = user.email
+    return user
+
+
+def get_current_active_user_unsafe(
+    request: Request,
+    api_key: Optional[str] = Security(api_key_header),
+    token: Optional[str] = Depends(get_token_from_header),
+):
+    """
+    Ensure the current user is authenticated and active, does not perform invite_pending check.
+
+    This function is UNSAFE and should not be used for sensitive operations.
+
+    It is intended for scenarios where the user is known to be unapproved and where the endpoints are not sensitive.
+    """
+    user = None
+    if api_key:
+        user = get_user_by_api_key(api_key)
+    elif token:
+        # Check if token is an API key
+        if re.match(r"^[A-Fa-f0-9]{32}$", token):
+            user = get_user_by_api_key(token)
+        else:
+            try:
+                # Decode token in Authorization header to get user
+                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                user_id = payload.get("id")
+
+                if user_id is None:
+                    print("No user ID found in token")
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid token",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+                # Fetch the user by ID from the database
+                user = User.objects.get(id=user_id)
+            except jwt.ExpiredSignatureError:
+                print("Token has expired")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has expired",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            except jwt.InvalidTokenError:
+                print("Invalid token")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No valid authentication credentials provided",
+        )
+
+    if user is None:
+        print("User not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+
     # Attach email to request state for logging
     request.state.user_email = user.email
     return user
@@ -255,6 +328,7 @@ async def process_user(decoded_token):
             cognito_use_case_description=decoded_token.get("nickname"),
             cognito_email_verified=decoded_token.get("email_verified"),
             cognito_groups=decoded_token.get("cognito:groups"),
+            can_select_own_state=True,
         )
 
         # Check for active major maintenance window and login status (New User)
@@ -450,8 +524,12 @@ def get_allowed_user_update_fields(current_user, target_user):
             "date_approved",
             "approved_by",
         }
-    elif current_user.id == target_user.id:
-        return set()
+    elif (
+        current_user.id == target_user.id
+        and current_user.can_select_own_state is True
+        and current_user.invite_pending is True
+    ):
+        return {"can_select_own_state", "state", "region_id"}
     return set()
 
 

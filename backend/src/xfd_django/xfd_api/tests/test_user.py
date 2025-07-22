@@ -670,6 +670,7 @@ def test_accept_terms_success():
         user_type=UserType.STANDARD,
         created_at=datetime.now(),
         updated_at=datetime.now(),
+        invite_pending=True,
     )
 
     version = "1.0"
@@ -1592,9 +1593,11 @@ def test_standard_user_cannot_clear_invite_pending():
         json=payload,
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
-
     assert response.status_code == 403
-    assert "invite_pending" in response.json()["detail"]
+    assert (
+        response.json()["detail"]
+        == "Unauthorized to update the following fields: invite_pending"
+    )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -1616,9 +1619,11 @@ def test_standard_user_cannot_self_approve():
         json=payload,
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
-
     assert response.status_code == 403
-    assert "date_approved" in response.json()["detail"]
+    assert (
+        response.json()["detail"]
+        == "Unauthorized to update the following fields: date_approved"
+    )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -1818,7 +1823,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         first_login=True,
-        invite_pending=True,
+        invite_pending=False,
     )
 
     payload = {
@@ -1835,6 +1840,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
+    print("Bang Bang", response.json())
     assert response.status_code == 200
     assert response.json()["first_name"] == "Updated"
     assert response.json()["last_name"] == "New"
@@ -1854,7 +1860,7 @@ def test_regional_user_updates_other_confirm_authorized_fields():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         first_login=True,
-        invite_pending=True,
+        invite_pending=False,
     )
 
     user_to_update = User.objects.create(

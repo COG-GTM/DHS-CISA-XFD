@@ -1,34 +1,37 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
-set -x
 
-# Get the current datetime (e.g., 2025-04-10T12:34:56)
+# 📅 Timestamp for report
 DATETIME=$(date +%Y-%m-%dT%H:%M:%S)
-echo "📅 Test timestamp: $DATETIME"
-echo "📦 Bucket: $AUTOMATED_TEST_REPORTS_BUCKET_NAME"
-echo "🌎 Region: $AWS_REGION"
-echo "📤 Uploading to: s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/playwright-reports/$DATETIME/"
 
-OVERRIDES=$(
-  jq -n \
-    --arg datetime "$DATETIME" \
-    --arg bucket "$AUTOMATED_TEST_REPORTS_BUCKET_NAME" \
-    --arg region "$AWS_REGION" \
-    --arg url "$PW_XFD_URL" \
-    --arg username "$PW_XFD_USERNAME" \
-    --arg password "$PW_XFD_PASSWORD" \
-    --arg otpsecret "$PW_XFD_2FA_SECRET" \
-    --arg login "$PW_XFD_LOGIN" \
-    --arg git_branch "$GIT_BRANCH" \
-    --arg environment "$ENVIRONMENT" \
-    --arg s3HtmlPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/$ENVIRONMENT/playwright-reports/$DATETIME/html/" \
-    --arg s3JsonPath "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/$ENVIRONMENT/playwright-reports/$DATETIME/results.json" \
-    '{
-    "containerOverrides": [
+# 🧾 Define S3 report paths
+S3_HTML_PATH="s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/$ENVIRONMENT/playwright-reports/$DATETIME/html/"
+S3_JSON_PATH="s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/$ENVIRONMENT/playwright-reports/$DATETIME/results.json"
+
+echo "📅 Test timestamp: $DATETIME"
+echo "📦 Upload bucket: $AUTOMATED_TEST_REPORTS_BUCKET_NAME"
+echo "🌎 AWS Region: $AWS_REGION"
+echo "📤 Uploading to: $S3_HTML_PATH"
+
+# ⚙️ Prepare container environment overrides
+OVERRIDES=$(jq -n \
+  --arg datetime "$DATETIME" \
+  --arg bucket "$AUTOMATED_TEST_REPORTS_BUCKET_NAME" \
+  --arg region "$AWS_REGION" \
+  --arg url "$PW_XFD_URL" \
+  --arg username "$PW_XFD_USERNAME" \
+  --arg password "$PW_XFD_PASSWORD" \
+  --arg otpsecret "$PW_XFD_2FA_SECRET" \
+  --arg login "$PW_XFD_LOGIN" \
+  --arg git_branch "$GIT_BRANCH" \
+  --arg environment "$ENVIRONMENT" \
+  --arg s3HtmlPath "$S3_HTML_PATH" \
+  --arg s3JsonPath "$S3_JSON_PATH" \
+  '{
+    containerOverrides: [
       {
-        "name": "main",
-        "environment": [
+        name: "main",
+        environment: [
           { "name": "DATETIME", "value": $datetime },
           { "name": "AUTOMATED_TEST_REPORTS_BUCKET_NAME", "value": $bucket },
           { "name": "AWS_REGION", "value": $region },
@@ -41,48 +44,88 @@ OVERRIDES=$(
           { "name": "ENVIRONMENT", "value": $environment },
           { "name": "S3_HTML_PATH", "value": $s3HtmlPath },
           { "name": "S3_JSON_PATH", "value": $s3JsonPath }
-        ],
+        ]
       }
     ]
-  }'
-)
+  }')
 
-echo "Starting ECS task to run Playwright tests..."
 
+# 🚀 Launch ECS task
+echo "🚀 Starting ECS task..."
 TASK_ARN=$(aws ecs run-task \
   --cluster "$CLUSTER_NAME" \
   --task-definition "$TASK_DEFINITION" \
   --launch-type FARGATE \
   --network-configuration "{
     \"awsvpcConfiguration\":{
-      \"subnets\": [\"${AWS_SUBNET}\"],
-      \"securityGroups\": [\"${AWS_SECURITY_GROUP}\"],
+      \"subnets\": [\"$AWS_SUBNET\"],
+      \"securityGroups\": [\"$AWS_SECURITY_GROUP\"],
       \"assignPublicIp\": \"ENABLED\"
     }
   }" \
-  --region "${AWS_REGION}" \
+  --region "$AWS_REGION" \
   --overrides "$OVERRIDES" \
   --query 'tasks[0].taskArn' \
-  --output text 2> /dev/null) || {
-  echo "❌ Failed to run ECS task (aws command error)." >&2
-  exit 1
+  --output text 2>/dev/null) || {
+    echo "❌ Failed to run ECS task." >&2
+    exit 1
 }
 
-# Sanity check: ensure the result isn't empty
 if [[ -z "$TASK_ARN" || "$TASK_ARN" == "None" ]]; then
-  echo "❌ Failed to run ECS task. No ARN returned." >&2
+  echo "❌ ECS task did not return a valid ARN." >&2
   exit 1
 fi
 
-echo "Started ECS Task with ARN: $TASK_ARN"
-echo "Waiting for ECS task to complete..."
+echo "✅ ECS Task ARN: $TASK_ARN"
+echo "⏳ Waiting for ECS task to finish..."
 
 aws ecs wait tasks-stopped \
   --cluster "$CLUSTER_NAME" \
   --tasks "$TASK_ARN" \
-  --region "${AWS_REGION}" || {
-  echo "❌ Task did not complete successfully." >&2
-  exit 1
-}
+  --region "$AWS_REGION"
 
-echo "ECS task $TASK_ARN completed successfully."
+echo "✅ Task stopped. Checking exit code..."
+
+EXIT_CODE=$(aws ecs describe-tasks \
+  --cluster "$CLUSTER_NAME" \
+  --tasks "$TASK_ARN" \
+  --region "$AWS_REGION" \
+  --query 'tasks[0].containers[0].exitCode' \
+  --output text) || EXIT_CODE=1
+
+echo "📦 Container exit code: $EXIT_CODE"
+
+# 📜 Fetch logs from CloudWatch
+LOG_GROUP=$(aws ecs describe-task-definition \
+  --task-definition "$TASK_DEFINITION" \
+  --region "$AWS_REGION" \
+  --query 'taskDefinition.containerDefinitions[0].logConfiguration.options."awslogs-group"' \
+  --output text)
+
+LOG_STREAM_PREFIX=$(aws ecs describe-task-definition \
+  --task-definition "$TASK_DEFINITION" \
+  --region "$AWS_REGION" \
+  --query 'taskDefinition.containerDefinitions[0].logConfiguration.options."awslogs-stream-prefix"' \
+  --output text)
+
+TASK_ID="${TASK_ARN##*/}"
+LOG_STREAM_NAME="${LOG_STREAM_PREFIX}/main/${TASK_ID}"
+
+echo "   • Log Group: $LOG_GROUP"
+echo "   • Log Stream: $LOG_STREAM_NAME"
+
+aws logs get-log-events \
+  --log-group-name "$LOG_GROUP" \
+  --log-stream-name "$LOG_STREAM_NAME" \
+  --region "$AWS_REGION" \
+  --output text | tee ecs-task-output.log
+
+# ✅ Final reporting to GitHub Actions
+if [[ "$EXIT_CODE" != "0" ]]; then
+  echo "❌ Playwright tests failed inside ECS task (exit code: $EXIT_CODE)"
+  echo "::error title=Playwright Tests Failed::One or more tests failed. See logs above or S3 report."
+  exit "$EXIT_CODE"
+else
+  echo "✅ All Playwright tests passed."
+  exit 0
+fi

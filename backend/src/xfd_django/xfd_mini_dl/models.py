@@ -1279,6 +1279,11 @@ class User(AutoLengthCheckModel):
         null=True,
         help_text="A boolean field identifying a users first approved login for prompts.",
     )
+    can_select_own_state = models.BooleanField(
+        db_column="can_select_own_state",
+        default=False,
+        help_text="A boolean field identifying if a user has select their state/region.",
+    )
     date_approved = models.DateTimeField(
         db_column="date_approved",
         blank=True,
