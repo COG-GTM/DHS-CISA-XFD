@@ -25,6 +25,8 @@ OVERRIDES=$(jq -n \
   --arg login "$PW_XFD_LOGIN" \
   --arg git_branch "$GIT_BRANCH" \
   --arg environment "$ENVIRONMENT" \
+  --arg headless "$PW_HEADLESS" \
+  --arg ci "$PW_CI" \
   --arg s3HtmlPath "$S3_HTML_PATH" \
   --arg s3JsonPath "$S3_JSON_PATH" \
   '{
@@ -42,6 +44,8 @@ OVERRIDES=$(jq -n \
           { "name": "PW_XFD_LOGIN", "value": $login },
           { "name": "GIT_BRANCH", "value": $git_branch },
           { "name": "ENVIRONMENT", "value": $environment },
+          { "name": "PW_HEADLESS", "value": $headless },
+          { "name": "PW_CI", "value": $ci },
           { "name": "S3_HTML_PATH", "value": $s3HtmlPath },
           { "name": "S3_JSON_PATH", "value": $s3JsonPath }
         ]

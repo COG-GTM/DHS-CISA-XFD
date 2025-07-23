@@ -2,8 +2,18 @@ import { chromium, FullConfig } from '@playwright/test';
 import * as OTPAuth from 'otpauth';
 import * as dotenv from 'dotenv';
 import { determineUrl } from './utils/env';
+import * as fs from 'fs';
+import * as path from 'path';
 
-dotenv.config({ path: '../.env' });
+const envPath = path.resolve(__dirname, '.env');
+const isCI = process.env.PW_CI === 'true';
+
+if (!isCI && fs.existsSync(envPath)) {
+  console.log('📥 Running locally — loading .env file');
+  dotenv.config({ path: envPath, override: true });
+} else {
+  console.log('🚀 Running in CI/CD — skipping .env load');
+}
 
 const authFile = './storageState.json';
 
