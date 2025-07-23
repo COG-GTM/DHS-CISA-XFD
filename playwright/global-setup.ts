@@ -10,7 +10,7 @@ const isCI = process.env.PW_CI === 'true';
 
 if (!isCI && fs.existsSync(envPath)) {
   console.log('📥 Running locally — loading .env file');
-  dotenv.config({ path: envPath });
+  dotenv.config({ path: envPath, override: true });
 } else {
   console.log('🚀 Running in CI/CD — skipping .env load');
 }
