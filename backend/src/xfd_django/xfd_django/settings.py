@@ -21,8 +21,12 @@ from pathlib import Path
 # Third-Party Libraries
 from django.contrib.messages import constants as messages
 
+from .helpers.log_helpers import install_xfd_prefix
+
 mimetypes.add_type("text/css", ".css", True)
 mimetypes.add_type("text/html", ".html", True)
+
+install_xfd_prefix()  # Install custom logger prefix
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -131,18 +135,22 @@ ELASTICSEARCH_ENDPOINT = os.getenv("ELASTICSEARCH_ENDPOINT")
 
 LANGUAGE_CODE = "en-us"
 
+# Log Level defaults to INFO, can be changed to DEBUG in development
+LOG_LEVEL = os.getenv("LOG_LEVEL_XFD", "INFO").upper()
+
+# Logging configuration
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": False,
+    "disable_existing_loggers": True,
     "formatters": {
         "standard": {
-            "format": "[%(asctime)s] %(levelname)s [xfd.%(name)s:%(lineno)d] - %(message)s",
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(funcName)s:line %(lineno)d] - %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
+            "level": os.getenv("LOG_LEVEL_XFD", "INFO").upper(),
             "class": "logging.StreamHandler",
             "formatter": "standard",
         },
@@ -154,12 +162,12 @@ LOGGING = {
     "loggers": {
         "xfd": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": os.getenv("LOG_LEVEL_XFD", "INFO").upper(),
             "propagate": False,
         },
     },
 }
-
+# Apply the logging configuration
 logging.config.dictConfig(LOGGING)
 
 TIME_ZONE = "UTC"
