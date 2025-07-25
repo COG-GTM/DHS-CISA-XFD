@@ -15,8 +15,8 @@ import pytest
 import requests
 
 # ——— Configuration ———
-BASE_URL = "http://localhost:3000"
-X_API_KEY = os.environ["X_API_KEY"]
+BASE_URL = os.environ.get("BACKEND_DOMAIN")
+X_API_KEY = os.environ.get("X_API_KEY")
 HEADERS = {"X-API-KEY": X_API_KEY}
 TIMEOUT = 10
 
