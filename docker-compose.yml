@@ -19,18 +19,52 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     command: ['postgres', '-c', 'log_statement=all', '-c', 'log_duration=on']
 
+  # frontend:
+  #   container_name: frontend
+  #   build: ./frontend
+  #   volumes:
+  #     - ./frontend/src:/app/src
+  #   ports:
+  #     - '80:3000'
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #   env_file:
+  #     - ./.env
+  #   tty: true
   frontend:
     container_name: frontend
     build: ./frontend
     volumes:
       - ./frontend/src:/app/src
+      - /app/node_modules
     ports:
-      - '80:3000'
-    environment:
-      - CHOKIDAR_USEPOLLING=true
+       # - "80:3000"
+      - "5173:5173"
     env_file:
       - ./.env
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: npm run dev -- --port 5173 --host 0.0.0.0
+    depends_on:
+      - backend
+    networks:
+      - backend
     tty: true
+
+  proxy:
+    container_name: proxy
+    build:
+      context: .                           # include nginx.conf at repo root
+      dockerfile: frontend/Dockerfile.proxy
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"                             # host port 80 → container port 80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - backend
 
   backend:
     container_name: backend

@@ -10,16 +10,31 @@ export default defineConfig({
     global: 'window'
   },
   plugins: [react(), tsconfigPaths(), inspectorServer()],
+  // server: {
+  //   port: 3000,
+  //   host: true,
+  //   strictPort: true,
+  //   watch: {
+  //     usePolling: true,
+  //     interval: 1000
+  //   },
+  //   hmr: {
+  //     clientPort: 80
+  //   }
+  // },
   server: {
-    port: 3000,
-    host: true,
-    strictPort: true,
+    port: 5173, // Vite’s default port :contentReference[oaicite:9]{index=9}
+    host: '0.0.0.0', // bind to all interfaces :contentReference[oaicite:10]{index=10}
+    strictPort: true, // fail if 5173 is taken :contentReference[oaicite:11]{index=11}
     watch: {
+      // polling for Docker mounts :contentReference[oaicite:12]{index=12}
       usePolling: true,
       interval: 1000
     },
     hmr: {
-      clientPort: 80
+      // HMR over WebSocket on host port 5173 :contentReference[oaicite:13]{index=13}
+      host: 'localhost',
+      clientPort: 5173
     }
   },
   test: {
