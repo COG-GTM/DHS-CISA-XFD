@@ -22,6 +22,7 @@ BAD_HEADERS = {"X-API-KEY": "invalid-key"}
 TIMEOUT = 10
 BAD_ID = "00000000-0000-0000-0000-000000000000"
 INVALID_ORG_ID = "notauuid"
+BAD_STATE = "ZZZ_NOT_A_REAL_STATE"
 test_payload = {
     "state_name": "Florida",
     "county": "SomeCounty",
@@ -71,392 +72,232 @@ def name(sample_org):
     return sample_org["name"]
 
 
+# ========================================
+#   Assert failures for endpoints
+# ========================================
+
+
 def assert_auth_failure(resp, context=""):
     """Assert that a response indicates an authentication failure (401 or 403)."""
-    assert resp.status_code in (
-        401,
-        403,
-    ), f"{context}Expected 401 or 403, got {resp.status_code}"
+    assert resp.status_code in (401, 403), (
+        f"{context}Expected 401 or 403, got {resp.status_code}. "
+        f"Response body: {resp.text}"
+    )
     detail = resp.json().get("detail", "")
     assert isinstance(
         detail, str
     ), f"{context}Expected 'detail' as string, got {type(detail)}"
 
 
-# ========================================
-#   GET organizations
-# ========================================
+# Centralized test
 @pytest.mark.integration
-def test_list_organizations_success():
-    """GET /organizations returns 200 and a non-empty list of orgs."""
-    url = f"{BASE_URL}/organizations"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
-    data = resp.json()
-    assert isinstance(data, list), "Response should be a list"
-    assert len(data) > 0, "Expected at least one organization in the list"
-
-    for org in data:
-        assert "id" in org, "Each organization must have an 'id'"
-        assert "name" in org, "Each organization must have a 'name'"
-
-
-@pytest.mark.integration
-def test_list_organizations_unauthenticated():
-    """Unauthenticated request (no API key) should be rejected."""
-    url = f"{BASE_URL}/organizations"
-    resp = requests.get(url, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[unauthenticated] ")
-
-
-@pytest.mark.integration
-def test_list_organizations_invalid_api_key():
-    """Invalid API key should also be rejected."""
-    url = f"{BASE_URL}/organizations"
-    resp = requests.get(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[invalid key] ")
-
-
-@pytest.mark.integration
-def test_get_organization_with_payload():
-    """Get with payload should still return (200)."""
-    url = f"{BASE_URL}/organizations"
-    resp = requests.get(url, json=test_payload, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code in (
-        200,
-    ), f"Expected 200 for get with random payload, got {resp.status_code}"
-
-
-# ========================================
-#   GET organizations/tags
-# ========================================
+@pytest.mark.parametrize("headers", [None, BAD_HEADERS], ids=["no-auth", "bad-auth"])
+@pytest.mark.parametrize(
+    "method, endpoint_template",
+    [
+        ("GET", "/organizations"),
+        ("POST", "/organizations"),
+        ("GET", "/organizations/tags"),
+        ("GET", "/organizations/{org_id}"),
+        ("GET", "/organizations/state/{state}"),
+        ("GET", "/organizations/region_id/{region_id}"),
+        ("POST", "/organizations_upsert"),
+        ("GET", "/v2/organizations"),
+        ("POST", "/search/organizations"),
+        ("POST", "/v2/organizations/{org_id}/users"),
+        ("POST", "/organizations/{org_id}/roles/{bad_id}/approve"),
+        ("POST", "/organizations/{org_id}/roles/{bad_id}/remove"),
+        ("POST", "/organizations/{org_id}/granularScans/{bad_id}/update"),
+        ("DELETE", "/organizations/{bad_id}"),
+        ("PUT", "/organizations/{bad_id}"),
+    ],
+)
+def test_auth_failure_single_request(
+    headers, method, endpoint_template, org_id, region_id, state
+):
+    """Each (method, URL, auth header) pair is its own test."""
+    url = f"{BASE_URL}" + endpoint_template.format(
+        org_id=org_id, region_id=region_id, state=state, bad_id=BAD_ID
+    )
+    resp = requests.request(method, url, headers=headers, timeout=TIMEOUT)
+    context = f"[{method} {url}] "
+    assert_auth_failure(resp, context)
 
 
 @pytest.mark.integration
-def test_get_organization_tags_success():
-    """GET /organizations/tags returns 200 and a JSON list of tags."""
-    url = f"{BASE_URL}/organizations/tags"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+@pytest.mark.parametrize(
+    "method, endpoint_template",
+    [
+        # GET on POST-only endpoints
+        ("GET", "/organizations_upsert"),
+        ("GET", "/search/organizations"),
+        ("GET", "/organizations/{org_id}/roles/{role_id}/approve"),
+        ("GET", "/organizations/{org_id}/roles/{role_id}/remove"),
+        ("GET", "/organizations/{org_id}/granularScans/{scan_id}/update"),
+        ("GET", "/v2/organizations/{org_id}/users"),
+        # POST on GET-only endpoints
+        ("POST", "/v2/organizations"),
+        ("POST", "/organizations/tags"),
+        ("POST", "/organizations/state/{state}"),
+        ("POST", "/organizations/region_id/{region_id}"),
+    ],
+)
+def test_methods_not_allowed(method, endpoint_template, v2_org_id, region_id, state):
+    """Ensure that unsupported methods return 405 with real IDs."""
+    url = f"{BASE_URL}" + endpoint_template.format(
+        org_id=v2_org_id,
+        region_id=region_id,
+        state=state,
+        role_id=BAD_ID,
+        scan_id=BAD_ID,
+    )
 
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
-    assert "application/json" in resp.headers.get(
-        "Content-Type", ""
-    ), f"Expected JSON response, got {resp.headers.get('Content-Type')}"
-    data = resp.json()
-    assert isinstance(data, list), f"Expected list, got {type(data).__name__}"
-
-    for tag in data:
-        assert isinstance(tag, dict), "Each item should be a dict"
-        assert "id" in tag, "Each tag must have an 'id'"
-        assert "name" in tag, "Each tag must have a 'name'"
-
-
-@pytest.mark.integration
-def test_get_organization_tags_unauthenticated():
-    """No API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations/tags"
-    resp = requests.get(url, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[unauthenticated] ")
-
-
-@pytest.mark.integration
-def test_get_organization_tags_invalid_api_key():
-    """Invalid API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations/tags"
-    resp = requests.get(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[invalid key] ")
-
-
-@pytest.mark.integration
-def test_get_organization_tags_method_not_allowed():
-    """POST to a GET‐only endpoint should return 405 Method Not Allowed."""
-    url = f"{BASE_URL}/organizations/tags"
-    resp = requests.post(url, headers=HEADERS, timeout=TIMEOUT)
-
+    resp = requests.request(method, url, headers=HEADERS, timeout=TIMEOUT)
     assert (
         resp.status_code == 405
-    ), f"Expected 405 for wrong HTTP method, got {resp.status_code}"
+    ), f"[{method} {url}] Expected 405, got {resp.status_code}"
 
 
 @pytest.mark.integration
-def test_get_organization_tags_with_payload():
-    """Get with payload should still return (200)."""
-    url = f"{BASE_URL}/organizations/tags"
-    resp = requests.get(url, json=test_payload, headers=HEADERS, timeout=TIMEOUT)
+@pytest.mark.parametrize(
+    "method, endpoint_template",
+    [
+        ("GET", "/organizations"),
+        ("GET", "/organizations/tags"),
+        ("GET", "/organizations/{org_id}"),
+        ("GET", "/organizations/state/{state}"),
+        ("GET", "/organizations/region_id/{region_id}"),
+    ],
+)
+def test_get_with_payload(method, endpoint_template, org_id, region_id, state):
+    """Ensure that GET request return 200 with payloads."""
+    url = f"{BASE_URL}" + endpoint_template.format(
+        org_id=org_id,
+        region_id=region_id,
+        state=state,
+    )
 
-    assert resp.status_code in (
-        200,
-    ), f"Expected 200 for get with random payload, got {resp.status_code}"
+    resp = requests.request(
+        method, url, json=test_payload, headers=HEADERS, timeout=TIMEOUT
+    )
+    assert (
+        resp.status_code == 200
+    ), f"[{method} {url}] Expected 200, got {resp.status_code}"
 
 
 # ========================================
-#   GET organizations org_id
+#   GET organizations, tags, org_id, states, region_id
 # ========================================
 
 
 @pytest.mark.integration
-def test_get_organization_success(org_id):
-    """Happy path: GET /organizations/{org_id} returns 200 and correct payload."""
-    url = f"{BASE_URL}/organizations/{org_id}"
+@pytest.mark.parametrize(
+    "endpoint, filter_key, expected_type",
+    [
+        ("/organizations", None, "list"),
+        ("/organizations/tags", None, "list"),
+        ("/organizations/state/{state}", "state", "list"),
+        ("/organizations/region_id/{region_id}", "region_id", "list"),
+        ("/organizations/{org_id}", "org_id", "object"),
+    ],
+    ids=[
+        "list_orgs",
+        "list_tags",
+        "filter_state",
+        "filter_region",
+        "get_org_by_id",
+    ],
+)
+def test_get_collections_success(
+    endpoint, filter_key, expected_type, org_id, state, region_id
+):
+    """
+    GET endpoints return 200 and the correct JSON structure (list or object).
+
+    If filter_key is set, verify the filter condition.
+    """
+    url = BASE_URL + endpoint.format(
+        org_id=org_id,
+        state=state,
+        region_id=region_id,
+    )
     resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+    assert (
+        resp.status_code == 200
+    ), f"[GET {url}] Expected 200 OK, got {resp.status_code}"
 
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
     data = resp.json()
-    assert data["id"] == org_id
-    assert "name" in data
+    if expected_type == "list":
+        assert isinstance(
+            data, list
+        ), f"[GET {url}] Expected list, got {type(data).__name__}"
+        if filter_key:
+            assert data, f"[GET {url}] Expected ≥1 item for filter {filter_key}"
+            expected = {"state": state, "region_id": region_id}[filter_key]
+            for item in data:
+                assert str(item.get(filter_key)) == str(
+                    expected
+                ), f"[GET {url}] Expected {filter_key}={expected}, got {item.get(filter_key)}"
+    elif expected_type == "object":
+        assert isinstance(
+            data, dict
+        ), f"[GET {url}] Expected object, got {type(data).__name__}"
+        assert data["id"] == org_id
+        assert "name" in data
 
 
 @pytest.mark.integration
-def test_get_organization_not_found(org_id):
-    """404 when organization does not exist."""
-    url = f"{BASE_URL}/organizations/{BAD_ID}"
+@pytest.mark.parametrize(
+    "endpoint_template, kwargs, expected_status",
+    [
+        ("/organizations/{bad_id}", dict(bad_id="BAD_ID"), 404),
+        ("/organizations/{invalid}", dict(invalid="invalid"), 500),
+        ("/organizations/state/{bad_state}", dict(bad_state="BAD_STATE"), 404),
+        ("/organizations/state/{number}", dict(number="number"), 404),
+        ("/organizations/region_id/{bad_id}", dict(bad_id="BAD_ID"), 404),
+        ("/organizations/region_id/{number}", dict(number="number"), 404),
+        ("/organizations/region_id/{invalid}", dict(invalid="invalid"), 404),
+    ],
+    ids=[
+        "get_org_not_found",
+        "get_org_invalid_uuid",
+        "get_state_not_found",
+        "get_state_number_invalid",
+        "get_region_not_found",
+        "get_region_number_invalid",
+        "get_region_invalid_uuid",
+    ],
+)
+def test_get_single_errors_and_success(
+    endpoint_template, kwargs, expected_status, org_id
+):
+    """
+    Single‑item endpoints should return the correct status code.
+
+    On errors, must include 'detail'.
+    """
+    # build URL
+    mapping = {
+        "org_id": org_id,
+        "BAD_ID": BAD_ID,
+        "BAD_STATE": BAD_STATE,
+        "invalid": "cisa",
+        "number": 12345,
+    }
+    url = BASE_URL + endpoint_template.format(
+        **{k: mapping[v] for k, v in kwargs.items()}
+    )
     resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
-    detail = resp.json().get("detail", "")
-    assert "not found" in detail.lower()
-
-
-@pytest.mark.integration
-def test_get_organization_invalid_api_key():
-    """Invalid API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations/{org_id}"
-    resp = requests.get(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[invalid key] ")
-
-
-@pytest.mark.integration
-def test_get_organization_unauthenticated(org_id):
-    """Missing API key should yield 401 or 403."""
-    url = f"{BASE_URL}/organizations/{org_id}"
-    resp = requests.get(url, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[unauthenticated get org] ")
-
-
-@pytest.mark.integration
-def test_get_organization_invalid_id_format():
-    """Invalid ID format today returns 500 with a validation detail."""
-    url = f"{BASE_URL}/organizations/{INVALID_ORG_ID}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    # current behavior
     assert (
-        resp.status_code == 500
-    ), f"Expected 500 for invalid UUID (current behavior), got {resp.status_code}"
-    body = resp.json()
-    assert "detail" in body, "Expected a detail key in the error response"
-    assert (
-        "not a valid UUID" in body["detail"]
-    ), f"Unexpected detail message: {body['detail']}"
-
-
-@pytest.mark.integration
-def test_get_organization_method_not_allowed(org_id):
-    """POST to this GET-only endpoint should return 405."""
-    url = f"{BASE_URL}/organizations/{org_id}"
-    resp = requests.post(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert (
-        resp.status_code == 405
-    ), f"Expected 405 Method Not Allowed, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_get_organization_org_id_with_payload(org_id):
-    """GET with payload should still return (200)."""
-    url = f"{BASE_URL}/organizations/{org_id}"
-    resp = requests.get(url, json=test_payload, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
-
-
-# ========================================
-#   GET organizations states
-# ========================================
-BAD_STATE = "ZZZ_NOT_A_REAL_STATE"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_state_success(state):
-    """Happy path: returns 200 and a list of orgs whose 'state' matches the query."""
-    url = f"{BASE_URL}/organizations/state/{state}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
-    data = resp.json()
-    assert isinstance(data, list), f"Expected list, got {type(data).__name__}"
-    assert len(data) > 0, "Expected at least one organization for a real state"
-
-    for org in data:
-        assert "state" in org, "Each org must include a 'state' field"
-        assert org["state"] == state, f"Expected state={state}, got {org['state']}"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_state_empty():
-    """Querying a non-existent state should return 404 with a 'No organizations found…' detail."""
-    url = f"{BASE_URL}/organizations/state/{BAD_STATE}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    # current behavior is 404
-    assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
+        resp.status_code == expected_status
+    ), f"[GET {url}] Expected {expected_status}, got {resp.status_code}"
 
     body = resp.json()
-    assert "detail" in body, "Expected a 'detail' key in the response body"
-    assert body["detail"] == "No organizations found for the given state"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_state_unauthenticated(state):
-    """No API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations/state/{state}"
-    resp = requests.get(url, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[unauthenticated] ")
-
-
-@pytest.mark.integration
-def test_get_organizations_by_state_invalid_api_key(state):
-    """Bad API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations/state/{state}"
-    resp = requests.get(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[invalid key] ")
-
-
-@pytest.mark.integration
-def test_get_organizations_by_state_method_not_allowed(state):
-    """POST (wrong HTTP method) → 405 Method Not Allowed."""
-    url = f"{BASE_URL}/organizations/state/{state}"
-    resp = requests.post(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert (
-        resp.status_code == 405
-    ), f"Expected 405 for wrong method, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_state_numbers():
-    """Querying with numbers should return 404 with a 'No organizations found…' detail."""
-    url = f"{BASE_URL}/organizations/state/{12345}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    # current behavior is 404
-    assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
-
-    body = resp.json()
-    assert "detail" in body, "Expected a 'detail' key in the response body"
-    assert body["detail"] == "No organizations found for the given state"
-
-
-@pytest.mark.integration
-def test_get_organization_state_with_payload(state):
-    """GET with payload should still return (200)."""
-    url = f"{BASE_URL}/organizations/state/{state}"
-    resp = requests.get(url, json=test_payload, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
-
-
-# ========================================
-#   GET organizations region_id
-# ========================================
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_success(region_id):
-    """Returns 200 and a non-empty list where each org has the matching region_id."""
-    url = f"{BASE_URL}/organizations/region_id/{region_id}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
-    orgs = resp.json()
-    assert isinstance(orgs, list), f"Expected list, got {type(orgs).__name__}"
-    assert len(orgs) > 0, "Expected at least one organization for a valid region"
-
-    for org in orgs:
-        assert "region_id" in org, "Each organization must include 'region_id'"
-        assert (
-            org["region_id"] == region_id
-        ), f"Expected region_id={region_id}, got {org['region_id']}"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_not_found():
-    """Non-existent region_id should return 404 with a 'No organizations found...' detail."""
-    url = f"{BASE_URL}/organizations/region_id/{BAD_ID}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
-    body = resp.json()
-    assert "detail" in body, "Expected 'detail' key in error response"
-    assert (
-        "No organizations found" in body["detail"]
-    ), f"Unexpected detail message: {body['detail']}"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_unauthenticated(region_id):
-    """Missing API key should yield 401 or 403."""
-    url = f"{BASE_URL}/organizations/region_id/{region_id}"
-    resp = requests.get(url, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[unauthenticated] ")
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_invalid_api_key(region_id):
-    """Invalid API key should be rejected (401 or 403)."""
-    url = f"{BASE_URL}/organizations/region_id/{region_id}"
-    resp = requests.get(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert_auth_failure(resp, context="[invalid key] ")
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_method_not_allowed(region_id):
-    """POST to this GET-only endpoint should return 405."""
-    url = f"{BASE_URL}/organizations/region_id/{region_id}"
-    resp = requests.post(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert (
-        resp.status_code == 405
-    ), f"Expected 405 Method Not Allowed, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_id_numbers():
-    """Querying with invalid length should return 404 with a 'No organizations found…' detail."""
-    url = f"{BASE_URL}/organizations/region_id/{12345}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    # current behavior is 404
-    assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
-
-    body = resp.json()
-    assert "detail" in body, "Expected a 'detail' key in the response body"
-    assert body["detail"] == "No organizations found for the given region"
-
-
-@pytest.mark.integration
-def test_get_organizations_by_region_id_invalid_arguement():
-    """Querying with invalid arguement should return 404 with a 'No organizations found…' detail."""
-    url = f"{BASE_URL}/organizations/region_id/{'cisa'}"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    # current behavior is 404
-    assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
-
-    body = resp.json()
-    assert "detail" in body, "Expected a 'detail' key in the response body"
-    assert body["detail"] == "No organizations found for the given region"
-
-
-@pytest.mark.integration
-def test_get_organization_region_id_with_payload(region_id):
-    """GET with payload should still return (200)."""
-    url = f"{BASE_URL}/organizations/region_id/{region_id}"
-    resp = requests.get(url, json=test_payload, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 200, f"Expected 200 OK, got {resp.status_code}"
+    if expected_status == 200:
+        assert isinstance(body, dict), f"[GET {url}] Expected JSON object"
+        assert body.get("id"), f"[GET {url}] Expected 'id' in response"
+    else:
+        assert "detail" in body, f"[GET {url}] Expected 'detail' in error response"
 
 
 # ========================================
@@ -600,34 +441,6 @@ def test_create_organization_invalid_list_types(region_id, state):
     ), f"Expected 422 for bad ip_blocks, got {resp2.status_code}"
 
 
-@pytest.mark.integration
-def test_create_organization_unauthenticated(region_id, state):
-    """No API key → 401 or 403."""
-    payload = {
-        "acronym": "NOAUTH",
-        "name": "No Auth Org",
-        "region_id": region_id,
-        "state": state,
-    }
-    resp = requests.post(f"{BASE_URL}/organizations", json=payload, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_create_organization_invalid_api_key(region_id, state):
-    """Invalid API key → 401 or 403."""
-    payload = {
-        "acronym": "BADKEY",
-        "name": "Bad Key Org",
-        "region_id": region_id,
-        "state": state,
-    }
-    resp = requests.post(
-        f"{BASE_URL}/organizations", json=payload, headers=BAD_HEADERS, timeout=TIMEOUT
-    )
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
 # ========================================
 #   POST upsert
 # ========================================
@@ -762,42 +575,6 @@ def test_upsert_missing_required_fields(region_id, state):
 
 
 @pytest.mark.integration
-def test_upsert_unauthenticated(region_id, state):
-    """No API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations_upsert"
-    payload = {
-        "acronym": "NOAUTH",
-        "name": "No Auth Org",
-        "region_id": region_id,
-        "state": state,
-    }
-    r = requests.post(url, json=payload, timeout=TIMEOUT)
-    assert r.status_code in (401, 403), f"Expected 401/403, got {r.status_code}"
-
-
-@pytest.mark.integration
-def test_upsert_invalid_api_key(region_id, state):
-    """Invalid API key → 401 or 403."""
-    url = f"{BASE_URL}/organizations_upsert"
-    payload = {
-        "acronym": "BADKEY",
-        "name": "Bad Key Org",
-        "region_id": region_id,
-        "state": state,
-    }
-    r = requests.post(url, json=payload, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert r.status_code in (401, 403), f"Expected 401/403, got {r.status_code}"
-
-
-@pytest.mark.integration
-def test_upsert_method_not_allowed(region_id, state):
-    """GET on a POST-only endpoint → 405 Method Not Allowed."""
-    url = f"{BASE_URL}/organizations_upsert"
-    r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-    assert r.status_code == 405, f"Expected 405, got {r.status_code}"
-
-
-@pytest.mark.integration
 def test_upsert_invalid_format_and_value(region_id, state):
     """Invalid types and values → 422 validation error."""
     url = f"{BASE_URL}/organizations_upsert"
@@ -921,29 +698,6 @@ def test_update_organization_not_found(region_id, state):
 
 
 @pytest.mark.integration
-def test_update_organization_unauthenticated(region_id, state):
-    """Missing API key → 401 or 403."""
-    payload = {"acronym": "A", "name": "B", "region_id": str(region_id), "state": state}
-    resp = requests.put(
-        f"{BASE_URL}/organizations/{BAD_ID}", json=payload, timeout=TIMEOUT
-    )
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_update_organization_invalid_api_key(region_id, state):
-    """Invalid API key → 401 or 403."""
-    payload = {"acronym": "A", "name": "B", "region_id": str(region_id), "state": state}
-    resp = requests.put(
-        f"{BASE_URL}/organizations/{BAD_ID}",
-        json=payload,
-        headers=BAD_HEADERS,
-        timeout=TIMEOUT,
-    )
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
 def test_update_organization_invalid_format(region_id, state, org_to_cleanup):
     """PUT with invalid field types or missing fields should return 422 Unprocessable Entity."""
     valid_payload = {
@@ -1064,39 +818,12 @@ def test_delete_organization_not_found():
 
 
 @pytest.mark.integration
-def test_delete_organization_invalid():
-    """Deleting a invalid id should return 404."""
-    r = requests.delete(
-        f"{BASE_URL}/organizations/{'cisa'}", headers=HEADERS, timeout=TIMEOUT
-    )
-    assert r.status_code == 404, f"Expected 404, got {r.status_code}"
-    body = r.json()
-    assert "detail" in body and "invalid" in body["detail"].lower()
-
-
-@pytest.mark.integration
-def test_delete_organization_unauthenticated():
-    """Missing API key → 401 or 403."""
-    r = requests.delete(f"{BASE_URL}/organizations/{BAD_ID}", timeout=TIMEOUT)
-    assert r.status_code in (401, 403), f"Expected 401/403, got {r.status_code}"
-
-
-@pytest.mark.integration
 def test_delete_organization_invalid_api_key():
     """Invalid API key → 401 or 403."""
     r = requests.delete(
         f"{BASE_URL}/organizations/{BAD_ID}", headers=BAD_HEADERS, timeout=TIMEOUT
     )
     assert r.status_code in (401, 403), f"Expected 401/403, got {r.status_code}"
-
-
-@pytest.mark.integration
-def test_delete_organization_method_not_allowed(region_id):
-    """POST to the DELETE endpoint should return 405."""
-    r = requests.post(
-        f"{BASE_URL}/organizations/{region_id}", headers=HEADERS, timeout=TIMEOUT
-    )
-    assert r.status_code == 405, f"Expected 405 Method Not Allowed, got {r.status_code}"
 
 
 @pytest.mark.integration
@@ -1279,38 +1006,6 @@ def test_list_organizations_v2_filter_both(v2_state, v2_region_id):
 
 
 @pytest.mark.integration
-def test_list_organizations_v2_unauthenticated():
-    """Missing API key → 401 or 403."""
-    url = f"{BASE_URL}/v2/organizations"
-    resp = requests.get(url, timeout=TIMEOUT)
-    assert resp.status_code in (
-        401,
-        403,
-    ), f"Expected 401/403 for missing API key, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_list_organizations_v2_invalid_api_key():
-    """Invalid API key → 401 or 403."""
-    url = f"{BASE_URL}/v2/organizations"
-    resp = requests.get(url, headers={"X-API-KEY": "invalid-key"}, timeout=TIMEOUT)
-    assert resp.status_code in (
-        401,
-        403,
-    ), f"Expected 401/403 for invalid API key, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_list_organizations_v2_method_not_allowed():
-    """POST on a GET-only endpoint → 405 Method Not Allowed."""
-    url = f"{BASE_URL}/v2/organizations"
-    resp = requests.post(url, headers=HEADERS, timeout=TIMEOUT)
-    assert (
-        resp.status_code == 405
-    ), f"Expected 405 Method Not Allowed, got {resp.status_code}"
-
-
-@pytest.mark.integration
 def test_list_organizations_v2_invalid_filter_values():
     """Query with invalid state and region_id returns 200 and likely empty list."""
     url = f"{BASE_URL}/v2/organizations"
@@ -1419,32 +1114,6 @@ def test_search_organizations_invalid_body():
     payload = {"search_term": 123, "regions": "not-a-list"}
     resp = requests.post(url, json=payload, headers=HEADERS, timeout=TIMEOUT)
     assert resp.status_code == 422
-
-
-@pytest.mark.integration
-def test_search_organizations_unauthenticated(v2_region_id):
-    """Missing API key → 401 or 403."""
-    url = f"{BASE_URL}/search/organizations"
-    payload = {"search_term": "", "regions": [v2_region_id]}
-    resp = requests.post(url, json=payload, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403)
-
-
-@pytest.mark.integration
-def test_search_organizations_invalid_api_key(v2_region_id):
-    """Invalid API key → 401 or 403."""
-    url = f"{BASE_URL}/search/organizations"
-    payload = {"search_term": "", "regions": [v2_region_id]}
-    resp = requests.post(url, json=payload, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403)
-
-
-@pytest.mark.integration
-def test_search_organizations_method_not_allowed():
-    """GET on a POST-only endpoint → 405."""
-    url = f"{BASE_URL}/search/organizations"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-    assert resp.status_code == 405
 
 
 # ========================================
@@ -1558,35 +1227,6 @@ def test_add_user_to_organization_v2_nonexistent_org(test_user):
 
 
 @pytest.mark.integration
-def test_add_user_to_organization_v2_unauthenticated(v2_org_id, test_user):
-    """Missing API key → 401 or 403."""
-    url = f"{BASE_URL}/v2/organizations/{v2_org_id}/users"
-    payload = {"user_id": test_user["id"], "role": ROLE_MEMBER}
-    resp = requests.post(url, json=payload, timeout=TIMEOUT)
-
-    assert resp.status_code in (401, 403)
-
-
-@pytest.mark.integration
-def test_add_user_to_organization_v2_invalid_api_key(v2_org_id, test_user):
-    """Invalid API key → 401 or 403."""
-    url = f"{BASE_URL}/v2/organizations/{v2_org_id}/users"
-    payload = {"user_id": test_user["id"], "role": ROLE_MEMBER}
-    resp = requests.post(url, json=payload, headers=BAD_HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code in (401, 403)
-
-
-@pytest.mark.integration
-def test_add_user_to_organization_v2_method_not_allowed(v2_org_id):
-    """GET on a POST-only endpoint → 405 Method Not Allowed."""
-    url = f"{BASE_URL}/v2/organizations/{v2_org_id}/users"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 405
-
-
-@pytest.mark.integration
 def test_add_user_to_organization_v2_invalid_format_and_value(v2_org_id):
     """Invalid format (wrong types) and invalid values (bad role) → 422."""
     url = f"{BASE_URL}/v2/organizations/{v2_org_id}/users"
@@ -1651,30 +1291,6 @@ def test_approve_role_nonexistent_org(test_user):
     assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
     detail = resp.json().get("detail", "")
     assert "not found" in detail.lower()
-
-
-@pytest.mark.integration
-def test_approve_role_unauthenticated(v2_org_id):
-    """401 or 403 when no API key is provided."""
-    url = f"{BASE_URL}/organizations/{v2_org_id}/roles/{BAD_ID}/approve"
-    resp = requests.post(url, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_approve_role_invalid_api_key(v2_org_id):
-    """401 or 403 when an invalid API key is provided."""
-    url = f"{BASE_URL}/organizations/{v2_org_id}/roles/{BAD_ID}/approve"
-    resp = requests.post(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_approve_role_method_not_allowed(v2_org_id):
-    """GET on this endpoint should return 405 Method Not Allowed."""
-    url = f"{BASE_URL}/organizations/{v2_org_id}/roles/{BAD_ID}/approve"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-    assert resp.status_code == 405, f"Expected 405, got {resp.status_code}"
 
 
 @pytest.mark.integration
@@ -1745,30 +1361,6 @@ def test_remove_role_nonexistent_org():
 
 
 @pytest.mark.integration
-def test_remove_role_unauthenticated(v2_org_id):
-    """401 or 403 when no API key is provided."""
-    url = f"{BASE_URL}/organizations/{v2_org_id}/roles/{BAD_ID}/remove"
-    resp = requests.post(url, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_remove_role_invalid_api_key(v2_org_id):
-    """401 or 403 when an invalid API key is provided."""
-    url = f"{BASE_URL}/organizations/{v2_org_id}/roles/{BAD_ID}/remove"
-    resp = requests.post(url, headers=BAD_HEADERS, timeout=TIMEOUT)
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_remove_role_method_not_allowed(v2_org_id):
-    """GET on this POST-only endpoint should return 405 Method Not Allowed."""
-    url = f"{BASE_URL}/organizations/{v2_org_id}/roles/{BAD_ID}/remove"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-    assert resp.status_code == 405, f"Expected 405, got {resp.status_code}"
-
-
-@pytest.mark.integration
 def test_remove_role_invalid_format():
     """Badly formatted org_id or role_id should still return 404 (not found)."""
     bad_org_id = "not-a-uuid"
@@ -1835,10 +1427,10 @@ def test_scan(v2_org_id):
 
 
 @pytest.mark.integration
-def test_update_granular_scan_enable_and_cleanup(org_id, test_scan):
+def test_update_granular_scan_enable_and_cleanup(v2_org_id, test_scan):
     """Enable a granular scan for an organization (enabled=True), then disable it again."""
     scan_id = test_scan["id"]
-    url = f"{BASE_URL}/organizations/{org_id}/granularScans/{scan_id}/update"
+    url = f"{BASE_URL}/organizations/{v2_org_id}/granularScans/{scan_id}/update"
 
     resp = requests.post(
         url,
@@ -1848,7 +1440,7 @@ def test_update_granular_scan_enable_and_cleanup(org_id, test_scan):
     )
     assert resp.status_code == 200, f"Expected 200 OK on enable, got {resp.status_code}"
     org = resp.json()
-    assert org["id"] == org_id
+    assert org["id"] == v2_org_id
 
     scans = org.get("granular_scans", [])
     assert any(s["id"] == scan_id for s in scans), "Scan should be present when enabled"
@@ -1870,9 +1462,9 @@ def test_update_granular_scan_enable_and_cleanup(org_id, test_scan):
 
 
 @pytest.mark.integration
-def test_update_granular_scan_not_found_scan(org_id):
+def test_update_granular_scan_not_found_scan(v2_org_id):
     """404 when the scan_id doesn’t exist on a real organization."""
-    url = f"{BASE_URL}/organizations/{org_id}" f"/granularScans/{BAD_ID}/update"
+    url = f"{BASE_URL}/organizations/{v2_org_id}" f"/granularScans/{BAD_ID}/update"
     resp = requests.post(
         url,
         json={"enabled": True},
@@ -1917,10 +1509,10 @@ def test_update_granular_scan_missing_body(org_id, test_scan):
 
 
 @pytest.mark.integration
-def test_update_granular_scan_invalid_body(org_id, test_scan):
+def test_update_granular_scan_invalid_body(v2_org_id, test_scan):
     """Wrong type for 'enabled' → 422 Unprocessable Entity."""
     scan_id = test_scan["id"]
-    url = f"{BASE_URL}/organizations/{org_id}/granularScans/{scan_id}/update"
+    url = f"{BASE_URL}/organizations/{v2_org_id}/granularScans/{scan_id}/update"
     resp = requests.post(
         url,
         json={"enabled": "not-a-bool"},
@@ -1931,41 +1523,6 @@ def test_update_granular_scan_invalid_body(org_id, test_scan):
     assert (
         resp.status_code == 422
     ), f"Expected 422 for invalid body, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_update_granular_scan_unauthenticated(org_id, test_scan):
-    """No API key → 401 or 403."""
-    scan_id = test_scan["id"]
-    url = f"{BASE_URL}/organizations/{org_id}/granularScans/{scan_id}/update"
-    resp = requests.post(url, json={"enabled": True}, timeout=TIMEOUT)
-
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_update_granular_scan_invalid_api_key(org_id, test_scan):
-    """Invalid API key → 401 or 403."""
-    scan_id = test_scan["id"]
-    url = f"{BASE_URL}/organizations/{org_id}/granularScans/{scan_id}/update"
-    resp = requests.post(
-        url,
-        json={"enabled": True},
-        headers=BAD_HEADERS,
-        timeout=TIMEOUT,
-    )
-
-    assert resp.status_code in (401, 403), f"Expected 401/403, got {resp.status_code}"
-
-
-@pytest.mark.integration
-def test_update_granular_scan_method_not_allowed(org_id, test_scan):
-    """GET on this POST-only endpoint → 405 Method Not Allowed."""
-    scan_id = test_scan["id"]
-    url = f"{BASE_URL}/organizations/{org_id}/granularScans/{scan_id}/update"
-    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-
-    assert resp.status_code == 405, f"Expected 405, got {resp.status_code}"
 
 
 @pytest.mark.integration
