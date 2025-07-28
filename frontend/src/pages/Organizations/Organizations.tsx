@@ -17,6 +17,7 @@ import { CheckCircleOutline } from '@mui/icons-material';
 import { OrganizationForm } from './OrganizationForm';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import InfoDialog from 'components/Dialog/InfoDialog';
+import { GridRowSelectionModel } from '@mui/x-data-grid';
 
 export const Organizations: React.FC = () => {
   const { apiGet, apiPost, setFeedbackMessage, user } = useAuthContext();
@@ -26,6 +27,8 @@ export const Organizations: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [chosenTags, setChosenTags] = useState<string[]>([]);
+  const [rowSelectionModel, setRowSelectionModel] =
+    useState<GridRowSelectionModel>([]);
   const history = useHistory();
   const region_id = user?.region_id;
 
@@ -158,6 +161,11 @@ export const Organizations: React.FC = () => {
                 pagination: { paginationModel: { pageSize: 15 } }
               }}
               pageSizeOptions={[15, 30, 50, 100]}
+              checkboxSelection
+              rowSelectionModel={rowSelectionModel}
+              onRowSelectionModelChange={(newSelection) => {
+                setRowSelectionModel(newSelection);
+              }}
             />
           </Paper>
         )}
