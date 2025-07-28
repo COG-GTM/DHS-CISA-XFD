@@ -1,4 +1,5 @@
 """Django ORM models."""
+# Standard Python Librar
 # Standard Python Libraries
 import logging
 import socket
@@ -3671,11 +3672,11 @@ class WasScanSummary(models.Model):
         null=False,
         help_text="End of the 24-hour summary period (based on vuln_detection timestamp).",
     )
-    scan_identifier = models.CharField(
-        max_length=100,
+
+    scan_identifier = models.JSONField(
+        default=list,
         blank=True,
-        null=True,
-        help_text="Identifier of the scan job, if available.",
+        help_text="The list of finding_uid values used to build this summary.",
     )
     was_org_id = models.CharField(
         max_length=50, help_text="Acronym of the customer who owns the scan."
