@@ -180,15 +180,15 @@ def delete_user(target_user_id, current_user):
 
 # GET: /users
 def get_users(current_user):
-    """Retrieve a list of all users."""
+    """Retrieve a list of users, restricted by admin type."""
     try:
-        # Check if user is a regional admin or global admin
-        if not is_global_view_admin(current_user) | is_regional_admin(current_user):
+        if is_global_view_admin(current_user):
+            users = User.objects.all().prefetch_related("roles__organization")
+        elif is_regional_admin(current_user):
+            users = User.objects.filter(region_id=current_user.region_id).prefetch_related("roles__organization")
+        else:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
-        users = User.objects.all().prefetch_related("roles__organization")
-
-        # Return the updated user details
         return [
             {
                 "id": str(user.id),
