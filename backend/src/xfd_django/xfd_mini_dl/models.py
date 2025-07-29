@@ -689,7 +689,7 @@ class Organization(AutoLengthCheckModel):
     )
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -831,7 +831,7 @@ class Role(models.Model):
     )
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -994,7 +994,7 @@ class Scan(models.Model):
     concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by",
         blank=True,
         null=True,
