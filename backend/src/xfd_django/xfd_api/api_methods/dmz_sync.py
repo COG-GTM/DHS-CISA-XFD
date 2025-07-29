@@ -89,7 +89,7 @@ async def fetch_cybersix_data(
 
     try:
         org = Organization.objects.get(acronym=params.acronym)
-        LOGGER.info(f"Found organization: {org.acronym} ({org.name})")
+        LOGGER.info("Found organization: %s (%s)", org.acronym, org.name)
     except Organization.DoesNotExist:
         LOGGER.warning(
             f"Organization not found: {params.acronym}, continuing without org filter"
@@ -202,8 +202,8 @@ def list_data_sources(current_user):
         return list(data_sources)
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.exception(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def dmz_asm_sync(asm_sync_data, current_user):
@@ -383,8 +383,8 @@ def dmz_asm_sync(asm_sync_data, current_user):
     except Organization.DoesNotExist:
         raise HTTPException(status_code=404, detail="Parent organization not found")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /dmz_sync/shodan_sync
@@ -500,8 +500,8 @@ def dmz_shodan_sync(shodan_data, current_user):
         raise HTTPException(status_code=404, detail="Organization not found")
     except Exception as e:
         # TODO: CRASM-2568 - Create a unified logger in python backend
-        print("Unexpected error in dmz_shodan_sync: {}".format(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Unexpected error in dmz_shodan_sync: {}".format(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /dmz_sync/censys_sync
@@ -566,8 +566,8 @@ def dmz_censys_sync(censys_data, current_user):
         raise
     except Exception as e:
         # TODO: CRASM-2568 - Create a unified logger in python backend
-        print("Unexpected error in dmz_censys_sync: {}".format(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Unexpected error in dmz_censys_sync: {}".format(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def dmz_cred_sync(cred_sync_data, current_user):
@@ -718,5 +718,5 @@ def dmz_cred_sync(cred_sync_data, current_user):
     except Organization.DoesNotExist:
         raise HTTPException(status_code=404, detail="Organization not found")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

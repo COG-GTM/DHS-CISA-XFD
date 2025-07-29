@@ -1,5 +1,6 @@
 """Email methods."""
 # Standard Python Libraries
+import logging
 import os
 
 # Third-Party Libraries
@@ -9,6 +10,9 @@ from django.conf import settings
 from jinja2 import Template
 
 from .s3_client import S3Client
+
+# Configure logging
+LOGGER = logging.getLogger(__name__)
 
 
 def _setup_proxy():
@@ -77,9 +81,9 @@ def send_email(recipient, subject, body):
 
     try:
         ses_client.send_email(**email_params)
-        print("Email sent to {}".format(recipient))
+        LOGGER.info("Email sent to %s", recipient)
     except ClientError as e:
-        print("Error sending email: {}".format(e))
+        LOGGER.error("Error sending email: %s", e)
 
 
 def send_registration_approved_email(
@@ -123,13 +127,13 @@ def send_registration_approved_email(
             ses_client = boto3.client("ses", region_name=os.getenv("EMAIL_REGION"))
             # Send email
             ses_client.send_email(**email_params)
-            print("Email sent successfully to:", recipient)
+            LOGGER.info("Email sent successfully to %s", recipient)
         else:
-            print(email_params)
-            print("Local environment cannot send email")
+            LOGGER.info("Email parameters: %s", email_params)
+            LOGGER.info("Local environment cannot send email")
 
     except (ClientError, ValueError) as e:
-        print("Email error:", e)
+        LOGGER.error("Email error: %s", e)
 
 
 def send_registration_denied_email(
@@ -172,10 +176,10 @@ def send_registration_denied_email(
             ses_client = boto3.client("ses", region_name=os.getenv("EMAIL_REGION"))
             # Send email
             ses_client.send_email(**email_params)
-            print("Email sent successfully to:", recipient)
+            LOGGER.info("Email sent successfully to %s", recipient)
         else:
-            print(email_params)
-            print("Local environment cannot send email")
+            LOGGER.info("Email parameters: %s", email_params)
+            LOGGER.info("Local environment cannot send email")
 
     except (ClientError, ValueError) as e:
-        print("Email error:", e)
+        LOGGER.error("Email error: %s", e)

@@ -2,12 +2,13 @@
 
 # Standard Python Libraries
 import json
+import logging
 import re
 from typing import Any, Dict, List
 
 # Third-Party Libraries
 from django.db.models import Q
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from xfd_mini_dl.models import Organization, OrganizationTag, Role, Scan, ScanTask, User
 
 from ..auth import (
@@ -24,6 +25,8 @@ from ..helpers.uuid_helpers import is_valid_uuid
 from ..schema_models import organization_schema
 from ..tasks.es_client import ESClient
 from ..tools.serializers import serialize_role
+
+LOGGER = logging.getLogger(__name__)
 
 
 # GET: /organizations
@@ -89,8 +92,8 @@ def list_organizations(current_user):
         return organization_list
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while listing organizations: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # GET: /organizations/tags
@@ -243,8 +246,8 @@ def get_organization(organization_id, current_user):
         raise http_exc
 
     except Exception as e:
-        print("An error occurred: {}".format(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("An error occurred: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # GET: /organizations/state/{state}
@@ -451,8 +454,8 @@ def create_organization(organization_data, current_user):
     except Organization.DoesNotExist:
         raise HTTPException(status_code=404, detail="Parent organization not found")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while creating organization: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /organizations_upsert
@@ -548,8 +551,8 @@ def upsert_organization(organization_data, current_user):
     except Organization.DoesNotExist:
         raise HTTPException(status_code=404, detail="Parent organization not found")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while upserting organization: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # PUT: /organizations/{organization_id}
@@ -682,8 +685,8 @@ def update_organization(organization_id: str, organization_data, current_user):
     except Organization.DoesNotExist:
         raise HTTPException(status_code=404, detail="Organization not found")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while updating organization details: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # DELETE: /organizations/{organization_id}
@@ -717,8 +720,8 @@ def delete_organization(org_id: str, current_user):
         raise http_exc
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while deleting organization: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /v2/organizations/{organization_id}/users
@@ -798,8 +801,8 @@ def add_user_to_org_v2(organization_id: str, user_data, current_user):
         raise http_exc
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while adding user to organization: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /organizations/{organization_id}/roles/{role_id}/approve
@@ -1040,8 +1043,8 @@ def list_organizations_v2(state, region_id, current_user):
         raise http_exc
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.error("Error occurred while listing organizations: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /search/organizations
@@ -1090,7 +1093,7 @@ def search_organizations_task(search_body, current_user: User):
             )
 
         # Log the query for debugging
-        print("Query body: {}".format(query_body))
+        LOGGER.debug("Query body: %s", query_body)
 
         # Execute the search
         search_results = client.search_organizations(query_body)
@@ -1098,7 +1101,5 @@ def search_organizations_task(search_body, current_user: User):
         return {"body": search_results}
 
     except Exception as e:
-        print(e)
-        raise HTTPException(
-            status_code=500, detail="An error occurred while searching organizations."
-        )
+        LOGGER.error("Error occurred while searching organizations: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

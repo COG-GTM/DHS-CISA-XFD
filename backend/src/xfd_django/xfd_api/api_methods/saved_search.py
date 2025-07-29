@@ -3,12 +3,15 @@
 
 # Standard Python Libraries
 from datetime import datetime, timezone
+import logging
 import uuid
 
 # Third-Party Libraries
 from django.http import JsonResponse
 from fastapi import HTTPException
 from xfd_mini_dl.models import SavedSearch, User
+
+LOGGER = logging.getLogger(__name__)
 
 
 def validate_name(value: str):
@@ -86,7 +89,7 @@ def create_saved_search(request):
         raise HTTPException(status_code=404, detail="User not found")
 
     except Exception as e:
-        print(e)
+        LOGGER.error("Error creating saved search: %s", e)
         raise HTTPException(status_code=404, detail=str(e))
 
 

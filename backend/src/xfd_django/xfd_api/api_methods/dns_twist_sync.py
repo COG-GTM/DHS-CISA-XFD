@@ -45,7 +45,7 @@ async def dns_twist_sync_post(sync_body, request: Request, current_user):
         last_run=datetime.datetime.now(),
     )
     orgs_with_dps = json.loads(sync_body.data)
-    print("DATA", orgs_with_dps)
+    LOGGER.info("DATA: %s", orgs_with_dps)
     for org in orgs_with_dps:
         domain_permutations = org.get("domain_permutations", [])
         org_record = Organization.objects.using(DB_NAME).get(
