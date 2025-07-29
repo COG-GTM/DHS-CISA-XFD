@@ -187,8 +187,7 @@ def get_users(current_user):
         elif is_regional_admin(current_user):
             users = User.objects.filter(region_id=current_user.region_id).prefetch_related("roles__organization")
         else:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-        
+            raise HTTPException(status_code=401, detail="Unauthorized")       
         return [
             {
                 "id": str(user.id),
