@@ -34,6 +34,7 @@ from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
+from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.object_store import get_object_store_presigned_url
 from .api_methods.pshtt_sync import pshtt_sync_post
@@ -103,6 +104,7 @@ from .schema_models.dmz_sync import (
     ShodanSyncResponse,
     SyncRequest,
 )
+from .schema_models.dns_twist_sync import DnsTwistSyncBody, DnsTwistSyncResponse
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
@@ -1123,6 +1125,27 @@ async def pshtt_sync(
 
 
 @api_router.post(
+    "/dns_twist_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=DnsTwistSyncResponse,
+    tags=["Sync", "DnsTwist"],
+)
+async def dns_twist_sync(
+    sync_body: DnsTwistSyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post domain permnutations for DNSTwist sync."""
+    try:
+        return await dns_twist_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@api_router.post(
     "/search",
     dependencies=[Depends(get_current_active_user)],
     response_model=SearchResponse,
@@ -1353,7 +1376,8 @@ async def healthcheck():
     tags=["Users"],
 )
 async def call_accept_terms(
-    version_data: VersionModel, current_user: User = Depends(get_current_active_user)
+    version_data: VersionModel,
+    current_user: User = Depends(get_current_active_user_unsafe),
 ):
     """Accept the latest terms of service."""
     return accept_terms(version_data, current_user)
@@ -1368,7 +1392,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user_uns
 @api_router.delete(
     "/users/{user_id}",
     response_model=OrganizationSchema.DeleteUserResponseModel,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 @log_action(
@@ -1443,14 +1467,14 @@ async def call_get_users_v2(
 
 @api_router.put(
     "/v2/users/{user_id}",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     response_model=UserResponseV2,
     tags=["Users"],
 )
 async def update_user_v2_view(
     user_id: str,
     user_data: UpdateUserV2,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user_unsafe),
 ):
     """Update a particular user."""
     return update_user_v2(user_id, user_data, current_user)

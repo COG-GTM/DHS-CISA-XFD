@@ -47,6 +47,8 @@ class Command(BaseCommand):
         mdl_username = os.getenv("MDL_USERNAME")
         mdl_password = os.getenv("MDL_PASSWORD")
         mdl_name = os.getenv("MDL_NAME")
+        # TODO: Uncomment when IS_LOCAL is needed
+        # is_local = os.getenv("IS_LOCAL")
 
         if not (mdl_username and mdl_password and mdl_name):
             self.stderr.write(
@@ -126,6 +128,7 @@ class Command(BaseCommand):
         if populate:
             self.stdout.write("Populating the database with sample data...")
             populate_sample_data()
+
             self.stdout.write("Sample data population complete.")
 
             # Step 4.1: Sync domains in ES
