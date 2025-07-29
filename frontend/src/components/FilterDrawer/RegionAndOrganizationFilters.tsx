@@ -21,12 +21,18 @@ import {
   // REGIONAL_USER_CAN_SEARCH_OTHER_REGIONS
 } from 'hooks/useUserTypeFilters';
 import { ExpandMore, FiberManualRecordRounded } from '@mui/icons-material';
-import { useUserLevel } from 'hooks/useUserLevel';
+import {
+  useUserLevel,
+  GLOBAL_ADMIN,
+  GLOBAL_VIEW,
+  REGIONAL_ADMIN,
+  STANDARD_USER
+} from 'hooks/useUserLevel';
 import { Stack } from '@mui/system';
-import { GLOBAL_VIEW } from '@/context/userStateUtils';
+// import { GLOBAL_VIEW } from '@/context/userStateUtils';
 
-const GLOBAL_ADMIN = 3;
-const STANDARD_USER = 1;
+// const GLOBAL_ADMIN = 3;
+// const STANDARD_USER = 1;
 
 // Swap this value to allow regional admin to filter on regions that aren't their own
 export const toggleRegionalUserType = true;
@@ -94,6 +100,8 @@ export const RegionAndOrganizationFilters: React.FC<
   const [isRegOpen, setIsRegOpen] = useState(false);
   const userLevel = useUserLevel().userLevel;
   const theme = useTheme();
+
+  console.log('userLevel:', userLevel);
 
   const searchOrganizations = useCallback(
     async (search_term: string, regions?: string[]) => {

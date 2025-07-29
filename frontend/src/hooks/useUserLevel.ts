@@ -36,7 +36,7 @@ export const useUserLevel: () => UserLevel = () => {
       userLevel = REGIONAL_ADMIN;
       formattedUserType = 'Regional Admin';
     } else if (user.user_type === 'globalView') {
-      userLevel = REGIONAL_ADMIN;
+      userLevel = GLOBAL_VIEW;
       formattedUserType = 'Global View';
     }
   }
