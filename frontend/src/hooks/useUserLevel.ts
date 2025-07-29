@@ -1,6 +1,7 @@
 import { AuthContextType, useAuthContext } from 'context';
 
-export const GLOBAL_ADMIN = 3;
+export const GLOBAL_ADMIN = 4;
+export const GLOBAL_VIEW = 3;
 export const REGIONAL_ADMIN = 2;
 export const STANDARD_USER = 1;
 
