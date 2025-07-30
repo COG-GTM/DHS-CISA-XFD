@@ -101,8 +101,6 @@ export const RegionAndOrganizationFilters: React.FC<
   const userLevel = useUserLevel().userLevel;
   const theme = useTheme();
 
-  console.log('userLevel:', userLevel);
-
   const searchOrganizations = useCallback(
     async (search_term: string, regions?: string[]) => {
       try {
@@ -178,9 +176,6 @@ export const RegionAndOrganizationFilters: React.FC<
     }
     return null;
   }, [filters]);
-  console.log('filters:', filters);
-  console.log('Region filter values:', regionFilterValues);
-  console.log('Regions:', regions);
 
   const handleCheckboxChange = (region_id: string) => {
     if (allRegionsSelected) {

@@ -35,8 +35,6 @@ export const StaticsContextProvider: React.FC<StaticsContextProviderProps> = ({
     }
   }, [apiGet, setRegions]);
 
-  console.log('Regions fetched:', regions);
-
   useEffect(() => {
     if (user) {
       fetchRegions();

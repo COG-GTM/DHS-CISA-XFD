@@ -104,7 +104,6 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  console.log('initialFiltersForUser:', initialFiltersForUser);
 
   return (
     <>

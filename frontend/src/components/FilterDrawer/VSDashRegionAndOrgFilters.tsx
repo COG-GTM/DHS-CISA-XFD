@@ -14,10 +14,6 @@ import { ORGANIZATION_EXCLUSIONS } from 'hooks/useUserTypeFilters';
 import { OrganizationShallow } from './RegionAndOrganizationFilters';
 import { Organization } from 'types';
 
-// const GLOBAL_ADMIN = 3;
-// const REGIONAL_ADMIN = 2;
-// const STANDARD_USER = 1;
-
 // Swap this value to allow regional admin to filter on regions that aren't their own
 export const toggleRegionalUserType = true;
 
@@ -69,20 +65,6 @@ export const VSDashRegionAndOrgFilters: React.FC<
   const [selectedOrg, setSelectedOrg] = useState<
     OrganizationShallow | undefined
   >(shallowCurrentOrg(currentOrganization as Organization));
-
-  // let userLevel = 0;
-  // if (user && user.isRegistered) {
-  //   if (user.user_type === 'standard') {
-  //     userLevel = STANDARD_USER;
-  //   } else if (user.user_type === 'globalAdmin') {
-  //     userLevel = GLOBAL_ADMIN;
-  //   } else if (
-  //     user.user_type === 'regionalAdmin' ||
-  //     user.user_type === 'globalView'
-  //   ) {
-  //     userLevel = REGIONAL_ADMIN;
-  //   }
-  // }
 
   const searchOrganizations = useCallback(
     async (search_term: string, regions?: string[]) => {
