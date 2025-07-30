@@ -446,7 +446,7 @@ export const RegionAndOrganizationFilters: React.FC<
                 })}
             </List>
           )}
-          {userLevel === GLOBAL_ADMIN && (
+          {(userLevel === GLOBAL_ADMIN || userLevel === GLOBAL_VIEW) && (
             <div
               style={{
                 position: 'relative',
