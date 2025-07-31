@@ -127,13 +127,19 @@ def send_registration_approved_email(
             ses_client = boto3.client("ses", region_name=os.getenv("EMAIL_REGION"))
             # Send email
             ses_client.send_email(**email_params)
-            LOGGER.info("Email sent successfully to %s", recipient)
+            LOGGER.info(
+                "Email sent successfully | From: %s | To: %s", sender, recipient
+            )
         else:
-            LOGGER.info("Email parameters: %s", email_params)
-            LOGGER.info("Local environment cannot send email")
+            # TODO: Determine if we need this condition for local env
+            LOGGER.info(
+                "Email not attempted for local env | From: %s | To: %s",
+                sender,
+                recipient,
+            )
 
     except (ClientError, ValueError) as e:
-        LOGGER.error("Email error: %s", e)
+        LOGGER.error("Email failed with error: %s", e)
 
 
 def send_registration_denied_email(
@@ -176,10 +182,16 @@ def send_registration_denied_email(
             ses_client = boto3.client("ses", region_name=os.getenv("EMAIL_REGION"))
             # Send email
             ses_client.send_email(**email_params)
-            LOGGER.info("Email sent successfully to %s", recipient)
+            LOGGER.info(
+                "Email sent successfully | From: %s | To: %s", sender, recipient
+            )
         else:
-            LOGGER.info("Email parameters: %s", email_params)
-            LOGGER.info("Local environment cannot send email")
+            # TODO: Determine if we need this condition for local env
+            LOGGER.info(
+                "Email not attempted for local env | From: %s | To: %s",
+                sender,
+                recipient,
+            )
 
     except (ClientError, ValueError) as e:
-        LOGGER.error("Email error: %s", e)
+        LOGGER.error("Email failed with error: %s", e)

@@ -199,6 +199,7 @@ const App: React.FC = () => (
                         <RouteGuard
                           path="/admin-tools"
                           component={AdminTools}
+                          permissions={['globalAdmin']}
                         />
                         <RouteGuard
                           path="/organizations/:organizationId"
