@@ -432,40 +432,44 @@ export const UserForm: React.FC<UserFormProps> = ({
               make a selection.
             </Alert>
           ) : (
-            <>
-              <Autocomplete
-                size="small"
-                id="org_id"
-                fullWidth
-                disabled={
-                  organizationsInRegion.length === 0 ||
-                  user?.user_type !== 'globalAdmin'
+            <Autocomplete
+              size="small"
+              id="org_id"
+              fullWidth
+              disabled={
+                organizationsInRegion.length === 0 ||
+                user?.user_type !== 'globalAdmin'
+              }
+              options={sortedOrgs}
+              getOptionLabel={(option) => option.name}
+              value={sortedOrgs.find((org) => org.id === values.org_id) || null}
+              onChange={(_, newValue) => {
+                handleOrgChange(newValue ? newValue.id : '');
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              slotProps={{
+                listbox: {
+                  sx: {
+                    maxHeight: 200,
+                    overflow: 'auto'
+                  }
                 }
-                options={sortedOrgs}
-                getOptionLabel={(option) => option.name}
-                value={
-                  sortedOrgs.find((org) => org.id === values.org_id) || null
-                }
-                onChange={(_, newValue) => {
-                  handleOrgChange(newValue ? newValue.id : '');
-                }}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Select an Organization"
-                    error={values.org_id === ''}
-                    helperText={
-                      values.org_id === '' ? (
-                        <Typography variant="caption" color="error.main">
-                          Organization is required
-                        </Typography>
-                      ) : null
-                    }
-                  />
-                )}
-              />
-            </>
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Select an Organization"
+                  error={values.org_id === ''}
+                  helperText={
+                    values.org_id === '' ? (
+                      <Typography variant="caption" color="error.main">
+                        Organization is required
+                      </Typography>
+                    ) : null
+                  }
+                />
+              )}
+            />
           )}
         </Grid>
         <Grid size={{ xs: 12 }}>
