@@ -119,16 +119,86 @@ export const Users: React.FC = () => {
   }, [fetchUsers]);
 
   const userCols: GridColDef[] = [
-    { field: 'full_name', headerName: 'Name', minWidth: 100, flex: 1 },
-    { field: 'email', headerName: 'Email', minWidth: 100, flex: 1.5 },
-    { field: 'region_id', headerName: 'Region', minWidth: 50, flex: 0.4 },
+    {
+      field: 'full_name',
+      headerName: 'Name',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Full name for user: ${cellValues.row.full_name}`}
+          >
+            {cellValues.row.full_name}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'email',
+      headerName: 'Email',
+      minWidth: 100,
+      flex: 1.5,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Email for ${cellValues.row.full_name}: ${cellValues.row.email}`}
+          >
+            {cellValues.row.email}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'region_id',
+      headerName: 'Region',
+      minWidth: 50,
+      flex: 0.4,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Region for ${cellValues.row.full_name}: ${cellValues.row.region_id}`}
+          >
+            {cellValues.row.region_id}
+          </Box>
+        );
+      }
+    },
     {
       field: 'orgs',
       headerName: 'Organizations',
       minWidth: 100,
-      flex: 1
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Organizations for ${cellValues.row.full_name}: ${cellValues.row.orgs}`}
+          >
+            {cellValues.row.orgs}
+          </Box>
+        );
+      }
     },
-    { field: 'user_type', headerName: 'User Type', minWidth: 100, flex: 0.75 },
+    {
+      field: 'user_type',
+      headerName: 'User Type',
+      minWidth: 100,
+      flex: 0.75,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`User type for ${cellValues.row.full_name}: ${cellValues.row.user_type}`}
+          >
+            {cellValues.row.user_type}
+          </Box>
+        );
+      }
+    },
     {
       field: 'date_approved',
       headerName: 'Approval Date',
@@ -144,11 +214,14 @@ export const Users: React.FC = () => {
                 : 'None'
             }
           >
-            <span>
+            <Box
+              component="span"
+              aria-label={`Approval date for ${params.row.full_name}: ${dateApproved}`}
+            >
               {dateApproved
                 ? format(new Date(dateApproved), 'MM-dd-yyyy hh:mm a')
                 : 'None'}
-            </span>
+            </Box>
           </Tooltip>
         );
       }
@@ -171,7 +244,12 @@ export const Users: React.FC = () => {
                 : 'None'
             }
           >
-            <span>{fullName}</span>
+            <Box
+              component="span"
+              aria-label={`User ${params.row.full_name} approved by: ${fullName}`}
+            >
+              {fullName}
+            </Box>
           </Tooltip>
         );
       }
@@ -188,13 +266,33 @@ export const Users: React.FC = () => {
         const date1 = new Date(v1);
         const date2 = new Date(v2);
         return date1.getTime() - date2.getTime();
+      },
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Date ToU signed for ${cellValues.row.full_name}: ${cellValues.row.dateToUSigned}`}
+          >
+            {cellValues.row.dateToUSigned}
+          </Box>
+        );
       }
     },
     {
       field: 'accepted_terms_version',
       headerName: 'ToU Version',
       minWidth: 50,
-      flex: 0.5
+      flex: 0.5,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`ToU version for ${cellValues.row.full_name}: ${cellValues.row.accepted_terms_version}`}
+          >
+            {cellValues.row.accepted_terms_version}
+          </Box>
+        );
+      }
     },
     {
       field: 'lastLoggedInString',
@@ -209,6 +307,16 @@ export const Users: React.FC = () => {
         const date2 = new Date(v2);
 
         return date1.getTime() - date2.getTime();
+      },
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Last logged in date for ${cellValues.row.full_name}: ${cellValues.row.lastLoggedInString}`}
+          >
+            {cellValues.row.lastLoggedInString}
+          </Box>
+        );
       }
     },
     {
