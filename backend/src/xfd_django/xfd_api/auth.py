@@ -283,7 +283,7 @@ def get_cookie_domain(frontend_url: str) -> str:
 def set_oauth_cookies_response(state: str, code_verifier: str) -> Response:
     """Return a Response with OAuth state and PKCE code_verifier cookies set."""
     response = Response(content="Cookies set", media_type="text/plain")
-    if settings.ENVIRONMENT == "test":
+    if settings.IS_LOCAL:
         cookie_domain = None
     else:
         cookie_domain = get_cookie_domain(settings.FRONTEND_DOMAIN)
