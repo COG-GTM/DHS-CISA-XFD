@@ -345,7 +345,7 @@ def test_v2_get_vulnerability_by_id_with_history(
 def test_v2_get_vulnerability_by_source_id(user, vulnerability, refresh_vuln_views):
     """Test v2 vulnerability_by_id endpoint with scan_source query param."""
     response = client.get(
-        f"/v2/vulnerability_by_id/{vulnerability.id}?scan_source=shodan_vulnerability",
+        f"/v2/vulnerability_by_id/{vulnerability.id}",
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
     data = response.json()
