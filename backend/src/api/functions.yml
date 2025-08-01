@@ -5,9 +5,9 @@ api:
         - http:
               path: /  # this matches the base path
               method: ANY
-              cors: true
+              cors: false
         - http:
               # this matches any path, the token 'any' doesn't mean anything special
               path: /{any+}
               method: ANY
-              cors: true
+              cors: false
