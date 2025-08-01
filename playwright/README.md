@@ -21,7 +21,7 @@ This README will guide you through setting up, configuring, and running Playwrig
   - [Environment Variables for Local Testing](#environment-variables-for-local-testing)
   - [Environment Variables for Local Testing in VS Code](#environment-variables-for-local-testing-in-vs-code)
 - [Local Testing via Docker](#local-testing-via-docker)
-- [Github Actions Testing with Amazon ECS](#github-actions-testing-with-amazon-ecs)
+- [GitHub Actions Testing with Amazon ECS](#github-actions-testing-with-amazon-ecs)
 - [Logging into Crossfeed and Preserving Browser State](#logging-into-crossfeed-and-preserving-browser-state)
 - [Adding Test Cases](#adding-test-cases)
 - [Test Results](#test-results)
@@ -32,7 +32,7 @@ This README will guide you through setting up, configuring, and running Playwrig
 
 ## Playwright configuration for Crossfeed
 
-Since Playwright is intended to run in 3 different modes `[localhost, local Docker, Github Actions/AWS]`, a configuration tool at `utils/env.ts` is created to help set default URLs and headless mode options.
+Since Playwright is intended to run in 3 different modes `[localhost, local Docker, GitHub Actions/AWS]`, a configuration tool at `utils/env.ts` is created to help set default URLs and headless mode options.
 
  Environment variables pertinent to Playwright are located in `xfd/playwright/.env` and are prefixed with `PW_*`. A blank dummy file is included in the repository to satisfy linters and checkers. This file can be used to set variables for running Playwright in localhost or Docker, but do not check in that file. It is excluded by .gitignore, but be careful when checking in code.
 
@@ -92,7 +92,7 @@ If you are using testing in VS Code using the Playwright extension, add the foll
 
 ## **Local Testing via Docker**
 
-For running in a Dockerzied environment, the following variable should be set in the `xfd/playwright/.env`
+For running in a Dockerized environment, the following variable should be set in the `xfd/playwright/.env`
 
 ```env
 PW_XFD_URL=http://frontend:3000
@@ -112,9 +112,9 @@ A wait feature will listen for the frontend to begin accepting requests, as the 
 
 For this Dockerized environment, `PW_HEADLESS` must be set to true and `PW_CI` must be set to false.
 
-## **Github Actions Testing with Amazon ECS**
+## **GitHub Actions Testing with Amazon ECS**
 
-In this mode, the Playwright tests are run everytime changes are committed to the develop and integration branches `xfd/frontend/` directory, or to the `xfd/.github/regression.yml` file itself. The Regression Testing workflow (which so far only encompasses Playwright) calls out to a containerized version of Crossfeed's Playwright testing suite stored on Amazon ECR via an ECS task. When the task is triggered, Playwright ECS will run against either the staging-cd or integration instances of Playwright. Test results are stored in Amazon S3 bucket and downloaded as artifacts to the Github Actions workflow.
+In this mode, the Playwright tests are run everytime changes are committed to the develop and integration branches `xfd/frontend/` directory, or to the `xfd/.github/workflows/regression.yml` file itself. The Regression Testing workflow (which so far only encompasses Playwright) calls out to a containerized version of Crossfeed's Playwright testing suite stored on Amazon ECR via an ECS task. When the task is triggered, Playwright ECS will run against either the staging-cd or integration instances of Playwright. Test results are stored in Amazon S3 bucket and downloaded as artifacts to the GitHub Actions workflow.
 
 There is no need for any frontend developer to alter any configuration of Playwright ECS. The entire configuration is set by the workflow process.
 
@@ -122,7 +122,7 @@ There is no need for any frontend developer to alter any configuration of Playwr
 
 The global setup script located at `xfd/playwright/global-setup.ts` performs the task of logging into Crossfeed and storing the browsers state to `xfd/playwright/storageState.json`. This script works by manually performing the steps to login to Crossfeed through the browser.
 
-This process does not use the PIV card certificate process, but a username/password process with 2FA tokens. The necessary environment variables are not stored in code, but populated by the build process (manually setting environment variables, set by docker-compose, or populated by Github Actions).
+This process does not use the PIV card certificate process, but a username/password process with 2FA tokens. The necessary environment variables are not stored in code, but populated by the build process (manually setting environment variables, set by docker-compose, or populated by GitHub Actions).
 
 The login process also uses `waitForFrontend()` to listen for a response code 200 from Crossfeed's frontend before performing the login procedure.
 
