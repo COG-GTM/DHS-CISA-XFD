@@ -13,6 +13,7 @@ from fastapi import (
     Body,
     Depends,
     HTTPException,
+    Path,
     Query,
     Request,
     Response,
@@ -78,6 +79,7 @@ from .api_methods.vulnerability import (
     get_vulnerability_by_id,
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
+    v2_get_vulnerability_by_id,
 )
 from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import (
@@ -139,10 +141,13 @@ from .schema_models.user_log_schema import (
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
     GetVulnerabilityResponse,
+    GetV2VulnerabilityResponse,
+    GetVulnerabilityByIdRequest,
     ShodanVulnerabiltyResponse,
     VsVulnerabilityResponse,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
+    VulnByIdRequest,
 )
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
@@ -1599,9 +1604,22 @@ async def call_get_vulnerability_by_id(
     """Get vulnerability by id."""
     return get_vulnerability_by_id(vulnerability_id, current_user)
 
+@api_router.post(
+    "/v2/vulnerabilities/{vuln_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetV2VulnerabilityResponse,
+    tags=["Vulnerabilities"],
+)
+async def call_get_vulnerability_by_id(
+    vuln_id: str = Path(..., description="Vulnerability ID"),
+    vuln_by_id_request: Optional[VulnByIdRequest] = Body(default=None),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get vulnerability by id."""
+    return v2_get_vulnerability_by_id(vuln_id, vuln_by_id_request, current_user)
 
-@api_router.get(
-    "/vulnerabilities/{scan_source}/{vulnerability_id}",
+@api_router.post(
+    "/v2/vulnerability_by_id/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=Union[
         CredBreachVulnerabilityResponse,
@@ -1611,13 +1629,14 @@ async def call_get_vulnerability_by_id(
     tags=["Vulnerabilities"],
 )
 async def get_vulnerability_by_source_id_route(
-    scan_source: str,
     vulnerability_id: str,
+    request: Optional[GetVulnerabilityByIdRequest] = Body(default=None),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get vulnerability by id."""
     return get_vulnerability_by_scan_source_and_id(
-        scan_source, vulnerability_id, current_user
+        vulnerability_id=vulnerability_id,
+        request=request,
+        current_user=current_user,
     )
 
 
