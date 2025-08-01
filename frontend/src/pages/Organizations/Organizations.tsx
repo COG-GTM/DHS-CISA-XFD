@@ -56,9 +56,54 @@ export const Organizations: React.FC = () => {
   }, [fetchOrganizations]);
 
   const orgCols: GridColDef[] = [
-    { field: 'name', headerName: 'Organization', minWidth: 100, flex: 2 },
-    { field: 'state', headerName: 'State', minWidth: 100, flex: 1 },
-    { field: 'region_id', headerName: 'Region', minWidth: 100, flex: 1 },
+    {
+      field: 'name',
+      headerName: 'Organization',
+      minWidth: 100,
+      flex: 2,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Organization name: ${cellValues.row.name}`}
+          >
+            {cellValues.row.name}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'state',
+      headerName: 'State',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`State for organization ${cellValues.row.name}: ${cellValues.row.state}`}
+          >
+            {cellValues.row.state}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'region_id',
+      headerName: 'Region',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component="span"
+            aria-label={`Region for organization ${cellValues.row.name}: ${cellValues.row.region_id}`}
+          >
+            {cellValues.row.region_id}
+          </Box>
+        );
+      }
+    },
     {
       field: 'view',
       headerName: 'View/Edit',
