@@ -140,14 +140,14 @@ from .schema_models.user_log_schema import (
 )
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
-    GetVulnerabilityResponse,
     GetV2VulnerabilityResponse,
     GetVulnerabilityByIdRequest,
+    GetVulnerabilityResponse,
     ShodanVulnerabiltyResponse,
     VsVulnerabilityResponse,
+    VulnByIdRequest,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
-    VulnByIdRequest,
 )
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
@@ -1604,21 +1604,23 @@ async def call_get_vulnerability_by_id(
     """Get vulnerability by id."""
     return get_vulnerability_by_id(vulnerability_id, current_user)
 
+
 @api_router.get(
     "/v2/vulnerabilities/{vuln_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=GetV2VulnerabilityResponse,
     tags=["Vulnerabilities"],
 )
-async def call_get_vulnerability_by_id(
+async def v2_call_get_vulnerability_by_id(
     vuln_id: str = Path(..., description="Vulnerability ID"),
     history: Optional[bool] = Query(False, description="Include ticket history"),
     history_limit: Optional[int] = Query(None, description="Limit for scan history"),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get vulnerability by id."""
     request = VulnByIdRequest(history=history, history_limit=history_limit)
     return v2_get_vulnerability_by_id(vuln_id, request, current_user)
+
 
 @api_router.get(
     "/v2/vulnerability_by_id/{vulnerability_id}",
@@ -1637,10 +1639,9 @@ async def get_vulnerability_by_source_id_route(
     history_limit: Optional[int] = Query(10, description="Limit for scan history"),
     current_user: User = Depends(get_current_active_user),
 ):
+    """Get Vulnerability by Id: V2."""
     request = GetVulnerabilityByIdRequest(
-        scan_source=scan_source,
-        history=history,
-        history_limit=history_limit
+        scan_source=scan_source, history=history, history_limit=history_limit
     )
     return get_vulnerability_by_scan_source_and_id(
         vulnerability_id=vulnerability_id,
