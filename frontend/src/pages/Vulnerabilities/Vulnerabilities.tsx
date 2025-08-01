@@ -283,7 +283,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           title: vuln.title,
           severity: severity,
           kev: vuln.is_kev ? 'Yes' : 'No',
-          ransomware: vuln.is_kev_ransomware ? 'Yes' : 'No',
+          is_kev_ransomware: vuln.is_kev_ransomware ? 'Yes' : 'No',
           domain: vuln.domain?.name,
           domainId: vuln.domain?.id,
           product: product,
@@ -371,7 +371,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         }
       },
       {
-        field: 'ransomware',
+        field: 'is_kev_ransomware',
         headerName: 'Ransomware',
         minWidth: 100,
         flex: 0.5,
@@ -379,9 +379,9 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => (
           <Box
             component="span"
-            aria-label={`Ransomware status ${cellValues.row.ransomware}`}
+            aria-label={`Ransomware status ${cellValues.row.is_kev_ransomware}`}
           >
-            {cellValues.row.ransomware}
+            {cellValues.row.is_kev_ransomware}
           </Box>
         )
       },
