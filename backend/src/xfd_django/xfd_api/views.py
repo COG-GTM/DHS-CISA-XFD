@@ -1604,7 +1604,7 @@ async def call_get_vulnerability_by_id(
     """Get vulnerability by id."""
     return get_vulnerability_by_id(vulnerability_id, current_user)
 
-@api_router.post(
+@api_router.get(
     "/v2/vulnerabilities/{vuln_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=GetV2VulnerabilityResponse,
@@ -1612,13 +1612,15 @@ async def call_get_vulnerability_by_id(
 )
 async def call_get_vulnerability_by_id(
     vuln_id: str = Path(..., description="Vulnerability ID"),
-    vuln_by_id_request: Optional[VulnByIdRequest] = Body(default=None),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(None, description="Limit for scan history"),
     current_user: User = Depends(get_current_active_user)
 ):
     """Get vulnerability by id."""
-    return v2_get_vulnerability_by_id(vuln_id, vuln_by_id_request, current_user)
+    request = VulnByIdRequest(history=history, history_limit=history_limit)
+    return v2_get_vulnerability_by_id(vuln_id, request, current_user)
 
-@api_router.post(
+@api_router.get(
     "/v2/vulnerability_by_id/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=Union[
@@ -1629,10 +1631,17 @@ async def call_get_vulnerability_by_id(
     tags=["Vulnerabilities"],
 )
 async def get_vulnerability_by_source_id_route(
-    vulnerability_id: str,
-    request: Optional[GetVulnerabilityByIdRequest] = Body(default=None),
+    vulnerability_id: str = Path(..., description="The ID of the vulnerability"),
+    scan_source: Optional[str] = Query(None, description="Scan source (e.g. shodan)"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(10, description="Limit for scan history"),
     current_user: User = Depends(get_current_active_user),
 ):
+    request = GetVulnerabilityByIdRequest(
+        scan_source=scan_source,
+        history=history,
+        history_limit=history_limit
+    )
     return get_vulnerability_by_scan_source_and_id(
         vulnerability_id=vulnerability_id,
         request=request,
