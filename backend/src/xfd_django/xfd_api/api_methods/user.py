@@ -1,4 +1,5 @@
 """User API."""
+
 # Standard Python Libraries
 from datetime import datetime
 import os
@@ -51,32 +52,34 @@ def get_me(current_user):
                 "id": role.id,
                 "role": role.role,
                 "approved": role.approved,
-                "organization": {
-                    **model_to_dict(
-                        role.organization,
-                        fields=[
-                            "acronym",
-                            "name",
-                            "root_domains",
-                            "ip_blocks",
-                            "is_passive",
-                            "pending_domains",
-                            "country",
-                            "state",
-                            "region_id",
-                            "state_fips",
-                            "state_name",
-                            "county",
-                            "county_fips",
-                            "type",
-                            "parent",
-                            "created_by",
-                        ],
-                    ),
-                    "id": str(role.organization.id),  # Explicitly add the ID
-                }
-                if role.organization
-                else None,
+                "organization": (
+                    {
+                        **model_to_dict(
+                            role.organization,
+                            fields=[
+                                "acronym",
+                                "name",
+                                "root_domains",
+                                "ip_blocks",
+                                "is_passive",
+                                "pending_domains",
+                                "country",
+                                "state",
+                                "region_id",
+                                "state_fips",
+                                "state_name",
+                                "county",
+                                "county_fips",
+                                "type",
+                                "parent",
+                                "created_by",
+                            ],
+                        ),
+                        "id": str(role.organization.id),  # Explicitly add the ID
+                    }
+                    if role.organization
+                    else None
+                ),
             }
             for role in user.roles.all()
         ]
@@ -117,25 +120,29 @@ def accept_terms(version_data, current_user):
             "cognito_id": current_user.cognito_id,
             "okta_id": current_user.okta_id,
             "login_gov_id": current_user.login_gov_id,
-            "created_at": current_user.created_at.isoformat()
-            if current_user.created_at
-            else None,
-            "updated_at": current_user.updated_at.isoformat()
-            if current_user.updated_at
-            else None,
+            "created_at": (
+                current_user.created_at.isoformat() if current_user.created_at else None
+            ),
+            "updated_at": (
+                current_user.updated_at.isoformat() if current_user.updated_at else None
+            ),
             "first_name": current_user.first_name,
             "last_name": current_user.last_name,
             "full_name": current_user.full_name,
             "email": current_user.email,
             "invite_pending": current_user.invite_pending,
             "login_blocked_by_maintenance": current_user.login_blocked_by_maintenance,
-            "date_accepted_terms": current_user.date_accepted_terms.isoformat()
-            if current_user.date_accepted_terms
-            else None,
+            "date_accepted_terms": (
+                current_user.date_accepted_terms.isoformat()
+                if current_user.date_accepted_terms
+                else None
+            ),
             "accepted_terms_version": current_user.accepted_terms_version,
-            "last_logged_in": current_user.last_logged_in.isoformat()
-            if current_user.last_logged_in
-            else None,
+            "last_logged_in": (
+                current_user.last_logged_in.isoformat()
+                if current_user.last_logged_in
+                else None
+            ),
             "user_type": current_user.user_type,
             "region_id": current_user.region_id,
             "state": current_user.state,
@@ -185,9 +192,11 @@ def get_users(current_user):
         if is_global_view_admin(current_user):
             users = User.objects.all().prefetch_related("roles__organization")
         elif is_regional_admin(current_user):
-            users = User.objects.filter(region_id=current_user.region_id).prefetch_related("roles__organization")
+            users = User.objects.filter(
+                region_id=current_user.region_id
+            ).prefetch_related("roles__organization")
         else:
-            raise HTTPException(status_code=401, detail="Unauthorized")       
+            raise HTTPException(status_code=401, detail="Unauthorized")
         return [
             {
                 "id": str(user.id),
@@ -202,13 +211,15 @@ def get_users(current_user):
                 "user_type": user.user_type,
                 "last_logged_in": user.last_logged_in,
                 "date_approved": user.date_approved,
-                "approved_by": {
-                    "id": str(user.approved_by.id),
-                    "full_name": str(user.approved_by.full_name),
-                    "email": str(user.approved_by.email),
-                }
-                if user.approved_by
-                else None,
+                "approved_by": (
+                    {
+                        "id": str(user.approved_by.id),
+                        "full_name": str(user.approved_by.full_name),
+                        "email": str(user.approved_by.email),
+                    }
+                    if user.approved_by
+                    else None
+                ),
                 "accepted_terms_version": user.accepted_terms_version,
                 "date_accepted_terms": user.date_accepted_terms,
                 "roles": [
@@ -216,12 +227,14 @@ def get_users(current_user):
                         "id": str(role.id),
                         "approved": role.approved,
                         "role": role.role,
-                        "organization": {
-                            "id": str(role.organization.id),
-                            "name": role.organization.name,
-                        }
-                        if role.organization
-                        else None,
+                        "organization": (
+                            {
+                                "id": str(role.organization.id),
+                                "name": role.organization.name,
+                            }
+                            if role.organization
+                            else None
+                        ),
                     }
                     for role in user.roles.all()
                 ],
@@ -269,12 +282,14 @@ def get_users_by_region_id(region_id, current_user):
                             "id": str(role.id),
                             "approved": role.approved,
                             "role": role.role,
-                            "organization": {
-                                "id": str(role.organization.id),
-                                "name": role.organization.name,
-                            }
-                            if role.organization
-                            else None,
+                            "organization": (
+                                {
+                                    "id": str(role.organization.id),
+                                    "name": role.organization.name,
+                                }
+                                if role.organization
+                                else None
+                            ),
                         }
                         for role in user.roles.all()
                     ],
@@ -327,12 +342,14 @@ def get_users_by_state(state, current_user):
                             "id": str(role.id),
                             "approved": role.approved,
                             "role": role.role,
-                            "organization": {
-                                "id": str(role.organization.id),
-                                "name": role.organization.name,
-                            }
-                            if role.organization
-                            else None,
+                            "organization": (
+                                {
+                                    "id": str(role.organization.id),
+                                    "name": role.organization.name,
+                                }
+                                if role.organization
+                                else None
+                            ),
                         }
                         for role in user.roles.all()
                     ],
@@ -387,25 +404,29 @@ def get_users_v2(state, region_id, invite_pending, current_user):
                 "user_type": user.user_type,
                 "last_logged_in": user.last_logged_in,
                 "date_approved": user.date_approved,
-                "approved_by": {
-                    "id": str(user.approved_by.id),
-                    "full_name": str(user.approved_by.full_name),
-                    "email": str(user.approved_by.email),
-                }
-                if user.approved_by
-                else None,
+                "approved_by": (
+                    {
+                        "id": str(user.approved_by.id),
+                        "full_name": str(user.approved_by.full_name),
+                        "email": str(user.approved_by.email),
+                    }
+                    if user.approved_by
+                    else None
+                ),
                 "accepted_terms_version": user.accepted_terms_version,
                 "roles": [
                     {
                         "id": str(role.id),
                         "approved": role.approved,
                         "role": role.role,
-                        "organization": {
-                            "id": str(role.organization.id),
-                            "name": role.organization.name,
-                        }
-                        if role.organization
-                        else None,
+                        "organization": (
+                            {
+                                "id": str(role.organization.id),
+                                "name": role.organization.name,
+                            }
+                            if role.organization
+                            else None
+                        ),
                     }
                     for role in user.roles.all()
                 ],
@@ -492,12 +513,14 @@ def update_user_v2(user_id, user_data, current_user):
                     "id": str(role.id),
                     "approved": role.approved,
                     "role": role.role,
-                    "organization": {
-                        "id": str(role.organization.id),
-                        "name": role.organization.name,
-                    }
-                    if role.organization
-                    else None,
+                    "organization": (
+                        {
+                            "id": str(role.organization.id),
+                            "name": role.organization.name,
+                        }
+                        if role.organization
+                        else None
+                    ),
                 }
                 for role in updated_user.roles.all()
             ],
@@ -707,12 +730,14 @@ def invite(new_user_data, current_user):
                     "id": str(role.id),
                     "role": role.role,
                     "approved": role.approved,
-                    "organization": {
-                        "id": str(role.organization.id),
-                        "name": role.organization.name,
-                    }
-                    if role.organization
-                    else {},
+                    "organization": (
+                        {
+                            "id": str(role.organization.id),
+                            "name": role.organization.name,
+                        }
+                        if role.organization
+                        else {}
+                    ),
                 }
                 for role in user.roles.select_related("organization").all()
             ],
