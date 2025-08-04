@@ -316,8 +316,6 @@ def test_v2_get_vulnerability_by_id(user, vulnerability, refresh_vuln_views):
     )
     data = response.json()
 
-    print(data)
-
     assert response.status_code == 200
     assert data["id"] == str(vulnerability.id)
     assert data["domain"]["id"] == str(vulnerability.domain.id)
@@ -343,13 +341,12 @@ def test_v2_get_vulnerability_by_id_with_history(
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_v2_get_vulnerability_by_source_id(user, vulnerability, refresh_vuln_views):
-    """Test v2 vulnerability_by_id endpoint with scan_source query param."""
+    """Test v2 vulnerability_details endpoint with scan_source query param."""
     response = client.get(
-        "/v2/vulnerability_by_id/{}".format(str(vulnerability.id)),
+        "/v2/vulnerability_details/{}".format(str(vulnerability.id)),
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
     )
     data = response.json()
-    print(data)
 
     assert response.status_code == 200
     assert data["name"] == search_fields["title"]

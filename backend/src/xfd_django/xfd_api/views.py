@@ -1614,7 +1614,9 @@ async def call_get_vulnerability_by_id(
 async def v2_call_get_vulnerability_by_id(
     vuln_id: str = Path(..., description="Vulnerability ID"),
     history: Optional[bool] = Query(False, description="Include ticket history"),
-    history_limit: Optional[int] = Query(None, description="Limit for scan history"),
+    history_limit: Optional[int] = Query(
+        None, gt=0, description="Limit for scan history"
+    ),
     current_user: User = Depends(get_current_active_user),
 ):
     """Get vulnerability by id."""
@@ -1623,7 +1625,7 @@ async def v2_call_get_vulnerability_by_id(
 
 
 @api_router.get(
-    "/v2/vulnerability_by_id/{vulnerability_id}",
+    "/v2/vulnerability_details/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=Union[
         CredBreachVulnerabilityResponse,
@@ -1636,10 +1638,12 @@ async def get_vulnerability_by_source_id_route(
     vulnerability_id: str = Path(..., description="The ID of the vulnerability"),
     scan_source: Optional[str] = Query(None, description="Scan source (e.g. shodan)"),
     history: Optional[bool] = Query(False, description="Include ticket history"),
-    history_limit: Optional[int] = Query(10, description="Limit for scan history"),
+    history_limit: Optional[int] = Query(
+        10, gt=0, description="Limit for scan history"
+    ),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get Vulnerability by Id: V2."""
+    """Get vulnerability details by Id: V2."""
     request = GetVulnerabilityByIdRequest(
         scan_source=scan_source, history=history, history_limit=history_limit
     )
