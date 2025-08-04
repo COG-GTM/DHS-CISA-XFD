@@ -19,7 +19,7 @@ const LoginButton = () => {
     const state = uuidv4();
 
     try {
-      await fetch(`${process.env.REACT_APP_API_URL}/auth/set-oauth-cookies`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/auth/set-oauth-cookies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
