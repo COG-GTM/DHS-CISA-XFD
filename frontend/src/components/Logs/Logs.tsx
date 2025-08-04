@@ -445,6 +445,7 @@ export const Logs: FC<LogsProps> = () => {
             }
           }}
           pageSizeOptions={[15, 30, 50, 100]}
+          disableRowSelectionOnClick
         />
       </Paper>
       <Dialog
