@@ -400,7 +400,10 @@ export const ScanTasksView: React.FC = () => {
                     (child, index) => <Box key={index}>{child}</Box>
                   ),
                   exportTitle: 'Scans'
-                } as any
+                } as any,
+                basePopper: {
+                  placement: 'bottom-start'
+                }
               }}
               paginationMode="server"
               paginationModel={paginationModel}
@@ -426,6 +429,7 @@ export const ScanTasksView: React.FC = () => {
               }}
               pageSizeOptions={[15, 30, 50, 100]}
               disableRowSelectionOnClick
+              showToolbar
             />
           </Paper>
         )}

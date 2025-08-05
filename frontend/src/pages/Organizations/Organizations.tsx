@@ -154,11 +154,17 @@ export const Organizations: React.FC = () => {
               rows={organizations}
               columns={orgCols}
               slots={{ toolbar: CustomToolbar }}
+              slotProps={{
+                basePopper: {
+                  placement: 'bottom-start'
+                }
+              }}
               initialState={{
                 pagination: { paginationModel: { pageSize: 15 } }
               }}
               pageSizeOptions={[15, 30, 50, 100]}
               disableRowSelectionOnClick
+              showToolbar
             />
           </Paper>
         )}
