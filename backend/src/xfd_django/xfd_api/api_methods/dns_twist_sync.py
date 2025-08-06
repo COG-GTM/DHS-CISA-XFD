@@ -16,7 +16,6 @@ from requests import Request
 from xfd_api.auth import is_global_view_admin
 from xfd_mini_dl.models import DataSource, DomainPermutations, Organization
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
 

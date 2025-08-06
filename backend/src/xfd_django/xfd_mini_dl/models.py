@@ -16,7 +16,6 @@ from netfields import InetAddressField
 manage_db = True
 app_label_name = "xfd_mini_dl"
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 

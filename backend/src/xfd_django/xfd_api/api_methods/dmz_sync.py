@@ -36,7 +36,6 @@ from ..schema_models.dmz_sync import (
     LooseSub,
 )
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 SALT = os.getenv("CHECKSUM_SALT", "default_salt")
