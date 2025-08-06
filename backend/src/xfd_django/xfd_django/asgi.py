@@ -29,8 +29,6 @@ from xfd_api.tasks.scheduler import handler as scheduler_handler
 from xfd_django.docker_events import listen_for_docker_events
 from xfd_django.middleware.middleware import LoggingMiddleware
 
-print = functools.partial(print, flush=True)
-
 LOGGER = logging.getLogger(__name__)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
