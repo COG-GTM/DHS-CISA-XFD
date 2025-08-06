@@ -2,6 +2,7 @@ import React from 'react';
 import Notifications from 'pages/Notifications';
 import ScansView from 'pages/Scans/ScansView';
 import ScanTasksView from 'pages/Scans/ScanTasksView';
+import Metrics from '../../components/Metrics/MetricsDashboard';
 import QueueMonitorView from 'pages/Scans/QueueMonitorView';
 import { Box, Container, Tab } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
@@ -24,6 +25,7 @@ export const AdminTools: React.FC = () => {
               <Tab label="Queue Monitoring" value="3" />
               <Tab label="Notifications" value="4" />
               <Tab label="User Logs" value="5" />
+              <Tab label="Metrics" value="6" />
             </TabList>
           </Box>
           <TabPanel value="1">
@@ -40,6 +42,9 @@ export const AdminTools: React.FC = () => {
           </TabPanel>
           <TabPanel value="5">
             <Logs />
+          </TabPanel>
+          <TabPanel value="6">
+            <Metrics />
           </TabPanel>
         </TabContext>
       </Box>
