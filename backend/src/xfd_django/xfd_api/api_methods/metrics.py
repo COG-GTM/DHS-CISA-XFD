@@ -21,12 +21,12 @@ from xfd_mini_dl.models import Scan, ScanResult
 
 def get_scan_daily_status_counts(scan_id: str, window_days: int, current_user):
     """Get daily HTTP status counts for a specific scan over a given time window."""
-    cutoff = (timezone.now() - timedelta(days=window_days)).replace(
+    cutoff = (timezone.now() - timedelta(days=window_days - 1)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
 
     result = (
-        ScanResult.objects.filter(scan_id=scan_id, logged_at__gte=cutoff)
+        ScanResult.objects.filter(scan_id=scan_id, scanned_at__gte=cutoff)
         .annotate(date=TruncDate("scanned_at"))
         .values("http_status", "date")
         .annotate(count=Count("id"))
@@ -42,7 +42,7 @@ def transform_daily_status_counts(queryset, scan_id, window_days):
     status_map = defaultdict(list)
     for row in queryset:
         status_map[row["http_status"]].append(
-            DailyCount(date=row["date"], count=row["count"])
+            DailyCount(date=row["date"].strftime("%Y-%m-%d"), count=row["count"])
         )
 
     daily_status_counts = [
@@ -65,7 +65,7 @@ def transform_daily_status_counts(queryset, scan_id, window_days):
 
 def list_scans_org_count_by_status(window_days, current_user):
     """List non-global scans and count distinct orgs for each http status in a given time window."""
-    cutoff = (timezone.now() - timedelta(days=window_days)).replace(
+    cutoff = (timezone.now() - timedelta(days=window_days - 1)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     # Generate set of non-global scan names from SCAN_SCHEMA
@@ -81,10 +81,10 @@ def list_scans_org_count_by_status(window_days, current_user):
     result = (
         ScanResult.objects.filter(
             scan_id__in=non_global_scan_ids,
-            logged_at__gte=cutoff,
+            scanned_at__gte=cutoff,
         )
         .values("scan_id", "http_status")
-        .annotate(count=Count("organization", distinct=True))
+        .annotate(count=Count("organization_id", distinct=True))
         .order_by("scan_id", "http_status")
     )
     return transform_org_counts_by_status(result, window_days)
@@ -110,7 +110,7 @@ def transform_org_counts_by_status(queryset, window_days):
                 frequency=scan.frequency,
                 last_run=scan.last_run,
                 total_orgs=scan.total_orgs,
-                org_counts_by_status=scan_map[str(scan.id)],
+                org_counts_by_status=scan_map[scan.id],
             )
         )
 

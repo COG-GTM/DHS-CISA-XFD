@@ -441,13 +441,6 @@ async def call_search_logs(
 #   Metrics Dashboard Endpoints
 # ========================================
 
-# @api_router.post(
-#     "/metrics/scan_result",
-#     dependencies=[Depends(get_current_active_user)],
-#     response_model=List[ScanResultSchema], # TODO: Define ScanResultSchema
-#     tags=["Metrics"],
-# )
-
 
 @api_router.get(
     "/metrics/scans",

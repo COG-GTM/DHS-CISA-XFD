@@ -38,7 +38,7 @@ class ListScansOrgCountByStatusResponse(BaseModel):
 class DailyCount(BaseModel):
     """Count for a specific date."""
 
-    date: datetime
+    date: str
     count: int
 
 
