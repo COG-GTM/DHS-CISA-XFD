@@ -138,8 +138,8 @@ export const OrgMembers: React.FC<OrgMemberProps> = ({
           <React.Fragment>
             <Typography mb={3}>
               This request will permanently remove{' '}
-              <b>{selectedRow?.user.full_name}</b> from{' '}
-              <b>{organization.name}</b> and cannot be undone.
+              <b>{selectedRow?.user?.full_name}</b> from{' '}
+              <b>{organization?.name}</b> and cannot be undone.
             </Typography>
             {hasError && (
               <Alert severity="error">
@@ -165,8 +165,8 @@ export const OrgMembers: React.FC<OrgMemberProps> = ({
         title={<Typography variant="h4">Success</Typography>}
         content={
           <Typography variant="body1">
-            {selectedRow?.user.full_name} has been removed from{' '}
-            {organization.name}
+            {selectedRow?.user?.full_name} has been removed from{' '}
+            {organization?.name}
           </Typography>
         }
       />
