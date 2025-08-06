@@ -79,6 +79,15 @@ def get_term_filter(term_filter):
         search_type = "match"
     elif term_filter["field"] == "organization.region_id":
         search_type = "terms"
+    elif term_filter["field"] == "no_services":
+        # Return the must_not nested query for no_services
+        return {
+            "bool": {
+                "must_not": [
+                    {"nested": {"path": "services", "query": {"match_all": {}}}}
+                ]
+            }
+        }
 
     reg_values = [
         "Low",
@@ -211,6 +220,39 @@ def build_request_filter(filters, force_return_no_results):
     if force_return_no_results:
         return {"term": {"non_existent_field": ""}}
 
+    # Special handling: if both 'no_services' and 'services.port' are in filters
+    port_filter = next((f for f in filters if f["field"] == "services.port"), None)
+    no_services_filter = next((f for f in filters if f["field"] == "no_services"), None)
+
+    if port_filter and no_services_filter:
+        # Remove them from the list so they're not processed again
+        other_filters = [
+            f for f in filters if f["field"] not in ("services.port", "no_services")
+        ]
+        port_values = port_filter.get("values", [])
+        should_clause = [
+            {
+                "bool": {
+                    "must_not": [
+                        {"nested": {"path": "services", "query": {"match_all": {}}}}
+                    ]
+                }
+            },
+            {
+                "nested": {
+                    "path": "services",
+                    "query": {"terms": {"services.port": port_values}},
+                }
+            },
+        ]
+        # Combine with other filters (if any)
+        filter_list = (
+            [get_term_filter(f) for f in other_filters] if other_filters else []
+        )
+        return filter_list + [
+            {"bool": {"should": should_clause, "minimum_should_match": 1}}
+        ]
+
     return [get_term_filter(f) for f in filters]
 
 
@@ -301,7 +343,7 @@ def build_request(state: DomainSearchBody) -> Dict[str, Any]:
             "services": {
                 "nested": {"path": "services"},
                 "aggs": {
-                    "port": {"terms": {"field": "services.port"}},
+                    "port": {"terms": {"field": "services.port", "missing": -1}},
                     "name": {"terms": {"field": "services.service.keyword"}},
                     "products": {
                         "nested": {"path": "products"},
@@ -311,6 +353,25 @@ def build_request(state: DomainSearchBody) -> Dict[str, Any]:
                     },
                 },
             },
+            "no_services": {
+                "filter": {
+                    "bool": {
+                        "must_not": [
+                            {"nested": {"path": "services", "query": {"match_all": {}}}}
+                        ]
+                    }
+                }
+            },
+            # "services_missing": {
+            #     "filter": {
+            #         "script": {
+            #             "script": {
+            #                 "source": "doc['services'].size() == 0",
+            #                 "lang": "painless"
+            #             }
+            #         }
+            #     }
+            # },
             "vulnerabilities": {
                 "nested": {"path": "vulnerabilities"},
                 "aggs": {

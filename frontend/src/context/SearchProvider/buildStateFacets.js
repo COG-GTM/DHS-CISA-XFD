@@ -61,6 +61,27 @@ export default function buildStateFacets(aggregations) {
     }
   }
 
+  // Special handling for no_services filter aggregation
+  if (
+    aggregations.no_services &&
+    typeof aggregations.no_services.doc_count === 'number'
+  ) {
+    facets['no_services'] = [
+      {
+        field: 'no_services',
+        type: 'value',
+        data: [
+          {
+            value: true,
+            count: aggregations.no_services.doc_count
+          }
+        ]
+      }
+    ];
+  }
+  // console.log(`buildStateFacets: ${JSON.stringify(facets)}`);
+  console.log('facets', facets);
+
   if (Object.keys(facets).length > 0) {
     return facets;
   }
