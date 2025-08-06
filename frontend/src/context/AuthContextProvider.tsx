@@ -47,7 +47,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     localStorage.clear();
     await Auth.signOut();
     cookies.remove('crossfeed-token', {
-      domain: process.env.REACT_APP_COOKIE_DOMAIN
+      domain: import.meta.env.VITE_COOKIE_DOMAIN
     });
 
     // Clear user state after successful sign out
@@ -113,7 +113,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 
   const refreshUser = useCallback(async () => {
     try {
-      if (!token && process.env.REACT_APP_USE_COGNITO) {
+      if (!token && import.meta.env.VITE_USE_COGNITO) {
         const session = await Auth.currentSession();
         const { token } = await apiPost<{ token: string; user: User }>(
           '/auth/callback',

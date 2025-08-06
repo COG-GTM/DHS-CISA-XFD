@@ -437,9 +437,9 @@ async def process_user(decoded_token):
 async def get_jwt_from_code(auth_code: str, code_verifier: str):
     """Exchange authorization code for JWT tokens and decode."""
     try:
-        callback_url = os.getenv("REACT_APP_COGNITO_CALLBACK_URL")
-        client_id = os.getenv("REACT_APP_COGNITO_CLIENT_ID")
-        domain = os.getenv("REACT_APP_COGNITO_DOMAIN")
+        callback_url = os.getenv("VITE_COGNITO_CALLBACK_URL")
+        client_id = os.getenv("VITE_COGNITO_CLIENT_ID")
+        domain = os.getenv("VITE_COGNITO_DOMAIN")
         proxy_url = os.getenv("LZ_PROXY_URL")
 
         authorize_token_url = "https://{}/oauth2/token".format(domain)

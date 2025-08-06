@@ -10,8 +10,8 @@ import {
   Button,
   Box
 } from '@mui/material';
-import { SavedSearch } from '../../types/saved-search';
-import { useAuthContext } from '../../context';
+import { SavedSearch } from 'types/saved-search';
+import { useAuthContext } from 'context';
 import { Add } from '@mui/icons-material';
 
 interface SaveSearchModalProps {
