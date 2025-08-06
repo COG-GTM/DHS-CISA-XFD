@@ -317,8 +317,10 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             value={organization.name}
             disabled
             variant="standard"
-            InputProps={{
-              sx: { fontSize: '18px', fontWeight: 400 }
+            slotProps={{
+              htmlInput: {
+                sx: { fontSize: '18px', fontWeight: 400 }
+              }
             }}
           />
         </Grid>

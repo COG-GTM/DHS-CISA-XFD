@@ -174,8 +174,10 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
               variant="outlined"
               value={savedSearchValues.name}
               onChange={(e) => handleChange(e.target.name, e.target.value)}
-              inputProps={{
-                'aria-label': 'Enter a name for your saved filter'
+              slotProps={{
+                htmlInput: {
+                  'aria-label': 'Enter a name for your saved filter'
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -276,8 +278,10 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
               variant="outlined"
               value={savedSearchValues.name}
               onChange={(e) => handleChange(e.target.name, e.target.value)}
-              inputProps={{
-                'aria-label': 'Enter a name for your saved search'
+              slotProps={{
+                htmlInput: {
+                  'aria-label': 'Enter a name for your saved search'
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
