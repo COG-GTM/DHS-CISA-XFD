@@ -23,6 +23,7 @@ from django.utils import timezone
 import psycopg2
 import requests
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
+from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
@@ -187,12 +188,6 @@ def main():  # pylint: disable=R0915
         LOGGER.info("Setting port scans latest flag")
         enforce_latest_flag_port_scan()
 
-        # Create port scan summaries
-        LOGGER.info("Creating port scan summaries")
-        create_port_scan_summary()
-        create_port_scan_service_summaries()
-        LOGGER.info("Finished processing port scans")
-
     # Fill CIDR live IPs
     fill_cidr_live_ips_bulk_update()
 
@@ -227,12 +222,39 @@ def main():  # pylint: disable=R0915
             chunk_number - 1,
         )
         LOGGER.info("Finished processing tickets")
-        try:
-            create_vuln_scan_summary()
-        except Exception as e:
-            raise QueryError(
-                SCAN_NAME, str(e), "Error creating vulnerability scan summary"
-            ) from e
+
+    # 🔁 REFRESH MATERIALIZED VIEWS BEFORE CREATING SUMMARIES
+    LOGGER.info("Refreshing materialized views before creating summaries...")
+    # Create or refresh materialized views
+    result = refresh_materialized_views({})
+    LOGGER.info(result)
+    LOGGER.info("Finished refreshing materialized views")
+
+    # ✅ Create summaries with individual error handling
+    LOGGER.info("Creating port scan summary...")
+    try:
+        create_port_scan_summary()
+        LOGGER.info("Finished port scan summary")
+    except Exception as e:
+        LOGGER.error("Failed to create port scan summary: %s", e, exc_info=True)
+
+    LOGGER.info("Creating port scan service summaries...")
+    try:
+        create_port_scan_service_summaries()
+        LOGGER.info("Finished port scan service summaries")
+    except Exception as e:
+        LOGGER.error(
+            "Failed to create port scan service summaries: %s", e, exc_info=True
+        )
+
+    LOGGER.info("Creating vulnerability scan summary...")
+    try:
+        create_vuln_scan_summary()
+        LOGGER.info("Finished vulnerability scan summary")
+    except Exception as e:
+        LOGGER.error(
+            "Failed to create vulnerability scan summary: %s", e, exc_info=True
+        )
 
 
 def detect_data_set(query):
@@ -319,7 +341,6 @@ def send_csv_to_sync(csv_data, bounds):
         "Content-Type": "application/json",
         "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
-
     try:
         response = requests.post(
             os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
@@ -533,6 +554,7 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                     "host_ready_count": row["host_ready_count"],
                     "up_host_count": row["up_host_count"],
                     "down_host_count": row["down_host_count"],
+                    "scanned_asset_count": row["scanned_asset_count"],
                 },
             )
         except Organization.DoesNotExist:
@@ -729,6 +751,7 @@ def process_tickets(tickets, org_id_dict):
                 else None,
                 "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
+                "is_kev_ransomware": details.get("kev_ransomware"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
                 "operating_system": get_latest_os_type(ticket.get("ip"))
@@ -751,13 +774,29 @@ def get_asset_owned_count(org):
         cidrorgs__organization=org, cidrorgs__current=True, network__isnull=False
     ).distinct()
 
+    if not cidrs.exists():
+        LOGGER.warning("No CIDRs found for organization ID: %s (%s)", org.id, org.name)
+
     total_ips = 0
     for cidr in cidrs:
         try:
             network = ip_network(str(cidr.network), strict=False)
             total_ips += network.num_addresses
-        except ValueError:
-            continue  # Skip bad CIDRs
+        except (ValueError, TypeError) as e:
+            LOGGER.warning(
+                "Invalid CIDR '%s' for organization ID: %s (%s) — %s",
+                getattr(cidr, "network", None),
+                org.id,
+                org.name,
+                str(e),
+            )
+        except Exception as e:
+            LOGGER.warning(
+                "Unexpected error while processing CIDR for org ID: %s (%s) — %s",
+                org.id,
+                org.name,
+                str(e),
+            )
 
     return total_ips
 
@@ -1013,7 +1052,13 @@ def create_vuln_scan_summary(summary_date=None):
                 "ten_plus_vulns_count": ten_plus,
                 "top_5_occurring_cves": top_5_occurring_cves,
                 "top_5_occurring_kevs": top_5_occurring_kevs,
-                "included_tickets": list(included.values_list("id", flat=True)),
+                "included_tickets": {
+                    str(ticket.id): {
+                        "severity": severity_map.get(ticket.cvss_severity, "unknown"),
+                        "is_kev": ticket.is_kev,
+                    }
+                    for ticket in included.only("id", "cvss_severity", "is_kev")
+                },
                 "top_5_risky_hosts": top_5_hosts,
             },
         )

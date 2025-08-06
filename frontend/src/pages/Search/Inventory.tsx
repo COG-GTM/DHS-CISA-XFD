@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { classes, Root } from './Styling/dashboardStyle';
+import React, { useEffect, useState } from 'react';
 import { ResultCard } from './ResultCard';
 import {
   Button,
@@ -9,19 +8,20 @@ import {
   MenuItem,
   Typography,
   Box,
-  Stack
+  Stack,
+  useTheme
 } from '@mui/material';
 import { Pagination } from '@mui/material';
 import { withSearch } from '@elastic/react-search-ui';
-import { ContextType } from '../../context/SearchProvider';
+import { ContextType } from 'context/SearchProvider';
 import { SortBar } from './SortBar';
 import { useAuthContext } from 'context';
-import { FilterTags } from './FilterTags';
 import { NoResults } from 'components/NoResults';
 import { exportCSV } from 'components/ImportExport';
 import { useStaticsContext } from 'context/StaticsContext';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { useUserTypeFilters } from 'hooks/useUserTypeFilters';
+import { FiberManualRecordRounded } from '@mui/icons-material';
 import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
 
 export const DashboardUI: React.FC<ContextType & { location: any }> = (
@@ -36,8 +36,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     addFilter,
     removeFilter,
     results,
-    sort_direction,
-    sort_field,
+    sortDirection,
+    sortField,
     setSort,
     totalPages,
     totalResults,
@@ -65,13 +65,13 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
         filters,
         resultsPerPage,
         searchTerm,
-        sort_direction,
-        sort_field
+        sortDirection,
+        sortField
       };
       if (!showAllOrganizations && currentOrganization) {
         if ('root_domains' in currentOrganization)
-          body.organization_id = currentOrganization.id;
-        else body.tagId = currentOrganization.id;
+          body.organization_id = [currentOrganization.id];
+        else body.tagId = [currentOrganization.id];
       }
       const { url } = await apiPost('/search/export', {
         body
@@ -112,160 +112,180 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const filtersToDisplay = useMemo(() => {
-    if (searchTerm !== '') {
-      return [
-        ...filters,
-        {
-          field: 'query',
-          values: [searchTerm],
-          onClear: () => setSearchTerm('', { shouldClearFilters: false })
-        }
-      ];
+
+  const FiltersApplied: React.FC = () => {
+    const theme = useTheme();
+    return (
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <FiberManualRecordRounded
+          sx={{
+            color: theme.palette.primary.main,
+            height: '1rem',
+            width: '1rem'
+          }}
+        />
+        <Typography color="textSecondary">Filters Applied</Typography>
+      </Stack>
+    );
+  };
+
+  const nonInitialFilters = filters.filter((currentFilter) => {
+    const initial = initialFiltersForUser.find(
+      (initFilter) => initFilter.field === currentFilter.field
+    );
+    if (!initial) return true;
+
+    const currentVals = Array.isArray(currentFilter.values)
+      ? currentFilter.values
+      : [currentFilter.values];
+    const initialVals = Array.isArray(initial.values)
+      ? initial.values
+      : [initial.values];
+
+    if (currentFilter.field === 'organization_id') {
+      const currentIds = currentVals.map((org: any) => org.id);
+      const initialIds = initialVals.map((org: any) => org.id);
+      if (currentIds.length !== initialIds.length) return true;
+      return !currentIds.every((id: any) => initialIds.includes(id));
+    } else {
+      if (currentVals.length !== initialVals.length) return true;
+      return !currentVals.every((val: any) => initialVals.includes(val));
     }
-    return filters;
-  }, [filters, searchTerm, setSearchTerm]);
+  });
 
   return (
-    <FindingsHeader>
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <FindingsHeader />
       <Stack
         direction="row"
-        alignItems="flex-end"
-        justifyContent="space-between"
-      >
-        <Box mb="16px">
-          <FilterTags filters={filtersToDisplay} removeFilter={removeFilter} />
-        </Box>
-        <Box
-          alignItems="flex-end"
-          justifyContent="space-between"
-          minWidth="220px"
-          mb="10px"
-        >
-          <SortBar
-            sort_field={sort_field}
-            sort_direction={sort_direction}
-            setSort={setSort}
-            isFixed={resultsScrolled}
-            advancedFiltersReq={advanceFiltersReq}
-          />
-        </Box>
-      </Stack>
-      <Box
-        position="relative"
-        height="calc(100% - 32px - 32px - 46px - 10px)"
-        maxHeight="100%"
-        width="100%"
-        display="flex"
-        flexWrap="nowrap"
-        flexDirection="column"
         alignItems="center"
-        justifyContent="center"
-        overflow="auto"
+        justifyContent="space-between"
+        pb={2}
       >
-        <Box
-          height="100%"
-          width="100%"
-          flexDirection="column"
-          flexWrap="nowrap"
-          gap="1rem"
-          alignItems="stretch"
-          display="flex"
-          position="relative"
-          padding="0 0 2rem 0"
-        >
-          {noResults ? (
-            <Box
-              display="flex"
-              flex="1"
-              alignItems="center"
-              justifyContent="center"
-              height="100%"
-            >
-              <Stack spacing={2} alignItems="center" direction={'column'}>
-                <NoResults
-                  message={"We don't see any results that match your criteria."}
-                ></NoResults>
-                <Button variant="contained" onClick={resetFilters}>
-                  {' '}
-                  Reset Filters
-                </Button>
-              </Stack>
-            </Box>
-          ) : (
-            results.map((result) => (
-              <ResultCard
-                key={result.id.raw}
-                {...result}
-                onDomainSelected={(id) => setSelectedDomain(id)}
-                selected={result.id.raw === selectedDomain}
-              />
-            ))
-          )}
-        </Box>
+        {nonInitialFilters.length > 0 && <FiltersApplied />}
+        {/* Keeps SortBar fixed to the right side of the screen */}
+        <Box sx={{ flexGrow: 1 }} />
+        <SortBar
+          sortField={sortField}
+          sortDirection={sortDirection}
+          setSort={setSort}
+          isFixed={resultsScrolled}
+          advancedFiltersReq={advanceFiltersReq}
+        />
+      </Stack>
+      <Box flexGrow={1} display="flex" flexDirection="column">
+        {noResults ? (
+          <Box
+            display="flex"
+            flex="1"
+            alignItems="center"
+            justifyContent="center"
+            height="100%"
+          >
+            <Stack spacing={3} alignItems="center" direction={'column'}>
+              <NoResults
+                message={"We don't see any results that match your criteria."}
+              ></NoResults>
+              <Button variant="primaryContained" onClick={resetFilters}>
+                Reset Filters
+              </Button>
+            </Stack>
+          </Box>
+        ) : (
+          results.map((result) => (
+            <ResultCard
+              key={result.id.raw}
+              {...result}
+              onDomainSelected={(id) => setSelectedDomain(id)}
+              selected={result.id.raw === selectedDomain}
+            />
+          ))
+        )}
       </Box>
-      <Root className={classes.root}>
-        <Paper className={classes.pagination}>
-          <span>
-            <strong>
-              {(totalResults === 0
-                ? 0
-                : (current - 1) * resultsPerPage + 1
-              ).toLocaleString()}{' '}
-              -{' '}
-              {Math.min(
-                (current - 1) * resultsPerPage + resultsPerPage,
-                totalResults
-              ).toLocaleString()}
-            </strong>{' '}
-            of <strong>{totalResults.toLocaleString()}</strong>
-          </span>
-          <Pagination
-            count={totalPages}
-            page={current}
-            onChange={(_, page) => setCurrent(page)}
-            color="primary"
-            size="small"
-          />
-          <FormControl
-            variant="outlined"
-            className={classes.pageSize}
-            size="small"
+      <Box
+        sx={{
+          position: 'sticky',
+          bottom: 0,
+          width: '100%',
+          zIndex: 100,
+          backgroundColor: 'background.paper',
+          borderTop: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Paper elevation={3} sx={{ px: 2, py: 1.5 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
           >
-            <Typography id="results-per-page-label">
-              Results per page:
+            <Typography variant="body2">
+              <strong>
+                {(totalResults === 0
+                  ? 0
+                  : (current - 1) * resultsPerPage + 1
+                ).toLocaleString()}{' '}
+                -{' '}
+                {Math.min(
+                  (current - 1) * resultsPerPage + resultsPerPage,
+                  totalResults
+                ).toLocaleString()}
+              </strong>{' '}
+              of <strong>{totalResults.toLocaleString()}</strong>
             </Typography>
-            <Select
-              id="teststa"
-              labelId="results-per-page-label"
-              value={resultsPerPage}
-              onChange={(e) => setResultsPerPage(e.target.value as number)}
+            <Pagination
+              count={totalPages}
+              page={current}
+              onChange={(_, page) => setCurrent(page)}
+              color="primary"
+              size="small"
+            />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography id="results-per-page-label" variant="body2">
+                Results per page:
+              </Typography>
+              <FormControl size="small" variant="outlined">
+                <Select
+                  id="results-per-page-select"
+                  labelId="results-per-page-label"
+                  value={resultsPerPage}
+                  onChange={(e) => setResultsPerPage(e.target.value as number)}
+                >
+                  {[15, 45, 90].map((perPage) => (
+                    <MenuItem key={perPage} value={perPage}>
+                      {perPage}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+            <Button
+              variant="outlined"
+              onClick={() =>
+                exportCSV(
+                  {
+                    name: 'domains',
+                    getDataToExport: fetchDomainsExport
+                  },
+                  setLoading
+                )
+              }
             >
-              {[15, 45, 90].map((perPage) => (
-                <MenuItem key={perPage} value={perPage}>
-                  {perPage}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Button
-            variant="outlined"
-            className={classes.exportButton}
-            onClick={() =>
-              exportCSV(
-                {
-                  name: 'domains',
-                  getDataToExport: fetchDomainsExport
-                },
-                setLoading
-              )
-            }
-          >
-            Export Results
-          </Button>
+              Export Results
+            </Button>
+          </Stack>
         </Paper>
-      </Root>
-    </FindingsHeader>
+      </Box>
+    </Box>
   );
 };
 
@@ -281,8 +301,8 @@ export const Dashboard = withSearch(
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sort_direction,
-    sort_field,
+    sortDirection,
+    sortField,
     setSort,
     resultsPerPage,
     setResultsPerPage,
@@ -301,8 +321,8 @@ export const Dashboard = withSearch(
     setSearchTerm,
     autocompletedResults,
     saveSearch,
-    sort_direction,
-    sort_field,
+    sortDirection,
+    sortField,
     setSort,
     resultsPerPage,
     setResultsPerPage,

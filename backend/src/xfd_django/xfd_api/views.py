@@ -14,6 +14,7 @@ from fastapi import (
     Body,
     Depends,
     HTTPException,
+    Path,
     Query,
     Request,
     Response,
@@ -35,7 +36,10 @@ from .api_methods.blocklist import handle_check_ip
 from .api_methods.cpe import get_cpes_by_id
 from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
+from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.object_store import get_object_store_presigned_url
+from .api_methods.pshtt_sync import pshtt_sync_post
 from .api_methods.queue_monitoring import list_queues
 from .api_methods.saved_search import (
     create_saved_search,
@@ -50,6 +54,7 @@ from .api_methods.stats import (
     get_num_vulns,
     get_severity_stats,
     get_stats,
+    get_stats_comparison_data,
     get_user_ports_count,
     get_user_services_count,
     get_v2_trending_data,
@@ -69,15 +74,22 @@ from .api_methods.user import (
     get_users_v2,
     update_user_v2,
 )
-from .api_methods.user_log_search import search_logs
+from .api_methods.user_log_search import search_logs, search_logs_filtered
 from .api_methods.vulnerability import (
     enrich_kev_fields,
     export_vulnerabilities,
     get_vulnerability_by_id,
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
+    v2_get_vulnerability_by_id,
 )
-from .auth import get_current_active_user, handle_okta_callback
+from .api_methods.xpanse_sync import xpanse_sync_post
+from .auth import (
+    get_current_active_user,
+    get_current_active_user_unsafe,
+    handle_okta_callback,
+    set_oauth_cookies_response,
+)
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
@@ -97,9 +109,14 @@ from .schema_models.dmz_sync import (
     ShodanSyncResponse,
     SyncRequest,
 )
+from .schema_models.dns_twist_sync import DnsTwistSyncBody, DnsTwistSyncResponse
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
+from .schema_models.object_store import (
+    ObjectStorePresignedUrlRequest,
+    ObjectStorePresignedUrlResponse,
+)
 from .schema_models.queue_monitoring import QueueListResponse, QueueSearch
 from .schema_models.saved_search import (
     SavedSearchCreate,
@@ -108,7 +125,7 @@ from .schema_models.saved_search import (
 )
 from .schema_models.saved_search import SavedSearch as SavedSearchSchema
 from .schema_models.search import DomainSearchBody, SearchResponse
-from .schema_models.sync import SyncBody, SyncResponse
+from .schema_models.sync import SyncBody, SyncResponse, XpanseSyncResponse
 from .schema_models.user import (
     NewUser,
     NewUserResponseModel,
@@ -117,12 +134,21 @@ from .schema_models.user import (
 )
 from .schema_models.user import User as UserSchema
 from .schema_models.user import UserResponseV2, VersionModel
-from .schema_models.user_log_schema import LogSearch, LogSearchResponse
+from .schema_models.user_log_schema import (
+    GetLogResponse,
+    LogSearch,
+    LogSearchFilter,
+    LogSearchResponse,
+    LogSearchResponseFilters,
+)
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
+    GetV2VulnerabilityResponse,
+    GetVulnerabilityByIdRequest,
     GetVulnerabilityResponse,
     ShodanVulnerabiltyResponse,
     VsVulnerabilityResponse,
+    VulnByIdRequest,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
@@ -268,6 +294,21 @@ async def callback_route(request: Request):
         return user_info
     except Exception as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+# Set PKCE and state cookies for OAuth
+@api_router.post("/auth/set-oauth-cookies", tags=["Auth"])
+async def set_oauth_cookies(request: Request):
+    """Set PKCE code_verifier and state cookies for OAuth flow."""
+    body = await request.json()
+    state = body.get("state")
+    code_verifier = body.get("code_verifier")
+
+    if not state or not code_verifier:
+        raise HTTPException(
+            status_code=400, detail="Missing PKCE code_verifier or state"
+        )
+    return set_oauth_cookies_response(state, code_verifier)
 
 
 # ========================================
@@ -432,6 +473,27 @@ async def call_search_logs(
     """Search log table."""
     log_data, count = search_logs(log_search, current_user)
     return LogSearchResponse(result=log_data, count=count)
+
+
+@api_router.post(
+    "/logs/filtered-search",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=LogSearchResponseFilters,
+    tags=["Logs"],
+)
+async def call_search_logs_filtered(
+    log_search: LogSearchFilter,
+    current_user: dict = Depends(get_current_active_user),
+):
+    """Search logs with filtering capabilities."""
+    logs, count = search_logs_filtered(log_search, current_user)
+    try:
+        result = [GetLogResponse.model_validate(log) for log in logs]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Serialization error: {}".format(str(e))
+        )
+    return LogSearchResponseFilters(result=result, count=count)
 
 
 # ========================================
@@ -1024,9 +1086,24 @@ async def get_scan_task_logs(
     return scan_tasks.get_scan_task_logs(scan_task_id, current_user)
 
 
-# ========================================
-#   Search Endpoints
-# ========================================
+@api_router.post(
+    "/xpanse-sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=XpanseSyncResponse,
+    tags=["Sync"],
+)
+async def xpanse_sync(
+    sync_body: SyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post organizations for datalake sync."""
+    try:
+        return await xpanse_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @api_router.post(
@@ -1043,6 +1120,52 @@ async def sync(
     """Post organizations for datalake sync."""
     await sync_post(sync_body, request, current_user)
     return SyncResponse(status="OK")
+
+
+# ========================================
+#   Search Endpoints
+# ========================================
+
+
+@api_router.post(
+    "/pshtt_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=SyncResponse,
+    tags=["PshttSync"],
+)
+async def pshtt_sync(
+    sync_body: SyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post Pshtt results for datalake sync."""
+    try:
+        return await pshtt_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@api_router.post(
+    "/dns_twist_sync",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=DnsTwistSyncResponse,
+    tags=["Sync", "DnsTwist"],
+)
+async def dns_twist_sync(
+    sync_body: DnsTwistSyncBody,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Post domain permnutations for DNSTwist sync."""
+    try:
+        return await dns_twist_sync_post(sync_body, request, current_user)
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @api_router.post(
@@ -1124,6 +1247,20 @@ async def get_vs_condensed_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_condensed_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/stats/compare",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.StatsComparisonResponse,
+    tags=["Stats"],
+)
+async def get_stats_comparison(
+    filter_data: stat_schema.StatsComparisonPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve Summary Comparison between two dates provided by the user."""
+    return get_stats_comparison_data(filter_data, current_user)
 
 
 @api_router.post(
@@ -1276,18 +1413,19 @@ async def healthcheck():
 @api_router.post(
     "/users/me/acceptTerms",
     response_model=UserSchema,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 async def call_accept_terms(
-    version_data: VersionModel, current_user: User = Depends(get_current_active_user)
+    version_data: VersionModel,
+    current_user: User = Depends(get_current_active_user_unsafe),
 ):
     """Accept the latest terms of service."""
     return accept_terms(version_data, current_user)
 
 
 @api_router.get("/users/me", tags=["Users"])
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(current_user: User = Depends(get_current_active_user_unsafe)):
     """Get current user."""
     return get_me(current_user)
 
@@ -1295,7 +1433,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 @api_router.delete(
     "/users/{user_id}",
     response_model=OrganizationSchema.DeleteUserResponseModel,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     tags=["Users"],
 )
 @log_action(
@@ -1370,14 +1508,14 @@ async def call_get_users_v2(
 
 @api_router.put(
     "/v2/users/{user_id}",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_active_user_unsafe)],
     response_model=UserResponseV2,
     tags=["Users"],
 )
 async def update_user_v2_view(
     user_id: str,
     user_data: UpdateUserV2,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user_unsafe),
 ):
     """Update a particular user."""
     return update_user_v2(user_id, user_data, current_user)
@@ -1504,7 +1642,26 @@ async def call_get_vulnerability_by_id(
 
 
 @api_router.get(
-    "/vulnerabilities/{scan_source}/{vulnerability_id}",
+    "/v2/vulnerabilities/{vuln_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetV2VulnerabilityResponse,
+    tags=["Vulnerabilities"],
+)
+async def v2_call_get_vulnerability_by_id(
+    vuln_id: str = Path(..., description="Vulnerability ID"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(
+        None, gt=0, description="Limit for scan history"
+    ),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get vulnerability by id."""
+    request = VulnByIdRequest(history=history, history_limit=history_limit)
+    return v2_get_vulnerability_by_id(vuln_id, request, current_user)
+
+
+@api_router.get(
+    "/v2/vulnerability_details/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=Union[
         CredBreachVulnerabilityResponse,
@@ -1514,13 +1671,22 @@ async def call_get_vulnerability_by_id(
     tags=["Vulnerabilities"],
 )
 async def get_vulnerability_by_source_id_route(
-    scan_source: str,
-    vulnerability_id: str,
+    vulnerability_id: str = Path(..., description="The ID of the vulnerability"),
+    scan_source: Optional[str] = Query(None, description="Scan source (e.g. shodan)"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(
+        10, gt=0, description="Limit for scan history"
+    ),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get vulnerability by id."""
+    """Get vulnerability details by Id: V2."""
+    request = GetVulnerabilityByIdRequest(
+        scan_source=scan_source, history=history, history_limit=history_limit
+    )
     return get_vulnerability_by_scan_source_and_id(
-        scan_source, vulnerability_id, current_user
+        vulnerability_id=vulnerability_id,
+        request=request,
+        current_user=current_user,
     )
 
 
@@ -1802,3 +1968,31 @@ async def cred_sync(
     return JSONResponse(
         content=response_serializable, headers={"X-Salted-Checksum": checksum}
     )
+
+
+############################
+# Object Store Endpoints  #
+############################
+
+
+# POST
+@api_router.post(
+    "/v1/object-store/presigned-url",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ObjectStorePresignedUrlResponse,
+    tags=["Object Store"],
+    summary="Generate a presigned URL for a given object",
+)
+def generate_presigned_object_store_url(
+    body: ObjectStorePresignedUrlRequest, current_user=Depends(get_current_active_user)
+) -> ObjectStorePresignedUrlResponse:
+    """Generate an Object Store Presigned URL.
+
+    Args:
+        body (ObjectStorePresignedUrlRequest): _description_
+        current_user (_type_, optional): _description_. Defaults to Depends(get_current_active_user).
+
+    Returns:
+        ObjectStorePresignedUrlResponse: _description_
+    """
+    return get_object_store_presigned_url(current_user, body)

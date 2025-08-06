@@ -20,7 +20,6 @@ export interface VulnScanSummary {
   scanned_asset_count?: number | null;
 
   unique_service_count?: number | null;
-  unique_none_severity_count?: number | null;
   unique_low_severity_count?: number | null;
   unique_medium_severity_count?: number | null;
   unique_high_severity_count?: number | null;
@@ -30,7 +29,6 @@ export interface VulnScanSummary {
   unsupported_software_count?: number | null;
   unique_os_count?: number | null;
 
-  none_severity_count?: number | null;
   low_severity_count?: number | null;
   medium_severity_count?: number | null;
   high_severity_count?: number | null;
@@ -41,7 +39,6 @@ export interface VulnScanSummary {
   medium_max_age?: number | null;
   low_max_age?: number | null;
 
-  none_kev_count?: number | null;
   low_kev_count?: number | null;
   medium_kev_count?: number | null;
   high_kev_count?: number | null;
@@ -76,6 +73,7 @@ export interface HostSummaries {
   host_ready_count?: number | null;
   up_host_count?: number | null;
   down_host_count?: number | null;
+  scanned_asset_count?: number | null;
 }
 
 export interface PortScanSummaries {
@@ -143,6 +141,7 @@ export interface Top5VulnerableHostsGraphData {
   criticalSeverity: number;
   all: number;
   domainId: string;
+  rrs?: number;
 }
 export interface SeverityByProminenceGraphData {
   vulnType: string;
@@ -155,15 +154,18 @@ export interface SeverityByProminenceGraphData {
   highMaxAge?: number;
   criticalMaxAge?: number;
 }
-export type vulnScanDataTransformed = {
-  vulnScanSummary: {
-    hostScan: string;
-    vulnerabilityScan: string;
-    assetsOwned: number;
-    assetsScanned: number;
-    startDate: string;
-    endDate: string;
-  }[];
+
+export interface ScanningSummary {
+  hostScan: string;
+  vulnerabilityScan: string;
+  assetsOwned: number;
+  assetsScanned: number;
+  startDate: string;
+  endDate: string;
+}
+
+export type VulnScanDataTransformed = {
+  vulnScanSummary: ScanningSummary[];
   vulnScanKeyMetrics: KeyMetrics[];
   detectedServicesKeyMetrics: KeyMetrics[];
   detectedHostsKeyMetrics: KeyMetrics[];

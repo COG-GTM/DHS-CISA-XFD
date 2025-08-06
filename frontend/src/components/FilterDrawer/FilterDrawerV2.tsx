@@ -12,7 +12,7 @@ import { Button, IconButton, Toolbar, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { VSDashRegionAndOrgFilters } from './VSDashRegionAndOrgFilters';
 
-export const drawerWidth = 300;
+export const drawerWidth = 278;
 
 export const FilterDrawer: FC<
   ContextType & {
@@ -57,26 +57,29 @@ export const FilterDrawer: FC<
     restoreInitialFilters();
   };
 
+  const [expanded, setExpanded] = React.useState<string | false>('panel1');
+
+  const handleExpanded =
+    (panel: string) => (event: React.SyntheticEvent, newExpanded: boolean) => {
+      setExpanded(newExpanded ? panel : false);
+    };
+
   const DrawerList = (
     <Stack justifyContent={'space-between'} height="100vh">
-      <Box sx={{ width: drawerWidth }} role="presentation">
+      <Box role="presentation">
         <Toolbar />
         <Toolbar />
         <Stack
           direction="row"
           alignItems="center"
           justifyContent="space-between"
+          height={63}
           px={2}
         >
-          {matchPath(['/inventory'], pathname) ? (
-            <Typography variant="h6" component="h3">
-              Search & Filter
-            </Typography>
-          ) : (
-            <Typography variant="h6" component="h3">
-              Filter
-            </Typography>
-          )}
+          <Typography variant="h3" component="h3">
+            Filter
+          </Typography>
+
           <IconButton
             onClick={() => setIsFilterDrawerOpen(false)}
             sx={{
@@ -90,6 +93,7 @@ export const FilterDrawer: FC<
             <CloseIcon />
           </IconButton>
         </Stack>
+
         {matchPath(['/overview', '/inventory'], pathname) && (
           <RegionAndOrganizationFilters
             addFilter={addFilter}
@@ -101,6 +105,8 @@ export const FilterDrawer: FC<
             autocompletedSuggestions={autocompletedSuggestions}
             results={results}
             initialFilters={initialFilters}
+            expanded={expanded}
+            handleExpanded={handleExpanded}
           />
         )}
         {matchPath(['/', '/VSDashboard'], pathname) && (
@@ -122,6 +128,8 @@ export const FilterDrawer: FC<
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             initialFilters={initialFilters}
+            expanded={expanded}
+            handleExpanded={handleExpanded}
           />
         )}
       </Box>
@@ -129,12 +137,23 @@ export const FilterDrawer: FC<
         <Box>
           {filters.length > 0 && (
             <Box
-              paddingBottom={3}
+              paddingBottom={5}
               display="flex"
               width="100%"
               justifyContent="center"
             >
-              <Button onClick={clearFiltersAndSearch}>Reset</Button>
+              <Button
+                onClick={clearFiltersAndSearch}
+                sx={{
+                  color: 'primary.dark',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  lineHeight: '20px',
+                  letterSpacing: '0.1em'
+                }}
+              >
+                Reset
+              </Button>
             </Box>
           )}
         </Box>

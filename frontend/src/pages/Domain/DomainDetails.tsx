@@ -16,7 +16,7 @@ import {
 import { ExpandLess, ExpandMore, KeyboardBackspace } from '@mui/icons-material';
 import { Domain } from 'types';
 import { useDomainApi } from 'hooks';
-import { DefinitionList } from './DefinitionList';
+import { DefinitionList } from 'components/DefinitionList';
 // @ts-ignore:next-line
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { Webpage } from 'types';
@@ -396,47 +396,71 @@ export const DomainDetails: React.FC<Props> = (props) => {
                   </Typography>
                 </AccordionSummary>
               </Accordion>
-              {domain.vulnerabilities.map((vuln) => (
-                <Accordion
-                  className={classes.accordion}
-                  key={vuln.id}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    history.push('/inventory/vulnerability/' + vuln.id);
-                  }}
-                >
-                  <AccordionSummary>
-                    <Typography className={classes.accordionHeading}>
-                      {vuln.title}
-                    </Typography>
-                    <Box
-                      className={classes.vulnDescription}
-                      sx={{ justifyItems: 'right' }}
+              {domain.vulnerabilities.map((vuln) => {
+                const isDisabled = vuln.state === 'closed';
+                return (
+                  <Accordion
+                    className={classes.accordion}
+                    key={vuln.id}
+                    disabled={vuln.state === 'closed'}
+                  >
+                    <AccordionSummary
+                      onClick={() => {
+                        if (!isDisabled) {
+                          history.push('/inventory/vulnerability/' + vuln.id);
+                        }
+                      }}
+                      onKeyDown={(event) => {
+                        if (
+                          !isDisabled &&
+                          (event.key === 'Enter' || event.key === ' ')
+                        ) {
+                          event.preventDefault();
+                          history.push('/inventory/vulnerability/' + vuln.id);
+                        }
+                      }}
+                      aria-label={`Vulnerability: ${vuln.title} - ${formatSeverity(vuln.severity)}`}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: isDisabled
+                            ? undefined
+                            : 'primary.light'
+                        },
+                        cursor: isDisabled ? 'default' : 'pointer'
+                      }}
                     >
-                      <Typography
-                        sx={{
-                          borderBottom: `6px solid ${getSeverityColor({
-                            id: formatSeverity(vuln.severity)
-                          })}`
-                        }}
-                      >
-                        {formatSeverity(vuln.severity)}
+                      <Typography className={classes.accordionHeading}>
+                        {vuln.title}
                       </Typography>
-                    </Box>
-                    <Typography className={classes.vulnDescription}>
-                      {vuln.state}
-                    </Typography>
-                    <Typography className={classes.vulnDescription}>
-                      {vuln.created_at
-                        ? `${differenceInCalendarDays(
-                            Date.now(),
-                            parseISO(vuln.created_at)
-                          )} days ago`
-                        : ''}
-                    </Typography>
-                  </AccordionSummary>
-                </Accordion>
-              ))}
+                      <Box
+                        className={classes.vulnDescription}
+                        sx={{ justifyItems: 'right' }}
+                      >
+                        <Typography
+                          sx={{
+                            borderBottom: `4px solid ${getSeverityColor({
+                              id: formatSeverity(vuln.severity)
+                            })}`
+                          }}
+                        >
+                          {formatSeverity(vuln.severity)}
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.vulnDescription}>
+                        {vuln.state}
+                      </Typography>
+                      <Typography className={classes.vulnDescription}>
+                        {vuln.created_at
+                          ? `${differenceInCalendarDays(
+                              Date.now(),
+                              parseISO(vuln.created_at)
+                            )} days ago`
+                          : ''}
+                      </Typography>
+                    </AccordionSummary>
+                  </Accordion>
+                );
+              })}
             </div>
           )}
           {domain.services.length > 0 && (

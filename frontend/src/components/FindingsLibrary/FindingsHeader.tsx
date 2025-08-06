@@ -7,15 +7,11 @@ const tooltipContentJson = [
   {
     id: 'Findings Library',
     content:
-      'The Findings Library is a collection of all findings from your scans. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
+      'The Findings Library is a collection of all findings, concerning your organization and its assets. You can search, filter, and sort through these findings to identify vulnerabilities and risks in your infrastructure.'
   }
 ];
 
-interface FLHeaderProps {
-  children?: React.ReactNode;
-}
-
-export const FindingsHeader: React.FC<FLHeaderProps> = ({ children }) => {
+export const FindingsHeader: React.FC = () => {
   const mobileMargin = {
     px: {
       xs: 1,
@@ -27,7 +23,7 @@ export const FindingsHeader: React.FC<FLHeaderProps> = ({ children }) => {
   };
 
   return (
-    <Box maxWidth="1152px" width="100%" margin="auto" sx={mobileMargin}>
+    <Box width="100%" sx={mobileMargin}>
       <Box sx={{ my: '40px' }}>
         <InfoLabel
           label="Findings Library"
@@ -43,7 +39,6 @@ export const FindingsHeader: React.FC<FLHeaderProps> = ({ children }) => {
           { title: 'Vulnerabilities', path: '/inventory/vulnerabilities' }
         ]}
       />
-      {children}
     </Box>
   );
 };

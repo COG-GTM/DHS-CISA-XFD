@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from 'test-utils/test-utils';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { Layout } from '../Layout';
 import { StaticsContext, StaticsContextType } from 'context/StaticsContext';
 import {
@@ -29,13 +30,13 @@ const testContext: ContextType = {
   resultSearchTerm: 'string',
   results: [],
   resultsPerPage: 1,
-  search_term: 'string',
+  searchTerm: 'string',
   setCurrent: (current: number) => {},
   setFilter: () => {},
   setResultsPerPage: () => {},
   setSort: (field: 'string', direction: 'asc' | 'desc') => {},
-  sort_direction: '',
-  sort_field: 'string',
+  sortDirection: '',
+  sortField: 'string',
   totalPages: 1,
   totalResults: 1,
   wasSearched: false,
@@ -47,15 +48,15 @@ const value: StaticsContextType = {
   setRegions: (regions: string[]) => {}
 };
 
-jest.mock('components/Header/Header', () => ({
+vi.mock('components/Header/Header', () => ({
   Header: () => <div>HEADER</div>
 }));
-jest.mock('components/GovBanner', () => ({
+vi.mock('components/GovBanner', () => ({
   GovBanner: () => <div>GOV_BANNER</div>
 }));
 
 afterAll(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('Layout component', () => {

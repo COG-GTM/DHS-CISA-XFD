@@ -79,7 +79,7 @@ const Feeds = () => {
             {
               title: 'P&E APP',
               path: {
-                pathname: `${process.env.REACT_APP_API_URL}/pe`
+                pathname: `${import.meta.env.VITE_API_URL}/pe`
               },
               users: GLOBAL_VIEW,
               externalLink: true
@@ -120,7 +120,6 @@ const Feeds = () => {
                     '/inventory' + search.search_path + '&searchId=' + search.id
                   }
                   onClick={() => {
-                    console.log('bbb');
                     localStorage.setItem('savedSearch', JSON.stringify(search));
                   }}
                   key={search.id}

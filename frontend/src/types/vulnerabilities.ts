@@ -20,6 +20,7 @@ interface LooseVulnerabilityRow {
   title: string;
   severity: string;
   kev: string;
+  ransomware: string;
   domain: string | undefined;
   domainId: string | undefined;
   product: string;
@@ -43,6 +44,7 @@ export interface LocationState {
   startDate?: string;
   endDate?: string;
   dateRange?: string;
+  scanType?: string;
 }
 
 export type SearchParams = {
@@ -50,6 +52,8 @@ export type SearchParams = {
   page: number;
   pageSize?: number;
   doExport?: boolean;
+  order?: string;
+  sort?: 'asc' | 'desc';
   group_by?: string;
   showAll?: boolean;
   is_kev?: boolean;

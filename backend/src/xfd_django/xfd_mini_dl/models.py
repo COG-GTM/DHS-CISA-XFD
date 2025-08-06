@@ -1,4 +1,5 @@
 """Django ORM models."""
+# Standard Python Librar
 # Standard Python Libraries
 import logging
 import socket
@@ -1274,6 +1275,16 @@ class User(AutoLengthCheckModel):
         default=False,
         help_text="A boolean field flagging if the user's invite is pending.",
     )
+    first_login = models.BooleanField(
+        db_column="first_login",
+        null=True,
+        help_text="A boolean field identifying a users first approved login for prompts.",
+    )
+    can_select_own_state = models.BooleanField(
+        db_column="can_select_own_state",
+        default=False,
+        help_text="A boolean field identifying if a user has select their state/region.",
+    )
     date_approved = models.DateTimeField(
         db_column="date_approved",
         blank=True,
@@ -1844,11 +1855,6 @@ class VulnScanSummary(models.Model):
         blank=True,
         help_text="Count of Ip addresses that have been scanned",
     )
-    unique_none_severity_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of vulnerabilities with a severity of 0",
-    )
     unique_low_severity_count = models.IntegerField(
         null=True,
         blank=True,
@@ -1883,11 +1889,6 @@ class VulnScanSummary(models.Model):
         null=True,
         blank=True,
         help_text="Count of unique operating systems identified running on org assets.",
-    )
-    none_severity_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of vulnerabilities with a severity of 0",
     )
     low_severity_count = models.IntegerField(
         null=True,
@@ -1955,11 +1956,6 @@ class VulnScanSummary(models.Model):
     #     blank=True,
     #     help_text="Median age of vulns with severity of critical.",
     # )
-    none_kev_count = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Count of Kevs with no severity.",
-    )
     low_kev_count = models.IntegerField(
         null=True,
         blank=True,
@@ -2035,8 +2031,8 @@ class VulnScanSummary(models.Model):
     included_tickets = models.JSONField(
         blank=True,
         null=True,
-        default=list,
-        help_text="List of ids for the tickets counted in this summary.",
+        default=dict,
+        help_text="Dictionary of ticket IDs to metadata (e.g., severity, is_kev) at the time of summary.",
     )
     top_5_risky_hosts = models.JSONField(
         blank=True,
@@ -2751,6 +2747,11 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         help_text="Boolean field that flags if this ticket is a KEV (Known Exploited Vulnerability) ticket",
+    )
+    is_kev_ransomware = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Boolean field that flags if this ticket is a KEV and known to be ransomware.",
     )
     is_risky = models.BooleanField(
         null=True,
@@ -3653,6 +3654,128 @@ class WasReport(models.Model):
         unique_together = ("last_scan_date", "org_was_acronym")
         app_label = app_label_name
         managed = manage_db
+
+
+class WasScanSummary(models.Model):
+    """Holds a 24-hour summary of WAS scan data for an organization."""
+
+    summary_uid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        help_text="Unique identifier for this WAS scan summary.",
+    )
+    start_date = models.DateField(
+        null=False,
+        help_text="Start of the 24-hour summary period (based on vuln_detection timestamp).",
+    )
+    end_date = models.DateField(
+        null=False,
+        help_text="End of the 24-hour summary period (based on vuln_detection timestamp).",
+    )
+
+    scan_identifier = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="The list of finding_uid values used to build this summary.",
+    )
+    was_org_id = models.CharField(
+        max_length=50, help_text="Acronym of the customer who owns the scan."
+    )
+    assets_scanned_count = models.IntegerField(
+        null=False, default=0, help_text="Number of assets scanned (unique IPs)."
+    )
+    unique_services_count = models.IntegerField(
+        null=False, default=0, help_text="Count of unique services (port count)."
+    )
+    unique_vulnerabilities_critical = models.IntegerField(
+        null=False, default=0, help_text="Number of unique critical vulnerabilities."
+    )
+    unique_vulnerabilities_high = models.IntegerField(
+        null=False, default=0, help_text="Number of unique high vulnerabilities."
+    )
+    unique_vulnerabilities_medium = models.IntegerField(
+        null=False, default=0, help_text="Number of unique medium vulnerabilities."
+    )
+    unique_vulnerabilities_low = models.IntegerField(
+        null=False, default=0, help_text="Number of unique low vulnerabilities."
+    )
+    unique_vulnerabilities_info = models.IntegerField(
+        null=False,
+        default=0,
+        help_text="Number of unique informational vulnerabilities.",
+    )
+    risky_services_host_count = models.IntegerField(
+        null=False, default=0, help_text="Count of hosts with risky services."
+    )
+    total_vulnerabilities_critical = models.IntegerField(
+        null=False, default=0, help_text="Total count of critical vulnerabilities."
+    )
+    total_vulnerabilities_high = models.IntegerField(
+        null=False, default=0, help_text="Total count of high vulnerabilities."
+    )
+    total_vulnerabilities_medium = models.IntegerField(
+        null=False, default=0, help_text="Total count of medium vulnerabilities."
+    )
+    total_vulnerabilities_low = models.IntegerField(
+        null=False, default=0, help_text="Total count of low vulnerabilities."
+    )
+    total_vulnerabilities_info = models.IntegerField(
+        null=False, default=0, help_text="Total count of informational vulnerabilities."
+    )
+    max_age_days_critical = models.IntegerField(
+        null=True,
+        help_text="Maximum age in days of critical vulnerabilities (from firstDetected).",
+    )
+    max_age_days_high = models.IntegerField(
+        null=True,
+        help_text="Maximum age in days of high vulnerabilities (from firstDetected).",
+    )
+    median_age_days_by_severity = models.JSONField(
+        null=True,
+        help_text="Median age in days of current vulnerabilities, keyed by severity.",
+    )
+    kev_counts_by_severity = models.JSONField(
+        null=True,
+        help_text="Counts of KEVs (Known Exploited Vulnerabilities), keyed by severity.",
+    )
+    max_age_days_kevs = models.IntegerField(
+        null=True, help_text="Maximum age in days of any KEV (from firstDetected)."
+    )
+    hosts_with_1_to_5_vulns_count = models.IntegerField(
+        null=False, default=0, help_text="Count of hosts with 1 to 5 vulnerabilities."
+    )
+    hosts_with_6_to_9_vulns_count = models.IntegerField(
+        null=False, default=0, help_text="Count of hosts with 6 to 9 vulnerabilities."
+    )
+    hosts_with_10_or_more_vulns_count = models.IntegerField(
+        null=False,
+        default=0,
+        help_text="Count of hosts with 10 or more vulnerabilities.",
+    )
+    hosts_with_vulnerability_above_info_count = models.IntegerField(
+        null=False,
+        default=0,
+        help_text="Count of hosts with vulnerabilities above informational severity.",
+    )
+    owasp_category_counts = models.JSONField(
+        null=True, help_text="Dictionary of vulnerability counts by OWASP category."
+    )
+    vulnerability_type_counts = models.JSONField(
+        null=True, help_text="Dictionary of vulnerability counts by type."
+    )
+    information_gathered_count = models.IntegerField(
+        null=False, default=0, help_text="Count of 'INFORMATION_GATHERED' findings."
+    )
+    sensitive_content_count = models.IntegerField(
+        null=False, default=0, help_text="Count of 'SENSITIVE_CONTENT' findings."
+    )
+
+    class Meta:
+        """Set WasScanSummary model metadata."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "was_scan_summary"
 
 
 # ######## PE Models #########
@@ -4667,9 +4790,10 @@ class DomainSearchView(models.Model):
     reverse_name = models.TextField(null=True)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-
-    services = models.JSONField()
-    vulnerabilities = models.JSONField()
+    ports_preview = models.TextField(null=True)
+    services_preview = models.TextField(null=True)
+    services_count = models.IntegerField(null=True)
+    vulnerabilities_count = models.IntegerField(null=True)
 
     class Meta:
         """Set DomainSearchView metadata."""
@@ -4948,7 +5072,6 @@ class PshttResults(models.Model):
         db_column="data_source_uid",
         help_text="",
     )
-    sub_domain = models.TextField(help_text="")
     date_scanned = models.DateField(blank=True, null=True, help_text="")
     base_domain = models.TextField(blank=True, null=True, help_text="")
     base_domain_hsts_preloaded = models.BooleanField(
@@ -4961,11 +5084,15 @@ class PshttResults(models.Model):
     domain_supports_https = models.BooleanField(blank=True, null=True, help_text="")
     domain_uses_strong_hsts = models.BooleanField(blank=True, null=True, help_text="")
     downgrades_https = models.BooleanField(blank=True, null=True, help_text="")
-    htss = models.BooleanField(blank=True, null=True, help_text="")
+    hsts = models.BooleanField(blank=True, null=True, help_text="")
     hsts_entire_domain = models.BooleanField(blank=True, null=True, help_text="")
     hsts_header = models.TextField(blank=True, null=True, help_text="")
     hsts_max_age = models.DecimalField(
-        max_digits=1000, decimal_places=1000, blank=True, null=True, help_text=""
+        max_digits=10,
+        decimal_places=0,
+        blank=True,
+        null=True,
+        help_text="Max age for HSTS in seconds",
     )
     hsts_preload_pending = models.BooleanField(blank=True, null=True, help_text="")
     hsts_preload_ready = models.BooleanField(blank=True, null=True, help_text="")
@@ -5003,24 +5130,24 @@ class PshttResults(models.Model):
     strictly_forces_https = models.BooleanField(blank=True, null=True, help_text="")
     unknown_error = models.BooleanField(blank=True, null=True, help_text="")
     valid_https = models.BooleanField(blank=True, null=True, help_text="")
-    ep_http_headers = models.TextField(
+    ep_http_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_http_server_header = models.TextField(blank=True, null=True, help_text="")
     ep_http_server_version = models.TextField(blank=True, null=True, help_text="")
-    ep_https_headers = models.TextField(
+    ep_https_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_https_hsts_header = models.TextField(blank=True, null=True, help_text="")
     ep_https_server_header = models.TextField(blank=True, null=True, help_text="")
     ep_https_server_version = models.TextField(blank=True, null=True, help_text="")
-    ep_httpswww_headers = models.TextField(
+    ep_httpswww_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_httpswww_hsts_header = models.TextField(blank=True, null=True, help_text="")
     ep_httpswww_server_header = models.TextField(blank=True, null=True, help_text="")
     ep_httpswww_server_version = models.TextField(blank=True, null=True, help_text="")
-    ep_httpwww_headers = models.TextField(
+    ep_httpwww_headers = models.JSONField(
         blank=True, null=True, help_text=""
     )  # This field type is a guess.
     ep_httpwww_server_header = models.TextField(blank=True, null=True, help_text="")
@@ -6662,11 +6789,23 @@ class Vulnerability(models.Model):
         blank=True, null=True, max_length=255, db_column="data_source"
     )
     description = models.TextField(blank=True, null=True)
+    false_positive = models.BooleanField(
+        db_column="false_positive",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability has been reported as a false positive.",
+    )
     is_kev = models.BooleanField(
         db_column="is_kev",
         blank=True,
         null=True,
         help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
+    )
+    is_kev_ransomware = models.BooleanField(
+        db_column="is_kev_ransomware",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability is linked to a known ransomware exploit.",
     )
     service_string = models.CharField(blank=True, null=True, max_length=255)
     # service = models.ForeignKey(

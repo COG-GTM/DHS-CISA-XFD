@@ -9,29 +9,25 @@ import {
   ListItemButton,
   ListItemText
 } from '@mui/material';
-
-interface MenuItemType {
-  menuItemTitle: string;
-  path: string;
-  users?: number;
-  onClick?: () => void;
-}
+import { MenuItemType } from './Header';
 
 interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
   openDrawer: boolean;
   menuItems: { [section: string]: MenuItemType[] }[];
+  onMenuItemClick?: (item: MenuItemType) => Promise<void>;
 }
+
 export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   toggleDrawer,
   openDrawer,
-  menuItems
+  menuItems,
+  onMenuItemClick
 }) => {
   const DrawerList = (
     <Box
       sx={{ width: 250 }}
       role="presentation"
-      onClick={toggleDrawer(false)}
       onKeyDown={(e) => {
         if (e.key === 'Escape') toggleDrawer(false)();
       }}
@@ -47,21 +43,20 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
 
             return (
               <React.Fragment key={index}>
-                {/* {menuTitle} */}
                 {items &&
                   items.length > 0 &&
                   items.map((item, subIndex) => {
-                    const isExternalLink =
-                      item.path?.startsWith('http') ||
-                      item.path?.startsWith('mailto');
-                    return (
-                      <ListItem
-                        key={`${index}-${subIndex}`}
-                        disablePadding
-                        role="none"
-                      >
-                        {item.onClick ? (
-                          //Used for buttons with onClick handlers
+                    const isHttpLink = item.path?.startsWith('http');
+                    const isMailtoLink = item.path?.startsWith('mailto:');
+
+                    // 1. onClick handler
+                    if (item.onClick) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
                           <ListItemButton
                             role="menuitem"
                             aria-label={item.menuItemTitle}
@@ -72,29 +67,84 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                           >
                             <ListItemText primary={item.menuItemTitle} />
                           </ListItemButton>
-                        ) : isExternalLink ? (
-                          // Used for external links
+                        </ListItem>
+                      );
+                    }
+
+                    // 2. Object store handler
+                    if (item.objectStoreParams && onMenuItemClick) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
+                          <ListItemButton
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                            onClick={async () => {
+                              await onMenuItemClick(item);
+                              toggleDrawer(false)();
+                            }}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
+
+                    // 3. External http link
+                    if (isHttpLink) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
                           <ListItemButton
                             component="a"
                             href={item.path}
-                            target={
-                              item.path.startsWith('http')
-                                ? '_blank'
-                                : undefined
-                            }
-                            rel={
-                              item.path.startsWith('http')
-                                ? 'noopener noreferrer'
-                                : undefined
-                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
                             role="menuitem"
                             aria-label={item.menuItemTitle}
                             onClick={toggleDrawer(false)}
                           >
                             <ListItemText primary={item.menuItemTitle} />
                           </ListItemButton>
-                        ) : (
-                          // Used for internal links
+                        </ListItem>
+                      );
+                    }
+
+                    // 4. External mailto link
+                    if (isMailtoLink) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
+                          <ListItemButton
+                            component="a"
+                            href={item.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            role="menuitem"
+                            aria-label={item.menuItemTitle}
+                          >
+                            <ListItemText primary={item.menuItemTitle} />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    }
+                    // 5. Internal link
+                    if (item.path) {
+                      return (
+                        <ListItem
+                          key={`${index}-${subIndex}`}
+                          disablePadding
+                          role="none"
+                        >
                           <ListItemButton
                             component={NavLink}
                             to={item.path}
@@ -104,9 +154,10 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                           >
                             <ListItemText primary={item.menuItemTitle} />
                           </ListItemButton>
-                        )}
-                      </ListItem>
-                    );
+                        </ListItem>
+                      );
+                    }
+                    return null;
                   })}
                 <Divider />
               </React.Fragment>

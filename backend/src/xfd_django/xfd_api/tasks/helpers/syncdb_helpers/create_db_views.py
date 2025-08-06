@@ -7,7 +7,7 @@ from django.db import connections
 VW_SERVICE_VERSION = "20250609"
 MAT_VW_COMBINED_VULNS_VERSION = "20250609"
 DOMAIN_MAT_VIEW_VERSION = "20250609"
-DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250610"
+DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250611"
 
 
 def create_vuln_normal_views(database):
@@ -65,7 +65,9 @@ def create_vuln_normal_views(database):
                 END AS state,
                 t.vuln_source as data_source,
                 COALESCE(vs.description, te.reason, 'N/A') as description,
+                t.false_positive::bool as false_positive,
                 t.is_kev::bool as is_kev,
+                t.is_kev_ransomware::bool as is_kev_ransomware,
                 t.service_name as service_string,
                 t.is_risky::bool as is_risky_service,
                 --null as os, --t.os as os --Not seeing this in the ticket
@@ -128,7 +130,9 @@ def create_vuln_normal_views(database):
                 'open' as state,
                 'Shodan' as data_source,
                 COALESCE(sv.summary, sv.mitigation, 'N/A') as description,
+                null::bool as false_positive,
                 null::bool as is_kev,
+                null::bool as is_kev_ransomware,
                 null as service_string,
                 null::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
@@ -181,7 +185,9 @@ def create_vuln_normal_views(database):
                 state,
                 data_source,
                 description,
+                null::bool as false_positive,
                 null::bool as is_kev,
+                null::bool as is_kev_ransomware,
                 null as service_string,
                 null::bool as is_risky_service,
                 null as os, --t.os as os --Not seeing this in the ticket
@@ -720,29 +726,46 @@ def create_domain_search_mat_view(database):
                 d.created_at,
                 d.updated_at,
 
-                COALESCE(
-                    jsonb_agg(DISTINCT jsonb_build_object(
-                        'id', s.id,
-                        'port', s.port,
-                        'products', s.products,
-                        'last_seen', s.last_seen,
-                        'banner', s.banner
-                    )) FILTER (WHERE s.id IS NOT NULL),
-                    '[]'::jsonb
-                ) AS services,
+            -- First 3 ports preview as comma-separated string
+            (
+                SELECT string_agg(port::text, ', ')
+                FROM (
+                    SELECT sub_inner.port
+                    FROM (
+                        SELECT s2.port, s2.last_seen
+                        FROM mat_vw_service s2
+                        WHERE s2.domain_id = d.id
+                        ORDER BY s2.last_seen DESC
+                    ) sub_inner
+                    GROUP BY sub_inner.port
+                    ORDER BY max(sub_inner.last_seen) DESC
+                    LIMIT 3
+                ) sub
+            ) AS ports_preview,
 
-                COALESCE(
-                    jsonb_agg(DISTINCT jsonb_build_object(
-                        'id', v.vuln_id,
-                        'scan_source', v.scan_source,
-                        'title', v.title,
-                        'severity', v.severity,
-                        'state', v.state,
-                        'created_at', v.created_at,
-                        'cve', v.cve
-                    )) FILTER (WHERE v.vuln_id IS NOT NULL),
-                    '[]'::jsonb
-                ) AS vulnerabilities
+            -- First 3 service names preview as comma-separated string
+            (
+                SELECT string_agg(service_name, ', ')
+                FROM (
+                    SELECT sub_inner.service_name
+                    FROM (
+                        SELECT (s2.products->0->>'name') AS service_name, s2.last_seen
+                        FROM mat_vw_service s2
+                        WHERE s2.domain_id = d.id
+                        ORDER BY s2.last_seen DESC
+                    ) sub_inner
+                    GROUP BY sub_inner.service_name
+                    ORDER BY max(sub_inner.last_seen) DESC
+                    LIMIT 3
+                ) sub
+            ) AS services_preview,
+
+            -- Services count
+            COUNT(DISTINCT s.id) AS services_count,
+
+            -- Vulnerabilities count
+            CASE WHEN COUNT(DISTINCT v.vuln_id) = 0 THEN NULL ELSE COUNT(DISTINCT v.vuln_id) END AS vulnerabilities_count
+
             FROM
                 mat_vw_domain d
 

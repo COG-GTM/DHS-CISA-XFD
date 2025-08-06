@@ -10,7 +10,6 @@ import {
   ModalRef
 } from '@trussworks/react-uswds';
 import { ModalToggleButton } from 'components';
-import { ImportExport } from 'components';
 // import { Column, CellProps } from 'react-table';
 import { Scan, Organization, ScanSchema, OrganizationTag } from 'types';
 // import { FaTimes, FaEdit } from 'react-icons/fa';
@@ -20,8 +19,6 @@ import { useAuthContext } from 'context';
 // @ts-ignore:next-line
 import { formatDistanceToNow, parseISO } from 'date-fns';
 // import { Link } from 'react-router-dom';
-import { setFrequency } from 'pages/Scan/Scan';
-import { ScanForm, ScanFormValues } from 'components/ScanForm';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
   Alert,
@@ -65,27 +62,16 @@ const ScansView: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>('');
   const [selectedName, setSelectedName] = useState<string>('');
   const [scans, setScans] = useState<Scan[]>([]);
-  const [organizationOptions, setOrganizationOptions] = useState<
+  const [_organizationOptions, setOrganizationOptions] = useState<
     OrganizationOption[]
   >([]);
-  const [tags, setTags] = useState<OrganizationTag[]>([]);
+  void _organizationOptions; // Suppress unused variable warning
+  const [_tags, setTags] = useState<OrganizationTag[]>([]);
+  void _tags; // Suppress unused variable warning
   const [scanSchema, setScanSchema] = useState<ScanSchema>({});
   const deleteModalRef = useRef<ModalRef>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [open, setOpen] = useState(false);
-
-  const [values] = useState<ScanFormValues>({
-    name: 'censys',
-    arguments: '{}',
-    organizations: [],
-    frequency: 1,
-    frequencyUnit: 'minute',
-    is_granular: false,
-    is_user_modifiable: false,
-    is_single_scan: false,
-    tags: [],
-    concurrent_tasks: 1
-  });
 
   const fetchScans = useCallback(async () => {
     try {
@@ -116,30 +102,6 @@ const ScansView: React.FC = () => {
           e.status === 422
             ? 'Unable to delete scan'
             : (e.message ?? e.toString())
-      });
-      console.log(e);
-    }
-  };
-
-  const onSubmit = async (body: ScanFormValues) => {
-    try {
-      // For now, parse the arguments as JSON. We'll want to add a GUI for this in the future
-      body.arguments = JSON.parse(body.arguments);
-      setFrequency(body);
-
-      const scan = await apiPost('/scans', {
-        body: {
-          ...body,
-          organizations: body.organizations
-            ? body.organizations.map((e) => e.value)
-            : [],
-          tags: body.tags ? body.tags.map((e) => ({ id: e.value })) : []
-        }
-      });
-      setScans(scans.concat(scan));
-    } catch (e: any) {
-      setErrors({
-        global: e.message ?? e.toString()
       });
       console.log(e);
     }
@@ -232,6 +194,9 @@ const ScansView: React.FC = () => {
       minWidth: 50,
       flex: 0.5,
       disableExport: true,
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -279,6 +244,9 @@ const ScansView: React.FC = () => {
       minWidth: 50,
       flex: 1,
       disableExport: true,
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
@@ -380,39 +348,6 @@ const ScansView: React.FC = () => {
         Manually run scheduler
       </Button>
       {errors.scheduler && <p className={classes.error}>{errors.scheduler}</p>}
-      <h2>Add a scan</h2>
-      {errors.global && <p className={classes.error}>{errors.global}</p>}
-      <ScanForm
-        organizationOption={organizationOptions}
-        tags={tags}
-        propValues={values}
-        onSubmit={onSubmit}
-        type="create"
-        scanSchema={scanSchema}
-      ></ScanForm>
-      <ImportExport<Scan>
-        name="scans"
-        fieldsToImport={['name', 'arguments', 'frequency']}
-        onImport={async (results) => {
-          // TODO: use a batch call here instead.
-          const createdScans = [];
-          for (const result of results) {
-            createdScans.push(
-              await apiPost('/scans/', {
-                body: {
-                  ...result,
-                  // These fields are initially parsed as strings, so they need
-                  // to be converted to objects.
-                  arguments: JSON.parse(
-                    (result.arguments as unknown as string) || ''
-                  )
-                }
-              })
-            );
-          }
-          setScans(scans.concat(...createdScans));
-        }}
-      />
       {/* To-Do: Undefined props are needed to avoid errors. This Modal needs to
       be replaced with a MUI Dialog. */}
       <Modal

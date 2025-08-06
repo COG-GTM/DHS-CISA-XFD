@@ -14,15 +14,14 @@ import {
   Radio,
   useTheme
 } from '@mui/material';
-import { classes } from '../../pages/Search/Styling/filterDrawerStyle';
 import {
   DeleteOutline,
   ExpandMore,
   FiberManualRecordRounded
 } from '@mui/icons-material';
 import { FacetFilter, TaggedArrayInput } from 'components';
-import { ContextType } from '../../context/SearchProvider';
-import { useAuthContext } from '../../context';
+import { ContextType } from 'context/SearchProvider';
+import { useAuthContext } from 'context';
 import { useSavedSearchContext } from 'context/SavedSearchContext';
 import { withSearch } from '@elastic/react-search-ui';
 import { SaveSearchModal } from '../SaveSearchModal/SaveSearchModal';
@@ -36,6 +35,10 @@ interface Props {
   setSearchTerm: ContextType['setSearchTerm'];
   totalResults?: ContextType['totalResults'];
   initialFilters: any[];
+  expanded?: string | false;
+  handleExpanded?: (
+    panel: string
+  ) => (event: React.SyntheticEvent, newExpanded: boolean) => void;
 }
 
 interface SeverityData {
@@ -50,10 +53,9 @@ interface GroupedData {
 const FiltersApplied: React.FC = () => {
   const theme = useTheme();
   return (
-    <Stack direction="row" alignItems="center" spacing={1}>
-      <FiberManualRecordRounded sx={{ color: theme.palette.success.main }} />
-      <Typography color="textSecondary">Filters Applied</Typography>
-    </Stack>
+    <FiberManualRecordRounded
+      sx={{ color: theme.palette.primary.main, height: '1rem', width: '1rem' }}
+    />
   );
 };
 
@@ -69,7 +71,9 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     searchTerm,
     setSearchTerm,
     totalResults = 0, // Default to 0 if not provided
-    initialFilters
+    initialFilters,
+    expanded,
+    handleExpanded
   } = props;
   const { apiGet, apiDelete } = useAuthContext();
 
@@ -235,39 +239,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
     });
 
   return (
-    <Box>
-      {/* Gives space for accordion divider to render*/}
-      <Box></Box>
-      {/* {selectedFiltersAndSearch.length > 0 && (
-        <>
-          <Divider />
-          <Box marginY={1} display="flex" width="100%" justifyContent="center">
-            <Button onClick={clearFiltersAndSearch}>Clear Filters</Button>
-          </Box>
-        </>
-      )} */}
+    <Box sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}>
       <Accordion
-        elevation={0}
         square
-        classes={{
-          root: classes.root,
-          disabled: classes.disabled,
-          expanded: classes.expanded
-        }}
+        elevation={0}
+        expanded={expanded === 'panel3'}
+        onChange={handleExpanded ? handleExpanded('panel3') : undefined}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
       >
-        <AccordionSummary
-          expandIcon={<ExpandMore />}
-          classes={{
-            root: classes.root2,
-            content: classes.content,
-            disabled: classes.disabled2,
-            expanded: classes.expanded2
-          }}
-        >
-          <div>IP(s)</div>
-          {filtersByColumn['ip']?.length > 0 && <FiltersApplied />}
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="largeBody">IP</Typography>
+            {filtersByColumn['ip']?.length > 0 && <FiltersApplied />}
+          </Stack>
         </AccordionSummary>
-        <AccordionDetails classes={{ root: classes.details }}>
+        <AccordionDetails>
           <TaggedArrayInput
             placeholder="IP address"
             values={filtersByColumn.ip ?? []}
@@ -277,29 +263,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
         </AccordionDetails>
       </Accordion>
       <Accordion
-        elevation={0}
         square
-        classes={{
-          root: classes.root,
-          disabled: classes.disabled,
-          expanded: classes.expanded
-        }}
+        elevation={0}
+        expanded={expanded === 'panel4'}
+        onChange={handleExpanded ? handleExpanded('panel4') : undefined}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
       >
-        <AccordionSummary
-          expandIcon={<ExpandMore />}
-          classes={{
-            root: classes.root2,
-            content: classes.content,
-            disabled: classes.disabled2,
-            expanded: classes.expanded2
-          }}
-        >
-          <div>Domain(s)</div>
-          {filtersByColumn['name']?.length > 0 && <FiltersApplied />}
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="largeBody">Domain</Typography>
+            {filtersByColumn['name']?.length > 0 && <FiltersApplied />}
+          </Stack>
         </AccordionSummary>
-        <AccordionDetails classes={{ root: classes.details }}>
+        <AccordionDetails>
           <TaggedArrayInput
-            placeholder="Domain"
+            placeholder="Domain Name"
             values={filtersByColumn.name ?? []}
             onAddTag={(value) => addFilter('name', value, 'any')}
             onRemoveTag={(value) => removeFilter('name', value, 'any')}
@@ -308,29 +286,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       </Accordion>
       {fromDomainFacet.length > 0 && (
         <Accordion
-          elevation={0}
           square
-          classes={{
-            root: classes.root,
-            disabled: classes.disabled,
-            expanded: classes.expanded
-          }}
+          elevation={0}
+          expanded={expanded === 'panel5'}
+          onChange={handleExpanded ? handleExpanded('panel5') : undefined}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            classes={{
-              root: classes.root2,
-              content: classes.content,
-              disabled: classes.disabled2,
-              expanded: classes.expanded2
-            }}
-          >
-            <div>Root Domain(s)</div>
-            {filtersByColumn['from_root_domain']?.length > 0 && (
-              <FiltersApplied />
-            )}
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="largeBody">Root Domains</Typography>
+              {filtersByColumn['from_root_domain']?.length > 0 && (
+                <FiltersApplied />
+              )}
+            </Stack>
           </AccordionSummary>
-          <AccordionDetails classes={{ root: classes.details }}>
+          <AccordionDetails>
             <FacetFilter
               options={fromDomainFacet}
               selected={filtersByColumn['from_root_domain'] ?? []}
@@ -344,27 +314,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {portFacet.length > 0 && (
         <Accordion
-          elevation={0}
           square
-          classes={{
-            root: classes.root,
-            disabled: classes.disabled,
-            expanded: classes.expanded
-          }}
+          elevation={0}
+          expanded={expanded === 'panel6'}
+          onChange={handleExpanded ? handleExpanded('panel6') : undefined}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            classes={{
-              root: classes.root2,
-              content: classes.content,
-              disabled: classes.disabled2,
-              expanded: classes.expanded2
-            }}
-          >
-            <div>Port(s)</div>
-            {filtersByColumn['services.port']?.length > 0 && <FiltersApplied />}
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="largeBody">Ports</Typography>
+              {filtersByColumn['services.port']?.length > 0 && (
+                <FiltersApplied />
+              )}
+            </Stack>
           </AccordionSummary>
-          <AccordionDetails classes={{ root: classes.details }}>
+          <AccordionDetails>
             <FacetFilter
               options={portFacet}
               selected={filtersByColumn['services.port'] ?? []}
@@ -378,29 +342,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {cveFacet.length > 0 && (
         <Accordion
-          elevation={0}
           square
-          classes={{
-            root: classes.root,
-            disabled: classes.disabled,
-            expanded: classes.expanded
-          }}
+          elevation={0}
+          expanded={expanded === 'panel7'}
+          onChange={handleExpanded ? handleExpanded('panel7') : undefined}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            classes={{
-              root: classes.root2,
-              content: classes.content,
-              disabled: classes.disabled2,
-              expanded: classes.expanded2
-            }}
-          >
-            <div>CVE(s)</div>
-            {filtersByColumn['vulnerabilities.cve']?.length > 0 && (
-              <FiltersApplied />
-            )}
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="largeBody">CVEs</Typography>
+              {filtersByColumn['vulnerabilities.cve']?.length > 0 && (
+                <FiltersApplied />
+              )}
+            </Stack>
           </AccordionSummary>
-          <AccordionDetails classes={{ root: classes.details }}>
+          <AccordionDetails>
             <FacetFilter
               options={cveFacet}
               selected={filtersByColumn['vulnerabilities.cve'] ?? []}
@@ -416,29 +372,21 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )}
       {sortedSeverityFacets.length > 0 && (
         <Accordion
-          elevation={0}
           square
-          classes={{
-            root: classes.root,
-            disabled: classes.disabled,
-            expanded: classes.expanded
-          }}
+          elevation={0}
+          expanded={expanded === 'panel8'}
+          onChange={handleExpanded ? handleExpanded('panel8') : undefined}
+          sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            classes={{
-              root: classes.root2,
-              content: classes.content,
-              disabled: classes.disabled2,
-              expanded: classes.expanded2
-            }}
-          >
-            <div>Severity</div>
-            {filtersByColumn['vulnerabilities.severity']?.length > 0 && (
-              <FiltersApplied />
-            )}
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="largeBody">Severity</Typography>
+              {filtersByColumn['vulnerabilities.severity']?.length > 0 && (
+                <FiltersApplied />
+              )}
+            </Stack>
           </AccordionSummary>
-          <AccordionDetails classes={{ root: classes.details }}>
+          <AccordionDetails>
             <FacetFilter
               options={sortedSeverityFacets}
               selected={filtersByColumn['vulnerabilities.severity'] ?? []}
@@ -452,17 +400,23 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           </AccordionDetails>
         </Accordion>
       )}
-      <Accordion>
+      <Accordion
+        square
+        elevation={0}
+        expanded={expanded === 'panel9'}
+        onChange={handleExpanded ? handleExpanded('panel9') : undefined}
+        sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
+      >
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography>Saved Searches</Typography>
+          <Typography variant="largeBody">Saved Filters</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <SaveSearchModal
             searchTerm={searchTerm}
             filters={filters}
             totalResults={totalResults}
-            sort_field={''}
-            sort_direction={''}
+            sortField={''}
+            sortDirection={''}
             advancedFiltersReq={advanceFiltersReq}
           />
           {ascendingSavedSearches.length > 0 ? (
@@ -499,7 +453,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
           ) : (
             <List>
               <ListItem sx={{ alignItems: 'center', justifyContent: 'center' }}>
-                No Saved Searches
+                No Saved Filters
               </ListItem>
             </List>
           )}

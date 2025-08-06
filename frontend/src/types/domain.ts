@@ -89,6 +89,7 @@ export interface Vulnerability {
   title: string;
   cve: string | null;
   is_kev?: string;
+  is_kev_ransomware?: string;
   cwe: string | null;
   cpe: string | null;
   description: string;
@@ -136,6 +137,24 @@ export interface Domain {
   censys_certificates_results: any;
   from_root_domain: string | null;
   subdomain_source: string | null;
+}
+
+export interface DomainSearchApiResponse {
+  id: string;
+  name: string;
+  ip: string;
+  created_at: string;
+  updated_at: string;
+  country: string | null;
+  cloud_hosted: boolean;
+  organization: {
+    id: string;
+    name: string;
+  };
+  ports_preview: string;
+  services_preview: string;
+  services_count: number;
+  vulnerabilities_count: number;
 }
 
 export interface SSLInfo {

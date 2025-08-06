@@ -10,16 +10,16 @@ import {
   Button,
   Box
 } from '@mui/material';
-import { SavedSearch } from '../../types/saved-search';
-import { useAuthContext } from '../../context';
+import { SavedSearch } from 'types/saved-search';
+import { useAuthContext } from 'context';
 import { Add } from '@mui/icons-material';
 
 interface SaveSearchModalProps {
   searchTerm: string;
   filters: any;
   totalResults: number;
-  sort_field: string;
-  sort_direction: string;
+  sortField: string;
+  sortDirection: string;
   advancedFiltersReq?: boolean;
 }
 
@@ -28,8 +28,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
     searchTerm,
     filters,
     totalResults,
-    sort_field,
-    sort_direction,
+    sortField,
+    sortDirection,
     advancedFiltersReq
   } = props;
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -53,8 +53,8 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         filters,
         count: totalResults,
         search_path: window.location.search,
-        sort_field,
-        sort_direction
+        sort_field: sortField,
+        sort_direction: sortDirection
       }
     };
 
@@ -137,13 +137,13 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         variant="text"
         onClick={handleUpdate}
         disabled={!advancedFiltersReq}
-        aria-label={activeSearch ? 'Update Saved Search' : 'Save Search'}
+        aria-label={activeSearch ? 'Update Saved Filter' : 'Save New'}
         startIcon={<Add />}
         sx={{
           paddingLeft: '0.25em'
         }}
       >
-        {activeSearch ? 'Update Saved Search' : 'Save Search'}
+        {activeSearch ? 'Update Saved Filter' : 'Save New'}
       </Button>
       <Dialog
         open={updateDialogOpen}
@@ -158,7 +158,7 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         }}
       >
         <DialogTitle id="update-saved-search-title">
-          Update Saved Search
+          Update Saved Filter
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="update-saved-search-description">
@@ -175,7 +175,7 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
               value={savedSearchValues.name}
               onChange={(e) => handleChange(e.target.name, e.target.value)}
               inputProps={{
-                'aria-label': 'Enter a name for your saved search'
+                'aria-label': 'Enter a name for your saved filter'
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -214,7 +214,7 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
           </Button>
           <Button
             tabIndex={0}
-            variant="contained"
+            variant="primaryContained"
             onClick={() => {
               try {
                 handleSave(savedSearchValues);
@@ -261,19 +261,16 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         aria-labelledby="save-search-dialog-title"
         aria-describedby="dialog-description"
       >
-        <DialogTitle id="dialog-title">Save Search</DialogTitle>
+        <DialogTitle id="dialog-title">Save Filter</DialogTitle>
         <DialogContent>
           <Box paddingBottom={'1em'}>
-            <DialogContentText id="dialog-description">
-              Name Your Search
-            </DialogContentText>
             <TextField
               autoFocus
               required
               margin="dense"
               id="name"
               name="name"
-              placeholder="Enter a name"
+              placeholder="Add custom filter name"
               type="text"
               fullWidth
               variant="outlined"
