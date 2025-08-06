@@ -3,17 +3,18 @@
 # Standard Python Libraries
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import json
 import os
 import re
 from typing import Optional
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 import uuid
 
 # Third-Party Libraries
 from django.conf import settings
 from django.forms.models import model_to_dict
 from fastapi import Depends, HTTPException, Request, Security, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.security import APIKeyHeader
 import jwt
 import requests
@@ -39,14 +40,44 @@ LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
 
+def validate_json_serialization(user_object, label="user_object"):
+    """Try to serialize an object to JSON. If it fails, identify which field caused it."""
+    if user_object is None:
+        raise ValueError("{} is None, cannot serialize".format(label))
+    try:
+        json.dumps(user_object)
+    except TypeError as e:
+
+        def traverse_data(user_data, path):
+            if isinstance(user_data, dict):
+                for key, value in user_data.items():
+                    traverse_data(value, path + [str(key)])
+            elif isinstance(user_data, list):
+                for index, item in enumerate(user_data):
+                    traverse_data(item, path + ["[{}]".format(index)])
+            else:
+                try:
+                    json.dumps(user_data)
+                except TypeError:
+                    path_str = ".".join(path)
+                    raise TypeError(
+                        "{} contains unserializable value at `{}`".format(
+                            label, path_str
+                        )
+                    )
+
+        traverse_data(user_object, [])
+        raise TypeError("{} failed JSON serialization: {}".format(label, e))
+
+
 def user_to_dict(user):
     """Take a user model object from django and sanitize fields for output."""
-    user_dict = model_to_dict(user)  # Convert model to dict
+    user_dict = model_to_dict(user)
     # Convert any UUID fields to strings
-    if isinstance(user_dict.get("id"), uuid.UUID):
-        user_dict["id"] = str(user_dict["id"])
     for key, val in user_dict.items():
-        if isinstance(val, datetime):
+        if isinstance(val, uuid.UUID):
+            user_dict[key] = str(val)
+        elif isinstance(val, datetime):
             user_dict[key] = str(val)
     # Make sure maintenance checks are included in user response
     user_dict["login_blocked_by_maintenance"] = user.login_blocked_by_maintenance
@@ -142,6 +173,79 @@ def get_current_active_user(
             detail="Invalid authentication credentials",
         )
 
+    if user.invite_pending:
+        print("User is not active or approved")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized",
+        )
+
+    # Attach email to request state for logging
+    request.state.user_email = user.email
+    return user
+
+
+def get_current_active_user_unsafe(
+    request: Request,
+    api_key: Optional[str] = Security(api_key_header),
+    token: Optional[str] = Depends(get_token_from_header),
+):
+    """
+    Ensure the current user is authenticated and active, does not perform invite_pending check.
+
+    This function is UNSAFE and should not be used for sensitive operations.
+
+    It is intended for scenarios where the user is known to be unapproved and where the endpoints are not sensitive.
+    """
+    user = None
+    if api_key:
+        user = get_user_by_api_key(api_key)
+    elif token:
+        # Check if token is an API key
+        if re.match(r"^[A-Fa-f0-9]{32}$", token):
+            user = get_user_by_api_key(token)
+        else:
+            try:
+                # Decode token in Authorization header to get user
+                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                user_id = payload.get("id")
+
+                if user_id is None:
+                    print("No user ID found in token")
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid token",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+                # Fetch the user by ID from the database
+                user = User.objects.get(id=user_id)
+            except jwt.ExpiredSignatureError:
+                print("Token has expired")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has expired",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            except jwt.InvalidTokenError:
+                print("Invalid token")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No valid authentication credentials provided",
+        )
+
+    if user is None:
+        print("User not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+
     # Attach email to request state for logging
     request.state.user_email = user.email
     return user
@@ -168,17 +272,67 @@ def update_login_block_status(user: User) -> None:
     user.save()
 
 
+def get_cookie_domain(frontend_url: str) -> str:
+    """Convert full URL to cookie domain starting with a dot."""
+    parsed = urlparse(frontend_url)
+    hostname = parsed.hostname or frontend_url  # fallback
+    return ".{}".format(hostname)
+
+
+# POST: /auth/set-oauth-cookies
+def set_oauth_cookies_response(state: str, code_verifier: str) -> Response:
+    """Return a Response with OAuth state and PKCE code_verifier cookies set."""
+    response = Response(content="Cookies set", media_type="text/plain")
+    if settings.IS_LOCAL:
+        cookie_domain = None
+    else:
+        cookie_domain = get_cookie_domain(settings.FRONTEND_DOMAIN)
+    response.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        path="/",
+        domain=cookie_domain,
+    )
+    response.set_cookie(
+        key="pkce_code_verifier",
+        value=code_verifier,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        path="/",
+        domain=cookie_domain,
+    )
+    return response
+
+
 # POST: /auth/okta-callback
 async def handle_okta_callback(request):
     """POST API LOGIC."""
     body = await request.json()
-    code = body.get("code", None)
-    if code is None:
-        return HTTPException(
+    code = body.get("code")
+    state = body.get("state")
+
+    # Retrieve from cookies (not from body anymore)
+    cookie_state = request.cookies.get("oauth_state")
+    code_verifier = request.cookies.get("pkce_code_verifier")
+
+    if not code or not state or not cookie_state or not code_verifier:
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Code not found in request body",
+            detail="Missing required OAuth parameters",
         )
-    jwt_data = await get_jwt_from_code(code)
+
+    # Validate state matches the cookie
+    if state != cookie_state:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or missing OAuth state",
+        )
+
+    jwt_data = await get_jwt_from_code(code, code_verifier)
     print("JWT Data: {}".format(jwt_data))
     if jwt_data is None:
         raise HTTPException(
@@ -191,9 +345,16 @@ async def handle_okta_callback(request):
     resp = await process_user(decoded_token)
     token = resp.get("token")
 
-    # Create a JSONResponse object to return the response and set the cookie
+    # Create a JSONResponse object to return the response and clear cookies
     response = JSONResponse(
         content={"message": "User authenticated", "data": resp, "token": token}
+    )
+    cookie_domain = get_cookie_domain(settings.FRONTEND_DOMAIN)
+    response.delete_cookie(
+        "oauth_state", domain=cookie_domain, path="/", samesite="None"
+    )
+    response.delete_cookie(
+        "pkce_code_verifier", domain=cookie_domain, path="/", samesite="None"
     )
     response.set_cookie(key="token", value=token)
 
@@ -210,7 +371,7 @@ async def handle_okta_callback(request):
 
 async def process_user(decoded_token):
     """Process a user based on decoded token information."""
-    user = User.objects.filter(email=decoded_token["email"]).first()
+    user = User.objects.filter(okta_id=decoded_token["sub"]).first()
     if not user:
         # Create a new user if they don't exist from Okta fields in SAML Response
         user = User(
@@ -224,12 +385,14 @@ async def process_user(decoded_token):
             cognito_use_case_description=decoded_token.get("nickname"),
             cognito_email_verified=decoded_token.get("email_verified"),
             cognito_groups=decoded_token.get("cognito:groups"),
+            can_select_own_state=True,
         )
 
         # Check for active major maintenance window and login status (New User)
         update_login_block_status(user)
 
         user.save()
+
     else:
         # Update user oktaId (legacy users) and login time
         user.okta_id = decoded_token["sub"]
@@ -265,12 +428,13 @@ async def process_user(decoded_token):
         )
 
         process_resp = {"token": signed_token, "user": user_to_dict(user)}
+        validate_json_serialization(process_resp["user"], label="User Dict")
         return process_resp
     else:
         raise HTTPException(status_code=400, detail="User not found")
 
 
-async def get_jwt_from_code(auth_code: str):
+async def get_jwt_from_code(auth_code: str, code_verifier: str):
     """Exchange authorization code for JWT tokens and decode."""
     try:
         callback_url = os.getenv("REACT_APP_COGNITO_CALLBACK_URL")
@@ -278,23 +442,20 @@ async def get_jwt_from_code(auth_code: str):
         domain = os.getenv("REACT_APP_COGNITO_DOMAIN")
         proxy_url = os.getenv("LZ_PROXY_URL")
 
-        scope = "openid"
         authorize_token_url = "https://{}/oauth2/token".format(domain)
         authorize_token_body = {
             "grant_type": "authorization_code",
             "client_id": client_id,
             "code": auth_code,
             "redirect_uri": callback_url,
-            "scope": scope,
+            "code_verifier": code_verifier,
         }
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
         # Set up proxies if PROXY_URL is defined
-        proxies = None
-        if proxy_url:
-            proxies = {"http": proxy_url, "https": proxy_url}
+        proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
 
         response = requests.post(
             authorize_token_url,
@@ -388,6 +549,42 @@ def can_access_user(current_user, target_user_id) -> bool:
         return current_user.region_id == target_user.region_id
 
     return False
+
+
+def get_allowed_user_update_fields(current_user, target_user):
+    """Get allowed user update fields."""
+    if is_global_write_admin(current_user):
+        return {
+            "first_name",
+            "last_name",
+            "state",
+            "region_id",
+            "user_type",
+            "invite_pending",
+            "date_approved",
+            "approved_by",
+            "accepted_terms_version",
+            "login_blocked_by_maintenance",
+        }
+    elif (
+        is_regional_admin(current_user)
+        and current_user.region_id == target_user.region_id
+    ):
+        return {
+            "first_name",
+            "last_name",
+            "invite_pending",
+            "first_login",
+            "date_approved",
+            "approved_by",
+        }
+    elif (
+        current_user.id == target_user.id
+        and current_user.can_select_own_state is True
+        and current_user.invite_pending is True
+    ):
+        return {"can_select_own_state", "state", "region_id"}
+    return set()
 
 
 def get_org_memberships(current_user) -> list[str]:

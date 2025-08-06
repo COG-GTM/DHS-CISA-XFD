@@ -17,19 +17,13 @@ import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
-from django.core.management import call_command
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Min, Q, Sum
 from django.db.models.functions import Power
 from django.utils import timezone
 import psycopg2
 import requests
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
-from xfd_api.tasks.syncdb_helpers import (
-    create_domain_view,
-    create_service_view,
-    create_vuln_materialized_views,
-    create_vuln_normal_views,
-)
+from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.utils.chunk import chunk_list_by_bytes
 from xfd_api.utils.csv_utils import create_checksum
 from xfd_api.utils.hash import hash_ip
@@ -143,8 +137,6 @@ def main():  # pylint: disable=R0915
     """Execute the vulnerability scanning synchronization task."""
     LOGGER.info("Started VulnScanningSync scan...")
 
-    call_command("syncmdl", dangerouslyforce=False)
-
     # Load request data
     request_list = fetch_from_redshift("SELECT * FROM vmtableau.requests;")
     LOGGER.info("Fetched %d requests from Redshift", len(request_list))
@@ -192,15 +184,14 @@ def main():  # pylint: disable=R0915
             total_processed,
             chunk_number - 1,
         )
+        # Set latest flag
+        LOGGER.info("Setting port scans latest flag")
         enforce_latest_flag_port_scan()
-        create_port_scan_summary()
-        create_port_scan_service_summaries()
-        LOGGER.info("Finished processing port scans")
 
-    # fill_cidr_live_ips()
+    # Fill CIDR live IPs
     fill_cidr_live_ips_bulk_update()
 
-    # Process Organizations & Relations
+    # Send organizations to the DMZ MDL
     send_organizations_to_dmz()
 
     # Process Tickets (Chunked)
@@ -231,33 +222,39 @@ def main():  # pylint: disable=R0915
             chunk_number - 1,
         )
         LOGGER.info("Finished processing tickets")
-        try:
-            create_vuln_scan_summary()
-        except Exception as e:
-            raise QueryError(
-                SCAN_NAME, str(e), "Error creating vulnerability scan summary"
-            ) from e
 
+    # 🔁 REFRESH MATERIALIZED VIEWS BEFORE CREATING SUMMARIES
+    LOGGER.info("Refreshing materialized views before creating summaries...")
+    # Create or refresh materialized views
+    result = refresh_materialized_views({})
+    LOGGER.info(result)
+    LOGGER.info("Finished refreshing materialized views")
+
+    # ✅ Create summaries with individual error handling
+    LOGGER.info("Creating port scan summary...")
     try:
-        create_domain_view("mini_data_lake")
+        create_port_scan_summary()
+        LOGGER.info("Finished port scan summary")
     except Exception as e:
-        raise QueryError(SCAN_NAME, str(e), "Error creating domain view") from e
+        LOGGER.error("Failed to create port scan summary: %s", e, exc_info=True)
+
+    LOGGER.info("Creating port scan service summaries...")
     try:
-        create_service_view("mini_data_lake")
+        create_port_scan_service_summaries()
+        LOGGER.info("Finished port scan service summaries")
     except Exception as e:
-        raise QueryError(SCAN_NAME, str(e), "Error creating service view") from e
+        LOGGER.error(
+            "Failed to create port scan service summaries: %s", e, exc_info=True
+        )
+
+    LOGGER.info("Creating vulnerability scan summary...")
     try:
-        create_vuln_normal_views("mini_data_lake")
+        create_vuln_scan_summary()
+        LOGGER.info("Finished vulnerability scan summary")
     except Exception as e:
-        raise QueryError(
-            SCAN_NAME, str(e), "Error creating vulnerability normal views"
-        ) from e
-    try:
-        create_vuln_materialized_views("mini_data_lake")
-    except Exception as e:
-        raise QueryError(
-            SCAN_NAME, str(e), "Error creating vulnerability materialized views"
-        ) from e
+        LOGGER.error(
+            "Failed to create vulnerability scan summary: %s", e, exc_info=True
+        )
 
 
 def detect_data_set(query):
@@ -344,7 +341,6 @@ def send_csv_to_sync(csv_data, bounds):
         "Content-Type": "application/json",
         "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
-
     try:
         response = requests.post(
             os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
@@ -411,12 +407,17 @@ def process_vulnerability_scans(vuln_scans, org_id_dict):
 
 
 def safe_fromisoformat(date_input) -> datetime.datetime | None:
-    """Safely convert input to datetime, or return None if invalid."""
+    """Safely convert input to timezone-aware datetime, or return None if invalid."""
     if isinstance(date_input, datetime.datetime):
-        return date_input
+        return (
+            timezone.make_aware(date_input)
+            if timezone.is_naive(date_input)
+            else date_input
+        )
     if isinstance(date_input, str):
         try:
-            return parser.isoparse(date_input)
+            parsed = parser.parse(date_input)
+            return timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
         except Exception as e:
             LOGGER.warning(
                 "Failed to parse datetime from string: %s | Error: %s", date_input, e
@@ -512,9 +513,9 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
             SUM(CASE WHEN status = 'WAITING' THEN 1 ELSE 0 END) AS host_waiting_count,
             SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
             SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END) AS host_ready_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'true' THEN 1 ELSE 0 END) AS up_host_count,
-            SUM(CASE WHEN json_extract_path_text(state, 'up') = 'false' THEN 1 ELSE 0 END) AS down_host_count,
-            COUNT(ip) AS scanned_asset_count,
+            SUM(CASE WHEN POSITION('\"up\":true' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS up_host_count,
+            SUM(CASE WHEN POSITION('\"up\":false' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS down_host_count,
+            COUNT(DISTINCT ip) AS scanned_asset_count
         FROM vmtableau.hosts
         WHERE last_change >= GETDATE() - INTERVAL '100 days'
         GROUP BY owner;
@@ -553,6 +554,7 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                     "host_ready_count": row["host_ready_count"],
                     "up_host_count": row["up_host_count"],
                     "down_host_count": row["down_host_count"],
+                    "scanned_asset_count": row["scanned_asset_count"],
                 },
             )
         except Organization.DoesNotExist:
@@ -749,6 +751,7 @@ def process_tickets(tickets, org_id_dict):
                 else None,
                 "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
+                "is_kev_ransomware": details.get("kev_ransomware"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
                 "operating_system": get_latest_os_type(ticket.get("ip"))
@@ -771,13 +774,29 @@ def get_asset_owned_count(org):
         cidrorgs__organization=org, cidrorgs__current=True, network__isnull=False
     ).distinct()
 
+    if not cidrs.exists():
+        LOGGER.warning("No CIDRs found for organization ID: %s (%s)", org.id, org.name)
+
     total_ips = 0
     for cidr in cidrs:
         try:
             network = ip_network(str(cidr.network), strict=False)
             total_ips += network.num_addresses
-        except ValueError:
-            continue  # Skip bad CIDRs
+        except (ValueError, TypeError) as e:
+            LOGGER.warning(
+                "Invalid CIDR '%s' for organization ID: %s (%s) — %s",
+                getattr(cidr, "network", None),
+                org.id,
+                org.name,
+                str(e),
+            )
+        except Exception as e:
+            LOGGER.warning(
+                "Unexpected error while processing CIDR for org ID: %s (%s) — %s",
+                org.id,
+                org.name,
+                str(e),
+            )
 
     return total_ips
 
@@ -856,7 +875,15 @@ def create_vuln_scan_summary(summary_date=None):
 
         critical_max = max_ticket_life(included.filter(cvss_severity=4))
         high_max = max_ticket_life(included.filter(cvss_severity=3))
+        medium_max = max_ticket_life(included.filter(cvss_severity=2))
+        low_max = max_ticket_life(included.filter(cvss_severity=1))
         kev_max = max_ticket_life(included.filter(is_kev=True))
+        critical_kev_max = max_ticket_life(
+            included.filter(is_kev=True, cvss_severity=4)
+        )
+        high_kev_max = max_ticket_life(included.filter(is_kev=True, cvss_severity=3))
+        medium_kev_max = max_ticket_life(included.filter(is_kev=True, cvss_severity=2))
+        low_kev_max = max_ticket_life(included.filter(is_kev=True, cvss_severity=1))
 
         # Host vuln distribution
         ip_counts = Counter(included.values_list("ip_string", flat=True))
@@ -1013,13 +1040,25 @@ def create_vuln_scan_summary(summary_date=None):
                 **kev_counts,
                 "critical_max_age": critical_max,
                 "high_max_age": high_max,
+                "medium_max_age": medium_max,
+                "low_max_age": low_max,
                 "kev_max_age": kev_max,
+                "critical_kev_max_age": critical_kev_max,
+                "high_kev_max_age": high_kev_max,
+                "medium_kev_max_age": medium_kev_max,
+                "low_kev_max_age": low_kev_max,
                 "one_to_five_vulns_count": one_to_five,
                 "six_to_nine_vulns_count": six_to_nine,
                 "ten_plus_vulns_count": ten_plus,
                 "top_5_occurring_cves": top_5_occurring_cves,
                 "top_5_occurring_kevs": top_5_occurring_kevs,
-                "included_tickets": list(included.values_list("id", flat=True)),
+                "included_tickets": {
+                    str(ticket.id): {
+                        "severity": severity_map.get(ticket.cvss_severity, "unknown"),
+                        "is_kev": ticket.is_kev,
+                    }
+                    for ticket in included.only("id", "cvss_severity", "is_kev")
+                },
                 "top_5_risky_hosts": top_5_hosts,
             },
         )
@@ -1320,7 +1359,7 @@ def process_organization(request, network_list, location_dict, org_id_dict):
             request.get("agency", {}).get("location", {}).get("state_name"), None
         ),
         "stakeholder": bool(request.get("stakeholder", False)),
-        "enrolled_in_vs_timestamp": request.get("enrolled") or datetime.datetime.now(),
+        "enrolled_in_vs_timestamp": request.get("enrolled") or timezone.now(),
         "period_start_vs_timestamp": request.get("period_start"),
         "report_types": json.dumps(request.get("report_types", [])),
         "scan_types": json.dumps(request.get("scan_types", [])),

@@ -290,6 +290,7 @@ export const ScanTasksView: React.FC = () => {
     'dnstwist',
     'rootDomainSync',
     'was_sync',
+    'was',
     'xpanse_sync'
   ];
 
@@ -424,6 +425,7 @@ export const ScanTasksView: React.FC = () => {
                 });
               }}
               pageSizeOptions={[15, 30, 50, 100]}
+              disableRowSelectionOnClick
             />
           </Paper>
         )}
@@ -470,14 +472,26 @@ export const ScanTasksView: React.FC = () => {
               />
             </>
           )}
-          <Typography variant="h6" component="div">
-            Input:
-          </Typography>
-          <pre>
-            {detailsParams?.row?.input &&
-              JSON.stringify(JSON.parse(detailsParams?.row?.input), null, 2)}
-          </pre>
-
+          {(() => {
+            const rawInput = detailsParams?.row?.input;
+            if (!rawInput) return '';
+            try {
+              const parsedJSON = JSON.parse(rawInput);
+              const formattedJSON = JSON.stringify(parsedJSON, null, 2);
+              if (formattedJSON === '{}' || formattedJSON === '[]') return '';
+              return (
+                <>
+                  <Typography variant="h6" component="div">
+                    Input:
+                  </Typography>
+                  <pre>{formattedJSON}</pre>
+                </>
+              );
+            } catch (e) {
+              console.log(e);
+              return '';
+            }
+          })()}
           <Typography variant="h6" component="div">
             Output:
           </Typography>

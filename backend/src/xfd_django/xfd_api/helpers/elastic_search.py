@@ -2,18 +2,22 @@
 # Standard Python Libraries
 from typing import Any, Dict, List, Optional
 
+from ..schema_models.search import DomainSearchBody
+
 # Define non-keyword fields
 NON_KEYWORD_FIELDS = {"updated_at", "created_at"}
 
 
-def build_from(current: int, results_per_page: int) -> Optional[int]:
+def build_from(current: int | None, results_per_page: int | None) -> Optional[int]:
     """Build from."""
     if not current or not results_per_page:
         return None
     return (current - 1) * results_per_page
 
 
-def build_sort(sort_direction: str, sort_field: str) -> Optional[List[Dict[str, Any]]]:
+def build_sort(
+    sort_direction: str | None, sort_field: str | None
+) -> Optional[List[Dict[str, Any]]]:
     """Build sort."""
     if not sort_direction or not sort_field:
         return None
@@ -22,7 +26,7 @@ def build_sort(sort_direction: str, sort_field: str) -> Optional[List[Dict[str, 
     return [{"{}.keyword".format(sort_field): {"order": sort_direction}}]
 
 
-def build_match(search_term: str) -> Dict[str, Any]:
+def build_match(search_term: str | None) -> Dict[str, Any]:
     """Build match."""
     if search_term:
         return {
@@ -35,7 +39,7 @@ def build_match(search_term: str) -> Dict[str, Any]:
     return {"match_all": {}}
 
 
-def build_child_match(search_term: str) -> Dict[str, Any]:
+def build_child_match(search_term: str | None) -> Dict[str, Any]:
     """Build child match."""
     return build_match(search_term)
 
@@ -210,19 +214,21 @@ def build_request_filter(filters, force_return_no_results):
     return [get_term_filter(f) for f in filters]
 
 
-def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
-    """Build request."""
-    print(options)
+def build_request(state: DomainSearchBody) -> Dict[str, Any]:
+    """Build Elasticsearch request body."""
     current = state.current
     filters = state.filters or []
-    results_per_page = state.results_per_page
-    search_term = state.search_term
-    sort_direction = state.sort_direction
-    sort_field = state.sort_field
+    results_per_page = state.resultsPerPage
+    search_term = state.searchTerm
+    sort_direction = state.sortDirection
+    sort_field = state.sortField
 
+    # Extract org filters from filters list
     orgs_in_filters = next(
         (f for f in filters if f["field"] == "organization_id"), None
     )
+
+    # Remove organization_id filters from filters so they are handled separately
     refined_filters = (
         [f for f in filters if f["field"] != "organization_id"]
         if orgs_in_filters
@@ -237,6 +243,7 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
     from_ = build_from(current, results_per_page)
     filter_ = build_request_filter(refined_filters, should_return_no_results)
 
+    # Base query
     query = {
         "bool": {
             "must": [
@@ -267,22 +274,20 @@ def build_request(state, options: Dict[str, Any]) -> Dict[str, Any]:
         }
     }
 
-    if orgs_in_filters:
-        query = {
-            "bool": {
-                "must": [
-                    {
-                        "terms": {
-                            "organization.id.keyword": [
-                                org["id"] for org in orgs_in_filters["values"]
-                            ]
-                        }
-                    },
-                    query,
-                ]
+    # Add organization filter if valid
+    if orgs_in_filters and orgs_in_filters.get("values"):
+        org_ids = [org["id"] for org in orgs_in_filters["values"] if "id" in org]
+        if org_ids:
+            query = {
+                "bool": {
+                    "must": [
+                        {"terms": {"organization.id.keyword": org_ids}},
+                        query,
+                    ]
+                }
             }
-        }
 
+    # Final request body
     body = {
         "highlight": {
             "fragment_size": 200,

@@ -104,15 +104,15 @@ class ECSClient:
                             "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
                             "LG_API_KEY": os.getenv("LG_API_KEY"),
                             "LG_WORKSPACE_NAME": os.getenv("LG_WORKSPACE_NAME"),
+                            "SERVICE_QUEUE_URL": os.getenv("QUEUE_URL", ""),
+                            "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
+                            "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
                             "QUEUE_URL": os.getenv("QUEUE_URL", ""),
                             "XPANSE_ORG_SYNC_BUCKET_NAME": os.getenv(
                                 "XPANSE_ORG_SYNC_BUCKET_NAME"
                             ),
                             "XPANSE_API_KEY": os.getenv("XPANSE_API_KEY"),
                             "XPANSE_AUTH_ID": os.getenv("XPANSE_AUTH_ID"),
-                            "SERVICE_QUEUE_URL": os.getenv("QUEUE_URL", ""),
-                            "DMZ_SYNC_ENDPOINT": os.getenv("DMZ_SYNC_ENDPOINT", ""),
-                            "DMZ_API_KEY": os.getenv("DMZ_API_KEY", ""),
                             "VS_PULL_DATE_RANGE": os.getenv("VS_PULL_DATE_RANGE", "90"),
                         },
                         detach=True,
@@ -146,10 +146,11 @@ class ECSClient:
         ]
 
         # Conditionally add NO_PROXY
-        if not os.getenv("IS_DMZ"):
+        if os.getenv("IS_DMZ") == "0":
             container_env.append(
                 {"name": "HTTPS_PROXY", "value": os.getenv("LZ_PROXY_URL")}
             )
+            print("Adding the HTTPS_PROXY")
 
         response = self.ecs.run_task(
             cluster=os.getenv("FARGATE_CLUSTER_NAME"),

@@ -357,7 +357,7 @@ export const Users: React.FC = () => {
   );
 
   return (
-    <Box display="flex" justifyContent="center">
+    <Box display="flex" justifyContent="center" sx={{ height: '100vh' }}>
       <Box
         mb={3}
         mt={3}
@@ -409,6 +409,7 @@ export const Users: React.FC = () => {
                   pagination: { paginationModel: { pageSize: 15 } }
                 }}
                 pageSizeOptions={[15, 30, 50, 100]}
+                disableRowSelectionOnClick
               />
             </Paper>
           ) : null}

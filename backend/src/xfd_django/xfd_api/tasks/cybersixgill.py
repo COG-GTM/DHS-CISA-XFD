@@ -288,10 +288,10 @@ def handler(event):
     """Entrypoint for running Cybersixgill scan, with DMZ/local check."""
     try:
         # Check if script is allowed to run in current environment
-        is_dmz = os.getenv("IS_DMZ", "0") == "1"
-        is_local = os.getenv("IS_LOCAL", "1") == "1"
+        is_dmz = os.getenv("IS_DMZ")
+        is_local = os.getenv("IS_LOCAL")
 
-        if not is_dmz and not is_local:
+        if str(is_dmz).lower() not in {"true", "1"} and not is_local:
             LOGGER.warning("Scan can only be run in the DMZ or locally. Exiting now.")
             return {
                 "statusCode": 200,
