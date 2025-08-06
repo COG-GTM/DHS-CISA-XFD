@@ -71,7 +71,7 @@ export const RegionUsers: React.FC = () => {
       flex: 2,
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} mt={1}>
             <Button
               variant="contained"
               endIcon={<DoneIcon />}
@@ -140,18 +140,33 @@ export const RegionUsers: React.FC = () => {
     getDeleteError: ''
   });
   const [selectedUser, selectUser] = useState<User>(initializeUser);
-  const [selectedOrg, selectOrg] = useState<GridRowSelectionModel>([]);
+  const [selectedOrg, setSelectedOrg] = React.useState<GridRowSelectionModel>({
+    type: 'include',
+    ids: new Set<string | number>()
+  });
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [currentUsers, setCurrentUsers] = useState<User[]>([]);
   const [infoDialogContent, setInfoDialogContent] = useState<String>('');
 
   const fetchOrganizations = async (row: User) => {
+    if (!row.region_id) {
+      setOrganizations([]);
+      setErrorStates((prev) => ({
+        ...prev,
+        getOrgsError: 'This user has no region assigned.'
+      }));
+      return;
+    }
     try {
-      const rows = await apiGet<OrganizationType[]>(getOrgsURL + row.region_id);
+      // const rows = await apiGet<OrganizationType[]>(getOrgsURL + row.region_id);
+      const rows = await apiGet<OrganizationType[]>(getOrgsURL + 3);
       setOrganizations(rows);
       if (row.roles.length > 0) {
-        selectOrg([row.roles[0].organization.id]);
+        setSelectedOrg({
+          type: 'include',
+          ids: new Set([row.roles[0].organization.id])
+        });
       }
       setErrorStates({ ...errorStates, getOrgsError: '', getUpdateError: '' });
     } catch (e: any) {
@@ -197,7 +212,7 @@ export const RegionUsers: React.FC = () => {
     (user_id: string): Promise<boolean> => {
       return apiDelete(`/users/${user_id}`).then(
         () => {
-          apiRefPendingUsers.current.updateRows([
+          apiRefPendingUsers.current?.updateRows([
             { id: user_id, _action: 'delete' }
           ]);
           setPendingUsers((prevPendingUsers) =>
@@ -238,14 +253,14 @@ export const RegionUsers: React.FC = () => {
         body: { invite_pending: false }
       }).then(
         (res) => {
-          apiRefPendingUsers.current.updateRows([
+          apiRefPendingUsers.current?.updateRows([
             { id: user_id, _action: 'delete' }
           ]);
           setPendingUsers((prevPendingUsers) =>
             prevPendingUsers.filter((user) => user.id !== user_id)
           );
           res['organizations'] = org_name;
-          apiRefCurrentUsers.current.updateRows([res]);
+          apiRefCurrentUsers.current?.updateRows([res]);
           setCurrentUsers((prevCurrentUsers) => [...prevCurrentUsers, res]);
           return sendApprovalEmail(user_id);
         },
@@ -297,7 +312,10 @@ export const RegionUsers: React.FC = () => {
   };
 
   const handleApproveClick = (row: typeof initializeUser) => {
-    selectOrg([]);
+    setSelectedOrg({
+      type: 'include',
+      ids: new Set<string | number>()
+    });
     setDialogStates({
       ...dialogStates,
       isOrgDialogOpen: true
@@ -351,7 +369,10 @@ export const RegionUsers: React.FC = () => {
       const originalOrgId = userHadOrg
         ? selectedUser.roles[0].organization.id
         : '';
-      const selectedOrgId = selectedOrg[0].toString();
+      const selectedOrgId =
+        selectedOrg.ids.size > 0
+          ? Array.from(selectedOrg.ids)[0].toString()
+          : null;
       let success = false;
       // If the user's org was already added and not modified, only update the user.
       if (userHadOrg && originalOrgId === selectedOrgId) {
@@ -385,15 +406,29 @@ export const RegionUsers: React.FC = () => {
       setErrorStates({ ...errorStates, getUpdateError: e.message });
     }
   };
-  const onRowSelectionModelChange = (newRowSelectionModel: any) => {
-    if (newRowSelectionModel.length > 1) {
-      const selectionSet = new Set(selectedOrg);
-      const result = newRowSelectionModel.filter(
-        (s: any) => !selectionSet.has(s)
-      );
-      selectOrg(result);
+  const onRowSelectionModelChange = (
+    newRowSelectionModel: GridRowSelectionModel
+  ) => {
+    const newIds = Array.isArray(newRowSelectionModel)
+      ? newRowSelectionModel
+      : Array.from(newRowSelectionModel.ids);
+
+    if (newIds.length > 1) {
+      const lastSelected = newIds[newIds.length - 1];
+      setSelectedOrg({
+        type: 'include',
+        ids: new Set([lastSelected])
+      });
+    } else if (newIds.length === 1) {
+      setSelectedOrg({
+        type: 'include',
+        ids: new Set(newIds)
+      });
     } else {
-      selectOrg(newRowSelectionModel);
+      setSelectedOrg({
+        type: 'include',
+        ids: new Set()
+      });
     }
   };
 
@@ -452,6 +487,7 @@ export const RegionUsers: React.FC = () => {
               disableRowSelectionOnClick
               slots={{ toolbar: GridToolbar }}
               autoPageSize
+              showToolbar
             />
           </Paper>
         </Box>
@@ -473,7 +509,7 @@ export const RegionUsers: React.FC = () => {
                 checkboxSelection
                 onRowSelectionModelChange={onRowSelectionModelChange}
                 rowSelectionModel={selectedOrg}
-                rows={organizations}
+                rows={organizations ?? []}
                 columns={orgCols}
                 slots={{ toolbar: GridToolbar }}
                 slotProps={{
@@ -487,6 +523,8 @@ export const RegionUsers: React.FC = () => {
                       display: 'none'
                     }
                 }}
+                disableRowSelectionOnClick
+                showToolbar
               />
             </Paper>
             {errorStates.getOrgsError && (
@@ -494,9 +532,9 @@ export const RegionUsers: React.FC = () => {
                 Error retrieving organizations: {errorStates.getOrgsError}
               </Alert>
             )}
-            {selectedOrg.length !== 0 &&
+            {selectedOrg.ids.size !== 0 &&
               errorStates.getUpdateError.length === 0 && (
-                <Alert severity="info">
+                <Alert severity="info" sx={{ mt: 2 }}>
                   {selectedUser.full_name} will become a member of the selected
                   organization.
                 </Alert>
@@ -509,7 +547,7 @@ export const RegionUsers: React.FC = () => {
             )}
           </>
         }
-        disabled={selectedOrg.length === 0 ? true : false}
+        disabled={selectedOrg.ids.size === 0}
         screenWidth="lg"
       />
       <ConfirmDialog
