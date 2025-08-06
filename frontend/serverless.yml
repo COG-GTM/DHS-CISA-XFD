@@ -91,15 +91,16 @@ functions:
           path: /{any+}
           method: GET
     # provisionedConcurrency: 1
-  docs:
-    handler: scripts/docs.handler
-    events:
-      - http:
-          path: /docs
-          method: GET
-      - http:
-          path: /docs/{any+}
-          method: GET
+  # TODO: Reenable docs site CRASM-1070, CRASM-2124
+  # docs:
+  #   handler: scripts/docs.handler
+  #   events:
+  #     - http:
+  #         path: /docs
+  #         method: GET
+  #     - http:
+  #         path: /docs/{any+}
+  #         method: GET
 
 resources:
   Resources:
@@ -124,7 +125,8 @@ package:
   include:
     - scripts/**         # Include handler scripts
     - dist/**           # Include React static assets
-    - docs-build/**      # Include copied Gatsby static assets
+    # TODO: Reenable docs site CRASM-1070, CRASM-2124
+    # - docs-build/**      # Include copied Gatsby static assets
 
 plugins:
   - serverless-domain-manager
