@@ -310,7 +310,11 @@ export const UserForm: React.FC<UserFormProps> = ({
             size="small"
             margin="dense"
             id="first_name"
-            inputProps={{ maxLength: 250 }}
+            slotProps={{
+              htmlInput: {
+                maxLength: 250
+              }
+            }}
             name="first_name"
             error={formErrors.first_name}
             helperText={
@@ -332,7 +336,11 @@ export const UserForm: React.FC<UserFormProps> = ({
             size="small"
             margin="dense"
             id="last_name"
-            inputProps={{ maxLength: 250 }}
+            slotProps={{
+              htmlInput: {
+                maxLength: 250
+              }
+            }}
             name="last_name"
             error={formErrors.last_name}
             helperText={
@@ -354,7 +362,11 @@ export const UserForm: React.FC<UserFormProps> = ({
             size="small"
             margin="dense"
             id="email"
-            inputProps={{ maxLength: 250 }}
+            slotProps={{
+              htmlInput: {
+                maxLength: 250
+              }
+            }}
             name="email"
             error={formErrors.email}
             helperText={
@@ -374,11 +386,28 @@ export const UserForm: React.FC<UserFormProps> = ({
             displayEmpty
             size="small"
             id="state"
-            value={values.state === null ? '' : values.state}
+            value={values.state || ''}
             name="state"
             error={formErrors.state}
             onChange={handleStateChange}
             fullWidth
+            MenuProps={{
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left'
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left'
+              },
+              PaperProps: {
+                style: {
+                  marginTop: 5,
+                  maxHeight: 250,
+                  overflowY: 'auto'
+                }
+              }
+            }}
             renderValue={
               values.state !== ''
                 ? undefined
@@ -424,7 +453,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 displayEmpty
                 size="small"
                 id="org_id"
-                value={values.org_id === null ? '' : values.org_id}
+                value={values.org_id || ''}
                 name="org_id"
                 error={values.org_id === ''}
                 onChange={handleOrgChange}
