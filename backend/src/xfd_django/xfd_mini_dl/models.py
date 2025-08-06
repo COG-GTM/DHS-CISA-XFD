@@ -2535,7 +2535,8 @@ class Ip(models.Model):
                     socket.inet_pton(socket.AF_INET6, self.ip)
                     self.ip_version = "IPv6"
                 except OSError:
-                    raise ValueError(f"Invalid IP address: {self.ip}")
+                    LOGGER.exception("Invalid IP address: %s", self.ip)
+                    raise ValueError
 
         super().save(*args, **kwargs)
 

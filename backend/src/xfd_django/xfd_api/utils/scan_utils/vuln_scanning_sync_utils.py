@@ -638,12 +638,14 @@ def load_test_data(data_set: str) -> list:
     file_path = file_paths.get(data_set)
 
     if file_path is None:
-        raise ValueError(f"Unknown data set: {data_set}")
+        LOGGER.exception("Unknown data set: %s", data_set)
+        raise ValueError
 
     expanded_path = os.path.expanduser(file_path)
 
     if not os.path.exists(expanded_path):
-        raise FileNotFoundError(f"Test data file not found: {expanded_path}")
+        LOGGER.exception("Test data file not found: %s", expanded_path)
+        raise FileNotFoundError
 
     with open(expanded_path, encoding="utf-8") as file:
         return json.load(file)

@@ -161,7 +161,8 @@ def main():
             normalized_payload = normalize_dates(wrapper["payload"])
             wrapped_obj = {"status": "ok", "payload": normalized_payload}
             if not validate_response_checksum(wrapped_obj, received_checksum):
-                raise RuntimeError(f"Checksum mismatch on page {current_page}")
+                LOGGER.exception("Checksum mismatch on page %d", current_page)
+                raise RuntimeError
 
             total_pages = normalized_payload["total_pages"]
             fetched_page = normalized_payload["current_page"]
