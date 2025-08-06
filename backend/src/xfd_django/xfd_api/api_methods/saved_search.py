@@ -90,7 +90,7 @@ def create_saved_search(request):
     except User.DoesNotExist:
         raise HTTPException(status_code=404, detail="User not found")
 
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Error creating saved search: %s", e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

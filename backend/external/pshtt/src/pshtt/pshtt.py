@@ -129,7 +129,7 @@ def inspect(base_domain):
 
 def result_for(domain):
     """Get the results for the provided domain."""
-    # print(utils.json_for(domain.to_object()))
+    # LOGGER.info(utils.json_for(domain.to_object()))
 
     # Because it will inform many other judgments, first identify
     # an acceptable "canonical" URL for the domain.

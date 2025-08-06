@@ -7,10 +7,6 @@ import random
 
 # Third-Party Libraries
 from django.utils import timezone
-
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-LOGGER = logging.getLogger(__name__)
-# Third-Party Libraries
 from xfd_api.tasks.vulnScanningSync import (
     create_daily_host_summary,
     create_port_scan_service_summaries,
@@ -19,6 +15,8 @@ from xfd_api.tasks.vulnScanningSync import (
     enforce_latest_flag_port_scan,
 )
 from xfd_mini_dl.models import HostSummary, Organization
+
+LOGGER = logging.getLogger(__name__)
 
 
 def rebuild_org_id_dict(db_name="mini_data_lake"):
@@ -72,7 +70,9 @@ def build_fake_host_summaries():
                 },
             )
         except Exception as e:
-            print("\n❌ Error while creating host_summary for org %s: %s", org.name, e)
+            LOGGER.error(
+                "\n❌ Error while creating host_summary for org %s: %s", org.name, e
+            )
             continue
 
 

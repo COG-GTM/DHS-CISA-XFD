@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/howto/deployment/asgi/
 import asyncio
 from asyncio import Semaphore
 import functools
+import logging
 import os
 import threading
 
@@ -29,6 +30,8 @@ from xfd_django.docker_events import listen_for_docker_events
 from xfd_django.middleware.middleware import LoggingMiddleware
 
 print = functools.partial(print, flush=True)
+
+LOGGER = logging.getLogger(__name__)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -149,18 +152,18 @@ def run_docker_events_listener():
     """Run the Docker events listener for local development in a separate thread."""
     thread = threading.Thread(target=listen_for_docker_events, daemon=True)
     thread.start()
-    print("Docker events listener started in a separate thread.")
+    LOGGER.info("Docker events listener started in a separate thread.")
 
 
 async def run_scheduler():
     """Run the scheduler in local development."""
     try:
-        print("Starting local scheduler...")
+        LOGGER.info("Starting local scheduler...")
         while True:
             await scheduler_handler({}, {})
             await asyncio.sleep(120)  # Run every 120 seconds
     except Exception as e:
-        print("Error running local scheduler: {}".format(e))
+        LOGGER.error("Error running local scheduler: %s", e)
 
 
 app = get_application()

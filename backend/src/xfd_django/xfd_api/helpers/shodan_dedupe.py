@@ -276,7 +276,7 @@ def search(api, query, ip_obj, cidr, org_type):
 
         for result in results["matches"]:
             # if ":" in result["ip_str"]:
-            #     print("ipv6 found ", result["ip_str"])
+            #     LOGGER.info("ipv6 found ", result["ip_str"])
             #     ip_type = "ipv6"
             # else:
             #     ip_type = "ipv4"
@@ -307,7 +307,7 @@ def search(api, query, ip_obj, cidr, org_type):
                 # Show the results
                 for result in results["matches"]:
                     # if ":" in result["ip_str"]:
-                    #     print("ipv6 found ", result["ip_str"])
+                    #     LOGGER.info("ipv6 found ", result["ip_str"])
                     #     ip_type = "ipv6"
                     # else:
                     #     ip_type = "ipv4"

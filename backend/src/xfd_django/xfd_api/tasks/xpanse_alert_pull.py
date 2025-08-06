@@ -27,7 +27,6 @@ from xfd_mini_dl.models import (
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 django.setup()
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 api_key = os.getenv("XPANSE_API_KEY")
@@ -304,7 +303,7 @@ def insert_xpanse_alert(alert, org_record, business_unit):
             )
             if xpanse_service is not None:
                 linked_services.append(xpanse_service)
-        print("Attempting to link alert to service")
+        LOGGER.info("Attempting to link alert to service")
         xpanse_alert.services.set(linked_services)
         LOGGER.info(
             "Created %d Services for Xpanse Alert %s",
@@ -738,4 +737,4 @@ def handler(event):
 #     try:
 #         main("all")
 #     except Exception as e:
-#         print("Error", e)
+#         LOGGER.error("Error", e)

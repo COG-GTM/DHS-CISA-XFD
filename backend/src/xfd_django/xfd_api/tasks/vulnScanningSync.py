@@ -13,7 +13,6 @@ from ipaddress import IPv4Network, IPv6Network, ip_network
 import json
 import logging
 import os
-import traceback
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
@@ -61,12 +60,16 @@ from xfd_mini_dl.models import (
     VulnScanSummary,
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s: %(message)s",
-    filename="vuln_scanning_sync.log",
-)
 LOGGER = logging.getLogger(__name__)
+_file = logging.FileHandler("vuln_scanning_sync.log")
+_file.setLevel(logging.INFO)
+_file.setFormatter(
+    logging.Formatter(
+        "%(levelname)s: %(message)s",
+    )
+)
+LOGGER.addHandler(_file)
+
 IS_LOCAL = os.getenv("IS_LOCAL")
 SCAN_NAME = "VulnScanningSync"
 
@@ -86,7 +89,7 @@ def handler(event):
     Returns:
         dict: Response containing the status code and message.
     """
-    print("VS_PULL_DATE_RANGE: ", VS_PULL_DATE_RANGE)
+    LOGGER.info("VS_PULL_DATE_RANGE: %s", VS_PULL_DATE_RANGE)
     try:
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
@@ -295,9 +298,9 @@ def save_json_to_file(data, filename="test.json"):
     try:
         with open(filename, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4)
-        print(f"Data successfully saved to {filename}")
+        LOGGER.info("Data successfully saved to %s", filename)
     except Exception as e:
-        print(f"Error saving JSON to file: {e}")
+        LOGGER.error("Error saving JSON to file: %s", e)
 
 
 def send_organizations_to_dmz():
@@ -318,11 +321,7 @@ def send_organizations_to_dmz():
             send_csv_to_sync(json.dumps(chunk), bounds)
 
     except Exception as e:
-        LOGGER.error(
-            "Error sending organizations to DMZ sync endpoint:\n%s",
-            traceback.format_exc(),
-        )
-        print(e)
+        LOGGER.exception("Error sending organizations to DMZ sync endpoint:\n%s", e)
         raise SyncError(SCAN_NAME, str(e), "Error sending organizations to dmz") from e
 
 
@@ -354,7 +353,7 @@ def send_csv_to_sync(csv_data, bounds):
         try:
             error_data = response.json()
             error_detail = error_data.get("detail", error_data)
-            print(http_err)
+            LOGGER.error("HTTPError sending chunk to sync API: %s", http_err)
         except ValueError:
             error_detail = response.text
         LOGGER.error(
@@ -364,7 +363,7 @@ def send_csv_to_sync(csv_data, bounds):
             response.headers,
         )
     except Exception as e:
-        LOGGER.error("Unexpected error sending chunk: %s", str(e))
+        LOGGER.exception("Unexpected error sending chunk: %s", str(e))
         raise SyncError(
             SCAN_NAME,
             str(e),
@@ -394,13 +393,11 @@ def process_vulnerability_scans(vuln_scans, org_id_dict):
             try:
                 save_vuln_scan(vuln_scan_dict)
             except Exception as e:
-                LOGGER.error("Error saving vulnerability scan: %s", e)
-                print(traceback.format_exc())
+                LOGGER.exception("Error saving vulnerability scan: %s", e)
                 # Raise to catch in the outer block
                 raise e
         except Exception as e:
-            LOGGER.error("Error processing Vulnerability Scan: %s", e)
-            print(traceback.format_exc())
+            LOGGER.exception("Error processing Vulnerability Scan: %s", e)
             raise IngestionError(
                 SCAN_NAME, str(e), "Failed processing vulnerability scans"
             ) from e
@@ -633,7 +630,7 @@ def create_port_scan_summary(summary_date=None):
             )
 
     except Exception as e:
-        print("Error creating port scan summary: {}".format(e))
+        LOGGER.exception("Error creating port scan summary: %s", e)
         raise QueryError(SCAN_NAME, str(e), "Error creating port scan summary") from e
 
 
@@ -686,7 +683,7 @@ def create_port_scan_service_summaries(summary_date=None):
                     },
                 )
     except Exception as e:
-        print("Error creating port scan service summary: {}".format(e))
+        LOGGER.exception("Error creating port scan service summary: %s", e)
         raise QueryError(
             SCAN_NAME, str(e), "Error creating port scan service summary"
         ) from e
@@ -761,8 +758,11 @@ def process_tickets(tickets, org_id_dict):
             events = json.loads(ticket.get("events", "[]"))
             save_ticket_to_datalake(ticket_dict, events, details)
         except Exception as e:
-            print(
-                f"Error processing ticket data: {e} - {owner_id} - {ticket.get('owner')}"
+            LOGGER.exception(
+                "Error processing ticket data: %s - %s - %s",
+                e,
+                owner_id,
+                ticket.get("owner"),
             )
             raise IngestionError(SCAN_NAME, str(e), "Failed processing tickets") from e
 
@@ -1070,8 +1070,9 @@ def process_port_scans(port_scans, org_id_dict):
         try:
             owner_id = org_id_dict.get(port_scan.get("owner"))
             if not owner_id:
-                print(
-                    f"{port_scan.get('Owner')} is not a recognized organization, skipping host"
+                LOGGER.warning(
+                    "%s is not a recognized organization, skipping host",
+                    port_scan.get("Owner"),
                 )
                 continue
 
@@ -1128,7 +1129,7 @@ def process_port_scans(port_scans, org_id_dict):
             }
             save_port_scan_to_datalake(port_scan_dict)
         except Exception as e:
-            print(f"Error processing port scan data: {e}")
+            LOGGER.exception("Error processing port scan data: %s", e)
             raise IngestionError(
                 SCAN_NAME, str(e), "Failed processing port scans"
             ) from e
@@ -1211,8 +1212,7 @@ def assign_organizations_to_sectors(
                     *Organization.objects.using(db_name).filter(id__in=organization_ids)
                 )
     except Exception as e:
-        print("Error assigning organization to sectors:")
-        print(e)
+        LOGGER.exception("Error assigning organization to sectors: %s", e)
         raise e
 
 
@@ -1286,7 +1286,7 @@ def process_sector(request, sector_child_dict):
             )
             sector_child_dict[sector_obj.id] = request["children"]
         except Exception as e:
-            print("Error occurred creating sector", e)
+            LOGGER.error("Error occurred creating sector: %s", e)
 
 
 def process_networks(networks):
@@ -1303,7 +1303,7 @@ def process_networks(networks):
                 {"network": cidr, "start_ip": address[0], "end_ip": address[-1]}
             )
         except Exception as e:
-            print("Invalid CIDR Format", e)
+            LOGGER.error("Invalid CIDR Format", e)
     return network_list
 
 

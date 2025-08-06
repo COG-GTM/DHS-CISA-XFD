@@ -47,10 +47,6 @@ def safe_parse_date(value):
     return None
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s: %(message)s",
-)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -64,9 +60,11 @@ def save_port_scan_to_datalake(port_scan_obj):
     Returns:
         str or None: The ID of the inserted/updated record.
     """
-    # print(
-    #     f"Starting to save port scan {port_scan_obj.get('ipString')} {port_scan_obj.get('port')} to datalake"
-    # )
+    LOGGER.debug(
+        "Starting to save port scan %s %s to datalake",
+        port_scan_obj.get("ipString"),
+        port_scan_obj.get("port"),
+    )
 
     id = port_scan_obj.get("id")
     del port_scan_obj["id"]
@@ -78,7 +76,7 @@ def save_port_scan_to_datalake(port_scan_obj):
                 id=id, defaults=port_scan_obj
             )
     except Exception as e:
-        print("Error saving PortScan to Datalake", e)
+        LOGGER.error("Error saving PortScan to Datalake: %s", e)
         return None
 
 
@@ -174,7 +172,7 @@ def save_ticket_to_datalake(ticket_obj, events, details):
     Returns:
         str or None: The ID of the inserted/updated record.
     """
-    # print("Starting to save Ticket to datalake")
+    LOGGER.debug("Starting to save Ticket to datalake")
     obj = None
     id = ticket_obj.get("id")
     del ticket_obj["id"]
@@ -185,14 +183,13 @@ def save_ticket_to_datalake(ticket_obj, events, details):
 
             obj, created = Ticket.objects.update_or_create(id=id, defaults=ticket_obj)
     except Exception as e:
-        print("Error saving Ticket to Datalake", e)
+        LOGGER.error("Error saving Ticket to Datalake: %s", e)
 
     try:
         for event in events:
             save_ticket_event_to_datalake(event, obj.id, details)
     except Exception as e:
-        print("Error saving TicketEvent to Datalake", e)
-        LOGGER.error("Error saving TicketEvent to Datalake, %s", e)
+        LOGGER.error("Error saving TicketEvent to Datalake: %s", e)
         return None
     return None
 
@@ -285,7 +282,7 @@ def save_cve_to_datalake(cve_obj):
                     defaults={key: cve_obj[key] for key in cve_updated_values}
                     | {"id": str(1)},
                 )
-                print("Updated CVE" if not created else "Created CVE")
+                LOGGER.info("Updated CVE" if not created else "Created CVE")
                 return cve_record
             else:
                 # Insert but ignore if the record already exists
@@ -294,7 +291,7 @@ def save_cve_to_datalake(cve_obj):
                 )
                 return obj
     except Exception as e:
-        print("Error saving CVE to Datalake", e)
+        LOGGER.error("Error saving CVE to Datalake: %s", e)
         return None
 
 
@@ -339,10 +336,10 @@ def save_ip_to_datalake(ip_obj):
                         "ip_hash": ip_obj["ip_hash"],
                     },
                 )
-                print("Created ip")
+                LOGGER.info("Created IP")
                 return obj
     except Exception as e:
-        print("Error saving IP to Datalake", e)
+        LOGGER.error("Error saving IP to Datalake: %s", e)
     except IntegrityError:
         pass
 
@@ -481,7 +478,7 @@ def save_organization_to_mdl(
     Returns:
         Organization: The created or updated organization instance.
     """
-    # print("Saving Organization")
+    LOGGER.debug("Saving Organization")
     location_obj = None
     if location:
         try:
@@ -498,7 +495,7 @@ def save_organization_to_mdl(
                 },
             )
         except Exception as e:
-            print("Error creating location", e)
+            LOGGER.error("Error creating location: %s", e)
 
     org_obj = None
     try:
@@ -558,7 +555,7 @@ def save_organization_to_mdl(
             org_obj = organization_obj
         pass
     except Exception as e:
-        print("Error occurred creating org", e)
+        LOGGER.error("Error occurred creating org: %s", e)
 
     if org_obj:
         # Create CIDRs and link them
@@ -610,10 +607,10 @@ def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake
                 },
             )
     except IntegrityError as e:
-        print("IntegrityError:", e)
+        LOGGER.error("IntegrityError: %s", e)
     except Exception as e:
-        print(type(e))
-        print("Error occurred while creating or updating CIDR:", e)
+        LOGGER.error(type(e))
+        LOGGER.error("Error occurred while creating or updating CIDR: %s", e)
 
 
 # Used for loading test data from file for vuln_scans, port_scans, hosts, tickets
@@ -696,10 +693,10 @@ def enforce_latest_flag_port_scan():
                 )
 
         except Exception as e:
-            print("Error enforcing latest flag for org {}: {}".format(org_id, e))
+            LOGGER.error("Error enforcing latest flag for org %s: %s", org_id, e)
 
     duration = time.time() - start
-    print("Completed enforce_latest_flag in {:.2f}s".format(duration))
+    LOGGER.info("Completed enforce_latest_flag in %.2f seconds", duration)
 
 
 def map_severity(severity):

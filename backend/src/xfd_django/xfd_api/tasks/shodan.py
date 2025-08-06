@@ -14,7 +14,6 @@ from xfd_api.tasks.helpers.get_ips import get_ips_by_cidr
 from xfd_mini_dl.models import DataSource, Ip, Organization, ShodanAssets, ShodanVulns
 
 # Constants controlling pagination and rate limiting
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -33,7 +32,7 @@ def handler(command_options):
     org_uid = organization.id
     org_name = organization.name
 
-    print("Running Shodan on organization: {}".format(organization_name))
+    LOGGER.info("Running Shodan on organization: %s", organization_name)
 
     # Get dates for Shodan query (30 days)
     start, end = get_dates()
