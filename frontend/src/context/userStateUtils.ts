@@ -2,7 +2,7 @@ import { Organization, OrganizationTag } from 'types';
 import { AuthUser, CurrentOrganization } from './AuthContext';
 import { ORGANIZATION_EXCLUSIONS } from 'hooks/useUserTypeFilters';
 
-const currentTermsVersion = process.env.REACT_APP_TERMS_VERSION;
+const currentTermsVersion = import.meta.env.VITE_TERMS_VERSION;
 
 export const getExtendedOrg = (
   org: Organization | OrganizationTag | null,
