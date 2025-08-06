@@ -10,6 +10,7 @@ from xfd_api.tasks.syncdb_helpers import (
     drop_all_tables,
     manage_elasticsearch_indices,
     populate_sample_data,
+    populate_scan_results,
     sync_es_organizations,
     synchronize,
 )
@@ -34,11 +35,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Populate the database with sample data.",
         )
+        parser.add_argument(
+            "-m",
+            "--metrics",
+            action="store_true",
+            help="Populate scan_results table with sample data using existing ids from scan and organization tables.",
+        )
 
     def handle(self, *args, **options):
         """Handle method."""
         dangerouslyforce = options["dangerouslyforce"]
         populate = options["populate"]
+        metrics = options["metrics"]
 
         mdl_username = os.getenv("MDL_USERNAME")
         mdl_password = os.getenv("MDL_PASSWORD")
@@ -124,3 +132,9 @@ class Command(BaseCommand):
 
             # Step 5: Sync domains in ES
             sync_es_domains({})
+
+        # Step 6: Populate Scan Results
+        if metrics:
+            self.stdout.write("Generating scan results...")
+            populate_scan_results()
+            self.stdout.write("Scan results population complete.")
