@@ -6,8 +6,6 @@ useDotenv: true
 configValidationMode: error
 
 custom:
-  webpack:
-    webpackConfig: webpack.lambda.config.js
   customDomain:
     domainName: ${file(env.yml):${self:provider.stage}.DOMAIN, ''}
     basePath: ''
@@ -61,7 +59,7 @@ provider:
   name: aws
   region: ${file(env.yml):${self:provider.stage}.REGION, ''}
   endpointType: ${file(env.yml):${self:provider.stage}.ENDPOINT_TYPE, ''}
-  runtime: nodejs16.x
+  runtime: nodejs22.x
   timeout: 30
   stage: ${opt:stage, 'dev'}
   environment: ${file(env.yml):${self:provider.stage}, ''}
@@ -125,12 +123,11 @@ resources:
 package:
   include:
     - scripts/**         # Include handler scripts
-    - build/**           # Include React static assets
+    - dist/**           # Include React static assets
     - docs-build/**      # Include copied Gatsby static assets
 
 plugins:
   - serverless-domain-manager
   - serverless-better-credentials
-  - serverless-webpack
   - serverless-plugin-ifelse
   - serverless-prune-versions
