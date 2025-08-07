@@ -129,14 +129,8 @@ functions:
 package:
   patterns:
     - dist/**
-    - scripts/**
-    # Whitelist deps from anything in /scripts to ensure these are bundled
-    - node_modules/serverless-http/**
-    - node_modules/helmet/**
-    - node_modules/cors/**
-    - node_modules/express/**
-    - node_modules/path/**
     - '!src/**'
+
 
     # TODO: Reenable docs site CRASM-1070, CRASM-2124
     # - docs-build/**      # Include copied Gatsby static assets
