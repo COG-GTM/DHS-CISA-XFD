@@ -433,64 +433,54 @@ export const RegionUsers: React.FC = () => {
   };
 
   return (
-    <Box m={5} sx={{ minHeight: '1500px' }}>
-      <Box
-        sx={{
-          maxWidth: '1700px',
-          m: 'auto'
-        }}
-      >
-        <Box sx={{ m: 'auto', maxWidth: '1500px', px: 2, py: 5 }}>
-          <Typography variant="h1" style={{ fontSize: '2.125rem' }}>
-            {`${formattedUserType} Dashboard`}
-          </Typography>
-          <br />
-          <Typography
-            variant="h2"
-            style={{ fontSize: '1.25rem' }}
-            pb={2}
-            pt={2}
-          >
-            Pending Requests
-          </Typography>
-          <Paper sx={{ height: '387px' }}>
-            <DataGrid
-              apiRef={apiRefPendingUsers}
-              columns={pendingCols}
-              rows={pendingUsers}
-              disableRowSelectionOnClick
-              autoPageSize
-            />
-          </Paper>
-          {errorStates.getUsersError && (
-            <Alert severity="error">
-              Error retrieving users from the database:{' '}
-              {errorStates.getUsersError}
-            </Alert>
-          )}
-          <Typography
-            variant="h2"
-            style={{ fontSize: '1.25rem' }}
-            pb={2}
-            pt={5}
-          >
-            Members of
-            {user?.user_type === 'regionalAdmin'
-              ? ` Region ${regionalAdminId}`
-              : ' all regions'}
-          </Typography>
-          <Paper sx={{ height: '667px' }}>
-            <DataGrid
-              apiRef={apiRefCurrentUsers}
-              columns={memberCols}
-              rows={currentUsers}
-              disableRowSelectionOnClick
-              slots={{ toolbar: GridToolbar }}
-              autoPageSize
-              showToolbar
-            />
-          </Paper>
-        </Box>
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <Box sx={{ px: 2, py: 5 }}>
+        <Typography variant="h1" style={{ fontSize: '2.125rem' }}>
+          {`${formattedUserType} Dashboard`}
+        </Typography>
+        <br />
+        <Typography variant="h2" style={{ fontSize: '1.25rem' }} pb={2} pt={2}>
+          Pending Requests
+        </Typography>
+        <Paper sx={{ height: '387px' }}>
+          <DataGrid
+            apiRef={apiRefPendingUsers}
+            columns={pendingCols}
+            rows={pendingUsers}
+            disableRowSelectionOnClick
+            autoPageSize
+          />
+        </Paper>
+        {errorStates.getUsersError && (
+          <Alert severity="error">
+            Error retrieving users from the database:{' '}
+            {errorStates.getUsersError}
+          </Alert>
+        )}
+        <Typography variant="h2" style={{ fontSize: '1.25rem' }} pb={2} pt={5}>
+          Members of
+          {user?.user_type === 'regionalAdmin'
+            ? ` Region ${regionalAdminId}`
+            : ' all regions'}
+        </Typography>
+        <Paper sx={{ height: '667px' }}>
+          <DataGrid
+            apiRef={apiRefCurrentUsers}
+            columns={memberCols}
+            rows={currentUsers}
+            disableRowSelectionOnClick
+            slots={{ toolbar: GridToolbar }}
+            autoPageSize
+            showToolbar
+          />
+        </Paper>
       </Box>
       <ConfirmDialog
         isOpen={dialogStates.isOrgDialogOpen}
