@@ -126,6 +126,8 @@ package:
   include:
     - scripts/**         # Include handler scripts
     - dist/**           # Include React static assets
+  exclude:
+    - node_modules/**   # Exclude node_modules
     # TODO: Reenable docs site CRASM-1070, CRASM-2124
     # - docs-build/**      # Include copied Gatsby static assets
 
