@@ -6,6 +6,10 @@ useDotenv: true
 configValidationMode: error
 
 custom:
+  esbuild:
+    bundle: true
+    external: []  # Make sure serverless-http is NOT here
+    exclude: []   # Also keep it out of exclude
   customDomain:
     domainName: ${file(env.yml):${self:provider.stage}.DOMAIN, ''}
     basePath: ''
@@ -123,9 +127,11 @@ functions:
 #               - Ref: ApiGatewayRestApi
 #               - "/*/*/docs*"
 package:
-  include:
-    - scripts/**         # Include handler scripts
-    - dist/**           # Include React static assets
+  patterns:
+    - dist/**
+    - '!src/**'
+
+
     # TODO: Reenable docs site CRASM-1070, CRASM-2124
     # - docs-build/**      # Include copied Gatsby static assets
 
@@ -134,3 +140,4 @@ plugins:
   - serverless-better-credentials
   - serverless-plugin-ifelse
   - serverless-prune-versions
+  - serverless-esbuild
