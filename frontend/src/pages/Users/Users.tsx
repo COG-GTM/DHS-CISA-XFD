@@ -402,6 +402,8 @@ export const Users: React.FC = () => {
                 slotProps={{
                   toolbar: {
                     children: addUserButton,
+                    // Disabling export for users table as per temp solution mentioned in CRASM-2509
+                    disableExport: true,
                     exportTitle: 'Users'
                   } as any
                 }}
