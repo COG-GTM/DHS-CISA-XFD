@@ -5,6 +5,7 @@ import os
 
 # Third-Party Libraries
 from elasticsearch import Elasticsearch, helpers
+from elasticsearch.helpers import bulk
 
 # Constants
 DOMAINS_INDEX = "domains-5"
@@ -100,23 +101,25 @@ class ESClient:
         ]
         self._bulk_update(actions)
 
-    def update_domains(self, domains):
-        """Update or insert domains into Elasticsearch."""
+    def update_domains(self, docs):
+        """Update Domains."""
         actions = [
-            {
-                "_op_type": "update",
-                "_index": DOMAINS_INDEX,
-                "_id": domain["id"],
-                "doc": {
-                    **domain,
-                    "suggest": [{"input": domain["name"], "weight": 1}],
-                    "parent_join": "domain",
-                },
-                "doc_as_upsert": True,
-            }
-            for domain in domains
+            {"_index": "domains", "_id": doc["id"], "_source": doc} for doc in docs
         ]
-        self._bulk_update(actions)
+
+        try:
+            success, failed = bulk(
+                self.es,
+                actions,
+                raise_on_error=False,
+                raise_on_exception=False,
+                request_timeout=60,
+            )
+            logging.info(f"Bulk sync: {success} succeeded, {len(failed)} failed.")
+            if failed:
+                logging.warning("Some bulk operations failed.")
+        except Exception as e:
+            logging.error(f"Bulk operation error: {e}")
 
     def delete_all(self):
         """Delete all indices in Elasticsearch."""
