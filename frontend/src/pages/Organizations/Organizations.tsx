@@ -157,7 +157,11 @@ export const Organizations: React.FC = () => {
               slotProps={{
                 basePopper: {
                   placement: 'bottom-start'
-                }
+                },
+                toolbar: {
+                  // Disabling export for organizations table as per temp solution mentioned in CRASM-2509
+                  disableExport: true
+                } as any
               }}
               initialState={{
                 pagination: { paginationModel: { pageSize: 15 } }

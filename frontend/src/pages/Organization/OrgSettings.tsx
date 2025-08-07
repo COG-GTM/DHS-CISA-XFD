@@ -348,6 +348,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
           <ListInput
             label="Root Domains"
             type="root_domains"
+            disableAddButton
             organization={organization}
             userType={user?.user_type}
             setOrganization={setOrganization}
@@ -360,6 +361,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
           <ListInput
             label="IP Blocks"
             type="ip_blocks"
+            disableAddButton
             organization={organization}
             userType={user?.user_type}
             setOrganization={setOrganization}
@@ -373,6 +375,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             <ListInput
               label="Tags"
               type="tags"
+              disableAddButton
               organization={organization}
               userType={user?.user_type}
               setOrganization={setOrganization}
