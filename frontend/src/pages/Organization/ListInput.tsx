@@ -15,6 +15,7 @@ export interface ListInputProps {
   setChosenTags?: (val: string[]) => void;
   localTags?: string[];
   setLocalTags?: (tags: string[]) => void;
+  disableAddButton?: boolean;
 }
 
 const ListInput: React.FC<ListInputProps> = ({
@@ -29,7 +30,8 @@ const ListInput: React.FC<ListInputProps> = ({
   chosenTags,
   setChosenTags,
   localTags,
-  setLocalTags
+  setLocalTags,
+  disableAddButton = false
 }) => {
   if (!organization) return null;
 
@@ -96,17 +98,18 @@ const ListInput: React.FC<ListInputProps> = ({
             </Grid>
           )
         )}
-      {(type === 'root_domains' || userType === 'globalAdmin') && (
-        <Grid>
-          <Chip
-            label="ADD"
-            variant="outlined"
-            color="secondary"
-            onClick={() => setDialog({ open: true, type, label, stage: 0 })}
-            disabled={userType === 'globalView'}
-          />
-        </Grid>
-      )}
+      {(type === 'root_domains' || userType === 'globalAdmin') &&
+        !disableAddButton && (
+          <Grid>
+            <Chip
+              label="ADD"
+              variant="outlined"
+              color="secondary"
+              onClick={() => setDialog({ open: true, type, label, stage: 0 })}
+              disabled={userType === 'globalView'}
+            />
+          </Grid>
+        )}
     </Grid>
   );
 };
