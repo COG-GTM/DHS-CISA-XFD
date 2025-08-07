@@ -2,10 +2,11 @@
 # Standard Python Libraries
 import logging
 import os
+import time
 
 # Third-Party Libraries
 from elasticsearch import Elasticsearch, helpers
-from elasticsearch.helpers import bulk
+from elasticsearch.exceptions import TransportError
 
 # Constants
 DOMAINS_INDEX = "domains-5"
@@ -101,25 +102,67 @@ class ESClient:
         ]
         self._bulk_update(actions)
 
-    def update_domains(self, docs):
-        """Update Domains."""
+    def update_domains(self, docs, max_retries=5, backoff_base=2):
+        """Update domains with retry and backoff on 429 errors."""
         actions = [
-            {"_index": "domains", "_id": doc["id"], "_source": doc} for doc in docs
+            {
+                "_op_type": "update",
+                "_index": DOMAINS_INDEX,
+                "_id": doc["id"],
+                "doc": {
+                    **doc,
+                    "suggest": [{"input": doc["name"], "weight": 1}],
+                    "parent_join": "domain",
+                },
+                "doc_as_upsert": True,
+            }
+            for doc in docs
         ]
 
-        try:
-            success, failed = bulk(
-                self.es,
-                actions,
-                raise_on_error=False,
-                raise_on_exception=False,
-                request_timeout=60,
-            )
-            logging.info(f"Bulk sync: {success} succeeded, {len(failed)} failed.")
-            if failed:
-                logging.warning("Some bulk operations failed.")
-        except Exception as e:
-            logging.error(f"Bulk operation error: {e}")
+        attempt = 0
+        while attempt <= max_retries:
+            try:
+                success, response = helpers.bulk(
+                    self.client,
+                    actions,
+                    raise_on_error=False,
+                    raise_on_exception=False,
+                    request_timeout=60,
+                )
+
+                failed = [
+                    item
+                    for item in response
+                    if "update" in item and item["update"].get("error")
+                ]
+                success_count = success
+                failure_count = len(failed)
+
+                logging.info(
+                    f"Bulk sync: {success_count} succeeded, {failure_count} failed."
+                )
+
+                if failure_count:
+                    for i, item in enumerate(failed):
+                        logging.warning(
+                            "Error on document %s: %s", i, item["update"]["error"]
+                        )
+
+                return  # Exit after success (even with partial failures)
+
+            except TransportError as e:
+                if e.status_code == 429:
+                    wait_time = backoff_base**attempt
+                    logging.warning(
+                        "429 received, retrying in %s seconds...", wait_time
+                    )
+                    time.sleep(wait_time)
+                    attempt += 1
+                else:
+                    logging.error("Unexpected error during bulk update: %s", e)
+                    raise e
+
+        raise Exception("Max retries exceeded for bulk update.")
 
     def delete_all(self):
         """Delete all indices in Elasticsearch."""
