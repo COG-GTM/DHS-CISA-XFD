@@ -6,6 +6,10 @@ useDotenv: true
 configValidationMode: error
 
 custom:
+  esbuild:
+    bundle: true
+    external: []  # Make sure serverless-http is NOT here
+    exclude: []   # Also keep it out of exclude
   customDomain:
     domainName: ${file(env.yml):${self:provider.stage}.DOMAIN, ''}
     basePath: ''
@@ -126,6 +130,12 @@ package:
   patterns:
     - dist/**
     - scripts/**
+    # Whitelist deps from anything in /scripts to ensure these are bundled
+    - node_modules/serverless-http/**
+    - node_modules/helmet/**
+    - node_modules/cors/**
+    - node_modules/express/**
+    - node_modules/path/**
     - '!src/**'
 
     # TODO: Reenable docs site CRASM-1070, CRASM-2124
