@@ -151,10 +151,12 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
         aria-label="Save Search form"
         aria-labelledby="save-search-form-title"
         aria-describedby="save-search-form-description"
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleSubmit,
-          style: { width: '30%', minWidth: '300px' }
+        slotProps={{
+          paper: {
+            component: 'form',
+            onSubmit: handleSubmit,
+            style: { width: '30%', minWidth: '300px' }
+          }
         }}
       >
         <DialogTitle id="update-saved-search-title">
@@ -254,10 +256,12 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = (props) => {
       <Dialog
         open={saveDialogOpen}
         onClose={handleCloseModal}
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleSubmit,
-          style: { width: '30%', minWidth: '300px' }
+        slotProps={{
+          paper: {
+            component: 'form',
+            onSubmit: handleSubmit,
+            style: { width: '30%', minWidth: '300px' }
+          }
         }}
         aria-label="Save Search"
         aria-labelledby="save-search-dialog-title"
