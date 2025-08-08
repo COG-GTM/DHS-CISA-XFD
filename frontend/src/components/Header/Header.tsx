@@ -31,8 +31,8 @@ export interface MenuItemType {
 }
 
 // TODO: Update bucket/key names when provided.
-const LEARNING_CENTER_DOC_BUCKET_NAME = process.env
-  .REACT_APP_LEARNING_CENTER_DOC_BUCKET_NAME as string;
+const LEARNING_CENTER_DOC_BUCKET_NAME = import.meta.env
+  .VITE_LEARNING_CENTER_DOC_BUCKET_NAME as string;
 
 const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'CyHy Dashboard VS Glossary.pdf',
