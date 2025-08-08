@@ -195,7 +195,7 @@ def test_process_user_save_failure(mock_get_jwt, mock_save):
         json={"code": "auth-code", "state": "state-fail", "signedToken": signed_token},
     )
 
-    assert response.status_code == 400 or response.status_code == 500
+    assert response.status_code == 400
 
 
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
