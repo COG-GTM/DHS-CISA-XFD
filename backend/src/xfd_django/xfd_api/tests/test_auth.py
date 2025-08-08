@@ -17,7 +17,7 @@ client = TestClient(app)
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_okta_callback_success(mock_get_jwt_from_code):
     """Successful login with valid signed token."""
-    email = f"{secrets.token_hex(4)}@example.com"
+    email = "{}@example.com".format(secrets.token_hex(4))
     User.objects.create(
         email=email,
         okta_id="okta-user-id-123",
@@ -25,6 +25,7 @@ def test_okta_callback_success(mock_get_jwt_from_code):
         last_name="User",
         user_type="standard",
         invite_pending=True,
+        last_logged_in="2000-01-01T00:00:00Z",
     )
 
     mock_get_jwt_from_code.return_value = {
@@ -36,7 +37,7 @@ def test_okta_callback_success(mock_get_jwt_from_code):
         }
     }
 
-    signed_token = sign_oauth_data("code-verifier-xyz", "state-123")
+    signed_token = sign_oauth_data("state-123", "code-verifier-xyz")
     response = client.post(
         "/auth/okta-callback",
         json={
@@ -72,7 +73,7 @@ def test_okta_callback_invalid_signed_token():
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_okta_callback_state_mismatch():
     """Reject if signed token state does not match request state."""
-    signed_token = sign_oauth_data("verifier", "real-state")
+    signed_token = sign_oauth_data("real-state", "verifier")
     response = client.post(
         "/auth/okta-callback",
         json={"code": "auth-code", "state": "wrong-state", "signedToken": signed_token},
@@ -97,7 +98,7 @@ def test_okta_callback_missing_signed_token():
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_okta_callback_missing_code_or_state():
     """Reject request with missing code or state."""
-    signed_token = sign_oauth_data("verifier", "test-state")
+    signed_token = sign_oauth_data("test_state", "verifier")
 
     # Missing 'code'
     response = client.post(
@@ -145,7 +146,7 @@ def test_okta_callback_json_serializable(mock_get_jwt_from_code):
         }
     }
 
-    signed_token = sign_oauth_data("verifier", "state-abc")
+    signed_token = sign_oauth_data("state-123", "verifier")
     response = client.post(
         "/auth/okta-callback",
         json={"code": "auth-code", "state": "state-abc", "signedToken": signed_token},
@@ -161,7 +162,7 @@ def test_okta_callback_token_exchange_failure(mock_get_jwt_from_code):
     """Simulate failure to exchange code for tokens."""
     mock_get_jwt_from_code.return_value = None
 
-    signed_token = sign_oauth_data("verifier", "state-xyz")
+    signed_token = sign_oauth_data("state-123", "verifier")
 
     response = client.post(
         "/auth/okta-callback",
@@ -188,7 +189,7 @@ def test_process_user_save_failure(mock_get_jwt, mock_save):
         }
     }
 
-    signed_token = sign_oauth_data("verifier", "state-fail")
+    signed_token = sign_oauth_data("state-fail", "verifier")
 
     response = client.post(
         "/auth/okta-callback",
@@ -220,7 +221,7 @@ def test_legacy_user_email_match_okta_id_added(mock_get_jwt):
         }
     }
 
-    signed_token = sign_oauth_data("verifier", "legacy-state")
+    signed_token = sign_oauth_data("legacy-state", "verifier")
 
     response = client.post(
         "/auth/okta-callback",
@@ -251,7 +252,7 @@ def test_jwt_secret_missing(mock_get_jwt):
         }
     }
 
-    signed_token = sign_oauth_data("verifier", "state-zzz")
+    signed_token = sign_oauth_data("state-zzz", "verifier")
 
     response = client.post(
         "/auth/okta-callback",
@@ -277,7 +278,7 @@ def test_okta_callback_sets_crossfeed_cookie(mock_get_jwt):
         }
     }
 
-    signed_token = sign_oauth_data("verifier", "cookie-state")
+    signed_token = sign_oauth_data("cookie-state", "verifier")
 
     response = client.post(
         "/auth/okta-callback",
