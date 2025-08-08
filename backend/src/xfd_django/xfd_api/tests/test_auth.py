@@ -80,10 +80,7 @@ def test_okta_callback_state_mismatch():
     )
 
     assert response.status_code == 400
-    assert (
-        response.json()["detail"]
-        == "Invalid authorization code or failed to retrieve tokens"
-    )
+    assert response.json()["detail"] == "State mismatch"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -169,7 +166,7 @@ def test_okta_callback_token_exchange_failure(mock_get_jwt_from_code):
 
     response = client.post(
         "/auth/okta-callback",
-        json={"code": "bad-code", "state": "state-xyz", "signedToken": signed_token},
+        json={"code": "bad-code", "state": "state-123", "signedToken": signed_token},
     )
 
     assert response.status_code == 400
@@ -271,3 +268,13 @@ def test_okta_callback_sets_crossfeed_cookie(mock_get_jwt):
     assert response.status_code == 200
     assert "crossfeed-token" in response.cookies
     assert response.cookies["crossfeed-token"]
+
+
+def test_get_oauth_meta_success():
+    """Test /auth/get-oauth-meta with valid state and code_verifier."""
+    payload = {"state": "abc123", "code_verifier": "verifierXYZ"}
+    response = client.post("/auth/get-oauth-meta", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "signedToken" in data
+    assert isinstance(data["signedToken"], str)
