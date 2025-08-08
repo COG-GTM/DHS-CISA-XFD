@@ -9,7 +9,7 @@ import {
 
 export default function CustomToolbar(props: any) {
   return (
-    <GridToolbarContainer>
+    <GridToolbarContainer sx={{ justifyContent: 'flex-start' }}>
       <GridToolbarColumnsButton />
       <GridToolbarFilterButton />
       <GridToolbarDensitySelector />

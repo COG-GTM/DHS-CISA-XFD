@@ -119,13 +119,17 @@ export const OrgMembers: React.FC<OrgMemberProps> = ({
           columns={userRoleColumns}
           slots={{ toolbar: CustomToolbar }}
           slotProps={{
-            toolbar: { exportTitle: organization?.name + ' Members' } as any
+            toolbar: { exportTitle: organization?.name + ' Members' } as any,
+            basePopper: {
+              placement: 'bottom-start'
+            }
           }}
           initialState={{
             pagination: { paginationModel: { pageSize: 15 } }
           }}
           pageSizeOptions={[15, 30, 50, 100]}
           disableRowSelectionOnClick={user?.user_type === 'globalView'}
+          showToolbar
         />
       </Paper>
       <ConfirmDialog
