@@ -154,10 +154,17 @@ export const Organizations: React.FC = () => {
               rows={organizations}
               columns={orgCols}
               slots={{ toolbar: CustomToolbar }}
+              slotProps={{
+                toolbar: {
+                  // Disabling export for organizations table as per temp solution mentioned in CRASM-2509
+                  disableExport: true
+                } as any
+              }}
               initialState={{
                 pagination: { paginationModel: { pageSize: 15 } }
               }}
               pageSizeOptions={[15, 30, 50, 100]}
+              disableRowSelectionOnClick
             />
           </Paper>
         )}

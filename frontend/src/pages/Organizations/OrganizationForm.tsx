@@ -16,10 +16,7 @@ import {
   Typography
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
-import {
-  STATE_ABBREVIATED_OPTIONS,
-  STATE_OPTIONS
-} from '../../constants/constants';
+import { STATE_ABBREVIATED_OPTIONS, STATE_OPTIONS } from 'constants/constants';
 import { useAuthContext } from 'context';
 
 const StyledDialog = orgFormStyles.StyledDialog;

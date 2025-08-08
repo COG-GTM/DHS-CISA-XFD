@@ -593,9 +593,8 @@ def update_organization(organization_id: str, organization_data, current_user):
             organization.parent_id = organization_data.parent
 
         # Handle tags (using the find_or_create_tags function)
-        if organization_data.tags:
-            tags = find_or_create_tags(organization_data.tags)
-            organization.tags.set(tags)
+        tags = find_or_create_tags(organization_data.tags)
+        organization.tags.set(tags)
 
         # Save the updated organization object
         organization.save()

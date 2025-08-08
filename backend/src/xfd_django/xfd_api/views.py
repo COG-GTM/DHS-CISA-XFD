@@ -13,6 +13,7 @@ from fastapi import (
     Body,
     Depends,
     HTTPException,
+    Path,
     Query,
     Request,
     Response,
@@ -78,12 +79,14 @@ from .api_methods.vulnerability import (
     get_vulnerability_by_id,
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
+    v2_get_vulnerability_by_id,
 )
 from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import (
     get_current_active_user,
     get_current_active_user_unsafe,
     handle_okta_callback,
+    set_oauth_cookies_response,
 )
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
@@ -138,9 +141,12 @@ from .schema_models.user_log_schema import (
 )
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
+    GetV2VulnerabilityResponse,
+    GetVulnerabilityByIdRequest,
     GetVulnerabilityResponse,
     ShodanVulnerabiltyResponse,
     VsVulnerabilityResponse,
+    VulnByIdRequest,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
@@ -286,6 +292,21 @@ async def callback_route(request: Request):
         return user_info
     except Exception as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+# Set PKCE and state cookies for OAuth
+@api_router.post("/auth/set-oauth-cookies", tags=["Auth"])
+async def set_oauth_cookies(request: Request):
+    """Set PKCE code_verifier and state cookies for OAuth flow."""
+    body = await request.json()
+    state = body.get("state")
+    code_verifier = body.get("code_verifier")
+
+    if not state or not code_verifier:
+        raise HTTPException(
+            status_code=400, detail="Missing PKCE code_verifier or state"
+        )
+    return set_oauth_cookies_response(state, code_verifier)
 
 
 # ========================================
@@ -1601,7 +1622,26 @@ async def call_get_vulnerability_by_id(
 
 
 @api_router.get(
-    "/vulnerabilities/{scan_source}/{vulnerability_id}",
+    "/v2/vulnerabilities/{vuln_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetV2VulnerabilityResponse,
+    tags=["Vulnerabilities"],
+)
+async def v2_call_get_vulnerability_by_id(
+    vuln_id: str = Path(..., description="Vulnerability ID"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(
+        None, gt=0, description="Limit for scan history"
+    ),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get vulnerability by id."""
+    request = VulnByIdRequest(history=history, history_limit=history_limit)
+    return v2_get_vulnerability_by_id(vuln_id, request, current_user)
+
+
+@api_router.get(
+    "/v2/vulnerability_details/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=Union[
         CredBreachVulnerabilityResponse,
@@ -1611,13 +1651,22 @@ async def call_get_vulnerability_by_id(
     tags=["Vulnerabilities"],
 )
 async def get_vulnerability_by_source_id_route(
-    scan_source: str,
-    vulnerability_id: str,
+    vulnerability_id: str = Path(..., description="The ID of the vulnerability"),
+    scan_source: Optional[str] = Query(None, description="Scan source (e.g. shodan)"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(
+        10, gt=0, description="Limit for scan history"
+    ),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get vulnerability by id."""
+    """Get vulnerability details by Id: V2."""
+    request = GetVulnerabilityByIdRequest(
+        scan_source=scan_source, history=history, history_limit=history_limit
+    )
     return get_vulnerability_by_scan_source_and_id(
-        scan_source, vulnerability_id, current_user
+        vulnerability_id=vulnerability_id,
+        request=request,
+        current_user=current_user,
     )
 
 

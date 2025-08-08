@@ -104,7 +104,13 @@ export const Users: React.FC = () => {
           : 'None';
         row.full_name = `${row.first_name} ${row.last_name}`;
       });
-      setUsers(rows);
+
+      let filteredRows = rows;
+      if (user?.user_type === 'regionalAdmin' && user.region_id) {
+        filteredRows = rows.filter((row) => row.region_id === user.region_id);
+      }
+
+      setUsers(filteredRows);
       setApiErrorStates((prev) => ({ ...prev, getUsersError: '' }));
     } catch (e: any) {
       setLoadingError(true);
@@ -112,7 +118,7 @@ export const Users: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [apiGet]);
+  }, [apiGet, user?.user_type, user?.region_id]);
 
   useEffect(() => {
     fetchUsers();
@@ -356,121 +362,134 @@ export const Users: React.FC = () => {
     />
   );
 
+  const mobileMargin = {
+    px: {
+      xs: 1,
+      sm: 1,
+      md: 1,
+      lg: 1,
+      xl: 0
+    }
+  };
+
   return (
-    <Box display="flex" justifyContent="center" sx={{ height: '100vh' }}>
-      <Box
-        mb={3}
-        mt={3}
-        display="flex"
-        flexDirection="column"
-        sx={{ width: '80%' }}
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight="100vh"
+      maxWidth="1152px"
+      width="100%"
+      margin="auto"
+    >
+      <Typography
+        fontSize={34}
+        fontWeight="bold"
+        letterSpacing={0}
+        my={6}
+        variant="h1"
+        sx={mobileMargin}
       >
-        <Typography
-          fontSize={34}
-          fontWeight="medium"
-          letterSpacing={0}
-          my={3}
-          variant="h1"
-        >
-          Users
-        </Typography>
-        <Box mb={3} mt={3} display="flex" justifyContent="center">
-          {isLoading ? (
-            <Paper elevation={2}>
-              <Alert severity="info">Loading Users..</Alert>
-            </Paper>
-          ) : isLoading === false && loadingError ? (
-            <Stack direction="row" spacing={2}>
-              <Paper elevation={2}>
-                <Alert severity="warning">Error Loading Users!</Alert>
-              </Paper>
-              <Button
-                onClick={fetchUsers}
-                variant="contained"
-                color="primary"
-                sx={{ width: 'fit-content' }}
-              >
-                Retry
-              </Button>
-            </Stack>
-          ) : isLoading === false && loadingError === false ? (
-            <Paper elevation={2} sx={{ width: '100%', minHeight: '200px' }}>
-              <DataGrid
-                rows={users}
-                columns={userCols}
-                slots={{ toolbar: CustomToolbar }}
-                slotProps={{
-                  toolbar: {
-                    children: addUserButton,
-                    exportTitle: 'Users'
-                  } as any
-                }}
-                initialState={{
-                  pagination: { paginationModel: { pageSize: 15 } }
-                }}
-                pageSizeOptions={[15, 30, 50, 100]}
-              />
-            </Paper>
-          ) : null}
-        </Box>
-        {confirmDeleteUserDialog}
-        {(newUserDialogOpen || editUserDialogOpen) && renderUserForm}
-        {user?.user_type === 'globalAdmin' && (
-          <>
-            <ImportExport<
-              | User
-              | {
-                  roles: string;
+        Users
+      </Typography>
+      {isLoading ? (
+        <Paper elevation={2}>
+          <Alert severity="info">Loading Users..</Alert>
+        </Paper>
+      ) : isLoading === false && loadingError ? (
+        <Stack direction="row" spacing={2}>
+          <Paper elevation={2}>
+            <Alert severity="warning">Error Loading Users!</Alert>
+          </Paper>
+          <Button
+            onClick={fetchUsers}
+            variant="contained"
+            color="primary"
+            sx={{ width: 'fit-content' }}
+          >
+            Retry
+          </Button>
+        </Stack>
+      ) : isLoading === false && loadingError === false ? (
+        <Paper elevation={2} sx={{ width: '100%', minHeight: '200px' }}>
+          <DataGrid
+            rows={users}
+            columns={userCols}
+            slots={{ toolbar: CustomToolbar }}
+            slotProps={{
+              toolbar: {
+                children: addUserButton,
+                // Disabling export for users table as per temp solution mentioned in CRASM-2509
+                disableExport: true,
+                exportTitle: 'Users'
+              } as any
+            }}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 15 } },
+              columns: {
+                columnVisibilityModel: {
+                  dateToUSigned: false,
+                  accepted_terms_version: false
                 }
-            >
-              name="users"
-              fieldsToImport={[
-                'first_name',
-                'last_name',
-                'email',
-                'roles',
-                'user_type',
-                'state'
-              ]}
-              onImport={async (results) => {
-                const createdUsers = [];
-                for (const result of results) {
-                  const parsedRoles: {
-                    organization: string;
-                    role: string;
-                  }[] = JSON.parse(result.roles as string);
-                  const body: any = result;
-                  if (parsedRoles.length > 0) {
-                    body.organization = parsedRoles[0].organization;
-                    body.organizationAdmin = parsedRoles[0].role === 'admin';
-                  }
-                  try {
-                    createdUsers.push(
-                      await apiPost('/users', {
-                        body
-                      })
-                    );
-                  } catch (e) {
-                    console.error(e);
-                  }
+              }
+            }}
+          />
+        </Paper>
+      ) : null}
+      {confirmDeleteUserDialog}
+      {(newUserDialogOpen || editUserDialogOpen) && renderUserForm}
+      {user?.user_type === 'globalAdmin' && (
+        <>
+          <ImportExport<
+            | User
+            | {
+                roles: string;
+              }
+          >
+            name="users"
+            fieldsToImport={[
+              'first_name',
+              'last_name',
+              'email',
+              'roles',
+              'user_type',
+              'state'
+            ]}
+            onImport={async (results) => {
+              const createdUsers = [];
+              for (const result of results) {
+                const parsedRoles: {
+                  organization: string;
+                  role: string;
+                }[] = JSON.parse(result.roles as string);
+                const body: any = result;
+                if (parsedRoles.length > 0) {
+                  body.organization = parsedRoles[0].organization;
+                  body.organizationAdmin = parsedRoles[0].role === 'admin';
                 }
-                setUsers(users.concat(...createdUsers));
-              }}
-            />
-          </>
-        )}
-        <InfoDialog
-          isOpen={infoDialogOpen}
-          handleClick={() => {
-            window.location.reload();
-          }}
-          icon={
-            <CheckCircleOutline color="success" sx={{ fontSize: '80px' }} />
-          }
-          title={<Typography variant="h4">Success </Typography>}
-          content={<Typography variant="body1">{infoDialogContent}</Typography>}
-        />
-      </Box>
+                try {
+                  createdUsers.push(
+                    await apiPost('/users', {
+                      body
+                    })
+                  );
+                } catch (e) {
+                  console.error(e);
+                }
+              }
+              setUsers(users.concat(...createdUsers));
+            }}
+          />
+        </>
+      )}
+      <InfoDialog
+        isOpen={infoDialogOpen}
+        handleClick={() => {
+          window.location.reload();
+        }}
+        icon={<CheckCircleOutline color="success" sx={{ fontSize: '80px' }} />}
+        title={<Typography variant="h4">Success </Typography>}
+        content={<Typography variant="body1">{infoDialogContent}</Typography>}
+      />
     </Box>
   );
 };
