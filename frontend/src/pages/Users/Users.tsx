@@ -126,7 +126,7 @@ export const Users: React.FC = () => {
 
   const userCols: GridColDef[] = [
     { field: 'full_name', headerName: 'Name', minWidth: 100, flex: 1 },
-    { field: 'email', headerName: 'Email', minWidth: 100, flex: 1.5 },
+    { field: 'email', headerName: 'Email', minWidth: 100, flex: 1 },
     { field: 'region_id', headerName: 'Region', minWidth: 50, flex: 0.4 },
     {
       field: 'orgs',
@@ -134,12 +134,12 @@ export const Users: React.FC = () => {
       minWidth: 100,
       flex: 1
     },
-    { field: 'user_type', headerName: 'User Type', minWidth: 100, flex: 0.75 },
+    { field: 'user_type', headerName: 'User Type', minWidth: 100, flex: 0.7 },
     {
       field: 'date_approved',
       headerName: 'Approval Date',
       minWidth: 100,
-      flex: 1,
+      flex: 0.8,
       renderCell: (params: GridRenderCellParams) => {
         const dateApproved = params.row?.date_approved;
         return (
@@ -163,7 +163,7 @@ export const Users: React.FC = () => {
       field: 'approved_by',
       headerName: 'Approved By',
       minWidth: 100,
-      flex: 0.75,
+      flex: 0.8,
       renderCell: (params: GridRenderCellParams) => {
         const approvedBy = params.row?.approved_by;
         const fullName = approvedBy ? approvedBy.full_name : 'None';
@@ -206,7 +206,7 @@ export const Users: React.FC = () => {
       field: 'lastLoggedInString',
       headerName: 'Last Logged In',
       minWidth: 100,
-      flex: 1,
+      flex: 0.8,
       sortComparator: (v1, v2) => {
         if (v1 === 'None') return -1;
         if (v2 === 'None') return 1;
@@ -421,7 +421,10 @@ export const Users: React.FC = () => {
                 // Disabling export for users table as per temp solution mentioned in CRASM-2509
                 disableExport: true,
                 exportTitle: 'Users'
-              } as any
+              } as any,
+              basePopper: {
+                placement: 'bottom-start'
+              }
             }}
             initialState={{
               pagination: { paginationModel: { pageSize: 15 } },
@@ -432,6 +435,7 @@ export const Users: React.FC = () => {
                 }
               }
             }}
+            showToolbar
           />
         </Paper>
       ) : null}

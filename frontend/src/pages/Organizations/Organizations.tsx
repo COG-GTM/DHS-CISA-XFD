@@ -155,6 +155,9 @@ export const Organizations: React.FC = () => {
               columns={orgCols}
               slots={{ toolbar: CustomToolbar }}
               slotProps={{
+                basePopper: {
+                  placement: 'bottom-start'
+                },
                 toolbar: {
                   // Disabling export for organizations table as per temp solution mentioned in CRASM-2509
                   disableExport: true
@@ -165,6 +168,7 @@ export const Organizations: React.FC = () => {
               }}
               pageSizeOptions={[15, 30, 50, 100]}
               disableRowSelectionOnClick
+              showToolbar
             />
           </Paper>
         )}
