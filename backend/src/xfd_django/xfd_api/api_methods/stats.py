@@ -1210,7 +1210,6 @@ def get_summary_comparison(
 
 def get_stats_comparison_data(filters, current_user):
     """Calculate a comparison of two requested comparisons."""
-
     organization_id = filters.organization_id
 
     if not is_valid_uuid(organization_id):
@@ -1229,7 +1228,6 @@ def get_stats_comparison_data(filters, current_user):
         if uuid.UUID(organization_id) not in org_ids:
             raise HTTPException(
                 status_code=404, detail="Access denied to requested organization."
-
             )  # User has no accessible organizations
 
     # Regional Admins can only view vulnerabilities in their region
@@ -1239,7 +1237,6 @@ def get_stats_comparison_data(filters, current_user):
             raise HTTPException(
                 status_code=404, detail="Access denied to requested organization."
             )
-
 
     base_date = filters.base_date
     compare_date = filters.compare_date
@@ -1260,4 +1257,3 @@ def get_stats_comparison_data(filters, current_user):
             results[f"{source}_scans"] = summary_data
 
     return results
-

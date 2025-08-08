@@ -1002,7 +1002,8 @@ def test_v2_trends_segment_behavior():
         else:
             # It's okay for avg_summary_date to be missing if there are no data points
             assert all(v is None for k, v in summary.items() if k != "summary_date")
-            
+
+
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_stats_compare_success():
     """Test /stats/compare returns expected comparison results."""
