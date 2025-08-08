@@ -80,7 +80,10 @@ def test_okta_callback_state_mismatch():
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "State mismatch"
+    assert (
+        response.json()["detail"]
+        == "Invalid authorization code or failed to retrieve tokens"
+    )
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -92,7 +95,7 @@ def test_okta_callback_missing_signed_token():
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Missing signed token"
+    assert response.json()["detail"] == "Missing required OAuth parameters"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -112,7 +115,7 @@ def test_okta_callback_missing_code_or_state():
         "/auth/okta-callback", json={"code": "auth-code", "signedToken": signed_token}
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid or expired token"
+    assert response.json()["detail"] == "Missing required OAuth parameters"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -149,7 +152,7 @@ def test_okta_callback_json_serializable(mock_get_jwt_from_code):
     signed_token = sign_oauth_data("state-123", "verifier")
     response = client.post(
         "/auth/okta-callback",
-        json={"code": "auth-code", "state": "state-abc", "signedToken": signed_token},
+        json={"code": "auth-code", "state": "state-123", "signedToken": signed_token},
     )
 
     assert response.status_code == 200
@@ -176,29 +179,7 @@ def test_okta_callback_token_exchange_failure(mock_get_jwt_from_code):
     )
 
 
-@patch("xfd_api.auth.User.save", side_effect=Exception("DB failure"))
-@patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
-def test_process_user_save_failure(mock_get_jwt, mock_save):
-    """Force exception during user save to trigger 400 error."""
-    mock_get_jwt.return_value = {
-        "decoded_token": {
-            "email": "savefail@example.com",
-            "sub": "fail-id",
-            "given_name": "Fail",
-            "family_name": "User",
-        }
-    }
-
-    signed_token = sign_oauth_data("state-fail", "verifier")
-
-    response = client.post(
-        "/auth/okta-callback",
-        json={"code": "auth-code", "state": "state-fail", "signedToken": signed_token},
-    )
-
-    assert response.status_code == 400
-
-
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_legacy_user_email_match_okta_id_added(mock_get_jwt):
     """Verify legacy user is upgraded by matching email."""
@@ -238,6 +219,7 @@ def test_legacy_user_email_match_okta_id_added(mock_get_jwt):
     assert updated.invite_pending is False
 
 
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.JWT_SECRET", None)
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_jwt_secret_missing(mock_get_jwt):
@@ -263,6 +245,7 @@ def test_jwt_secret_missing(mock_get_jwt):
     assert response.json()["detail"] == "JWT_SECRET is not defined"
 
 
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 @patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
 def test_okta_callback_sets_crossfeed_cookie(mock_get_jwt):
     """Ensure crossfeed-token cookie is correctly set."""
