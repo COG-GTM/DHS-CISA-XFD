@@ -102,21 +102,21 @@ class ESClient:
         ]
         self._bulk_update(actions)
 
-    def update_domains(self, docs, max_retries=5, backoff_base=2):
-        """Update domains with retry and backoff on 429 errors."""
+    def update_domains(self, domains, max_retries=5, backoff_base=2):
+        """Update or insert domains into Elasticsearch with retry and backoff."""
         actions = [
             {
                 "_op_type": "update",
                 "_index": DOMAINS_INDEX,
-                "_id": doc["id"],
+                "_id": domain["id"],
                 "doc": {
-                    **doc,
-                    "suggest": [{"input": doc["name"], "weight": 1}],
+                    **domain,
+                    "suggest": [{"input": domain["name"], "weight": 1}],
                     "parent_join": "domain",
                 },
                 "doc_as_upsert": True,
             }
-            for doc in docs
+            for domain in domains
         ]
 
         attempt = 0
@@ -150,8 +150,8 @@ class ESClient:
 
                 return  # Exit after success (even with partial failures)
 
-            except TransportError as e:
-                if e.status_code == 429:
+            except TransportError as sync_error:
+                if sync_error.status_code == 429:
                     wait_time = backoff_base**attempt
                     logging.warning(
                         "429 received, retrying in %s seconds...", wait_time
@@ -159,8 +159,8 @@ class ESClient:
                     time.sleep(wait_time)
                     attempt += 1
                 else:
-                    logging.error("Unexpected error during bulk update: %s", e)
-                    raise e
+                    logging.error("Unexpected error during bulk update: %s", sync_error)
+                    raise sync_error
 
         raise Exception("Max retries exceeded for bulk update.")
 
