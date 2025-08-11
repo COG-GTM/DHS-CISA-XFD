@@ -22,7 +22,7 @@ export const OktaCallback: React.FC = () => {
       return;
     }
 
-    const signedToken = localStorage.getItem('oauthMeta'); // New: get the signed token
+    const signedToken = localStorage.getItem('oauthMeta');
 
     if (!signedToken) {
       console.error('Missing signed OAuth metadata');
@@ -37,7 +37,7 @@ export const OktaCallback: React.FC = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ code, state, signedToken }) // Add it here
+          body: JSON.stringify({ code, state, signedToken })
         }
       );
 
@@ -48,7 +48,7 @@ export const OktaCallback: React.FC = () => {
 
       // Clean up
       localStorage.setItem('token', data.token);
-      localStorage.removeItem('oauthMeta'); // NEW: clear signed token
+      localStorage.removeItem('oauthMeta');
       localStorage.removeItem('nonce');
       localStorage.removeItem('state');
 
