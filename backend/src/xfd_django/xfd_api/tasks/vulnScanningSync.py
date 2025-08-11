@@ -438,7 +438,7 @@ def build_vuln_scan_dict(vuln, owner_id, ip_id, cve):
         "cvss_temporal_score": vuln.get("cvss_temporal_score", None),
         "cvss_temporal_vector": vuln.get("cvss_temporal_vector", None),
         "cvss_vector": vuln.get("cvss_vector", None),
-        "description": vuln.get("description", None)[:255],
+        "description": vuln.get("description", None),
         "exploit_available": vuln.get("exploit_available", None),
         "exploitability_ease": vuln.get("exploit_ease", None),
         "ip_string": vuln.get("ip", None),
