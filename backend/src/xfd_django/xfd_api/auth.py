@@ -336,7 +336,7 @@ async def handle_okta_callback(request):
         )
 
     jwt_data = await get_jwt_from_code(code, code_verifier)
-    LOGGER.info("JWT Data: {}".format(jwt_data))
+    LOGGER.info("JWT Data: %s", jwt_data)
     if jwt_data is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -476,7 +476,7 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
 
         # Decode the token without verifying the signature (if needed)
         decoded_token = jwt.decode(id_token, options={"verify_signature": False})
-        LOGGER.info("decoded token: {}".format(decoded_token))
+        LOGGER.info("decoded token: %s", decoded_token)
         return {
             "refresh_token": refresh_token,
             "id_token": id_token,
@@ -485,7 +485,7 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
         }
 
     except Exception as error:
-        LOGGER.error("get_jwt_from_code post error: {}".format(error))
+        LOGGER.error("get_jwt_from_code post error: %s", error)
 
 
 def is_global_write_admin(current_user) -> bool:

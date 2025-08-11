@@ -1305,7 +1305,7 @@ def process_networks(networks):
                 {"network": cidr, "start_ip": address[0], "end_ip": address[-1]}
             )
         except Exception as e:
-            LOGGER.error("Invalid CIDR Format", e)
+            LOGGER.error("Invalid CIDR Format: %s", e)
     return network_list
 
 

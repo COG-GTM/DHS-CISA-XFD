@@ -499,7 +499,7 @@ def dmz_shodan_sync(shodan_data, current_user):
         raise HTTPException(status_code=404, detail="Organization not found")
     except Exception as e:
         # TODO: CRASM-2568 - Create a unified logger in python backend
-        LOGGER.error("Unexpected error in dmz_shodan_sync: {}".format(e))
+        LOGGER.error("Unexpected error in dmz_shodan_sync: %s", e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -565,7 +565,7 @@ def dmz_censys_sync(censys_data, current_user):
         raise
     except Exception as e:
         # TODO: CRASM-2568 - Create a unified logger in python backend
-        LOGGER.error("Unexpected error in dmz_censys_sync: {}".format(e))
+        LOGGER.error("Unexpected error in dmz_censys_sync: %s", e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

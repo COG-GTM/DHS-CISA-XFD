@@ -247,9 +247,9 @@ def test_search_domain_by_organization(user, domain, refresh_vuln_views):
 def test_search_domain_by_organization_name(user, domain, refresh_vuln_views):
     """Test domain by org name."""
     LOGGER.info(
-        "Domain in view:", Domain.objects.values("id", "organization_id", "name")
+        "Domain in view: %s", Domain.objects.values("id", "organization_id", "name")
     )
-    LOGGER.info("Org in DB:", Organization.objects.all().values("id", "name"))
+    LOGGER.info("Org in DB: %s", Organization.objects.all().values("id", "name"))
     # Test search domains by organization
     response = client.post(
         "/domain/search",

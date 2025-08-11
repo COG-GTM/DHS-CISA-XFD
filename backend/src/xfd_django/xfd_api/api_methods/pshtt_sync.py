@@ -146,7 +146,7 @@ def process_data(data):
             )
         except Exception as e:
             LOGGER.error("Error occurred while processing Pshtt record: %s", e)
-            raise IngestionError("Failed processing pshtt record")
+            raise IngestionError
 
 
 def create_or_update_pshtt_result(pshtt_dict, data_source, organization, sub_domain):
