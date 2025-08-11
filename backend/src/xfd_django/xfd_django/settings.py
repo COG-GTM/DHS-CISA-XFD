@@ -136,8 +136,8 @@ ELASTICSEARCH_ENDPOINT = os.getenv("ELASTICSEARCH_ENDPOINT")
 LANGUAGE_CODE = "en-us"
 
 # Log Level defaults to INFO, can be changed to DEBUG in development
-LOG_LEVEL = os.getenv("LOG_LEVEL_XFD", "INFO").upper()
-
+LOGGING_LEVEL = "DEBUG" if DEBUG else "INFO"
+ROOT_LEVEL = "INFO"
 # Logging configuration
 LOGGING = {
     "version": 1,
@@ -150,19 +150,19 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": os.getenv("LOG_LEVEL_XFD", "INFO").upper(),
+            "level": LOGGING_LEVEL,
             "class": "logging.StreamHandler",
             "formatter": "standard",
         },
     },
     "root": {
         "handlers": ["console"],
-        "level": "INFO",
+        "level": ROOT_LEVEL,
     },
     "loggers": {
         "xfd": {
             "handlers": ["console"],
-            "level": os.getenv("LOG_LEVEL_XFD", "INFO").upper(),
+            "level": LOGGING_LEVEL,
             "propagate": False,
         },
     },
