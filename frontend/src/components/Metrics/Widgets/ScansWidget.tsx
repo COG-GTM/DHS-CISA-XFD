@@ -29,11 +29,11 @@ const generateDateRange = (days: number): string[] => {
 };
 
 const STATUS_COLORS: Record<number, string> = {
-  1: '#5c5c5c', // Cool gray/blue for informational
-  2: '#1a7f37', // Green for success
-  3: '#125ea4', // Blue for redirects
-  4: '#c75200', // Orange for client errors
-  5: '#a51414' // Red for server errors
+  1: '#5c5c5c', // Gray for informational (1xx)
+  2: '#1a7f37', // Green for success (2xx)
+  3: '#125ea4', // Blue for redirects (3xx)
+  4: '#c75200', // Orange for client errors (4xx)
+  5: '#a51414' // Red for server errors (5xx)
 };
 
 const getStatusColor = (status: number): string => {
@@ -163,7 +163,9 @@ const ScansWidget: React.FC = () => {
         <div className={body}>
           {scanSummaries?.scans?.length ? (
             <>
-              <h3 style={{ margin: 0 }}>Scan Result Summary</h3>
+              <h3 style={{ margin: 0 }}>
+                Scan Result Summary (Last {metricsWindowDays} Days)
+              </h3>
               <h4 style={{ fontWeight: 'normal', margin: 0 }}>
                 Organization count per scan for each HTTP Status Code
               </h4>

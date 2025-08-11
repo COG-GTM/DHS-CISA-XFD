@@ -10,9 +10,8 @@ import traceback
 import django
 from django.utils import timezone
 import pandas as pd
-from xfd_mini_dl.models import CredentialBreaches, DataSource, Organization, Scan
+from xfd_mini_dl.models import CredentialBreaches, DataSource, Organization
 
-from .helpers.log_scan_result import log_scan_result
 from .helpers.sixgill_helpers.api import get_sixgill_organizations
 from .helpers.sixgill_helpers.db_query_source import (
     insert_sixgill_alerts,
@@ -45,7 +44,7 @@ DAYS_BACK = datetime.timedelta(days=30)
 MENTIONS_DAYS_BACK = datetime.timedelta(days=20)
 MENTIONS_START_DATE = str(TODAY - MENTIONS_DAYS_BACK)
 END_DATE = str(TODAY)
-DATE_SPAN = "[{} TO {}]".format(MENTIONS_START_DATE, END_DATE)
+DATE_SPAN = f"[{MENTIONS_START_DATE} TO {END_DATE}]"
 NOW = datetime.datetime.now()
 START_DATE_TIME = (NOW - DAYS_BACK).strftime("%Y-%m-%d %H:%M:%S")
 END_DATE_TIME = NOW.strftime("%Y-%m-%d %H:%M:%S")
@@ -62,19 +61,17 @@ SOURCE_OBJ, _ = DataSource.objects.get_or_create(
 class Cybersixgill:
     """Main class to run Cybersixgill scans for alerts, mentions, credentials, and CVEs."""
 
-    def __init__(self, org_objects, method_list, soc_med_included, scan_id):
+    def __init__(self, org_objects, method_list, soc_med_included):
         """Initialize with orgs, scan methods, and social media inclusion flag."""
         self.org_objects = org_objects
         self.method_list = method_list
         self.soc_med_included = soc_med_included
         self.sixgill_org_map = get_sixgill_organizations()
-        self.scan_id = scan_id
 
     def run(self):
         """Run all selected scan methods for each organization."""
         LOGGER.info("Cybersixgill.run() started")
         failed = []
-        total_orgs = 0
 
         # Run top CVE scan globally
         if "topCVEs" in self.method_list:
@@ -84,43 +81,27 @@ class Cybersixgill:
         # Run per-org scans
         for idx, org in enumerate(self.org_objects):
             org_id = org.acronym
-            org_uuid = org.id
-
             sixgill_id = self.sixgill_org_map.get(org_id, [None])[0]
             if not sixgill_id:
                 LOGGER.warning("%s is not registered in Cybersixgill, skipping", org_id)
                 continue
+
             LOGGER.info(
                 "Running CSG on %s (%d/%d)", org_id, idx + 1, len(self.org_objects)
             )
 
-            # Count total organizations scanned
-            total_orgs += 1
-
             # Run alert scan
             if "alerts" in self.method_list:
                 if self.get_alerts(org, org_id, sixgill_id) == 1:
-                    failed.append("%s alerts" % org_id)
+                    failed.append(f"{org_id} alerts")
             # Run mention scan
             if "mentions" in self.method_list:
                 if self.get_mentions(org, org_id, sixgill_id) == 1:
-                    failed.append("%s mentions" % org_id)
+                    failed.append(f"{org_id} mentions")
             # Run credential scan
             if "credentials" in self.method_list:
                 if self.get_credentials(org, sixgill_id) == 1:
-                    failed.append("%s credentials" % org_id)
-            # Upsert scan result timestamp if all methods succeeded
-            if (
-                ("%s alerts" % org_id)
-                and ("%s mentions" % org_id)
-                and ("%s credentials" % org_id) not in failed
-            ):
-                log_scan_result(self.scan_id, org_uuid)
-
-        # Save total number of organizations scanned to the Scan table
-        scan = Scan.objects.get(id=self.scan_id)
-        scan.total_orgs = total_orgs
-        scan.save()
+                    failed.append(f"{org_id} credentials")
 
         # Log any failed scans
         if failed:
@@ -300,17 +281,13 @@ def handler(event):
 
         # Get all organizations
         orgs = Organization.objects.all()
-        scan_id = event.get("scanId")
         LOGGER.info("Number of orgs to scan: %d", orgs.count())
 
         # Define which scan methods to run
         method_list = ["alerts", "mentions", "credentials", "topCVEs"]
 
         scan = Cybersixgill(
-            org_objects=orgs,
-            method_list=method_list,
-            soc_med_included=False,
-            scan_id=scan_id,
+            org_objects=orgs, method_list=method_list, soc_med_included=False
         )
         scan.run()
 

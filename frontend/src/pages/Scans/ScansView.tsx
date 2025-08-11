@@ -26,8 +26,7 @@ import {
   DialogContentText,
   IconButton,
   Paper,
-  DialogTitle,
-  Tooltip
+  DialogTitle
 } from '@mui/material';
 
 interface Errors extends Partial<Scan> {
@@ -49,8 +48,6 @@ export interface ScansRow {
   last_run: string;
   description: string;
   concurrent_tasks: number;
-  total_orgs: number;
-  orgs_with_results: number;
 }
 
 const ScansView: React.FC = () => {
@@ -58,7 +55,6 @@ const ScansView: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>('');
   const [selectedName, setSelectedName] = useState<string>('');
   const [scans, setScans] = useState<Scan[]>([]);
-  const [metricsWindowDays, setMetricsWindowDays] = useState<number>(0);
   const [_organizationOptions, setOrganizationOptions] = useState<
     OrganizationOption[]
   >([]);
@@ -72,20 +68,17 @@ const ScansView: React.FC = () => {
 
   const fetchScans = useCallback(async () => {
     try {
-      const { scans, organizations, schema, metrics_window_days } =
-        await apiGet<{
-          scans: Scan[];
-          organizations: Organization[];
-          schema: ScanSchema;
-          metrics_window_days: number;
-        }>(`/scans`);
+      const { scans, organizations, schema } = await apiGet<{
+        scans: Scan[];
+        organizations: Organization[];
+        schema: ScanSchema;
+      }>('/scans/');
       const tags = await apiGet<OrganizationTag[]>(`/organizations/tags`);
       setScans(scans);
       setScanSchema(schema);
       setOrganizationOptions(
         organizations.map((e) => ({ label: e.name, value: e.id }))
       );
-      setMetricsWindowDays(metrics_window_days);
       setTags(tags);
     } catch (e) {
       console.error(e);
@@ -160,8 +153,6 @@ const ScansView: React.FC = () => {
     setOpen(true);
   };
 
-  //Code for new table//
-
   React.useEffect(() => {
     fetchScans();
   }, [fetchScans]);
@@ -183,9 +174,7 @@ const ScansView: React.FC = () => {
           : `${formatDistanceToNow(parseISO(scan.last_run))} ago`,
       description: scanSchema[scan.name]?.description,
       concurrent_tasks: scan.concurrent_tasks,
-      is_single_scan: scan.is_single_scan,
-      total_orgs: scan.total_orgs,
-      orgs_with_results: scan.orgs_with_results
+      is_single_scan: scan.is_single_scan
     };
   });
 
@@ -266,49 +255,7 @@ const ScansView: React.FC = () => {
         );
       }
     },
-    { field: 'description', headerName: 'Description', minWidth: 250, flex: 5 },
-    {
-      field: 'success_rate',
-      headerName: 'Success Rate',
-      minWidth: 140,
-      flex: 1,
-      align: 'right',
-      headerAlign: 'right',
-      renderHeader: () => (
-        <Tooltip
-          title={
-            <>
-              <div>Organizations with Results / Organizations Scanned</div>
-              <div>Calculated over the last {metricsWindowDays} days</div>
-            </>
-          }
-          placement="top"
-        >
-          <span>Success Rate</span>
-        </Tooltip>
-      ),
-      renderCell: (params: GridRenderCellParams) => {
-        const total = params.row.total_orgs as number;
-        const succeeded = params.row.orgs_with_results as number;
-        const pct = total
-          ? `${((succeeded / total) * 100).toFixed(1)}%`
-          : 'N/A';
-        return (
-          <Tooltip
-            title={
-              <>
-                <div>Organizations Scanned: {total}</div>
-                <div>Organizations with Results: {succeeded}</div>
-                <div>Window: {metricsWindowDays} Days</div>
-              </>
-            }
-            placement="top"
-          >
-            <span>{pct}</span>
-          </Tooltip>
-        );
-      }
-    }
+    { field: 'description', headerName: 'Description', minWidth: 250, flex: 5 }
   ];
 
   //To-do: Add a button to toolbar to import scans

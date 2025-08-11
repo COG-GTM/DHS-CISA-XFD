@@ -64,6 +64,9 @@ def process_message(message_data):
 
 def main():
     """Worker loop."""
+    # Third-Party Libraries
+    from xfd_api.tasks.helpers.log_scan_result import log_scan_result
+
     try:
         command_options = json.loads(os.getenv("CROSSFEED_COMMAND_OPTIONS", "{}"))
     except Exception:
@@ -128,7 +131,22 @@ def main():
         )
 
         try:
-            scan_fn(task_options)
+            result = scan_fn(task_options)
+
+            # Log returned http status and message body
+            if isinstance(result, dict):
+                http_status = result.get("status_code") or result.get("statusCode")
+                message_body = result.get("body")
+            else:
+                http_status = None
+                message_body = str(result)
+
+            log_scan_result(
+                scan_id=task_options.get("scanId"),
+                organization_id=task_options.get("organizationId"),
+                http_status=http_status,
+                message=message_body,
+            )
             # Delete message after processing
             receipt_handle = message_data.get("ReceiptHandle")
             if receipt_handle:

@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import requests
 from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
-from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import (
     CredentialBreaches,
     CredentialExposures,
@@ -77,7 +76,6 @@ def main(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
-        scan_id = command_options.get("scanId")
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -87,7 +85,7 @@ def main(command_options):
 
         organization = orgs_to_sync.first()
 
-        intelx = IntelX([organization], scan_id)
+        intelx = IntelX([organization])
         intelx.run_intelx()
 
         return {
@@ -103,16 +101,14 @@ def main(command_options):
 class IntelX:
     """Fetch IntelX data."""
 
-    def __init__(self, org_objects: list[Organization], scan_id: str):
+    def __init__(self, org_objects: list[Organization]):
         """Initialize IntelX class."""
         self.org_objects = org_objects
-        self.scan_id = scan_id
 
     def run_intelx(self):
         """Run IntelX api calls."""
         LOGGER.info("Running IntelX")
         orgs_objects = self.org_objects
-        scan_id = self.scan_id
 
         # Run IntelX on each org
         success = 0
@@ -127,7 +123,7 @@ class IntelX:
                 total_org_count,
             )
 
-            if self.get_credentials(org, scan_id) == 1:
+            if self.get_credentials(org) == 1:
                 LOGGER.error(
                     "Failed to retrieve IntelX credentials for %s", org.acronym
                 )
@@ -147,11 +143,9 @@ class IntelX:
             total_org_count,
         )
 
-    def get_credentials(self, org: Organization, scan_id: str):
+    def get_credentials(self, org: Organization):
         """Get credentials for a provided org."""
         # Get the org root domains
-        breach_saved = False
-        credential_saved = False
         LOGGER.info("Retrieving root domains for %s", org.acronym)
         try:
             roots = (
@@ -203,7 +197,6 @@ class IntelX:
             try:
                 breach_dict = insert_intelx_breaches(breaches_df)
                 # insert_intelx_breaches(breaches_df)
-                breach_saved = True
             except Exception as e:
                 LOGGER.error(
                     "Failed inserting IntelX breach data for %s", root.sub_domain
@@ -215,7 +208,7 @@ class IntelX:
             LOGGER.info("Inserting IntelX credential data for %s", root.sub_domain)
             try:
                 insert_intelx_credentials(creds_df, breach_dict, org, root)
-                credential_saved = True
+
             except Exception as e:
                 LOGGER.error(
                     "Failed inserting IntelX credential data for %s", root.sub_domain
@@ -227,8 +220,6 @@ class IntelX:
             "intel_x_pull",
             start_pulling_time,
         )
-        if breach_saved and credential_saved:
-            log_scan_result(scan_id, org.id)
         return 0
 
     def query_identity_api(self, domain, start_date, end_date):

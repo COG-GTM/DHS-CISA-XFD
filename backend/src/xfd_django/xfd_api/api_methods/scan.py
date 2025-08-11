@@ -8,20 +8,20 @@ from fastapi import HTTPException
 from xfd_mini_dl.models import Organization, OrganizationTag, Scan
 
 from ..auth import is_global_view_admin, is_global_write_admin
-from ..helpers.query_scans import query_scans
 from ..schema_models.scan import SCAN_SCHEMA, NewScan
 from ..tasks.lambda_client import LambdaClient
 
 
 # GET: /scans
-def list_scans(window_days, current_user):
-    """List scans, their schema/orgs, plus total_orgs and orgs_with_results in the last `window_days`."""
+def list_scans(current_user):
+    """List scans."""
     try:
         # Check if the user is a GlobalViewAdmin
         if not is_global_view_admin(current_user):
             raise HTTPException(status_code=403, detail="Unauthorized access.")
-        # Fetch scans, prefetch related orgs/tags, and annotate with metrics
-        scans = query_scans(None, window_days)
+
+        # Fetch scans and prefetch related tags
+        scans = Scan.objects.prefetch_related("tags").all()
 
         # Fetch all organizations
         organizations = Organization.objects.values("id", "name")
@@ -29,40 +29,36 @@ def list_scans(window_days, current_user):
         # Convert to list of dicts with related tags
         scan_list = []
         for scan in scans:
-            scan_list.append(
-                {
-                    "id": scan.id,
-                    "created_at": scan.created_at,
-                    "updated_at": scan.updated_at,
-                    "name": scan.name,
-                    "arguments": scan.arguments,
-                    "frequency": scan.frequency,
-                    "last_run": scan.last_run,
-                    "is_granular": scan.is_granular,
-                    "is_user_modifiable": scan.is_user_modifiable,
-                    "is_single_scan": scan.is_single_scan,
-                    "manual_run_pending": scan.manual_run_pending,
-                    "concurrent_tasks": scan.concurrent_tasks,
-                    "tags": [
-                        {
-                            "id": tag.id,
-                            "created_at": tag.created_at,
-                            "updated_at": tag.updated_at,
-                            "name": tag.name,
-                        }
-                        for tag in scan.tags.all()
-                    ],
-                    "total_orgs": scan.total_orgs,
-                    "orgs_with_results": scan.orgs_with_results,
-                }
-            )
+            scan_data = {
+                "id": scan.id,
+                "created_at": scan.created_at,
+                "updated_at": scan.updated_at,
+                "name": scan.name,
+                "arguments": scan.arguments,
+                "frequency": scan.frequency,
+                "last_run": scan.last_run,
+                "is_granular": scan.is_granular,
+                "is_user_modifiable": scan.is_user_modifiable,
+                "is_single_scan": scan.is_single_scan,
+                "manual_run_pending": scan.manual_run_pending,
+                "concurrent_tasks": scan.concurrent_tasks,
+                "tags": [
+                    {
+                        "id": tag.id,
+                        "created_at": tag.created_at,
+                        "updated_at": tag.updated_at,
+                        "name": tag.name,
+                    }
+                    for tag in scan.tags.all()
+                ],
+            }
+            scan_list.append(scan_data)
 
         # Return response with scans, schema, and organizations
         response = {
             "scans": scan_list,
             "schema": SCAN_SCHEMA,
             "organizations": list(organizations),
-            "metrics_window_days": window_days,
         }
 
         return response
@@ -71,7 +67,6 @@ def list_scans(window_days, current_user):
         raise http_exc
 
     except Exception as e:
-        print("Error fetching scans: {}".format(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -172,61 +167,51 @@ def create_scan(scan_data: NewScan, current_user):
 
 
 # GET: /scans/{scan_id}
-def get_scan(scan_id: str, window_days, current_user):
+def get_scan(scan_id: str, current_user):
     """Get a scan by its ID."""
-    try:
-        # Check if the user is a GlobalViewAdmin
-        if not is_global_view_admin(current_user):
-            raise HTTPException(status_code=403, detail="Unauthorized access.")
+    # Check if the user is a GlobalViewAdmin
+    if not is_global_view_admin(current_user):
+        raise HTTPException(status_code=403, detail="Unauthorized access.")
 
-        # Fetch scans, prefetch related orgs/tags, and annotate with metrics
-        scan = query_scans(scan_id, window_days)
+    try:
+        # Fetch the scan with its related organizations and tags
+        scan = Scan.objects.prefetch_related("organizations", "tags").get(id=scan_id)
 
         # Fetch all organizations
         all_organizations = Organization.objects.values("id", "name")
-
-        # Get related organizations with all fields and remove unwanted fields
-        related_organizations = list(scan.organizations.values())
-        for org in related_organizations:
-            org.pop("parent_id", None)
-            org.pop("created_by_id", None)
-
-        # Serialize scan data
-        scan_data = {
-            "id": str(scan.id),
-            "created_at": scan.created_at,
-            "updated_at": scan.updated_at,
-            "name": scan.name,
-            "arguments": scan.arguments,
-            "last_run": scan.last_run,
-            "frequency": scan.frequency,
-            "is_granular": scan.is_granular,
-            "is_user_modifiable": scan.is_user_modifiable,
-            "is_single_scan": scan.is_single_scan,
-            "manual_run_pending": scan.manual_run_pending,
-            "organizations": related_organizations,
-            "tags": list(scan.tags.values()),
-            "concurrent_tasks": scan.concurrent_tasks,
-            "total_orgs": scan.total_orgs,
-            "orgs_with_results": scan.orgs_with_results,
-        }
-
-        # Return the scan details along with its related data
-        return {
-            "scan": scan_data,
-            "schema": dict(SCAN_SCHEMA[scan.name]),
-            "organizations": list(all_organizations),
-            "metrics_window_days": window_days,
-        }
-
     except Scan.DoesNotExist:
         raise HTTPException(status_code=404, detail="Scan not found")
 
-    except HTTPException as http_exc:
-        raise http_exc
+    # Get related organizations with all fields and remove unwanted fields
+    related_organizations = list(scan.organizations.values())
+    for org in related_organizations:
+        org.pop("parent_id", None)
+        org.pop("created_by_id", None)
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Serialize scan data
+    scan_data = {
+        "id": str(scan.id),
+        "created_at": scan.created_at,
+        "updated_at": scan.updated_at,
+        "name": scan.name,
+        "arguments": scan.arguments,
+        "last_run": scan.last_run,
+        "frequency": scan.frequency,
+        "is_granular": scan.is_granular,
+        "is_user_modifiable": scan.is_user_modifiable,
+        "is_single_scan": scan.is_single_scan,
+        "manual_run_pending": scan.manual_run_pending,
+        "organizations": related_organizations,
+        "tags": list(scan.tags.values()),
+        "concurrent_tasks": scan.concurrent_tasks,
+    }
+
+    # Return the scan details along with its related data
+    return {
+        "scan": scan_data,
+        "schema": dict(SCAN_SCHEMA[scan.name]),
+        "organizations": list(all_organizations),
+    }
 
 
 # PUT: /scans/{scan_id}

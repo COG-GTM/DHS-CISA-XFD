@@ -9,7 +9,6 @@ from fastapi import HTTPException, Response, status
 from xfd_mini_dl.models import ScanTask
 
 from ..auth import get_tag_organizations, is_global_view_admin, is_global_write_admin
-from ..helpers.query_scans import query_scans
 from ..schema_models.scan_tasks import ScanTaskSearch
 from ..tasks.ecs_client import ECSClient
 
@@ -75,23 +74,22 @@ def list_scan_tasks(search_data: Optional[ScanTaskSearch], current_user):
                 print("Warning: ScanTask {} has no scan associated.".format(task.id))
                 scan_data = None
             else:
-                # Fetch scan with annotated metrics
-                scan = query_scans(task.scan.id)
                 scan_data = {
-                    "id": str(scan.id),
-                    "created_at": scan.created_at.isoformat(),
-                    "updated_at": scan.updated_at.isoformat(),
-                    "name": scan.name,
-                    "arguments": scan.arguments,
-                    "frequency": scan.frequency,
-                    "last_run": scan.last_run.isoformat() if scan.last_run else None,
-                    "is_granular": scan.is_granular,
-                    "is_user_modifiable": scan.is_user_modifiable,
-                    "is_single_scan": scan.is_single_scan,
-                    "manual_run_pending": scan.manual_run_pending,
-                    "concurrent_tasks": scan.concurrent_tasks,
-                    "total_orgs": scan.total_orgs,
-                    "orgs_with_results": scan.orgs_with_results,
+                    "id": str(task.scan.id),
+                    "created_at": task.scan.created_at.isoformat(),
+                    "updated_at": task.scan.updated_at.isoformat(),
+                    "name": task.scan.name,
+                    "arguments": task.scan.arguments,
+                    "frequency": task.scan.frequency,
+                    "last_run": task.scan.last_run.isoformat()
+                    if task.scan.last_run
+                    else None,
+                    "is_granular": task.scan.is_granular,
+                    "is_user_modifiable": task.scan.is_user_modifiable,
+                    "is_single_scan": task.scan.is_single_scan,
+                    "manual_run_pending": task.scan.manual_run_pending,
+                    "concurrent_tasks": task.scan.concurrent_tasks,
+                    "total_orgs": task.scan.total_orgs,
                 }
             results.append(
                 {

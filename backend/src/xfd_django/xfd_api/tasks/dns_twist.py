@@ -14,7 +14,6 @@ from uuid import uuid4
 import dnstwist
 import dshield
 import requests
-from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import DataSource, DomainPermutations, Organization, SubDomains
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -172,7 +171,7 @@ def check_domain_in_blocklist(
     # Query internal blocklist API
     try:
         response = requests.get(
-            "{}?ip_address={}".format(BACKEND_DOMAIN, ip_address),
+            f"{BACKEND_DOMAIN}?ip_address={ip_address}",
             timeout=60,
             headers={"Authorization": DMZ_API_KEY},
         )
@@ -258,10 +257,10 @@ def execute_dnstwist_data(domain_dict):
             dshield_attack_count=domain_dict["dshield_attack_count"],
         )
     except Exception as e:
-        LOGGER.error("Error adding domain permutation to data lake %s", str(e))
+        LOGGER.error(f"Error adding domain permutation to data lake {str(e)}")
 
 
-def process_org(org, orgs_list, data_source, failures, scan_id):
+def process_org(org, orgs_list, data_source, failures):
     """Process the domains for the given organization."""
     org_id = org.id
     org_name = org.name
@@ -296,9 +295,6 @@ def process_org(org, orgs_list, data_source, failures, scan_id):
                     LOGGER.info(
                         "Inserted %s into database", domain["domain_permutation"]
                     )
-                #  upsert timestamp of latest result for each organization per scan, if execute_dnstwist_data was successful and domain_list is not empty
-                if domain_list:
-                    log_scan_result(scan_id, org_id)
             except Exception:
                 # TODO: Create custom exceptions.
                 # Issue 265: https://github.com/cisagov/pe-reports/issues/265
@@ -342,12 +338,11 @@ def main(event):
     """Run DNStwist on certain domains and upload findings to database."""
     organizationId = event.get("organizationId")
     org_record = Organization.objects.get(id=organizationId)
-    scan_id = event.get("scanId")
     LOGGER.info("Running DNSTwist on %s", org_record.name)
     data_source = get_data_source("DNSTwist")
     failures = []
     orgs_list = [org_record.name]
-    process_org(org_record, orgs_list, data_source, failures, scan_id)
+    process_org(org_record, orgs_list, data_source, failures)
     if failures:
         LOGGER.error("These orgs failed:")
         LOGGER.error(failures)

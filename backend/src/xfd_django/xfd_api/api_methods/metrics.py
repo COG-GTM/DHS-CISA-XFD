@@ -18,6 +18,9 @@ from xfd_api.schema_models.metrics import (
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_mini_dl.models import Scan, ScanResult
 
+# Default window for metrics in days; used by metrics endpoints in views.py
+default_metrics_window = 7
+
 
 def get_scan_daily_status_counts(scan_id: str, window_days: int, current_user):
     """Get daily HTTP status counts for a specific scan over a given time window."""

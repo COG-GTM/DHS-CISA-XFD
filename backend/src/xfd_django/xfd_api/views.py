@@ -38,6 +38,7 @@ from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
 from .api_methods.metrics import (
+    default_metrics_window,
     get_scan_daily_status_counts,
     list_scans_org_count_by_status,
 )
@@ -92,7 +93,6 @@ from .auth import (
     handle_okta_callback,
     set_oauth_cookies_response,
 )
-from .helpers.query_scans import default_window
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
 from .schema_models import scan as scanSchema
@@ -515,7 +515,7 @@ async def call_search_logs_filtered(
     tags=["metrics"],
 )
 async def call_list_scans_org_count_by_status(
-    window_days: int = default_window,
+    window_days: int = default_metrics_window,
     current_user: User = Depends(get_current_active_user),
 ):
     """List scans and annotate with metrics."""
@@ -536,7 +536,7 @@ async def call_list_scans_org_count_by_status(
 )
 async def call_get_scan_daily_status_counts(
     scan_id: str,
-    window_days: int = default_window,
+    window_days: int = default_metrics_window,
     current_user: User = Depends(get_current_active_user),
 ):
     """Get daily http status counts for a specific scan."""
@@ -1010,12 +1010,9 @@ async def call_delete_saved_search(
     response_model=scanSchema.GetScansResponseModel,
     tags=["Scans"],
 )
-async def list_scans(
-    window_days: int = default_window,
-    current_user: User = Depends(get_current_active_user),
-):
-    """List all scans and annotate with metrics."""
-    return scan.list_scans(window_days, current_user)
+async def list_scans(current_user: User = Depends(get_current_active_user)):
+    """Retrieve a list of all scans."""
+    return scan.list_scans(current_user)
 
 
 @api_router.get(
@@ -1048,13 +1045,9 @@ async def create_scan(
     response_model=scanSchema.GetScanResponseModel,
     tags=["Scans"],
 )
-async def get_scan(
-    scan_id: str,
-    window_days: int = default_window,
-    current_user: User = Depends(get_current_active_user),
-):
+async def get_scan(scan_id: str, current_user: User = Depends(get_current_active_user)):
     """Get a scan by its ID. User must be authenticated."""
-    return scan.get_scan(scan_id, current_user, window_days)
+    return scan.get_scan(scan_id, current_user)
 
 
 @api_router.put(

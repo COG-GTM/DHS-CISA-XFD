@@ -11,7 +11,6 @@ from django.utils import timezone
 from xfd_api.helpers.data_pull_history import get_last_queried, update_query_timestamp
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_api.helpers.dmz_sync_helper import query_api
-from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 
 # Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
@@ -53,7 +52,7 @@ def handler(command_options):
         is_local = os.getenv("IS_LOCAL")
 
         if str(is_dmz).lower() in {"true", "1"} and not is_local:
-            LOGGER.warning("Scan can only be run in the LZ or locally. Exiting now.")
+            LOGGER.warning("Scan can only be run in the LZ or locally. Exitting now.")
             return {
                 "statusCode": 200,
                 "body": "ASM DMZ Sync pull cannot run outside the LZ.",
@@ -72,7 +71,6 @@ def main(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
-        scan_id = command_options.get("scanId")
         data_saved = False
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
@@ -126,14 +124,13 @@ def main(command_options):
 
             update_query_timestamp(org, "credential_sync", start_pulling_time)
         if data_saved:
-            LOGGER.info(
-                "Credential sync updated exposures and breaches for %s.",
-                organization_name,
-            )
-            log_scan_result(scan_id, organization_id)
+            return {
+                "statusCode": 200,
+                "body": "Credential Sync completed successfully.",
+            }
         return {
-            "statusCode": 200,
-            "body": "Credential sync completed successfully.",
+            "statusCode": 204,
+            "body": "Credential Sync found no new data.",
         }
 
     except Exception as e:
@@ -272,8 +269,8 @@ def process_response(response, org):
             except Exception as e:
                 print("Error saving Credential Exposure: {error}".format(error=e))
 
-    # return total pages and if both exposures and breaches were saved
+    # return total pages and if exposures or breaches were saved
     return {
         "total_pages": total_pages,
-        "data_saved": exposures_saved and breaches_saved,
+        "data_saved": exposures_saved or breaches_saved,
     }

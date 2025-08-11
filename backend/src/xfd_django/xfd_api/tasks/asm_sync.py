@@ -15,7 +15,6 @@ import requests
 from xfd_api.helpers.link_ips_from_subs import connect_ips_from_subs
 from xfd_api.helpers.link_subs_from_ips import connect_subs_from_ips
 from xfd_api.helpers.shodan_dedupe import dedupe
-from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 from xfd_mini_dl.models import (
     Cidr,
     CidrOrgs,
@@ -57,12 +56,6 @@ def handler(event):
             "body": "DMZ Shodan Vulnerabilities and Asset sync completed successfully.",
         }
     except Exception as e:
-        log_scan_result(
-            event.get("scanId"),
-            event.get("organizationId"),
-            500,
-            "Error running handler for ASM Sync: {}".format(e),
-        )
         return {"status_code": 500, "body": str(e)}
 
 
@@ -70,7 +63,6 @@ def main(event):
     """Identify assets owned by each stakeholder."""
     try:
         organization_id = event.get("organizationId")
-        scan_id = event.get("scanId")
         subdomain_found = False
         cidr_found = False
         orgs_to_sync = Organization.objects.filter(id__in=[organization_id])
@@ -88,7 +80,6 @@ def main(event):
         except Exception as e:
             message = "Error processing CIDRs: {}".format(e)
             LOGGER.warning(message)
-            log_scan_result(scan_id, organization_id, 500, message)
 
         # Process subdomains
         try:
@@ -99,7 +90,6 @@ def main(event):
         except Exception as e:
             message = "Error processing subdomains: {}".format(e)
             LOGGER.warning(message)
-            log_scan_result(scan_id, organization_id, 500, message)
 
         LOGGER.info("Identifying subdomains from ips...")
         connect_subs_from_ips(orgs_to_sync)
@@ -114,18 +104,22 @@ def main(event):
         LOGGER.info("Running Shodan dedupe...")
         dedupe(orgs_to_sync)
         LOGGER.info("Finished running Shodan dedupe")
-        if cidr_found and subdomain_found:
+        if cidr_found or subdomain_found:
             LOGGER.info("ASM Sync completed successfully.")
-            log_scan_result(scan_id, organization_id)
+            return {"status_code": 200, "body": "ASM Sync completed successfully."}
+        else:
+            return {
+                "status_code": 204,
+                "body": "ASM Sync finished without finding new CIDR blocks and subdomains.",
+            }
 
     except Exception as e:
-        message = "Error running ASM Sync: {}".format(e)
-        LOGGER.warning(message)
-        log_scan_result(event.get("scanId"), event.get("organizationId"), 500, message)
+        LOGGER.warning("Error running ASM Sync %s", e)
+        return {"status_code": 500, "body": "Error running ASM Sync: {}".format(e)}
 
 
 def flag_asset_changes():
-    """Mark Ips and Subdomains that were not seen in the last scan as not current."""
+    """Mark Ips and Subdomains that are were not seen in the last scan as not current."""
     cutoff_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
         days=15
     )

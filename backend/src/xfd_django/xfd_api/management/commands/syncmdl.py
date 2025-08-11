@@ -6,7 +6,10 @@ import os
 from django.core.management.base import BaseCommand
 from django.db import connections
 from xfd_api.tasks.helpers.syncdb_helpers.adjust_columns import adjust_column_types
-from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import populate_sample_data
+from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import (
+    populate_sample_data,
+    populate_scan_results,
+)
 from xfd_api.tasks.helpers.syncdb_helpers.es_sync import (
     manage_elasticsearch_indices,
     sync_es_organizations,
@@ -15,7 +18,6 @@ from xfd_api.tasks.helpers.syncdb_helpers.fill_static_tables import (
     fill_nmi_service_group_table,
     fill_risky_service_lookup_table,
 )
-from xfd_api.tasks.helpers.syncdb_helpers.populate_metrics import populate_scan_results
 from xfd_api.tasks.searchSync import handler as sync_es_domains
 from xfd_api.tasks.syncdb_task import drop_all_tables, synchronize
 
