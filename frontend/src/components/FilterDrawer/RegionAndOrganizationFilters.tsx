@@ -509,13 +509,15 @@ export const RegionAndOrganizationFilters: React.FC<
               return;
             }}
             getOptionLabel={(option) => option.name}
-            ListboxProps={{
-              sx: {
-                ':active': {
-                  bgcolor: 'transparent'
-                },
-                overflow: 'auto',
-                overscrollBehavior: 'contain'
+            slotProps={{
+              listbox: {
+                sx: {
+                  ':active': {
+                    bgcolor: 'transparent'
+                  },
+                  overflow: 'auto',
+                  overscrollBehavior: 'contain'
+                }
               }
             }}
             renderOption={(params, option) => {
