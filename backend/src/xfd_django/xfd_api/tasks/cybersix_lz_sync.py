@@ -66,7 +66,9 @@ def normalize_dates(payload: dict) -> dict:
                     record["date"] = dt.date().isoformat()
                 except (AttributeError, TypeError) as e:
                     LOGGER.warning(
-                        f"Unable to format record date for {record.get('id', '<unknown>')}: {e}"
+                        "Unable to format record date for %s: %s",
+                        record.get("id", "<unknown>"),
+                        e,
                     )
 
             # for mentions, keep the full timestamp on collection_date
@@ -76,7 +78,9 @@ def normalize_dates(payload: dict) -> dict:
                     record["collection_date"] = dt.isoformat()
                 except (AttributeError, TypeError) as e:
                     LOGGER.warning(
-                        f"Unable to format collection_date for {record.get('id', '<unknown>')}: {e}"
+                        "Unable to format collection_date for %s: %s",
+                        record.get("id", "<unknown>"),
+                        e,
                     )
 
     return payload

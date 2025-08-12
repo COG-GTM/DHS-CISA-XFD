@@ -179,7 +179,7 @@ def main():  # pylint: disable=R0915
 
     if total_processed == 0:
         LOGGER.warning(
-            f"No port scans found in Redshift for the last {VS_PULL_DATE_RANGE} days."
+            "No port scans found in Redshift for the last %d days.", VS_PULL_DATE_RANGE
         )
     else:
         LOGGER.info(
@@ -216,7 +216,7 @@ def main():  # pylint: disable=R0915
 
     if total_processed == 0:
         LOGGER.warning(
-            f"No tickets found in Redshift for the last {VS_PULL_DATE_RANGE} days."
+            "No tickets found in Redshift for the last %d days.", VS_PULL_DATE_RANGE
         )
     else:
         LOGGER.info(

@@ -91,7 +91,8 @@ async def fetch_cybersix_data(
         LOGGER.info("Found organization: %s (%s)", org.acronym, org.name)
     except Organization.DoesNotExist:
         LOGGER.warning(
-            f"Organization not found: {params.acronym}, continuing without org filter"
+            "Organization not found: %s, continuing without org filter",
+            params.acronym,
         )
         org = None
 
@@ -132,7 +133,9 @@ async def fetch_cybersix_data(
             )
         except EmptyPage:
             LOGGER.warning(
-                f"Page {params.page} is out of range for {model_cls.__name__}"
+                "Page %s is out of range for %s",
+                params.page,
+                model_cls.__name__,
             )
             items = []  # return an empty list instead of raising
 
