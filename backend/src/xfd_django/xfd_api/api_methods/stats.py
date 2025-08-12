@@ -600,11 +600,11 @@ def get_vs_trending_data(filters, current_user):
 
 # Allowed fields dictionary — module-level constant
 ALLOWED_FIELDS_BY_SOURCE = {
-    "vs": list(stat_schema.VulnScanSummaryV2Response.__fields__.keys()),
-    "host": list(stat_schema.HostScanSummaryV2Response.__fields__.keys()),
-    "port": list(stat_schema.PortScanSummaryV2Response.__fields__.keys()),
+    "vs": list(stat_schema.VulnScanSummaryV2Response.model_fields.keys()),
+    "host": list(stat_schema.HostScanSummaryV2Response.model_fields.keys()),
+    "port": list(stat_schema.PortScanSummaryV2Response.model_fields.keys()),
     "port_service": list(
-        stat_schema.PortScanServiceSummaryV2Response.__fields__.keys()
+        stat_schema.PortScanServiceSummaryV2Response.model_fields.keys()
     ),
 }
 
