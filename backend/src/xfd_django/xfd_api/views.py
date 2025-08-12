@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
-import pprint
 from typing import List, Optional, Union
 from uuid import UUID
 
@@ -1230,8 +1229,6 @@ async def get_v2_trending_stats(
 ):
     """Retrieve Summary data filtered by the user - V2."""
     result = get_v2_trending_data(filter_data, current_user)
-    print("DEBUG Response:")
-    pprint.pprint(result)
     return result
 
 
