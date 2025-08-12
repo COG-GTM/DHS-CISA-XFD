@@ -10,6 +10,7 @@ from django.db.models import Q
 from fastapi import HTTPException
 from xfd_mini_dl.models import Organization, OrganizationTag, Role, Scan, ScanTask, User
 
+from ..api_methods.search import is_valid_region
 from ..auth import (
     get_org_memberships,
     is_global_view_admin,
@@ -1053,6 +1054,15 @@ def escape_special_characters(search_term: str) -> str:
 def search_organizations_task(search_body, current_user: User):
     """Handle the logic for searching organizations in Elasticsearch."""
     try:
+        filtered_regions = set(search_body.regions) if search_body.regions else set()
+        unauthorized_regions = {
+            region_id
+            for region_id in filtered_regions
+            if not is_valid_region(region_id, current_user)
+        }
+
+        if unauthorized_regions:
+            raise HTTPException(status_code=403, detail="Unauthorized")
         # Check if user is GlobalViewAdmin or has memberships
         if not is_global_view_admin(current_user) and not get_org_memberships(
             current_user
@@ -1098,6 +1108,8 @@ def search_organizations_task(search_body, current_user: User):
 
     except Exception as e:
         print(e)
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(
             status_code=500, detail="An error occurred while searching organizations."
         )
