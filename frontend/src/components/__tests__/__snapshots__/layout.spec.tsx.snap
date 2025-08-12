@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Layout component matches snapshot 1`] = `
+exports[`Layout component > matches snapshot 1`] = `
 <DocumentFragment>
   <main
     class="css-o3tih"
@@ -51,7 +51,7 @@ exports[`Layout component matches snapshot 1`] = `
     >
       <div
         class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiDrawer-paper MuiDrawer-paperAnchorLeft MuiDrawer-paperAnchorDockedLeft css-1lwhjos-MuiPaper-root-MuiDrawer-paper"
-        style="--Paper-shadow: none; visibility: hidden; webkit-transform: translateX(-0px); transform: translateX(-0px);"
+        style="--Paper-shadow: none; visibility: hidden; -webkit-transform: translateX(-0px); transform: translateX(-0px);"
       >
         <div
           class="MuiStack-root css-ioj9fa-MuiStack-root"
@@ -105,8 +105,8 @@ exports[`Layout component matches snapshot 1`] = `
                   <label
                     class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-outlined MuiFormLabel-colorPrimary Mui-disabled MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-outlined css-n7ilwy-MuiFormLabel-root-MuiInputLabel-root"
                     data-shrink="true"
-                    for=":r3:"
-                    id=":r3:-label"
+                    for=":r4:"
+                    id=":r4:-label"
                   >
                     Region
                   </label>
@@ -121,7 +121,7 @@ exports[`Layout component matches snapshot 1`] = `
                       autocomplete="off"
                       class="MuiInputBase-input MuiOutlinedInput-input Mui-disabled MuiInputBase-inputAdornedEnd MuiAutocomplete-input MuiAutocomplete-inputFocused css-1dune0f-MuiInputBase-input-MuiOutlinedInput-input"
                       disabled=""
-                      id=":r3:"
+                      id=":r4:"
                       placeholder=""
                       role="combobox"
                       spellcheck="false"
@@ -154,10 +154,10 @@ exports[`Layout component matches snapshot 1`] = `
                     </div>
                     <fieldset
                       aria-hidden="true"
-                      class="MuiOutlinedInput-notchedOutline css-1ll44ll-MuiOutlinedInput-notchedOutline"
+                      class="MuiOutlinedInput-notchedOutline css-18p5xg2-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"
                     >
                       <legend
-                        class="css-w1u3ce"
+                        class="css-ex8a5f-MuiNotchedOutlined-root"
                       >
                         <span>
                           Region
@@ -180,8 +180,8 @@ exports[`Layout component matches snapshot 1`] = `
                   <label
                     class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-outlined MuiFormLabel-colorPrimary Mui-disabled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-outlined css-8b3bn2-MuiFormLabel-root-MuiInputLabel-root"
                     data-shrink="false"
-                    for=":r6:"
-                    id=":r6:-label"
+                    for=":r7:"
+                    id=":r7:-label"
                   >
                     Organization
                   </label>
@@ -196,7 +196,7 @@ exports[`Layout component matches snapshot 1`] = `
                       autocomplete="off"
                       class="MuiInputBase-input MuiOutlinedInput-input Mui-disabled MuiInputBase-inputAdornedEnd MuiAutocomplete-input MuiAutocomplete-inputFocused css-1dune0f-MuiInputBase-input-MuiOutlinedInput-input"
                       disabled=""
-                      id=":r6:"
+                      id=":r7:"
                       placeholder="Search Organizations"
                       role="combobox"
                       spellcheck="false"
@@ -229,10 +229,10 @@ exports[`Layout component matches snapshot 1`] = `
                     </div>
                     <fieldset
                       aria-hidden="true"
-                      class="MuiOutlinedInput-notchedOutline css-1ll44ll-MuiOutlinedInput-notchedOutline"
+                      class="MuiOutlinedInput-notchedOutline css-18p5xg2-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"
                     >
                       <legend
-                        class="css-81qg8w"
+                        class="css-1n64csd-MuiNotchedOutlined-root"
                       >
                         <span>
                           Organization
