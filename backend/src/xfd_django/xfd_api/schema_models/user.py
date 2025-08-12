@@ -209,5 +209,5 @@ class UserResponseV2(BaseModel):
     state: Optional[str] = None
     user_type: Optional[str] = None
     roles: List[Dict[str, Optional[Any]]]
-    first_login: Optional[bool] = None
+    first_login: Optional[bool] = True
     can_select_own_state: Optional[bool] = False
