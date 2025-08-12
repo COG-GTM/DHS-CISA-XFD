@@ -198,7 +198,7 @@ async def redirect_index():
 )
 async def matomo_proxy(path: str, request: Request):
     """Proxy requests to the Matomo analytics instance."""
-    MATOMO_URL = os.getenv("REACT_APP_MATOMO_URL", "")
+    MATOMO_URL = os.getenv("VITE_MATOMO_URL", "")
 
     # Handle the proxy request to Matomo
     return await matomo_proxy_handler.matomo_proxy_request(request, MATOMO_URL, path)
