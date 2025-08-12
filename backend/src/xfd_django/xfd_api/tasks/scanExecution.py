@@ -90,14 +90,14 @@ def start_desired_tasks(
     remaining_for_this_scan = desired_count - this_scan_running
     if scan_type == "shodan" and len(shodan_api_keys) < remaining_for_this_scan:
         LOGGER.warning(
-            "Not enough Shodan API keys. Needed: %d, Provided: %d",
+            "Not enough Shodan API keys. Needed: %s, Provided: %s",
             remaining_for_this_scan,
             len(shodan_api_keys),
         )
         return
     if remaining_for_this_scan <= 0:
         LOGGER.warning(
-            "Scan %d already has %d tasks running (desired: %d). Not launching more.",
+            "Scan %s already has %s tasks running (desired: %s). Not launching more.",
             scan_id,
             this_scan_running,
             desired_count,
