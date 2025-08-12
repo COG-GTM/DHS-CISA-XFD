@@ -1756,7 +1756,10 @@ async def get_call_all_cybersixgill(
         raise
     except Exception as e:
         LOGGER.error("Sync error: %s", e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Sync error: {}".format(e),
+        )
 
     # attach checksum header
     response.headers["X-Salted-Checksum"] = checksum
