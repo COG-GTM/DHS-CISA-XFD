@@ -425,7 +425,11 @@ export const Logs: FC<LogsProps> = () => {
           slots={{
             toolbar: CustomToolbar
           }}
-          slotProps={{ toolbar: {} }}
+          slotProps={{
+            basePopper: {
+              placement: 'bottom-start'
+            }
+          }}
           onFilterModelChange={(model) => {
             setFilters(model.items);
           }}
@@ -446,6 +450,7 @@ export const Logs: FC<LogsProps> = () => {
           }}
           pageSizeOptions={[15, 30, 50, 100]}
           disableRowSelectionOnClick
+          showToolbar
         />
       </Paper>
       <Dialog
