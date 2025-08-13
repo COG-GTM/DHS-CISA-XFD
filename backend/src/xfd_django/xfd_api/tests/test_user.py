@@ -1838,7 +1838,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
         "first_name": "Updated",
         "last_name": "New",
         "invite_pending": False,
-        "first_login": False,
+        "first_login": True,
         "date_approved": datetime.now().isoformat(),
         "approved_by": None,
     }
