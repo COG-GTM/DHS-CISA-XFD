@@ -2042,7 +2042,7 @@ def test_list_organizations_v2_filter_by_state():
         updated_at=datetime.now(),
     )
 
-    payload = {"page": 1, "pageSize": 15, "filters": {"state": "VA"}}
+    payload = {"page": 1, "pageSize": 15, "filters": {"state": "CA"}}
 
     response = client.post(
         "/v2/organizations/search",
@@ -2092,7 +2092,7 @@ def test_list_organizations_v2_filter_by_region():
     )
 
     payload = {"page": 1, "pageSize": 15, "filters": {"region_id": "2"}}
-    response = client.payload(
+    response = client.post(
         "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
         json=payload,
@@ -2173,7 +2173,7 @@ def test_search_organizations_as_global_admin(mock_search):
     )
 
     assert response.status_code == 200
-    data = response.json()["result"]
+    data = response.json()
     assert "body" in data
     assert len(data["body"]["hits"]["hits"]) == 1
     assert data["body"]["hits"]["hits"][0]["_source"]["name"] == "Test Org"
