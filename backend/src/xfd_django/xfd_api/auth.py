@@ -39,7 +39,6 @@ JWT_TIMEOUT_HOURS = settings.JWT_TIMEOUT_HOURS
 LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
-zscaler_cert_path = ensure_zscaler_cert_downloaded()
 IS_DMZ = os.getenv("IS_DMZ", "0") == "1"
 
 
@@ -465,6 +464,7 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
                 timeout=20,  # Timeout in seconds
             )
         else:
+            zscaler_cert_path = ensure_zscaler_cert_downloaded()
             response = requests.post(
                 authorize_token_url,
                 headers=headers,
