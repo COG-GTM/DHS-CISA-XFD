@@ -1917,7 +1917,7 @@ def test_list_organizations_v2_as_global_admin():
     )
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["result"]
     assert len(data) == 2
     org_ids = [org["id"] for org in data]
     assert str(organization1.id) in org_ids
@@ -1969,7 +1969,7 @@ def test_list_organizations_v2_as_member():
     )
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["result"]
     assert len(data) == 1
     assert data[0]["id"] == str(organization1.id)
 
@@ -2005,7 +2005,7 @@ def test_list_organizations_v2_as_user_without_membership():
     )
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()["result"] == []
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -2051,7 +2051,7 @@ def test_list_organizations_v2_filter_by_state():
     )
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["result"]
     assert len(data) == 1
     assert data[0]["state"] == "CA"
     assert data[0]["id"] == str(organization1.id)
@@ -2099,7 +2099,7 @@ def test_list_organizations_v2_filter_by_region():
     )
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["result"]
     assert len(data) == 1
     assert data[0]["region_id"] == "region-2"
     assert data[0]["id"] == str(organization2.id)
@@ -2143,7 +2143,7 @@ def test_list_organizations_v2_invalid_filter():
     )
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()["result"] == []
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
@@ -2173,7 +2173,7 @@ def test_search_organizations_as_global_admin(mock_search):
     )
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["result"]
     assert "body" in data
     assert len(data["body"]["hits"]["hits"]) == 1
     assert data["body"]["hits"]["hits"][0]["_source"]["name"] == "Test Org"
