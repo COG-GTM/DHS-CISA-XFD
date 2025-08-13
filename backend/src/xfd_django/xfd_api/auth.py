@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.security import APIKeyHeader
 import jwt
 import requests
+from xfd_api.helpers.email import ensure_zscaler_cert_downloaded
 
 # from .helpers import user_to_dict
 from xfd_mini_dl.models import (
@@ -38,6 +39,8 @@ JWT_TIMEOUT_HOURS = settings.JWT_TIMEOUT_HOURS
 LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+zscaler_cert_path = ensure_zscaler_cert_downloaded()
+IS_DMZ = os.getenv("IS_DMZ", "0") == "1"
 
 
 def validate_json_serialization(user_object, label="user_object"):
@@ -441,7 +444,6 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
         callback_url = os.getenv("VITE_COGNITO_CALLBACK_URL")
         client_id = os.getenv("VITE_COGNITO_CLIENT_ID")
         domain = os.getenv("VITE_COGNITO_DOMAIN")
-        proxy_url = os.getenv("LZ_PROXY_URL")
 
         authorize_token_url = "https://{}/oauth2/token".format(domain)
         authorize_token_body = {
@@ -455,16 +457,21 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        # Set up proxies if PROXY_URL is defined
-        proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
-
-        response = requests.post(
-            authorize_token_url,
-            headers=headers,
-            data=urlencode(authorize_token_body),
-            proxies=proxies,
-            timeout=20,  # Timeout in seconds
-        )
+        if IS_DMZ:
+            response = requests.post(
+                authorize_token_url,
+                headers=headers,
+                data=urlencode(authorize_token_body),
+                timeout=20,  # Timeout in seconds
+            )
+        else:
+            response = requests.post(
+                authorize_token_url,
+                headers=headers,
+                data=urlencode(authorize_token_body),
+                timeout=20,  # Timeout in seconds
+                verify=zscaler_cert_path,
+            )
         token_response = response.json()
         # Convert the id_token to bytes
         id_token = token_response["id_token"].encode("utf-8")
