@@ -131,7 +131,7 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         <div style={{ display: 'flex' }}>
           <GovBanner />
         </div>
-        {!siteWideAlert && !noAlertPaths.includes(pathname) && (
+        {!siteWideAlert && user && !noAlertPaths.includes(pathname) && (
           <Box sx={{ backgroundColor: '#E5F6FD' }}>
             <Box
               display="flex"
