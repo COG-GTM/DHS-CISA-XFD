@@ -438,7 +438,7 @@ def build_vuln_scan_dict(vuln, owner_id, ip_id, cve):
         "cvss_temporal_score": vuln.get("cvss_temporal_score", None),
         "cvss_temporal_vector": vuln.get("cvss_temporal_vector", None),
         "cvss_vector": vuln.get("cvss_vector", None),
-        "description": vuln.get("description", None)[:255],
+        "description": vuln.get("description", None),
         "exploit_available": vuln.get("exploit_available", None),
         "exploitability_ease": vuln.get("exploit_ease", None),
         "ip_string": vuln.get("ip", None),
@@ -774,13 +774,29 @@ def get_asset_owned_count(org):
         cidrorgs__organization=org, cidrorgs__current=True, network__isnull=False
     ).distinct()
 
+    if not cidrs.exists():
+        LOGGER.warning("No CIDRs found for organization ID: %s (%s)", org.id, org.name)
+
     total_ips = 0
     for cidr in cidrs:
         try:
             network = ip_network(str(cidr.network), strict=False)
             total_ips += network.num_addresses
-        except ValueError:
-            continue  # Skip bad CIDRs
+        except (ValueError, TypeError) as e:
+            LOGGER.warning(
+                "Invalid CIDR '%s' for organization ID: %s (%s) — %s",
+                getattr(cidr, "network", None),
+                org.id,
+                org.name,
+                str(e),
+            )
+        except Exception as e:
+            LOGGER.warning(
+                "Unexpected error while processing CIDR for org ID: %s (%s) — %s",
+                org.id,
+                org.name,
+                str(e),
+            )
 
     return total_ips
 
@@ -1321,6 +1337,8 @@ def parse_int(value):
 
 def process_organization(request, network_list, location_dict, org_id_dict):
     """Save organization data and update org_id_dict."""
+    ip_blocks: list[str] = [net["network"] for net in network_list]
+
     org_data = {
         "name": request.get("agency", {}).get("name"),
         "acronym": request.get("_id"),
@@ -1347,6 +1365,7 @@ def process_organization(request, network_list, location_dict, org_id_dict):
         "period_start_vs_timestamp": request.get("period_start"),
         "report_types": json.dumps(request.get("report_types", [])),
         "scan_types": json.dumps(request.get("scan_types", [])),
+        "ip_blocks": json.dumps(ip_blocks),
         "is_passive": False,
     }
     try:

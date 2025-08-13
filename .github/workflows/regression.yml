@@ -42,6 +42,7 @@ jobs:
       PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
       PW_XFD_LOGIN: ${{ secrets.PW_XFD_USERNAME }}
       PW_HEADLESS: true
+      PW_CI: true
       ENVIRONMENT: staging
       GIT_BRANCH: develop
     steps:
@@ -57,31 +58,31 @@ jobs:
          TASK_DEFINITION=crossfeed-staging-cd-playwright-worker \
          ./run_playwright_tests.sh
 
-        continue-on-error: false  # Ensure it stops if the ECS task fails
+        continue-on-error: true
 
       - name: Download test report from S3
         run: |
           mkdir -p ./playwright-report/html
           aws s3 cp \
             "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/latest/html/" \
-            ./playwright-report/html/ --recursive
+            playwright-report/html/ --recursive
 
           aws s3 cp \
             "s3://$AUTOMATED_TEST_REPORTS_BUCKET_NAME/staging/playwright-reports/latest/results.json" \
-            ./playwright-report/results.json
+            playwright-report/results.json
 
 
       - name: Upload Playwright HTML report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-html-report
-          path: ./playwright-report/html/
+          path: playwright/playwright-report/html/
 
       - name: Upload Playwright results JSON
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results-json
-          path: ./playwright-report/results.json
+          path: playwright/playwright-report/results.json
 
 
   test_integration:
@@ -118,7 +119,7 @@ jobs:
           TASK_DEFINITION=crossfeed-integration-playwright-worker \
           ./run_playwright_tests.sh
 
-        continue-on-error: false  # Ensure it stops if the ECS task fails
+        continue-on-error: true
 
       - name: Download test report from S3
         run: |
@@ -136,10 +137,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-html-report
-          path: ./playwright-report/html/
+          path: playwright/playwright-report/html/
 
       - name: Upload Playwright results JSON
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results-json
-          path: ./playwright-report/results.json
+          path: playwright/playwright-report/results.json

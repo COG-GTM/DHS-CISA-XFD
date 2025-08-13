@@ -1,6 +1,4 @@
 ---
-version: '3.4'
-
 services:
   db:
     container_name: db
@@ -203,20 +201,6 @@ services:
       - "9324:9324"
     networks:
       - backend
-
-  playwright:
-    container_name: playwright
-    image: mcr.microsoft.com/playwright:v1.50.1-jammy
-    working_dir: /workspace
-    volumes:
-      - ./playwright:/workspace
-      - ~/.cache:/root/.cache  # Cache Playwright browser downloads
-    env_file:
-      ./playwright/.env
-    environment:
-      - HOME=/root
-    command: >
-      /bin/bash -c "npm ci && npx playwright install --with-deps && npx playwright test"
 
 volumes:
   postgres-data:

@@ -1,4 +1,5 @@
 """Django ORM models."""
+# Standard Python Librar
 # Standard Python Libraries
 import logging
 import socket
@@ -688,7 +689,7 @@ class Organization(AutoLengthCheckModel):
     )
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -830,7 +831,7 @@ class Role(models.Model):
     )
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -838,7 +839,7 @@ class Role(models.Model):
     )
     approved_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="approved_by_id",
         related_name="approved_roles",
         blank=True,
@@ -847,7 +848,7 @@ class Role(models.Model):
     )
     user = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="user_id",
         related_name="roles",
         blank=True,
@@ -856,7 +857,7 @@ class Role(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="organization_id",
         related_name="user_roles",
         blank=True,
@@ -993,7 +994,7 @@ class Scan(models.Model):
     concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by",
         blank=True,
         null=True,
@@ -1292,7 +1293,7 @@ class User(AutoLengthCheckModel):
     )
     approved_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="approved_by_id",
         blank=True,
         null=True,
@@ -3671,11 +3672,11 @@ class WasScanSummary(models.Model):
         null=False,
         help_text="End of the 24-hour summary period (based on vuln_detection timestamp).",
     )
-    scan_identifier = models.CharField(
-        max_length=100,
+
+    scan_identifier = models.JSONField(
+        default=list,
         blank=True,
-        null=True,
-        help_text="Identifier of the scan job, if available.",
+        help_text="The list of finding_uid values used to build this summary.",
     )
     was_org_id = models.CharField(
         max_length=50, help_text="Acronym of the customer who owns the scan."

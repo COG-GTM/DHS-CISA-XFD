@@ -2,8 +2,18 @@ import { chromium, FullConfig } from '@playwright/test';
 import * as OTPAuth from 'otpauth';
 import * as dotenv from 'dotenv';
 import { determineUrl } from './utils/env';
+import * as fs from 'fs';
+import * as path from 'path';
 
-dotenv.config({ path: '../.env' });
+const envPath = path.resolve(__dirname, '.env');
+const isCI = process.env.PW_CI === 'true';
+
+if (!isCI && fs.existsSync(envPath)) {
+  console.log('📥 Running locally — loading .env file');
+  dotenv.config({ path: envPath, override: true });
+} else {
+  console.log('🚀 Running in CI/CD — skipping .env load');
+}
 
 const authFile = './storageState.json';
 
@@ -18,33 +28,6 @@ let totp = new OTPAuth.TOTP({
 
 const axios = require('axios');
 
-const waitForFrontend = async (url, timeout = 600000, checkInterval = 5000) => {
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeout) {
-    try {
-      const response = await axios.get(url);
-      // Log the status code to ensure the server responds correctly
-      console.log(`Frontend is ready with status code: ${response.status}`);
-      return; // If the request succeeds, we know the server is up
-    } catch (error) {
-      // Check if the error is related to a failed HTTP request (e.g., connection refused, status code not 2xx)
-      if (error.response) {
-        console.log(
-          `Frontend not ready yet. Status: ${error.response.status}. Retrying...`
-        );
-      } else {
-        console.log('Error occurred while checking frontend:', error);
-        break;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, checkInterval)); // Wait before retrying
-    }
-  }
-  throw new Error(
-    `Frontend did not become ready within ${timeout / 1000} seconds.`
-  );
-};
-
 async function globalSetup(config: FullConfig) {
   const baseUrl = determineUrl();
   console.log(`Base URL: ${baseUrl}`);
@@ -57,16 +40,15 @@ async function globalSetup(config: FullConfig) {
   const page = await browser.newPage();
 
   //Log in with credentials.
-  await waitForFrontend(baseUrl);
   await page.goto(baseUrl, {
     waitUntil: 'domcontentloaded',
     timeout: 60000
   });
   await page.getByTestId('button').click();
-  await page
-    .getByLabel('Username (Email)')
-    .fill(String(process.env.PW_XFD_LOGIN));
+  await page.getByLabel('Email Address').fill(String(process.env.PW_XFD_LOGIN));
+
   await page.getByRole('button', { name: 'Next' }).click();
+  await page.waitForFunction(() => document.title.includes('Login.gov'));
   await page
     .getByLabel('Email address')
     .fill(String(process.env.PW_XFD_USERNAME));

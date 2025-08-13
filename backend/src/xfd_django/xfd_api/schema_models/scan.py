@@ -404,6 +404,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Updates blocked ip records against blocklist.de global IP blocklist",
     ),
+    "was": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Populate was info at commercial mdl",
+    ),
     "was_sync": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -476,6 +484,15 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Collect alerts, mentions, credentials, and top CVEs from Cybersixgill dark web monitoring.",
+    ),
+    "dns_twist_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull DomainPermutation data and push them to the DMZ sync endpoint.",
+        max_concurrent_tasks=10000,
     ),
     "pshtt_scan": ScanSchema(
         type="fargate",
