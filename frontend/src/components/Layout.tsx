@@ -6,7 +6,7 @@ import React, {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import { withSearch } from '@elastic/react-search-ui';
-import { Alert, AlertTitle, Box, Collapse, Typography } from '@mui/material';
+import { Alert, AlertTitle, Box, Typography } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/system';
 import { GovBanner, Header } from 'components';
@@ -131,48 +131,45 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         <div style={{ display: 'flex' }}>
           <GovBanner />
         </div>
-        {!siteWideAlert && user && !noAlertPaths.includes(pathname) && (
-          <Collapse in>
-            <Box sx={{ backgroundColor: '#E5F6FD' }}>
-              <Box
-                display="flex"
-                flexDirection="column"
-                maxWidth="1152px"
-                width="100%"
-                margin="auto"
-              >
-                <Alert severity="info" onClose={handleAlertClose}>
-                  <Box
-                    display="flex"
-                    flexDirection="column"
-                    maxWidth="1152px"
-                    width="100%"
-                    margin="auto"
-                  ></Box>
-                  <AlertTitle
-                    variant="largeBody"
-                    color="primary.darker"
-                    sx={{ fontWeight: '700' }}
-                  >
-                    CyHy Dashboard - Beta (Early Access)
-                  </AlertTitle>
-                  <Typography
-                    variant="body1"
-                    color="primary.darker"
-                    fontWeight="600"
-                  >
-                    You are using an early release version of the CyHy
-                    Dashboard. This site is fully functional, but some features
-                    are still being improved and refined. Your feedback during
-                    this stage directly shapes improvements. Please go to the
-                    Support menu to share feedback, report bugs, or submit
-                    questions so we can enhance the dashboard to better meet
-                    your needs.
-                  </Typography>
-                </Alert>
-              </Box>
+        {!siteWideAlert && !noAlertPaths.includes(pathname) && (
+          <Box sx={{ backgroundColor: '#E5F6FD' }}>
+            <Box
+              display="flex"
+              flexDirection="column"
+              maxWidth="1152px"
+              width="100%"
+              margin="auto"
+            >
+              <Alert severity="info" onClose={handleAlertClose}>
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  maxWidth="1152px"
+                  width="100%"
+                  margin="auto"
+                ></Box>
+                <AlertTitle
+                  variant="largeBody"
+                  color="primary.darker"
+                  sx={{ fontWeight: '700' }}
+                >
+                  CyHy Dashboard - Beta (Early Access)
+                </AlertTitle>
+                <Typography
+                  variant="body1"
+                  color="primary.darker"
+                  fontWeight="600"
+                >
+                  You are using an early release version of the CyHy Dashboard.
+                  This site is fully functional, but some features are still
+                  being improved and refined. Your feedback during this stage
+                  directly shapes improvements. Please go to the Support menu to
+                  share feedback, report bugs, or submit questions so we can
+                  enhance the dashboard to better meet your needs.
+                </Typography>
+              </Alert>
             </Box>
-          </Collapse>
+          </Box>
         )}
         <Header />
         {userLevel > 0 && (
