@@ -84,8 +84,6 @@ class Scheduler:
                 )
             )
             return
-        else:
-            total_orgs = len(filtered_orgs)
 
         # Prepare scan specific queue
         queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan.name)
@@ -135,13 +133,13 @@ class Scheduler:
                 print("Batch sent successfully")
 
                 # Handle any failed messages
-                if "Failed" in resp:
-                    for failure in resp["Failed"]:
-                        print(
-                            "Failed to send message {}: {}".format(
-                                failure["Id"], failure["Message"]
-                            )
+                for failure in resp.get("Failed", []):
+                    print(
+                        "Failed to send message {}: {}".format(
+                            failure["Id"], failure["Message"]
                         )
+                    )
+
             except Exception as e:
                 print("Error sending message batch: {}".format(e))
 
@@ -160,7 +158,7 @@ class Scheduler:
             # Set manual_run_pending to False since scan is now launched
             scan.manual_run_pending = False
             scan.last_run = timezone.now()
-            scan.total_orgs = total_orgs
+            scan.total_orgs = len(filtered_orgs)
             scan.save()
             print("Updated scan: manual_run_pending set to False")
 
@@ -180,6 +178,9 @@ class Scheduler:
         is_passive = getattr(scan_schema, "is_passive", False)
         global_scan = getattr(scan_schema, "global_scan", False)
 
+        # Assuming scan.frequency is expressed in days, convert to seconds.
+        frequency_seconds = scan.frequency * 86400
+
         # Don't run non-passive scans on passive organizations.
         if organization and organization.is_passive and not is_passive:
             return False
@@ -194,8 +195,6 @@ class Scheduler:
                 scan.last_run = timezone.make_aware(
                     scan.last_run, timezone.get_current_timezone()
                 )
-            # Assuming scan.frequency is expressed in days, convert to seconds.
-            frequency_seconds = scan.frequency * 86400
             if (timezone.now() - scan.last_run).total_seconds() < frequency_seconds:
                 return False
 
@@ -220,7 +219,6 @@ class Scheduler:
             ).order_by("-finished_at")
         ).first()
         if last_finished_scan_task and last_finished_scan_task.finished_at:
-            frequency_seconds = scan.frequency * 86400
             if timezone.is_naive(last_finished_scan_task.finished_at):
                 last_finished_scan_task.finished_at = timezone.make_aware(
                     last_finished_scan_task.finished_at, timezone.get_current_timezone()

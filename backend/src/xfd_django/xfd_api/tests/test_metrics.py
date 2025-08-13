@@ -8,10 +8,10 @@ from django.db import transaction
 from django.utils import timezone
 from fastapi.testclient import TestClient
 import pytest
+from xfd_api.asgi import app
 
 # App Imports
 from xfd_api.auth import create_jwt_token
-from xfd_api.main import app
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_mini_dl.models import Organization, Scan, ScanResult, User, UserType
 
