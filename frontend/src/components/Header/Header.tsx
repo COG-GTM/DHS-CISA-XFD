@@ -28,6 +28,7 @@ export interface MenuItemType {
   users?: number;
   onClick?: any;
   href?: string;
+  subMenuItems?: MenuItemType[];
 }
 
 // TODO: Update bucket/key names when provided.
@@ -38,7 +39,18 @@ const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'CyHy Dashboard VS Glossary.pdf',
   faq: 'CyHy Dashboard VS FAQ.pdf',
   methodology: 'CyHy Dashboard VS Methodology.pdf',
-  userGuide: 'CyHy Dashboard User Guide.pdf'
+  userGuide: 'CyHy Dashboard User Guide.pdf',
+  communications: 'Vulnerability Snapshot: Communications Sector.pdf',
+  financialServices: 'Vulnerability Snapshot: Financial Services Sector.pdf',
+  foodAndAgriculture: 'Vulnerability Snapshot: Food and Agriculture Sector.pdf',
+  healthcareAndPublicHealth:
+    'Vulnerability Snapshot: Healthcare and Public Health Sector.pdf',
+  informationTechnology:
+    'Vulnerability Snapshot: Information Technology Sector.pdf',
+  transportationSystems:
+    'Vulnerability Snapshot: Transportation Systems Sector.pdf',
+  waterAndWastewater:
+    'Vulnerability Snapshot: Water and Wastewater Systems Sector.pdf'
 };
 
 export const Header: React.FC = () => {
@@ -132,6 +144,65 @@ export const Header: React.FC = () => {
     history.push('/VSDashboard');
   };
 
+  const sectorVulnSnapshotsMenuItems: MenuItemType[] = [
+    {
+      menuItemTitle: 'Communications',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.communications
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Financial Services',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.financialServices
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Food and Agriculture',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.foodAndAgriculture
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Healthcare and Public Health',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.healthcareAndPublicHealth
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Information Technology',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.informationTechnology
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Transportation Systems',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.transportationSystems
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Water and Wastewater Systems',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.waterAndWastewater
+      },
+      users: STANDARD_USER
+    }
+  ].filter(({ users }) => users <= userLevel);
+
   const learningCenterMenuItems: MenuItemType[] = [
     {
       menuItemTitle: 'VS Glossary',
@@ -164,6 +235,12 @@ export const Header: React.FC = () => {
         object_key: LEARNING_CENTER_DOC_KEYS.userGuide
       },
       users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Sector Vulnerability Snapshots',
+      users: STANDARD_USER,
+      // Nest sectorVulnSnapshotsMenuItems here
+      subMenuItems: sectorVulnSnapshotsMenuItems
     },
     {
       menuItemTitle: 'CISA Resources',

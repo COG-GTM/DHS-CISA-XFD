@@ -3,6 +3,9 @@ import { NavLink, useLocation, Link as RouterLink } from 'react-router-dom';
 import { Box, Button, ButtonProps, Menu, MenuItem } from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import { K } from 'vitest/dist/chunks/reporters.d.BFLkQcL6';
+import { Key } from '@mui/icons-material';
 
 interface MenuItemType {
   menuItemTitle: string;
@@ -10,6 +13,7 @@ interface MenuItemType {
   users?: number;
   onClick?: () => void;
   objectStoreParams?: { bucket_name: string; object_key: string };
+  subMenuItems?: MenuItemType[];
 }
 
 interface Props {
@@ -25,6 +29,9 @@ export const NavMenuButton: React.FC<Props> = ({
 }) => {
   const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [subAnchorEl, setSubAnchorEl] = React.useState<null | HTMLElement>(
+    null
+  );
   const menuRef = React.useRef<HTMLUListElement>(null);
   const isLink = !!menuItems?.[0]?.path || '';
   const open = Boolean(anchorEl);
@@ -133,6 +140,16 @@ export const NavMenuButton: React.FC<Props> = ({
             const isExternal =
               item.path?.startsWith('http') || item.path?.startsWith('mailto');
             const isInternal = !!item.path && !isExternal;
+            const isSubMenu = item.subMenuItems && item.subMenuItems.length > 0;
+
+            const handleSubMenuOpen = (
+              event: React.MouseEvent<HTMLElement>
+            ) => {
+              setSubAnchorEl(event.currentTarget);
+            };
+            const handleSubMenuClose = () => {
+              setSubAnchorEl(null);
+            };
 
             if (isExternal) {
               return (
@@ -165,6 +182,56 @@ export const NavMenuButton: React.FC<Props> = ({
                 >
                   {item.menuItemTitle}
                 </MenuItem>
+              );
+            }
+
+            if (isSubMenu) {
+              return (
+                <>
+                  <MenuItem
+                    key={index}
+                    onClick={handleSubMenuOpen}
+                    tabIndex={0}
+                    component={Button}
+                    endIcon={<KeyboardArrowRightIcon />}
+                    role="menuitem"
+                    sx={{ minWidth: '150px' }}
+                  >
+                    {item.menuItemTitle}
+                  </MenuItem>
+
+                  <Menu
+                    anchorEl={subAnchorEl}
+                    open={Boolean(subAnchorEl)}
+                    onClose={handleSubMenuClose}
+                    id={`${id}-submenu-${index}`}
+                    anchorOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right'
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'left'
+                    }}
+                    sx={{ mt: -1, ml: -1 }}
+                  >
+                    {item.subMenuItems?.map((subItem, subIndex) => (
+                      <MenuItem
+                        key={`${index}-${subIndex}`}
+                        onClick={() => {
+                          subItem.onClick?.();
+                          onMenuItemClick?.(subItem);
+                          handleSubMenuClose();
+                        }}
+                        tabIndex={0}
+                        role="menuitem"
+                        sx={{ minWidth: '150px' }}
+                      >
+                        {subItem.menuItemTitle}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
               );
             }
 
