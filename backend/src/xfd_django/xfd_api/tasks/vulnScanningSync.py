@@ -12,6 +12,7 @@ import datetime
 from ipaddress import IPv4Network, IPv6Network, ip_network
 import json
 import logging
+from logging import FileHandler
 import os
 
 # Third-Party Libraries
@@ -61,19 +62,55 @@ from xfd_mini_dl.models import (
 )
 
 LOGGER = logging.getLogger(__name__)
-_file = logging.FileHandler("vuln_scanning_sync.log")
-_file.setLevel(logging.INFO)
-_file.setFormatter(
-    logging.Formatter(
-        "%(levelname)s: %(message)s",
-    )
-)
-LOGGER.addHandler(_file)
 
 IS_LOCAL = os.getenv("IS_LOCAL")
 SCAN_NAME = "VulnScanningSync"
 
 VS_PULL_DATE_RANGE = os.getenv("VS_PULL_DATE_RANGE", "2")
+
+
+def setup_vuln_sync_logging(
+    filename: str = "vuln_scanning_sync.log",
+    logger_name: str = "xfd",  # Use the main logger
+) -> None:
+    """Attach a file handler that reuses the unified formatter & filters. Runs once."""
+    # Don't add twice
+    if any(
+        isinstance(handler, FileHandler)
+        and getattr(handler, "baseFilename", "").endswith(filename)
+        for handler in LOGGER.handlers
+    ):
+        return
+
+    # Find a formatter to reuse: prefer a handler on the unified logger, else root
+    def _find_formatter_and_filters():
+        for current_logger in (logging.getLogger(logger_name), logging.getLogger()):
+            for handler in current_logger.handlers:
+                if handler.formatter:
+                    return handler.formatter, list(handler.filters) or []
+        # Fallback: no configured handlers yet
+        return (
+            logging.Formatter(
+                "[%(asctime)s.%(msecs)03d] %(levelname)s "
+                "[%(name)s:%(funcName)s:%(lineno)d] - %(message)s",
+                "%Y-%m-%d %H:%M:%S",
+            ),
+            [],
+        )
+
+    formatter, filters = _find_formatter_and_filters()
+
+    file_handler = FileHandler(filename)
+    file_handler.setLevel(LOGGER.getEffectiveLevel())
+    file_handler.setFormatter(formatter)
+    for filter in filters:  # reuse any handler-level filters (e.g., redaction)
+        file_handler.addFilter(filter)
+
+    # Also inherit logger-level filters
+    for filter in LOGGER.filters:
+        file_handler.addFilter(filter)
+
+    LOGGER.addHandler(file_handler)
 
 
 def handler(event):
@@ -138,6 +175,7 @@ def fetch_in_chunks(base_query: str, chunk_size: int = 5000):
 
 def main():  # pylint: disable=R0915
     """Execute the vulnerability scanning synchronization task."""
+    setup_vuln_sync_logging()
     LOGGER.info("Started VulnScanningSync scan...")
 
     # Load request data
