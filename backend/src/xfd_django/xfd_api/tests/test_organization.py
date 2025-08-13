@@ -1910,8 +1910,8 @@ def test_list_organizations_v2_as_global_admin():
         updated_at=datetime.now(),
     )
 
-    response = client.get(
-        "/v2/organizations",
+    response = client.post(
+        "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
     )
 
@@ -1960,8 +1960,8 @@ def test_list_organizations_v2_as_member():
     # Assign user to only one organization
     Role.objects.create(user=user, organization=organization1, role="member")
 
-    response = client.get(
-        "/v2/organizations",
+    response = client.post(
+        "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
@@ -1994,8 +1994,8 @@ def test_list_organizations_v2_as_user_without_membership():
         updated_at=datetime.now(),
     )
 
-    response = client.get(
-        "/v2/organizations",
+    response = client.post(
+        "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
@@ -2037,9 +2037,12 @@ def test_list_organizations_v2_filter_by_state():
         updated_at=datetime.now(),
     )
 
-    response = client.get(
-        "/v2/organizations?state=CA",
+    payload = {"state": "VA", "regions": {}}
+
+    response = client.post(
+        "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
+        json=payload,
     )
 
     assert response.status_code == 200
@@ -2083,9 +2086,11 @@ def test_list_organizations_v2_filter_by_region():
         updated_at=datetime.now(),
     )
 
-    response = client.get(
-        "/v2/organizations?region_id=region-2",
+    payload = {"filters": {"region_id": "2"}}
+    response = client.payload(
+        "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
+        json=payload,
     )
 
     assert response.status_code == 200
@@ -2098,7 +2103,7 @@ def test_list_organizations_v2_filter_by_region():
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_no_auth():
     """Test that an unauthenticated request returns 401."""
-    response = client.get("/v2/organizations")
+    response = client.post("/v2/organizations")
     assert response.status_code == 401
 
 
@@ -2125,9 +2130,11 @@ def test_list_organizations_v2_invalid_filter():
         updated_at=datetime.now(),
     )
 
-    response = client.get(
-        "/v2/organizations?state=ZZ",  # Non-existent state code
+    payload = {"state": "ZZ", "regions": {}}
+    response = client.post(
+        "/v2/organizations/search",  # Non-existent state code
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
+        json=payload,
     )
 
     assert response.status_code == 200
