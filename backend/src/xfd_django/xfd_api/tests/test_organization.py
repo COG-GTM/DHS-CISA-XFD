@@ -2075,7 +2075,7 @@ def test_list_organizations_v2_filter_by_region():
         ip_blocks=[],
         is_passive=False,
         state="CA",
-        region_id="region-1",
+        region_id="1",
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -2086,7 +2086,7 @@ def test_list_organizations_v2_filter_by_region():
         ip_blocks=[],
         is_passive=False,
         state="NY",
-        region_id="region-2",
+        region_id="2",
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -2101,14 +2101,14 @@ def test_list_organizations_v2_filter_by_region():
     assert response.status_code == 200
     data = response.json()["result"]
     assert len(data) == 1
-    assert data[0]["region_id"] == "region-2"
+    assert data[0]["region_id"] == "2"
     assert data[0]["id"] == str(organization2.id)
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_list_organizations_v2_no_auth():
     """Test that an unauthenticated request returns 401."""
-    response = client.post("/v2/organizations")
+    response = client.post("/v2/organizations/search")
     assert response.status_code == 401
 
 
