@@ -1838,7 +1838,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
         "first_name": "Updated",
         "last_name": "New",
         "invite_pending": False,
-        "first_login": True,
+        "first_login": False,
         "date_approved": datetime.now().isoformat(),
         "approved_by": None,
     }
@@ -1852,7 +1852,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
     assert response.status_code == 200
     assert response.json()["first_name"] == "Updated"
     assert response.json()["last_name"] == "New"
-    assert response.json()["first_login"] is None
+    assert response.json()["first_login"] is False
     assert response.json()["approved_by"] is None
 
 
@@ -1899,7 +1899,7 @@ def test_regional_user_updates_other_confirm_authorized_fields():
     assert response.status_code == 200
     assert response.json()["first_name"] == "Updated"
     assert response.json()["last_name"] == "New"
-    assert response.json()["first_login"] is None
+    assert response.json()["first_login"] is False
     assert response.json()["date_approved"] is None
 
 
