@@ -1909,10 +1909,11 @@ def test_list_organizations_v2_as_global_admin():
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
-
+    payload = {"page": 1, "pageSize": 15, "filters": {}}
     response = client.post(
         "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
+        json=payload,
     )
 
     assert response.status_code == 200
@@ -1960,9 +1961,11 @@ def test_list_organizations_v2_as_member():
     # Assign user to only one organization
     Role.objects.create(user=user, organization=organization1, role="member")
 
+    payload = {"page": 1, "pageSize": 15, "filters": {}}
     response = client.post(
         "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
+        json=payload,
     )
 
     assert response.status_code == 200
@@ -1994,9 +1997,11 @@ def test_list_organizations_v2_as_user_without_membership():
         updated_at=datetime.now(),
     )
 
+    payload = {"page": 1, "pageSize": 15, "filters": {}}
     response = client.post(
         "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
+        json=payload,
     )
 
     assert response.status_code == 200
@@ -2037,7 +2042,7 @@ def test_list_organizations_v2_filter_by_state():
         updated_at=datetime.now(),
     )
 
-    payload = {"state": "VA", "regions": {}}
+    payload = {"page": 1, "pageSize": 15, "filters": {"state": "VA"}}
 
     response = client.post(
         "/v2/organizations/search",
@@ -2086,7 +2091,7 @@ def test_list_organizations_v2_filter_by_region():
         updated_at=datetime.now(),
     )
 
-    payload = {"filters": {"region_id": "2"}}
+    payload = {"page": 1, "pageSize": 15, "filters": {"region_id": "2"}}
     response = client.payload(
         "/v2/organizations/search",
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
@@ -2130,7 +2135,7 @@ def test_list_organizations_v2_invalid_filter():
         updated_at=datetime.now(),
     )
 
-    payload = {"state": "ZZ", "regions": {}}
+    payload = {"page": 1, "pageSize": 15, "filters": {"state": "ZZ"}}
     response = client.post(
         "/v2/organizations/search",  # Non-existent state code
         headers={"Authorization": "Bearer {}".format(create_jwt_token(admin))},
