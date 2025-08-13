@@ -1833,7 +1833,6 @@ def test_regional_user_updates_self_confirm_authorized_fields():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         invite_pending=False,
-        # first_login=True,
     )
 
     payload = {
