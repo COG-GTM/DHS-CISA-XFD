@@ -74,6 +74,7 @@ def setup_vuln_sync_logging(
     logger_name: str = "xfd",  # Use the main logger
 ) -> None:
     """Attach a file handler that reuses the unified formatter & filters. Runs once."""
+    # Don't add twice
     if any(
         isinstance(handler, FileHandler)
         and getattr(handler, "baseFilename", "").endswith(filename)
@@ -130,8 +131,8 @@ def handler(event):
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
-        LOGGER.info("Error occurred: %s", e)
-        raise ScanExecutionError(status=500)
+        LOGGER.exception("Error occurred: %s", e)
+        raise ScanExecutionError(SCAN_NAME, str(e), event) from e
 
 
 def query_redshift(query, params=None):
