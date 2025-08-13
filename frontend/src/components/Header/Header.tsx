@@ -37,7 +37,8 @@ const LEARNING_CENTER_DOC_BUCKET_NAME = import.meta.env
 const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'CyHy Dashboard VS Glossary.pdf',
   faq: 'CyHy Dashboard VS FAQ.pdf',
-  methodology: 'CyHy Dashboard VS Methodology.pdf'
+  methodology: 'CyHy Dashboard VS Methodology.pdf',
+  userGuide: 'CyHy Dashboard User Guide.pdf'
 };
 
 export const Header: React.FC = () => {
@@ -153,6 +154,14 @@ export const Header: React.FC = () => {
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
         object_key: LEARNING_CENTER_DOC_KEYS.methodology
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'User Guide',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
       },
       users: STANDARD_USER
     },
