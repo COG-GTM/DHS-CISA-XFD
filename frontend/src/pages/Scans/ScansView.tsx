@@ -145,6 +145,8 @@ const ScansView: React.FC = () => {
       setErrors({
         global: e.message ?? e.toString()
       });
+      setSnackbarMsg(`Scan creation failed: ${e.message ?? e.toString()}`);
+      setSnackbarOpen(true);
       console.log(e);
     }
   };
@@ -444,7 +446,7 @@ const ScansView: React.FC = () => {
       >
         <Alert
           onClose={() => setSnackbarOpen(false)}
-          severity="success"
+          severity={snackbarMsg.includes('failed') ? 'error' : 'success'}
           sx={{ width: '100%' }}
         >
           {snackbarMsg}
