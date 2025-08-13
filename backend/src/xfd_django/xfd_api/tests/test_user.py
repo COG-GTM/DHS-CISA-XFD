@@ -1833,7 +1833,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
         created_at=datetime.now(),
         updated_at=datetime.now(),
         invite_pending=False,
-        first_login=True,
+        # first_login=True,
     )
 
     payload = {
@@ -1869,7 +1869,6 @@ def test_regional_user_updates_other_confirm_authorized_fields():
         region_id="1",
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        # first_login=True,
         invite_pending=False,
     )
 
@@ -1881,14 +1880,12 @@ def test_regional_user_updates_other_confirm_authorized_fields():
         region_id="1",
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        # first_login=True,
         invite_pending=True,
     )
     payload = {
         "first_name": "Updated",
         "last_name": "New",
         "invite_pending": False,
-        # "first_login": False,
         "date_approved": datetime.now().isoformat(),
         "approved_by": None,
     }
@@ -1901,7 +1898,6 @@ def test_regional_user_updates_other_confirm_authorized_fields():
     assert response.status_code == 200
     assert response.json()["first_name"] == "Updated"
     assert response.json()["last_name"] == "New"
-    # assert response.json()["first_login"] is False
     assert response.json()["date_approved"] is None
 
 
