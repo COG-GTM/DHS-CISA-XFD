@@ -138,6 +138,10 @@ test.describe('VS Dashboard — Detected Hosts & Top Vulnerable Hosts', () => {
     }
   });
 
+  function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   test('Clicking Top Vulnerable Hosts chart bar navigates to host detail page', async ({
     page
   }) => {
@@ -164,7 +168,7 @@ test.describe('VS Dashboard — Detected Hosts & Top Vulnerable Hosts', () => {
 
     await expect(
       page.getByRole('heading', {
-        name: new RegExp(`^${expectedIP.replace(/\./g, '\\.')}$`)
+        name: new RegExp(`^${escapeRegExp(expectedIP)}$`)
       })
     ).toBeVisible();
   });
