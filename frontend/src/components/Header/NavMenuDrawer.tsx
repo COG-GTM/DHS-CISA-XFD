@@ -8,8 +8,10 @@ import {
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText
 } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { MenuItemType } from './Header';
 
 interface NavMenuDrawerProps {
@@ -179,6 +181,9 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                               aria-label={item.menuItemTitle}
                             >
                               <ListItemText primary={item.menuItemTitle} />
+                              <ListItemIcon>
+                                <KeyboardArrowDownIcon fontSize="small" />
+                              </ListItemIcon>
                             </ListItemButton>
                           </ListItem>
                           <Collapse
@@ -186,7 +191,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                             timeout="auto"
                             unmountOnExit
                           >
-                            <List component="div" disablePadding>
+                            <List component="div" sx={{ pl: 1 }}>
                               {item.subMenuItems?.map(
                                 (subItem, subSubIndex) => (
                                   <ListItem
