@@ -257,8 +257,10 @@ def get_organization(organization_id, current_user):
         raise http_exc
 
     except Exception as e:
-        LOGGER.error("An error occurred: %s", e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        LOGGER.exception("An error occurred: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 # GET: /organizations/state/{state}
@@ -1017,9 +1019,9 @@ def search_organizations_v2(payload, current_user):
 
         f = apply_organization_filters(f, payload.filters or {})
 
-        print("FINAL Q OBJECT:", f)
+        LOGGER.debug("FINAL Q OBJECT: %s", f)
         qs = Organization.objects.filter(f)
-        print("SQL:", str(qs.query))
+        LOGGER.debug("SQL: %s", str(qs.query))
 
         sort_field = SORT_MAP.get(payload.sort or "", None)
         direction = "" if (payload.order or "asc") == "asc" else "-"
@@ -1125,7 +1127,8 @@ def search_organizations_task(search_body, current_user: User):
         search_results = client.search_organizations(query_body)
 
         return {"body": search_results}
-
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
-        LOGGER.error("Error occurred while searching organizations: %s", e)
+        LOGGER.exception("Error occurred while searching organizations: %s", e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

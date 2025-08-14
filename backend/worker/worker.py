@@ -76,13 +76,13 @@ def main():
         os.environ["AWS_CA_BUNDLE"] = zscaler_cert
         os.environ["REQUESTS_CA_BUNDLE"] = zscaler_cert
         os.environ["SSL_CERT_FILE"] = zscaler_cert
-        print("Set Zscaler cert environment variables for outbound TLS.")
+        LOGGER.info("Set Zscaler cert environment variables for outbound TLS.")
     else:
         # If not set, ensure these are not set so traffic is direct
         os.environ.pop("AWS_CA_BUNDLE", None)
         os.environ.pop("REQUESTS_CA_BUNDLE", None)
         os.environ.pop("SSL_CERT_FILE", None)
-        print("DMZ mode enabled. Skipping Zscaler cert injection.")
+        LOGGER.info("DMZ mode enabled. Skipping Zscaler cert injection.")
 
     try:
         command_options = json.loads(os.getenv("CROSSFEED_COMMAND_OPTIONS", "{}"))
