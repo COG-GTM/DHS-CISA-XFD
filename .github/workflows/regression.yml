@@ -105,7 +105,7 @@ jobs:
         working-directory: ./integration
     env:
       BACKEND_DOMAIN: api.staging-cd.crossfeed.cyber.dhs.gov
-      X_API_KEY: ${{ secrets.X_API_KEY_STAGING }}
+      X_API_KEY: ${{ secrets.X_API_KEY }}
     steps:
       - uses: actions/checkout@v3
 
@@ -223,7 +223,7 @@ jobs:
         working-directory: ./integration
     env:
       BACKEND_DOMAIN: api.integration.crossfeed.cyber.dhs.gov
-      X_API_KEY: ${{ secrets.X_API_KEY_STAGING }}
+      X_API_KEY: ${{ secrets.X_API_KEY }}
     steps:
       - uses: actions/checkout@v3
 
