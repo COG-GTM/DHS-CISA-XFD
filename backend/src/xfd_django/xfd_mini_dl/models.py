@@ -1327,7 +1327,7 @@ class User(AutoLengthCheckModel):
     )
     first_login = models.BooleanField(
         db_column="first_login",
-        null=True,
+        default=True,
         help_text="A boolean field identifying a users first approved login for prompts.",
     )
     can_select_own_state = models.BooleanField(
