@@ -40,17 +40,17 @@ const LEARNING_CENTER_DOC_KEYS = {
   faq: 'CyHy Dashboard VS FAQ.pdf',
   methodology: 'CyHy Dashboard VS Methodology.pdf',
   userGuide: 'CyHy Dashboard User Guide.pdf',
-  communications: 'Vulnerability Snapshot: Communications Sector.pdf',
-  financialServices: 'Vulnerability Snapshot: Financial Services Sector.pdf',
-  foodAndAgriculture: 'Vulnerability Snapshot: Food and Agriculture Sector.pdf',
+  communications: 'Vulnerability Snapshot Communications Sector.pdf',
+  financialServices: 'Vulnerability Snapshot Financial Services Sector.pdf',
+  foodAndAgriculture: 'Vulnerability Snapshot Food and Agriculture Sector.pdf',
   healthcareAndPublicHealth:
-    'Vulnerability Snapshot: Healthcare and Public Health Sector.pdf',
+    'Vulnerability Snapshot Healthcare and Public Health Sector.pdf',
   informationTechnology:
-    'Vulnerability Snapshot: Information Technology Sector.pdf',
+    'Vulnerability Snapshot Information Technology Sector.pdf',
   transportationSystems:
-    'Vulnerability Snapshot: Transportation Systems Sector.pdf',
+    'Vulnerability Snapshot Transportation Systems Sector.pdf',
   waterAndWastewater:
-    'Vulnerability Snapshot: Water and Wastewater Systems Sector.pdf'
+    'Vulnerability Snapshot Water and Wastewater Systems Sector.pdf'
 };
 
 export const Header: React.FC = () => {
