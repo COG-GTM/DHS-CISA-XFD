@@ -3,7 +3,7 @@
 exports[`Layout component > matches snapshot 1`] = `
 <DocumentFragment>
   <main
-    class="css-o3tih"
+    class="css-1nj9mgp"
   >
     <div
       style="display: flex;"
@@ -41,9 +41,6 @@ exports[`Layout component > matches snapshot 1`] = `
           <div
             class="MuiAlert-message css-zioonp-MuiAlert-message"
           >
-            <div
-              class="MuiBox-root css-1c00z4o"
-            />
             <div
               class="MuiTypography-root MuiTypography-largeBody MuiTypography-gutterBottom MuiAlertTitle-root css-16l1za6-MuiTypography-root-MuiAlertTitle-root"
             >
@@ -84,6 +81,10 @@ exports[`Layout component > matches snapshot 1`] = `
     <div>
       HEADER
     </div>
+  </main>
+  <main
+    class="css-1nj9mgp"
+  >
     <header
       class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionSticky css-1duqi3m-MuiPaper-root-MuiAppBar-root"
       style="--Paper-shadow: none;"
@@ -116,7 +117,7 @@ exports[`Layout component > matches snapshot 1`] = `
       </div>
     </header>
     <div
-      class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-17tm3pi-MuiDrawer-docked"
+      class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-tii83f-MuiDrawer-docked"
     >
       <div
         class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiDrawer-paper MuiDrawer-paperAnchorLeft MuiDrawer-paperAnchorDockedLeft css-1lwhjos-MuiPaper-root-MuiDrawer-paper"
@@ -130,13 +131,7 @@ exports[`Layout component > matches snapshot 1`] = `
             role="presentation"
           >
             <div
-              class="MuiToolbar-root MuiToolbar-gutters MuiToolbar-regular css-t4299j-MuiToolbar-root"
-            />
-            <div
-              class="MuiToolbar-root MuiToolbar-gutters MuiToolbar-regular css-t4299j-MuiToolbar-root"
-            />
-            <div
-              class="MuiStack-root css-6ehs1v-MuiStack-root"
+              class="MuiStack-root css-1s4btzm-MuiStack-root"
             >
               <h3
                 class="MuiTypography-root MuiTypography-h3 css-wariq0-MuiTypography-root"
