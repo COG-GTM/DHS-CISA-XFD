@@ -349,6 +349,11 @@ export const DrawerInterior: React.FC<Props> = (props) => {
                     key="no_services"
                     control={
                       <Checkbox
+                        sx={{
+                          '&.Mui-checked': {
+                            color: theme.palette.primary.dark
+                          }
+                        }}
                         checked={filters.some((f) => f.field === 'no_services')}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -359,7 +364,7 @@ export const DrawerInterior: React.FC<Props> = (props) => {
                         }}
                       />
                     }
-                    label={`No Ports`}
+                    label={`Unassigned`}
                   />
                 ))}
               <FacetFilter
