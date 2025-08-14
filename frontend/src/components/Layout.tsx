@@ -141,13 +141,6 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
               margin="auto"
             >
               <Alert severity="info" onClose={handleAlertClose}>
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  maxWidth="1152px"
-                  width="100%"
-                  margin="auto"
-                ></Box>
                 <AlertTitle
                   variant="largeBody"
                   color="primary.darker"
