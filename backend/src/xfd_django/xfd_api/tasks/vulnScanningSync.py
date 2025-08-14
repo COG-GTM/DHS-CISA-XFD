@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import traceback
+from typing import Any, Tuple
 
 # Third-Party Libraries
 from dateutil import parser  # type: ignore
@@ -298,6 +299,28 @@ def save_json_to_file(data, filename="test.json"):
         print(f"Data successfully saved to {filename}")
     except Exception as e:
         print(f"Error saving JSON to file: {e}")
+
+
+def fetch_from_redshift_with_params(query: str, params: Tuple[Any, ...]):
+    """
+    Fetch data from Redshift with parameters and log execution time.
+    Mirrors fetch_from_redshift() but forwards params to query_redshift().
+    """
+    if IS_LOCAL:
+        data_set = detect_data_set(query)
+        return load_test_data(data_set)
+
+    start_time = datetime.datetime.now()
+    try:
+        result = query_redshift(query, params=params)
+        duration_seconds = (datetime.datetime.now() - start_time).total_seconds()
+        # Do NOT log params to avoid leaking sensitive values
+        LOGGER.info("[Redshift] [%.3fs] [%s records] %s", duration_seconds, len(result), query)
+        return result
+    except Exception as e:
+        LOGGER.info("Error fetching data from Redshift: %s", e)
+        LOGGER.info("Erroneous query: %s", query)
+        return []
 
 
 def send_organizations_to_dmz():
