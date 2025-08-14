@@ -2,6 +2,7 @@ import React, {
   PropsWithChildren,
   useCallback,
   useEffect,
+  useRef,
   useState
 } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -28,7 +29,6 @@ const Main = styled('main', {
   open?: boolean;
   user?: boolean;
 }>(() => ({
-  flexGrow: 1,
   minHeight: '100%',
   overflowY: 'auto',
   overscrollBehavior: 'contain'
@@ -42,6 +42,8 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
 }) => {
   const { pathname } = useLocation();
   const { logout, user } = useAuthContext();
+  const topRef = useRef<HTMLDivElement>(null);
+  const [topOffset, setTopOffset] = useState(0);
 
   const noAlertPaths = [
     '/login-gov-callback',
@@ -64,6 +66,12 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
   const [siteWideAlert, setSiteWideAlert] = useState(() => {
     return localStorage.getItem('siteWideAlertOff') === 'true';
   });
+
+  useEffect(() => {
+    if (topRef.current) {
+      setTopOffset(topRef.current.getBoundingClientRect().height);
+    }
+  }, [siteWideAlert, user, pathname]);
 
   const handleAlertClose = () => {
     setSiteWideAlert(true);
@@ -126,7 +134,7 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
         onCountdownEnd={handleCountdownEnd}
         countdown={60} // 60 second timer for user inactivity timeout
       />
-      <Main open={isFilterDrawerOpen} user={!!user}>
+      <Main open={isFilterDrawerOpen} user={!!user} ref={topRef}>
         <div style={{ display: 'flex' }}>
           <GovBanner />
         </div>
@@ -164,6 +172,9 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
           </Box>
         )}
         <Header />
+      </Main>
+
+      <Main open={isFilterDrawerOpen} user={!!user}>
         {userLevel > 0 && (
           <>
             {matchPath(['/', '/inventory', '/VSDashboard'], pathname) && (
@@ -174,6 +185,7 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
               isFilterDrawerOpen={isFilterDrawerOpen}
               isMobile={isMobile}
               initialFilters={initialFilters}
+              topOffset={topOffset}
             />
           </>
         )}

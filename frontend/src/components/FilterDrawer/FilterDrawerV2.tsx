@@ -20,6 +20,7 @@ export const FilterDrawer: FC<
     isMobile: boolean;
     setIsFilterDrawerOpen: (isOpen: boolean) => void;
     initialFilters: any[];
+    topOffset: number;
   }
 > = (props) => {
   const {
@@ -35,7 +36,8 @@ export const FilterDrawer: FC<
     initialFilters,
     autocompletedResults,
     autocompletedSuggestions,
-    results
+    results,
+    topOffset
   } = props;
   const { pathname } = useLocation();
 
@@ -67,13 +69,11 @@ export const FilterDrawer: FC<
   const DrawerList = (
     <Stack justifyContent={'space-between'} height="100vh">
       <Box role="presentation">
-        <Toolbar />
-        <Toolbar />
         <Stack
           direction="row"
           alignItems="center"
           justifyContent="space-between"
-          height={63}
+          height={83}
           px={2}
         >
           <Typography variant="h3" component="h3">
@@ -169,12 +169,15 @@ export const FilterDrawer: FC<
       onClose={() => setIsFilterDrawerOpen(false)}
       sx={{
         width: drawerWidth,
+        flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           overflow: 'auto',
           backgroundColor: 'neutrals.white',
           overscrollBehavior: 'contain',
-          // Hide scrollbar for Firefox, IE/Edge, and Chrome/Safari/Opera
+          top: isMobile ? '20px' : topOffset,
+          height: isMobile ? '100%' : `calc(100% - ${topOffset}px)`,
+          zIndex: (theme) => theme.zIndex.appBar,
           msOverflowStyle: 'none',
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': {
