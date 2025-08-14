@@ -2,6 +2,7 @@ import * as React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Box,
+  Collapse,
   Divider,
   Drawer,
   List,
@@ -24,6 +25,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   menuItems,
   onMenuItemClick
 }) => {
+  const [openCollapse, setOpenCollapse] = React.useState<string | false>(false);
   const DrawerList = (
     <Box
       sx={{ width: 250 }}
@@ -48,6 +50,8 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                   items.map((item, subIndex) => {
                     const isHttpLink = item.path?.startsWith('http');
                     const isMailtoLink = item.path?.startsWith('mailto:');
+                    const isSubMenu =
+                      item.subMenuItems && item.subMenuItems.length > 0;
 
                     // 1. onClick handler
                     if (item.onClick) {
@@ -155,6 +159,59 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                             <ListItemText primary={item.menuItemTitle} />
                           </ListItemButton>
                         </ListItem>
+                      );
+                    }
+
+                    // 6. Submenu
+                    if (isSubMenu) {
+                      return (
+                        <React.Fragment key={`${index}-${subIndex}`}>
+                          <ListItem disablePadding role="none">
+                            <ListItemButton
+                              onClick={() => {
+                                setOpenCollapse(
+                                  openCollapse === `${index}-${subIndex}`
+                                    ? false
+                                    : `${index}-${subIndex}`
+                                );
+                              }}
+                              role="menuitem"
+                              aria-haspopup="true"
+                              aria-label={item.menuItemTitle}
+                            >
+                              <ListItemText primary={item.menuItemTitle} />
+                            </ListItemButton>
+                          </ListItem>
+                          <Collapse
+                            in={openCollapse === `${index}-${subIndex}`}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <List component="div" disablePadding>
+                              {item.subMenuItems?.map(
+                                (subItem, subSubIndex) => (
+                                  <ListItem
+                                    key={`${index}-${subIndex}-${subSubIndex}`}
+                                    disablePadding
+                                    role="none"
+                                  >
+                                    <ListItemButton
+                                      // component={NavLink}
+                                      // to={subItem.path!}
+                                      role="menuitem"
+                                      aria-label={subItem.menuItemTitle}
+                                      // onClick={toggleDrawer(false)}
+                                    >
+                                      <ListItemText
+                                        primary={subItem.menuItemTitle}
+                                      />
+                                    </ListItemButton>
+                                  </ListItem>
+                                )
+                              )}
+                            </List>
+                          </Collapse>
+                        </React.Fragment>
                       );
                     }
                     return null;
