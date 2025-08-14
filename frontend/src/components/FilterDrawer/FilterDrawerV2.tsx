@@ -163,6 +163,7 @@ export const FilterDrawer: FC<
 
   return (
     <Drawer
+      container={document.getElementById('main-layout')}
       open={isFilterDrawerOpen}
       variant={isMobile ? 'temporary' : 'persistent'}
       ModalProps={{ keepMounted: isMobile }}
@@ -171,12 +172,13 @@ export const FilterDrawer: FC<
         width: drawerWidth,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
+          position: 'fixed',
           width: drawerWidth,
-          overflow: 'auto',
+          overflow: 'visible',
           backgroundColor: 'neutrals.white',
-          overscrollBehavior: 'contain',
-          top: isMobile ? '20px' : topOffset,
-          height: isMobile ? '100%' : `calc(100% - ${topOffset}px)`,
+          top: isMobile ? 0 : topOffset - 84,
+          height: isMobile ? '100%' : 'auto',
+          minHeight: `calc(100% - ${topOffset}px)`,
           zIndex: (theme) => theme.zIndex.appBar,
           msOverflowStyle: 'none',
           scrollbarWidth: 'none',

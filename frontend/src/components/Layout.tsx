@@ -24,14 +24,17 @@ import { useUserLevel } from 'hooks/useUserLevel';
 import FilterDrawerToggle from './FilterDrawer/FilterDrawerToggle';
 
 const Main = styled('main', {
-  shouldForwardProp: (prop) => prop !== 'open' && prop !== 'user'
+  shouldForwardProp: (prop) =>
+    prop !== 'open' && prop !== 'user' && prop !== 'topOffset'
 })<{
   open?: boolean;
   user?: boolean;
-}>(() => ({
-  minHeight: '100%',
+  topOffset?: number;
+}>(({ topOffset }) => ({
+  minHeight: '100vh',
   overflowY: 'auto',
-  overscrollBehavior: 'contain'
+  overscrollBehavior: 'contain',
+  paddingTop: topOffset ?? 0
 }));
 
 export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
@@ -132,12 +135,19 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
       <UserInactiveModal
         isOpen={isTimedOut}
         onCountdownEnd={handleCountdownEnd}
-        countdown={60} // 60 second timer for user inactivity timeout
+        countdown={60}
       />
-      <Main open={isFilterDrawerOpen} user={!!user} ref={topRef}>
-        <div style={{ display: 'flex' }}>
-          <GovBanner />
-        </div>
+      <Box
+        ref={topRef}
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: (theme) => theme.zIndex.appBar
+        }}
+      >
+        <GovBanner />
         {!siteWideAlert && user && !noAlertPaths.includes(pathname) && (
           <Box sx={{ backgroundColor: '#E5F6FD' }}>
             <Box
@@ -172,14 +182,14 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
           </Box>
         )}
         <Header />
-      </Main>
-
-      <Main open={isFilterDrawerOpen} user={!!user}>
-        {userLevel > 0 && (
-          <>
-            {matchPath(['/', '/inventory', '/VSDashboard'], pathname) && (
-              <FilterDrawerToggle />
-            )}
+        {userLevel > 0 &&
+          matchPath(['/', '/inventory', '/VSDashboard'], pathname) && (
+            <FilterDrawerToggle />
+          )}
+      </Box>
+      <Main open={isFilterDrawerOpen} user={!!user} topOffset={topOffset}>
+        {userLevel > 0 &&
+          matchPath(['/', '/inventory', '/VSDashboard'], pathname) && (
             <FilterDrawerV2
               setIsFilterDrawerOpen={setIsFilterDrawerOpen}
               isFilterDrawerOpen={isFilterDrawerOpen}
@@ -187,8 +197,7 @@ export const Layout: React.FC<PropsWithChildren<ContextType>> = ({
               initialFilters={initialFilters}
               topOffset={topOffset}
             />
-          </>
-        )}
+          )}
         {children}
       </Main>
     </>

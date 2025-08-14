@@ -303,6 +303,8 @@ export const RegionAndOrganizationFilters: React.FC<
         expanded={expanded === 'panel1'}
         onChange={handleExpanded ? handleExpanded('panel1') : undefined}
         sx={{ borderTop: `.5px solid ${theme.palette.neutrals.light}` }}
+        disableGutters
+        
       >
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Stack direction="row" alignItems="center" spacing={1}>
