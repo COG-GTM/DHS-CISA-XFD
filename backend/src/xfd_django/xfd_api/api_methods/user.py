@@ -371,7 +371,7 @@ def get_users_v2(state, region_id, invite_pending, current_user):
     """Retrieve a list of users based on optional filter parameters."""
     try:
         # Check if user is a regional admin or global admin
-        if not is_regional_admin(current_user) or is_global_view_admin(current_user):
+        if not (is_regional_admin(current_user) or is_global_view_admin(current_user)):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         filters = {}
