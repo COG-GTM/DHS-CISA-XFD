@@ -22,6 +22,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { setFrequency } from 'pages/Scan/Scan';
 import { ScanForm, ScanFormValues } from 'components/ScanForm';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+
 import {
   Alert,
   Button as MuiButton,
@@ -33,7 +34,8 @@ import {
   IconButton,
   Paper,
   DialogTitle,
-  Snackbar
+  Snackbar,
+  SnackbarCloseReason
 } from '@mui/material';
 //Needed for the CustomToolbar:
 // import CustomToolbar from 'components/DataGrid/CustomToolbar';
@@ -198,6 +200,18 @@ const ScansView: React.FC = () => {
   };
   const handleClose = () => {
     setOpen(false);
+  };
+
+  type SnackbarCloseReason = 'timeout' | 'clickaway';
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleSnackbarClose = (
+    event: React.SyntheticEvent<any> | Event,
+    reason?: SnackbarCloseReason
+  ) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    triggerRef.current?.focus();
   };
 
   const handleClick = () => {
@@ -440,11 +454,10 @@ const ScansView: React.FC = () => {
       </Modal>
       <Snackbar
         open={snackbarOpen}
-        onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
-          onClose={() => setSnackbarOpen(false)}
+          onClose={handleSnackbarClose}
           severity={snackbarMsg.includes('failed') ? 'error' : 'success'}
           sx={{ width: '100%' }}
         >
