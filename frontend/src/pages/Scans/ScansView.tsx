@@ -440,7 +440,6 @@ const ScansView: React.FC = () => {
       </Modal>
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
