@@ -45,6 +45,7 @@ const LoginButton = () => {
     <Button
       onClick={redirectToAuth}
       type={'button'}
+      size="big"
       style={{ width: 'fit-content' }}
     >
       Sign in with LOGIN.GOV
@@ -98,20 +99,20 @@ export const AuthLogin: React.FC<{ showSignUp?: boolean }> = () => {
     </Grid>
   );
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-around"
-      height="100%"
-    >
-      {notification?.status === 'active' && platformNotification}
-      <Typography variant="h2" textAlign="center" sx={{ mt: 5 }}>
-        Welcome to CyHy Dashboard
-      </Typography>
-      <Box pt={3} mb={3} display="flex" justifyContent="center">
+    <Box display="flex" flexDirection="column" height={'calc(100vh - 108px)'}>
+      <Box flex={0.5} display="flex" />
+      <Box flex={0.5} display="flex" justifyContent="center" alignItems="center">
+        <Typography variant="h1" textAlign="center">
+          Welcome to CyHy Dashboard
+        </Typography>
+      </Box>
+      <Box flex={1} display="flex" justifyContent="center" alignItems="center">
         <LoginButton />
       </Box>
-      <CrossfeedWarning />
+      <Box flex={1} display="flex" />
+      <Box justifyContent="center" alignItems="center" pb={5}>
+        <CrossfeedWarning />
+      </Box>
     </Box>
   );
 };
