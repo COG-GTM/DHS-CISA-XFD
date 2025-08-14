@@ -164,7 +164,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                     }
 
                     // 6. Submenu
-                    if (isSubMenu) {
+                    if (isSubMenu && onMenuItemClick) {
                       return (
                         <React.Fragment key={`${index}-${subIndex}`}>
                           <ListItem disablePadding role="none">
@@ -200,11 +200,12 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                     role="none"
                                   >
                                     <ListItemButton
-                                      // component={NavLink}
-                                      // to={subItem.path!}
                                       role="menuitem"
                                       aria-label={subItem.menuItemTitle}
-                                      // onClick={toggleDrawer(false)}
+                                      onClick={async () => {
+                                        await onMenuItemClick(item);
+                                        toggleDrawer(false)();
+                                      }}
                                     >
                                       <ListItemText
                                         primary={subItem.menuItemTitle}
