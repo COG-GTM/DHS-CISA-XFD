@@ -372,7 +372,7 @@ export const Header: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         height: '84px',
-        zIndex: theme.zIndex.FilterDrawerV2 + 1
+        zIndex: (theme) => theme.zIndex.appBar
       }}
     >
       <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>

@@ -28,13 +28,12 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   const [openCollapse, setOpenCollapse] = React.useState<string | false>(false);
   const DrawerList = (
     <Box
-      sx={{ width: 250 }}
+      sx={{ width: 250, pt: 3 }}
       role="presentation"
       onKeyDown={(e) => {
         if (e.key === 'Escape') toggleDrawer(false)();
       }}
     >
-      <Box sx={{ height: '100px' }} />
       <nav aria-label="Main navigation">
         <List>
           {menuItems.map((section, index) => {
@@ -232,6 +231,16 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
       anchor="right"
       role="dialog"
       aria-label="Navigation menu"
+      ModalProps={{
+        keepMounted: true
+      }}
+      slotProps={{
+        paper: {
+          sx: {
+            zIndex: (theme) => theme.zIndex.modal + 1
+          }
+        }
+      }}
     >
       {DrawerList}
     </Drawer>

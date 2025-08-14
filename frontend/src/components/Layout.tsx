@@ -29,8 +29,7 @@ const Main = styled('main', {
   user?: boolean;
 }>(() => ({
   flexGrow: 1,
-  minHeight: '100vh',
-  height: '100vh',
+  minHeight: '100%',
   overflowY: 'auto',
   overscrollBehavior: 'contain'
 }));
