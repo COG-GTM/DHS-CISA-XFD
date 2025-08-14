@@ -7,6 +7,7 @@ import os
 
 # Third-Party Libraries
 import boto3
+from botocore.session import Session as BotoCoreSession
 import django
 
 LOGGER = logging.getLogger(__name__)
@@ -19,13 +20,15 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Third-Party Libraries
-from xfd_api.helpers.email import _setup_proxy
+from xfd_api.helpers.email import ensure_zscaler_cert_downloaded
 from xfd_api.helpers.getScanOrganizations import get_scan_organizations
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_api.tasks.scanExecution import handler as scan_execution_handler
 
 # Import Django models and helper functions
 from xfd_mini_dl.models import Organization, Scan, ScanTask
+
+IS_DMZ = os.getenv("IS_DMZ", "0") == "1"
 
 
 class Scheduler:
@@ -90,6 +93,10 @@ class Scheduler:
         queue_name = "{}-{}-queue".format(os.getenv("STAGE"), scan.name)
         base_queue_url = os.getenv("QUEUE_URL").rstrip("/")
         is_local = os.getenv("IS_LOCAL")
+
+        if not IS_DMZ:
+            session = BotoCoreSession()
+            session.set_config_variable("ca_bundle", ensure_zscaler_cert_downloaded())
         sqs = boto3.client(
             "sqs",
             region_name=os.getenv("AWS_REGION", "us-east-1"),
@@ -247,8 +254,6 @@ class Scheduler:
 def handler(event, context):
     """Handle invoking the scheduler to run scans."""
     LOGGER.info("Running scheduler...")
-
-    _setup_proxy()  # Setup proxy if LZ_PROXY_URL is defined
 
     scan_ids = event.get("scanIds", [])
     if "scanId" in event:
