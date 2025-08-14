@@ -92,7 +92,7 @@ test.describe('VS Dashboard — Detected Hosts & Top Vulnerable Hosts', () => {
       const highBarCount = await bars.count();
       for (let i = 0; i < highBarCount; i++) {
         const fill = await bars.nth(i).getAttribute('fill');
-        expect(fill?.trim().toUpperCase()).toBe('#C33200');
+        expect(fill?.trim().toUpperCase()).toBe('#EC7633');
       }
     }
   });
