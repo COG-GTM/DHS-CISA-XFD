@@ -46,7 +46,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
             if (entries.length === 0) return null;
 
             const [, items] = entries[0];
-            console.log('Menu Items:', menuItems);
             return (
               <React.Fragment key={index}>
                 {items &&
