@@ -276,6 +276,7 @@ def build_redshift_sql() -> str:
                last_load_timestamp
            FROM cve.cve_org_data
            WHERE containers_adp IS NOT NULL
+             AND cvemetadata_date_updated >= CURRENT_DATE - INTERVAL '1 year'
              AND (%s = '' OR cvemetadata_cve_id > %s)   -- keyset pagination only
            ORDER BY cvemetadata_cve_id;
            """
