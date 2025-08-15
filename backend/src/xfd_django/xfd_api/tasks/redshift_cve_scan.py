@@ -178,7 +178,7 @@ def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
             updated_fields.append("cna_affected_json")
         if problem_types_json and not cve_object.cna_problem_types_json:
             cve_object.cna_problem_types_json = problem_types_json
-        updated_fields.append("cna_problem_types_json")
+            updated_fields.append("cna_problem_types_json")
         if weaknesses_list and not cve_object.weaknesses:
             cve_object.weaknesses = weaknesses_list
             updated_fields.append("weaknesses")
