@@ -127,7 +127,7 @@ exports[`Layout component > matches snapshot 1`] = `
             role="presentation"
           >
             <div
-              class="MuiStack-root css-1s4btzm-MuiStack-root"
+              class="MuiStack-root css-sxrrz-MuiStack-root"
             >
               <h3
                 class="MuiTypography-root MuiTypography-h3 css-wariq0-MuiTypography-root"
