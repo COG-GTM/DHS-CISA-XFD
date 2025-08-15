@@ -2,15 +2,11 @@
 
 exports[`Layout component > matches snapshot 1`] = `
 <DocumentFragment>
-  <main
-    class="css-1nj9mgp"
+  <div
+    class="MuiBox-root css-yuxl5"
   >
-    <div
-      style="display: flex;"
-    >
-      <div>
-        GOV_BANNER
-      </div>
+    <div>
+      GOV_BANNER
     </div>
     <div
       class="MuiBox-root css-dfy4bm"
@@ -81,10 +77,6 @@ exports[`Layout component > matches snapshot 1`] = `
     <div>
       HEADER
     </div>
-  </main>
-  <main
-    class="css-1nj9mgp"
-  >
     <header
       class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionSticky css-1duqi3m-MuiPaper-root-MuiAppBar-root"
       style="--Paper-shadow: none;"
@@ -116,8 +108,12 @@ exports[`Layout component > matches snapshot 1`] = `
         </button>
       </div>
     </header>
+  </div>
+  <main
+    class="css-170g0n7"
+  >
     <div
-      class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-tii83f-MuiDrawer-docked"
+      class="MuiDrawer-root MuiDrawer-anchorLeft MuiDrawer-docked css-aiqi88-MuiDrawer-docked"
     >
       <div
         class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation0 MuiDrawer-paper MuiDrawer-paperAnchorLeft MuiDrawer-paperAnchorDockedLeft css-1lwhjos-MuiPaper-root-MuiDrawer-paper"
