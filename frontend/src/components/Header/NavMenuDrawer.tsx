@@ -12,7 +12,9 @@ import {
   ListItemText
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { MenuItemType } from './Header';
+import { styled, useTheme } from '@mui/material/styles';
 
 interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
@@ -28,6 +30,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   onMenuItemClick
 }) => {
   const [openCollapse, setOpenCollapse] = React.useState<string | false>(false);
+  const theme = useTheme();
   const DrawerList = (
     <Box
       sx={{ width: 250, pt: 3 }}
@@ -182,7 +185,19 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                             >
                               <ListItemText primary={item.menuItemTitle} />
                               <ListItemIcon>
-                                <KeyboardArrowDownIcon fontSize="small" />
+                                {openCollapse === `${index}-${subIndex}` ? (
+                                  <KeyboardArrowUpIcon
+                                    sx={{
+                                      color: theme.palette.primary.dark
+                                    }}
+                                  />
+                                ) : (
+                                  <KeyboardArrowDownIcon
+                                    sx={{
+                                      color: theme.palette.primary.dark
+                                    }}
+                                  />
+                                )}
                               </ListItemIcon>
                             </ListItemButton>
                           </ListItem>

@@ -210,10 +210,21 @@ export const Header: React.FC = () => {
 
   const learningCenterMenuItems: MenuItemType[] = [
     {
-      menuItemTitle: 'VS Glossary',
+      menuItemTitle: 'CISA Resources',
+      path: 'https://www.cisa.gov',
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Sector Vulnerability Snapshots',
+      users: STANDARD_USER,
+      // Nest sectorVulnSnapshotsMenuItems here
+      subMenuItems: sectorVulnSnapshotsMenuItems
+    },
+    {
+      menuItemTitle: 'User Guide',
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
-        object_key: LEARNING_CENTER_DOC_KEYS.glossary
+        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
       },
       users: STANDARD_USER
     },
@@ -226,30 +237,20 @@ export const Header: React.FC = () => {
       users: STANDARD_USER
     },
     {
+      menuItemTitle: 'VS Glossary',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.glossary
+      },
+      users: STANDARD_USER
+    },
+
+    {
       menuItemTitle: 'VS Methodology',
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
         object_key: LEARNING_CENTER_DOC_KEYS.methodology
       },
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'User Guide',
-      objectStoreParams: {
-        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
-        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
-      },
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'Sector Vulnerability Snapshots',
-      users: STANDARD_USER,
-      // Nest sectorVulnSnapshotsMenuItems here
-      subMenuItems: sectorVulnSnapshotsMenuItems
-    },
-    {
-      menuItemTitle: 'CISA Resources',
-      path: 'https://www.cisa.gov',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
