@@ -54,18 +54,12 @@ def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
 
     descriptions_json = safe_json_loads(row_values[3] if len(row_values) > 3 else None)
     # These two are currently unused by the model, but keep parsed for future use:
-    affected_json = safe_json_loads(
-        row_values[4] if len(row_values) > 4 else None
-    )  # noqa: F841
-    problem_types_json = safe_json_loads(
-        row_values[6] if len(row_values) > 6 else None
-    )  # noqa: F841
+    affected_json = safe_json_loads(row_values[4] if len(row_values) > 4 else None)
+    problem_types_json = safe_json_loads(row_values[6] if len(row_values) > 6 else None)
 
     metrics_json = safe_json_loads(row_values[5] if len(row_values) > 5 else None)
     references_json = safe_json_loads(row_values[7] if len(row_values) > 7 else None)
-    source_json = safe_json_loads(
-        row_values[8] if len(row_values) > 8 else None
-    )  # noqa: F841
+    source_json = safe_json_loads(row_values[8] if len(row_values) > 8 else None)
     adp_json = safe_json_loads(row_values[9] if len(row_values) > 9 else None)
     weaknesses_list = extract_weaknesses_from_problem_types(problem_types_json)
 
