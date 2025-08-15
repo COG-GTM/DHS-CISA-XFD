@@ -371,7 +371,7 @@ def get_users_v2(state, region_id, invite_pending, current_user):
     """Retrieve a list of users based on optional filter parameters."""
     try:
         # Check if user is a regional admin or global admin
-        if not is_regional_admin(current_user) or is_global_view_admin(current_user):
+        if not (is_regional_admin(current_user) or is_global_view_admin(current_user)):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         filters = {}
@@ -464,7 +464,8 @@ def update_user_v2(user_id, user_data, current_user):
             )
 
         # Check if allowed fields to update then execute
-        updates = user_data.dict(exclude_unset=True)
+        # updates = user_data.dict(exclude_unset=True)
+        updates = user_data.model_dump(exclude_unset=True)
         allowed_fields = get_allowed_user_update_fields(current_user, user)
 
         # Check for disallowed fields before applying updates
@@ -507,6 +508,7 @@ def update_user_v2(user_id, user_data, current_user):
             "state": updated_user.state,
             "user_type": updated_user.user_type,
             "last_logged_in": user.last_logged_in,
+            "first_login": user.first_login,
             "accepted_terms_version": user.accepted_terms_version,
             "roles": [
                 {
