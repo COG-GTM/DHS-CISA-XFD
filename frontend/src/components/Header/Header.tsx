@@ -13,8 +13,7 @@ import {
   Button,
   IconButton,
   Toolbar,
-  Typography,
-  useTheme
+  Typography
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import cisaLogo from 'assets/cisaSeal.svg';
@@ -56,7 +55,6 @@ const LEARNING_CENTER_DOC_KEYS = {
 export const Header: React.FC = () => {
   const history = useHistory();
   const { apiPost, logout } = useAuthContext();
-  const theme = useTheme();
   const { userLevel } = useUserLevel();
   const [openDrawer, setOpenDrawer] = React.useState(false);
   const toggleDrawer = (newOpen: boolean) => () => {
@@ -69,11 +67,6 @@ export const Header: React.FC = () => {
       users: GLOBAL_ADMIN
     },
     {
-      menuItemTitle: 'User Registration',
-      path: '/region-admin-dashboard',
-      users: REGIONAL_ADMIN
-    },
-    {
       menuItemTitle: 'Manage Organizations',
       path: '/organizations',
       users: REGIONAL_ADMIN
@@ -81,6 +74,11 @@ export const Header: React.FC = () => {
     {
       menuItemTitle: 'Manage Users',
       path: '/users',
+      users: REGIONAL_ADMIN
+    },
+    {
+      menuItemTitle: 'User Registration',
+      path: '/region-admin-dashboard',
       users: REGIONAL_ADMIN
     }
   ].filter(({ users }) => users <= userLevel);
@@ -97,19 +95,6 @@ export const Header: React.FC = () => {
       onClick: logout
     }
   ].filter(({ users }) => users <= userLevel);
-
-  // const scanningResults: MenuItemType[] = [
-  //   {
-  //     menuItemTitle: 'Overview',
-  //     path: '/overview',
-  //     users: STANDARD_USER
-  //   },
-  //   {
-  //     menuItemTitle: 'Vulnerability Scanning',
-  //     path: '/VSDashboard',
-  //     users: STANDARD_USER
-  //   }
-  // ].filter(({ users }) => users <= userLevel);
 
   const vulnScanningMenuItems: MenuItemType[] = [
     {
@@ -306,7 +291,6 @@ export const Header: React.FC = () => {
   );
 
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
-    // { 'Scanning Results': scanningResults },
     { 'Vulnerability Scanning': vulnScanningMenuItems },
     { 'Findings Library': inventoryMenuItems },
     { 'Learning Center': learningCenterMenuItems },
