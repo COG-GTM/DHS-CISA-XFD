@@ -683,7 +683,7 @@ def populate_sample_data():
         )
         sys.stdout.flush()
 
-    # fill_cidr_live_ips()
+    # Fill CIDR Live Ips
     fill_cidr_live_ips_bulk_update()
 
     # Create or refresh materialized views
