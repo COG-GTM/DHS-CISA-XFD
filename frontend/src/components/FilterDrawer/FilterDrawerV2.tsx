@@ -73,7 +73,7 @@ export const FilterDrawer: FC<
           direction="row"
           alignItems="center"
           justifyContent="space-between"
-          height={83}
+          height={83.5}
           px={2}
         >
           <Typography variant="h3" component="h3">
