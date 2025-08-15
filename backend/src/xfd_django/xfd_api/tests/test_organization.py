@@ -2270,8 +2270,8 @@ def test_search_organizations_no_access():
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
-    assert response.status_code == 200
-    assert response.json() == []
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Unauthorized."}
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
