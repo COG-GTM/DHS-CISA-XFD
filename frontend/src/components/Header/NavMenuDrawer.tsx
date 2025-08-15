@@ -217,7 +217,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                       role="menuitem"
                                       aria-label={subItem.menuItemTitle}
                                       onClick={async () => {
-                                        await onMenuItemClick(item);
+                                        await onMenuItemClick(subItem);
                                         toggleDrawer(false)();
                                       }}
                                     >
