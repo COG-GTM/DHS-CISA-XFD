@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import { ContextType } from 'context';
 import { withSearch } from '@elastic/react-search-ui';
+import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import { DrawerInterior } from './DrawerInterior';
@@ -65,7 +66,7 @@ export const FilterDrawer: FC<
     (panel: string) => (event: React.SyntheticEvent, newExpanded: boolean) => {
       setExpanded(newExpanded ? panel : false);
     };
-
+  const theme = useTheme();
   const DrawerList = (
     <Stack justifyContent={'space-between'} height="100vh">
       <Box role="presentation">
@@ -73,8 +74,9 @@ export const FilterDrawer: FC<
           direction="row"
           alignItems="center"
           justifyContent="space-between"
-          height={83.5}
+          height={84}
           px={2}
+          sx={{ borderBottom: `.5px solid ${theme.palette.neutrals.light}` }}
         >
           <Typography variant="h3" component="h3">
             Filter
