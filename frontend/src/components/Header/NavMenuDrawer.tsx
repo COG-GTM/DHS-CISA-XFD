@@ -14,7 +14,7 @@ import {
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { MenuItemType } from './Header';
-import { styled, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 interface NavMenuDrawerProps {
   toggleDrawer: (open: boolean) => () => void;
@@ -46,7 +46,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
             if (entries.length === 0) return null;
 
             const [, items] = entries[0];
-
+            console.log('Menu Items:', menuItems);
             return (
               <React.Fragment key={index}>
                 {items &&
