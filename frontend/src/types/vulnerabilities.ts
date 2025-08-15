@@ -20,6 +20,7 @@ interface LooseVulnerabilityRow {
   title: string;
   severity: string;
   kev: string;
+  ransomware: string;
   domain: string | undefined;
   domainId: string | undefined;
   product: string;
@@ -51,6 +52,8 @@ export type SearchParams = {
   page: number;
   pageSize?: number;
   doExport?: boolean;
+  order?: string;
+  sort?: 'asc' | 'desc';
   group_by?: string;
   showAll?: boolean;
   is_kev?: boolean;

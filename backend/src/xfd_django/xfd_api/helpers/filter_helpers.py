@@ -35,7 +35,13 @@ def sort_direction(sort, order):
         # Fetch all domains in list
         if sort == "ASC":
             return order
+        elif sort == "asc":
+            return order
         elif sort == "DSC":
+            return "-" + order
+        elif sort == "dsc":
+            return "-" + order
+        elif sort == "desc":
             return "-" + order
         else:
             raise ValueError
@@ -100,6 +106,7 @@ def apply_domain_filters(domains, filters):
 def apply_vuln_filters(
     vulnerabilities: QuerySet, vulnerability_filters: VulnerabilityFilters
 ) -> QuerySet:
+    # pylint: disable=R0912
     """Filter vulnerabilities using Q objects for partial matches and exact matches."""
     q = Q()
 
@@ -161,8 +168,16 @@ def apply_vuln_filters(
         q &= Q(domain__organization_id=vulnerability_filters.organization)
 
     # Boolean flag for KEV
+    if vulnerability_filters.false_positive is not None:
+        q &= Q(false_positive=vulnerability_filters.false_positive)
+
+    # Boolean flag for KEV
     if vulnerability_filters.is_kev is not None:
         q &= Q(is_kev=vulnerability_filters.is_kev)
+
+    # Boolean flag for KEV Ransomware
+    if vulnerability_filters.is_kev_ransomware is not None:
+        q &= Q(is_kev_ransomware=vulnerability_filters.is_kev_ransomware)
 
     # Filter by earliest date (discovery window lower bound)
     if vulnerability_filters.earliest_date:
@@ -225,3 +240,29 @@ def apply_vuln_filters(
     filtered = vulnerabilities.filter(q)
 
     return filtered.none() if not filtered.exists() else filtered
+
+
+def apply_organization_filters(base_q, filters: dict):
+    """Apply organization filters."""
+    q = base_q
+    name = filters.get("name")
+    state = filters.get("state")
+    region_id = filters.get("region_id")
+
+    if name:
+        q &= Q(name__icontains=str(name).strip())
+
+    if state:
+        if isinstance(state, list):
+            vals = [str(s).strip().upper() for s in state if s]
+            if vals:
+                q &= Q(state__in=vals)
+        else:
+            q &= Q(state__iexact=str(state).strip())
+
+    if region_id:
+        if not isinstance(region_id, list):
+            region_id = [region_id]
+        q &= Q(region_id__in=[int(r) for r in region_id if r is not None and r != ""])
+
+    return q

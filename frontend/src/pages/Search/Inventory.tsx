@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Pagination } from '@mui/material';
 import { withSearch } from '@elastic/react-search-ui';
-import { ContextType } from '../../context/SearchProvider';
+import { ContextType } from 'context/SearchProvider';
 import { SortBar } from './SortBar';
 import { useAuthContext } from 'context';
 import { NoResults } from 'components/NoResults';
@@ -70,8 +70,8 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
       };
       if (!showAllOrganizations && currentOrganization) {
         if ('root_domains' in currentOrganization)
-          body.organization_id = currentOrganization.id;
-        else body.tagId = currentOrganization.id;
+          body.organization_id = [currentOrganization.id];
+        else body.tagId = [currentOrganization.id];
       }
       const { url } = await apiPost('/search/export', {
         body

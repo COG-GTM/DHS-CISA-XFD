@@ -50,10 +50,10 @@ class ScanSchema(BaseModel):
     memory: Optional[str] = "8192"
 
     # A scan is "chunked" if its work is divided and run in parallel by multiple workers.
-    # To make a scan chunked, make sure it is a global scan and specify the "numChunks" variable,
+    # To make a scan chunked, make sure it is a global scan and specify the "num_chunks" variable,
     # which corresponds to the number of workers that will be created to run the task.
     # Chunked scans can only be run on scans whose implementation takes into account the
-    # chunkNumber and numChunks parameters specified in commandOptions.
+    # chunk_number and num_chunks parameters specified in commandOptions.
     num_chunks: Optional[int] = None
 
     max_concurrent_tasks: Optional[int] = 500
@@ -163,7 +163,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Censys asset and vulnerability data from commercial mdl",
-        maxConcurrentTasks=10,
+        max_concurrent_tasks=10,
     ),
     "censysCertificates": ScanSchema(
         type="fargate",
@@ -342,7 +342,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in Shodan asset and vulnerability data from commercial mdl",
-        maxConcurrentTasks=10,
+        max_concurrent_tasks=10,
     ),
     "sslyze": ScanSchema(
         type="fargate",
@@ -357,7 +357,7 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull synced assets from DMZ.",
-        maxConcurrentTasks=10,
+        max_concurrent_tasks=10,
     ),
     "test": ScanSchema(
         type="fargate",
@@ -399,10 +399,18 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
-        numChunks=0,
+        num_chunks=0,
         cpu="1024",
         memory="8192",
         description="Updates blocked ip records against blocklist.de global IP blocklist",
+    ),
+    "was": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Populate was info at commercial mdl",
     ),
     "was_sync": ScanSchema(
         type="fargate",
@@ -461,6 +469,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Pull in Xpanse business units and link them to organizations",
     ),
+    "xpanse_data_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull all Xpanse data and push to /xpanse-sync in DMZ",
+    ),
     "cybersixgill": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -468,5 +484,31 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Collect alerts, mentions, credentials, and top CVEs from Cybersixgill dark web monitoring.",
+    ),
+    "dns_twist_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull DomainPermutation data and push them to the DMZ sync endpoint.",
+        max_concurrent_tasks=10000,
+    ),
+    "pshtt_scan": ScanSchema(
+        type="fargate",
+        is_passive=False,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Performs HTTPS security checks on domains using the pshtt tool.",
+        max_concurrent_tasks=10,
+    ),
+    "pshtt_scan_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Syncs pshtt scan results with the database and Elasticsearch.",
     ),
 }

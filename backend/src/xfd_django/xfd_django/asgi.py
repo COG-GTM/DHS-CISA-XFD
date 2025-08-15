@@ -19,7 +19,9 @@ import django
 from django.apps import apps
 from django.conf import settings
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from mangum import Mangum
 from redis import asyncio as aioredis
 from xfd_api.tasks.scheduler import handler as scheduler_handler
@@ -95,6 +97,22 @@ def get_application() -> FastAPI:
     app.add_middleware(LoggingMiddleware)
 
     app.include_router(api_router)
+
+    # ── Generic exception handler ────────────────────────────────
+    @app.exception_handler(Exception)
+    async def _handle_uncaught_exceptions(request: Request, exc: Exception):
+        # TODO: log exc via your logger here, e.g. logger.exception(exc)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def _handle_validation_errors(request: Request, exc: RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors()},
+        )
 
     @app.on_event("startup")
     async def startup():

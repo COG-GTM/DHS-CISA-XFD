@@ -341,7 +341,6 @@ def send_csv_to_sync(csv_data, bounds):
         "Content-Type": "application/json",
         "Authorization": os.getenv("DMZ_API_KEY", ""),
     }
-
     try:
         response = requests.post(
             os.getenv("DMZ_SYNC_ENDPOINT") + "/sync",
@@ -439,7 +438,7 @@ def build_vuln_scan_dict(vuln, owner_id, ip_id, cve):
         "cvss_temporal_score": vuln.get("cvss_temporal_score", None),
         "cvss_temporal_vector": vuln.get("cvss_temporal_vector", None),
         "cvss_vector": vuln.get("cvss_vector", None),
-        "description": vuln.get("description", None)[:255],
+        "description": vuln.get("description", None),
         "exploit_available": vuln.get("exploit_available", None),
         "exploitability_ease": vuln.get("exploit_ease", None),
         "ip_string": vuln.get("ip", None),
@@ -752,6 +751,7 @@ def process_tickets(tickets, org_id_dict):
                 else None,
                 "is_open": ticket.get("open"),
                 "is_kev": details.get("kev"),
+                "is_kev_ransomware": details.get("kev_ransomware"),
                 "is_risky": is_risky,
                 "service_name": details.get("service"),
                 "operating_system": get_latest_os_type(ticket.get("ip"))
@@ -774,13 +774,29 @@ def get_asset_owned_count(org):
         cidrorgs__organization=org, cidrorgs__current=True, network__isnull=False
     ).distinct()
 
+    if not cidrs.exists():
+        LOGGER.warning("No CIDRs found for organization ID: %s (%s)", org.id, org.name)
+
     total_ips = 0
     for cidr in cidrs:
         try:
             network = ip_network(str(cidr.network), strict=False)
             total_ips += network.num_addresses
-        except ValueError:
-            continue  # Skip bad CIDRs
+        except (ValueError, TypeError) as e:
+            LOGGER.warning(
+                "Invalid CIDR '%s' for organization ID: %s (%s) — %s",
+                getattr(cidr, "network", None),
+                org.id,
+                org.name,
+                str(e),
+            )
+        except Exception as e:
+            LOGGER.warning(
+                "Unexpected error while processing CIDR for org ID: %s (%s) — %s",
+                org.id,
+                org.name,
+                str(e),
+            )
 
     return total_ips
 
@@ -1036,7 +1052,13 @@ def create_vuln_scan_summary(summary_date=None):
                 "ten_plus_vulns_count": ten_plus,
                 "top_5_occurring_cves": top_5_occurring_cves,
                 "top_5_occurring_kevs": top_5_occurring_kevs,
-                "included_tickets": list(included.values_list("id", flat=True)),
+                "included_tickets": {
+                    str(ticket.id): {
+                        "severity": severity_map.get(ticket.cvss_severity, "unknown"),
+                        "is_kev": ticket.is_kev,
+                    }
+                    for ticket in included.only("id", "cvss_severity", "is_kev")
+                },
                 "top_5_risky_hosts": top_5_hosts,
             },
         )
@@ -1315,6 +1337,8 @@ def parse_int(value):
 
 def process_organization(request, network_list, location_dict, org_id_dict):
     """Save organization data and update org_id_dict."""
+    ip_blocks: list[str] = [net["network"] for net in network_list]
+
     org_data = {
         "name": request.get("agency", {}).get("name"),
         "acronym": request.get("_id"),
@@ -1341,6 +1365,7 @@ def process_organization(request, network_list, location_dict, org_id_dict):
         "period_start_vs_timestamp": request.get("period_start"),
         "report_types": json.dumps(request.get("report_types", [])),
         "scan_types": json.dumps(request.get("scan_types", [])),
+        "ip_blocks": json.dumps(ip_blocks),
         "is_passive": False,
     }
     try:

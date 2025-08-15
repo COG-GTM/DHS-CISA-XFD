@@ -38,8 +38,14 @@ def test_okta_callback_success(mock_get_jwt_from_code):
         }
     }
 
-    payload = {"code": "test-auth-code"}
-    response = client.post("/auth/okta-callback", json=payload)
+    response = client.post(
+        "/auth/okta-callback",
+        json={"code": "test-auth-code", "state": "test-state"},
+        cookies={
+            "oauth_state": "test-state",
+            "pkce_code_verifier": "test-code-verifier",
+        },
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -74,9 +80,14 @@ def test_okta_callback_existing_user(mock_get_jwt_from_code):
         }
     }
 
-    payload = {"code": "test-auth-code"}
-
-    response = client.post("/auth/okta-callback", json=payload)
+    response = client.post(
+        "/auth/okta-callback",
+        json={"code": "test-auth-code", "state": "test-state"},
+        cookies={
+            "oauth_state": "test-state",
+            "pkce_code_verifier": "test-code-verifier",
+        },
+    )
 
     assert response.status_code == 200
 
@@ -91,9 +102,107 @@ def test_okta_callback_existing_user(mock_get_jwt_from_code):
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_okta_callback_missing_code():
     """Test Okta callback with missing auth code (should fail)."""
-    payload = {}  # No code provided
+    response = client.post(
+        "/auth/okta-callback",
+        json={"state": "test-state"},
+        cookies={
+            "oauth_state": "test-state",
+            "pkce_code_verifier": "test-code-verifier",
+        },
+    )
 
-    response = client.post("/auth/okta-callback", json=payload)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Missing required OAuth parameters"
 
-    assert response.json()["status_code"] == 400
-    assert response.json()["detail"] == "Code not found in request body"
+
+# Test that the response is JSON serializable
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+@patch("xfd_api.auth.get_jwt_from_code", new_callable=AsyncMock)
+def test_okta_callback_user_approved_by_admin(mock_get_jwt_from_code):
+    """Ensure /auth/okta-callback user object is fully JSON serializable."""
+    approver_user_email = "{}@example.com".format(secrets.token_hex(4))
+    approved_user_email = "{}@example.com".format(secrets.token_hex(4))
+
+    approver = User.objects.create(
+        email=approver_user_email,
+        okta_id="okta-approver-id",
+        first_name="Approver",
+        last_name="User",
+        user_type="global_admin",
+        invite_pending=False,
+    )
+
+    User.objects.create(
+        email=approved_user_email,
+        okta_id="okta-user-id-456",
+        first_name="Test",
+        last_name="User",
+        user_type="standard",
+        approved_by=approver,
+        invite_pending=False,
+    )
+
+    mock_get_jwt_from_code.return_value = {
+        "decoded_token": {
+            "email": approved_user_email,
+            "sub": "okta-user-id-456",
+            "given_name": "Test",
+            "family_name": "User",
+        }
+    }
+
+    response = client.post(
+        "/auth/okta-callback",
+        json={"code": "test-auth-code", "state": "test-state"},
+        cookies={
+            "oauth_state": "test-state",
+            "pkce_code_verifier": "test-code-verifier",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["user"]
+
+
+def test_set_oauth_cookies_success():
+    """Test setting PKCE code_verifier and state cookies successfully."""
+    payload = {"code_verifier": "test-code-verifier-123", "state": "test-state-456"}
+
+    response = client.post("/auth/set-oauth-cookies", json=payload)
+
+    assert response.status_code == 200
+    cookies = response.cookies
+
+    # Ensure cookies are properly set
+    assert cookies["oauth_state"] == "test-state-456"
+    assert cookies["pkce_code_verifier"] == "test-code-verifier-123"
+
+
+def test_set_oauth_cookies_missing_state():
+    """Test missing state results in 400 error."""
+    payload = {"code_verifier": "test-code-verifier-123"}
+
+    response = client.post("/auth/set-oauth-cookies", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Missing PKCE code_verifier or state"
+
+
+def test_set_oauth_cookies_missing_code_verifier():
+    """Test missing code_verifier results in 400 error."""
+    payload = {"state": "test-state-456"}
+
+    response = client.post("/auth/set-oauth-cookies", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Missing PKCE code_verifier or state"
+
+
+def test_set_oauth_cookies_missing_both():
+    """Test missing both state and code_verifier results in 400 error."""
+    payload = {}
+
+    response = client.post("/auth/set-oauth-cookies", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Missing PKCE code_verifier or state"

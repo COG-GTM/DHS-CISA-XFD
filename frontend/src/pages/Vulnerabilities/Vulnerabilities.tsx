@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Link as RouterLink, useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Query } from 'types';
 import { useAuthContext } from 'context';
 import {
@@ -8,7 +8,6 @@ import {
   Button,
   Divider,
   IconButton,
-  Link,
   Paper,
   Stack,
   Typography
@@ -17,7 +16,8 @@ import {
   DataGrid,
   GridColDef,
   GridPaginationModel,
-  GridRenderCellParams
+  GridRenderCellParams,
+  GridSortModel
 } from '@mui/x-data-grid';
 import {
   Checklist,
@@ -60,6 +60,12 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [onlyOpenVulns, setOnlyOpenVulns] = useState(true);
+  const [sortModel, setSortModel] = useState<GridSortModel>([
+    {
+      field: 'created_at',
+      sort: 'desc'
+    }
+  ]);
   const [filters, setFilters] = useState(() => extractInitialFilters(state));
   const [hasPreloadedFilters, setPreloadedFiltersActive] = useState(false);
 
@@ -83,6 +89,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
       filters,
       page,
       pageSize = PAGE_SIZE,
+      order,
+      sort,
       doExport = false,
       group_by,
       showAll = false
@@ -97,7 +105,15 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         return await apiPost<ApiResponse>(
           doExport ? '/vulnerabilities/export' : '/vulnerabilities/search',
           {
-            body: { page, filters: tableFilters, pageSize, group_by, showAll }
+            body: {
+              page,
+              filters: tableFilters,
+              pageSize,
+              group_by,
+              showAll,
+              order,
+              sort
+            }
           }
         );
       } catch (e) {
@@ -118,6 +134,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           filters: query.filters,
           page: query.page,
           pageSize: query.pageSize ?? PAGE_SIZE,
+          order: query.order,
+          sort: query.sort,
           group_by,
           showAll: query.showAll
         });
@@ -176,6 +194,8 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     fetchVulnerabilities({
       page: paginationModel.page + 1,
       pageSize: paginationModel.pageSize,
+      order: sortModel[0]?.field,
+      sort: sortModel[0]?.sort ?? 'desc',
       filters: filters || [],
       showAll: !onlyOpenVulns
     });
@@ -183,6 +203,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     fetchVulnerabilities,
     paginationModel.page,
     paginationModel.pageSize,
+    sortModel,
     filters,
     onlyOpenVulns
   ]);
@@ -235,6 +256,14 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     </Box>
   );
 
+  const formatDays = (dateString: string) => {
+    const date = parseISO(dateString);
+    const days = differenceInCalendarDays(Date.now(), date);
+    if (days <= 1) {
+      return `${days} day ago`;
+    }
+    return `${days} days ago`;
+  };
   const vulRows: VulnerabilityRow[] = useMemo(
     () =>
       vulnerabilities.map((vuln) => {
@@ -244,9 +273,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           ? vuln.cpe
           : vuln.service?.products?.[0]?.cpe || 'N/A';
 
-        const daysOpen = vuln?.created_at
-          ? `${differenceInCalendarDays(Date.now(), parseISO(vuln?.created_at))} days`
-          : '';
+        const daysOpen = vuln?.created_at ? formatDays(vuln?.created_at) : '';
 
         const stateDisplay =
           vuln.state + (vuln.substate ? ` (${vuln.substate})` : '');
@@ -256,6 +283,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           title: vuln.title,
           severity: severity,
           kev: vuln.is_kev ? 'Yes' : 'No',
+          ransomware: vuln.is_kev_ransomware ? 'Yes' : 'No',
           domain: vuln.domain?.name,
           domainId: vuln.domain?.id,
           product: product,
@@ -281,22 +309,13 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return collator.compare(String(v1), String(v2));
         },
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
-          if (cellValues.row.title && cellValues.row.title.startsWith('CVE')) {
-            return (
-              <Link
-                component={RouterLink}
-                to={`/inventory/vulnerability/${cellValues.row.id}`}
-                aria-label={`View NIST entry for ${cellValues.row.title}`}
-                tabIndex={cellValues.tabIndex}
-              >
-                {cellValues.row.title}
-              </Link>
-            );
-          }
           return (
-            <Typography variant="body2" pl={1}>
+            <Box
+              component="span"
+              aria-label={`Vulnerability ${cellValues.row.title}`}
+            >
               {truncateString(cellValues.row.title ?? '')}
-            </Typography>
+            </Box>
           );
         }
       },
@@ -304,7 +323,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         field: 'severity',
         headerName: 'Severity',
         minWidth: 100,
-        flex: 0.7,
+        flex: 0.5,
         sortComparator: (v1: any, v2: any) => {
           const severityLevels: Record<string, number> = {
             'N/A': 1,
@@ -352,20 +371,34 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         }
       },
       {
+        field: 'ransomware',
+        headerName: 'Ransomware',
+        minWidth: 100,
+        flex: 0.5,
+        filterable: true,
+        renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => (
+          <Box
+            component="span"
+            aria-label={`Ransomware status ${cellValues.row.ransomware}`}
+          >
+            {cellValues.row.ransomware}
+          </Box>
+        )
+      },
+      {
         field: 'domain',
         headerName: 'Domain',
         minWidth: 100,
         flex: 1,
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
           return (
-            <Link
-              component={RouterLink}
-              to={`/inventory/domain/${cellValues.row.domainId}`}
-              aria-label={`Domain details for ${cellValues.row.domain}`}
+            <Box
+              component="span"
+              aria-label={`Domain address ${cellValues.row.domain}`}
               tabIndex={cellValues.tabIndex}
             >
               {cellValues.row.domain}
-            </Link>
+            </Box>
           );
         }
       },
@@ -557,7 +590,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           <Paper
             elevation={2}
             sx={{ width: '100%', minHeight: 500 }}
-            role="table"
             aria-label="Vulnerabilities Table"
           >
             <DataGrid
@@ -565,6 +597,11 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
               rowCount={totalResults}
               columns={vulCols}
               loading={isLoading}
+              sortModel={sortModel}
+              sortingMode="server"
+              onSortModelChange={(model) => {
+                setSortModel(model);
+              }}
               slots={{
                 toolbar: CustomToolbar,
                 noRowsOverlay: CustomNoRowsOverlay
@@ -576,12 +613,17 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
                     : showOpenVulnsButton,
                   exportTitle: 'Vulnerabilities'
                 } as any,
-                noRowsOverlay: { children: noRowsOverlay }
+                noRowsOverlay: { children: noRowsOverlay },
+                basePopper: {
+                  placement: 'bottom-start'
+                }
               }}
               paginationMode="server"
               paginationModel={paginationModel}
               onPaginationModelChange={handlePaginationModelChange}
               pageSizeOptions={[15, 30, 50, 100]}
+              disableRowSelectionOnClick
+              showToolbar
             />
           </Paper>
         ) : null}
