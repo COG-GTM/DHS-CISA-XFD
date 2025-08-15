@@ -1,23 +1,28 @@
+"""Sync CVE/SSVC from Redshift (AE feed) into MDL."""
+# Standard Python Libraries
 import logging
+import os
+import sys
 from typing import Any, Dict, List, Tuple
-import os, sys
-#Third party libraries
+
+# Third-Party Libraries
 import django
-
-from xfd_mini_dl.models import Cve as CveModel, CveSsvc
-
 from django.db import transaction
-
 from xfd_api.tasks.vulnScanningSync import fetch_from_redshift_with_params
+from xfd_mini_dl.models import Cve as CveModel
+from xfd_mini_dl.models import CveSsvc
+
 from ..helpers.redshift_helpers import (
-    safe_json_loads,
-    pick_english_description,
-    extract_references,
     extract_cvss,
+    extract_references,
     extract_ssvc,
-    parse_iso8601,
+    extract_weaknesses_from_problem_types,
     newdata_set,
+    parse_iso8601,
+    pick_english_description,
+    safe_json_loads,
 )
+
 # Setup logging
 LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +33,7 @@ django.setup()
 
 
 def handler(event):
-    """sync CVE/SSVC from Redshift (AE feed) into MDL."""
+    """Sync CVE/SSVC from Redshift (AE feed) into MDL."""
     try:
         main()
         return {
@@ -38,25 +43,34 @@ def handler(event):
     except Exception as e:
         return {"statusCode": 500, "body": str(e)}
 
+
 def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
     """Map one Redshift row to Cve and CveSsvc and upsert idempotently."""
     cve_name = str(row_values[0]) if len(row_values) > 0 else None
-    assigner_short_name = str(row_values[1]) if len(row_values) > 1 and row_values[1] else None
+    assigner_short_name = (
+        str(row_values[1]) if len(row_values) > 1 and row_values[1] else None
+    )
     cna_title = str(row_values[2]) if len(row_values) > 2 and row_values[2] else None
 
     descriptions_json = safe_json_loads(row_values[3] if len(row_values) > 3 else None)
     # These two are currently unused by the model, but keep parsed for future use:
-    affected_json = safe_json_loads(row_values[4] if len(row_values) > 4 else None)     # noqa: F841
-    problem_types_json = safe_json_loads(row_values[6] if len(row_values) > 6 else None) # noqa: F841
+    affected_json = safe_json_loads(
+        row_values[4] if len(row_values) > 4 else None
+    )  # noqa: F841
+    problem_types_json = safe_json_loads(
+        row_values[6] if len(row_values) > 6 else None
+    )  # noqa: F841
 
     metrics_json = safe_json_loads(row_values[5] if len(row_values) > 5 else None)
     references_json = safe_json_loads(row_values[7] if len(row_values) > 7 else None)
-    source_json = safe_json_loads(row_values[8] if len(row_values) > 8 else None)       # noqa: F841
+    source_json = safe_json_loads(
+        row_values[8] if len(row_values) > 8 else None
+    )  # noqa: F841
     adp_json = safe_json_loads(row_values[9] if len(row_values) > 9 else None)
+    weaknesses_list = extract_weaknesses_from_problem_types(problem_types_json)
 
     if not cve_name:
         return
-
 
     # Description: pick English (or best-effort)
     description_text = None
@@ -64,19 +78,33 @@ def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
         description_text = pick_english_description(descriptions_json)
 
     # Reference URLs (list[str] or [])
-    reference_urls_list = extract_references(references_json) if isinstance(references_json, list) else []
+    reference_urls_list = (
+        extract_references(references_json) if isinstance(references_json, list) else []
+    )
 
     # CVSS (prefers v4, else v3)
-    cvss_version, cvss_vector, cvss_base_score, cvss_base_severity, cvss_source_type = extract_cvss(
-        metrics_json if isinstance(metrics_json, list) else []
-    )
+    (
+        cvss_version,
+        cvss_vector,
+        cvss_base_score,
+        cvss_base_severity,
+        cvss_source_type,
+    ) = extract_cvss(metrics_json if isinstance(metrics_json, list) else [])
 
     # SSVC (ADP)
     ssvc_payload = extract_ssvc(adp_json if isinstance(adp_json, list) else [])
 
     # Published/Modified
-    published_at = parse_iso8601(row_values[10]) if len(row_values) > 10 and row_values[10] else None
-    modified_at = parse_iso8601(row_values[11]) if len(row_values) > 11 and row_values[11] else None
+    published_at = (
+        parse_iso8601(row_values[10])
+        if len(row_values) > 10 and row_values[10]
+        else None
+    )
+    modified_at = (
+        parse_iso8601(row_values[11])
+        if len(row_values) > 11 and row_values[11]
+        else None
+    )
 
     with transaction.atomic():
         cve_object, _ = CveModel.objects.get_or_create(
@@ -90,14 +118,34 @@ def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
                 "modified_at": modified_at,
                 # CVSS v4 preferred, else v3 → CharFields
                 "cvss_v4_version": cvss_version if cvss_source_type == "v4" else None,
-                "cvss_v4_vector_string": cvss_vector if cvss_source_type == "v4" else None,
-                "cvss_v4_base_score": cvss_base_score if cvss_source_type == "v4" else None,
-                "cvss_v4_base_severity": cvss_base_severity if cvss_source_type == "v4" else None,
+                "cvss_v4_vector_string": cvss_vector
+                if cvss_source_type == "v4"
+                else None,
+                "cvss_v4_base_score": cvss_base_score
+                if cvss_source_type == "v4"
+                else None,
+                "cvss_v4_base_severity": cvss_base_severity
+                if cvss_source_type == "v4"
+                else None,
                 "cvss_v3_version": cvss_version if cvss_source_type == "v3" else None,
-                "cvss_v3_vector_string": cvss_vector if cvss_source_type == "v3" else None,
-                "cvss_v3_base_score": cvss_base_score if cvss_source_type == "v3" else None,
-                "cvss_v3_base_severity": cvss_base_severity if cvss_source_type == "v3" else None,
+                "cvss_v3_vector_string": cvss_vector
+                if cvss_source_type == "v3"
+                else None,
+                "cvss_v3_base_score": cvss_base_score
+                if cvss_source_type == "v3"
+                else None,
+                "cvss_v3_base_severity": cvss_base_severity
+                if cvss_source_type == "v3"
+                else None,
                 "reference_urls": reference_urls_list or None,
+                "cna_source_json": source_json
+                if isinstance(source_json, (dict, list))
+                else None,
+                "cna_affected_json": affected_json
+                if isinstance(affected_json, (dict, list))
+                else None,
+                "cna_problem_types_json": problem_types_json or None,
+                "weaknesses": weaknesses_list or None,
             },
         )
 
@@ -124,6 +172,22 @@ def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
         if modified_at and not cve_object.modified_at:
             cve_object.modified_at = modified_at
             updated_fields.append("modified_at")
+        if (source_json and not cve_object.cna_source_json) and isinstance(
+            source_json, (dict, list)
+        ):
+            cve_object.cna_source_json = source_json
+            updated_fields.append("cna_source_json")
+        if (affected_json and not cve_object.cna_affected_json) and isinstance(
+            affected_json, (dict, list)
+        ):
+            cve_object.cna_affected_json = affected_json
+            updated_fields.append("cna_affected_json")
+        if problem_types_json and not cve_object.cna_problem_types_json:
+            cve_object.cna_problem_types_json = problem_types_json
+        updated_fields.append("cna_problem_types_json")
+        if weaknesses_list and not cve_object.weaknesses:
+            cve_object.weaknesses = weaknesses_list
+            updated_fields.append("weaknesses")
         if updated_fields:
             cve_object.save(update_fields=updated_fields)
 
@@ -178,7 +242,9 @@ def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
             },
         )
 
+
 def build_redshift_sql() -> str:
+    """Build the Redshift SQL query for CVE data with keyset pagination."""
     return """
            SELECT
                datatype,
@@ -212,6 +278,7 @@ def build_redshift_sql() -> str:
 def sync_cve_from_redshift(max_batches: int = 100) -> int:
     """
     Fetch CVE rows from Redshift (parameterized, keyset-paginated), then upsert into local models.
+
     Returns total rows processed.
     """
     sql = build_redshift_sql()
@@ -254,7 +321,9 @@ def sync_cve_from_redshift(max_batches: int = 100) -> int:
 
         batches += 1
         if batches >= max_batches:
-            LOGGER.warning("Stopping after %s batches to avoid long Lambda runtime.", max_batches)
+            LOGGER.warning(
+                "Stopping after %s batches to avoid long Lambda runtime.", max_batches
+            )
             break
 
     LOGGER.info("Redshift CVE sync complete: %s rows processed", total_processed)
@@ -264,7 +333,7 @@ def sync_cve_from_redshift(max_batches: int = 100) -> int:
 def main() -> int:
     """Task entrypoint used by handler() and CLI."""
     # You can run multiple prefixes if desired; keeping it simple:
-    return sync_cve_from_redshift(cve_prefix="CVE-2025", limit=1000, max_batches=100)
+    return sync_cve_from_redshift(max_batches=100)
 
 
 if __name__ == "__main__":

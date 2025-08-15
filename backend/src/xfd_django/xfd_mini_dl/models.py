@@ -362,6 +362,17 @@ class Cve(AutoLengthCheckModel):
         null=True,
         help_text="Short title from CNA/ADP when available.",
     )
+
+    cna_source_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'source' object."
+    )
+    cna_affected_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'affected' array/object."
+    )
+    cna_problem_types_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'problemTypes' structure."
+    )
+
     # tickets = models.ManyToManyField("Ticket", related_name='cves', blank=True)
     # vuln_scans = models.ManyToManyField("VulnScan", related_name='cves', blank=True)
 
@@ -375,14 +386,18 @@ class Cve(AutoLengthCheckModel):
 
 class CveSsvc(models.Model):
     """SSVC triplet + ADP provenance, flattened from AE/Redshift."""
-    cve = models.OneToOneField(
-        "Cve", on_delete=models.CASCADE, related_name="ssvc")
+
+    cve = models.OneToOneField("Cve", on_delete=models.CASCADE, related_name="ssvc")
 
     exploitation = models.CharField(max_length=32, blank=True, null=True, db_index=True)
     automatable = models.CharField(max_length=32, blank=True, null=True, db_index=True)
-    technical_impact = models.CharField(max_length=32, blank=True, null=True, db_index=True)
+    technical_impact = models.CharField(
+        max_length=32, blank=True, null=True, db_index=True
+    )
 
-    adp_provider = models.CharField(max_length=128, blank=True, null=True, db_index=True)
+    adp_provider = models.CharField(
+        max_length=128, blank=True, null=True, db_index=True
+    )
     adp_title = models.TextField(blank=True, null=True)
     ssvc_version = models.CharField(max_length=16, blank=True, null=True)
     ssvc_timestamp = models.DateTimeField(blank=True, null=True, db_index=True)
@@ -392,6 +407,8 @@ class CveSsvc(models.Model):
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     class Meta:
+        """Meta class for CveSsvc."""
+
         app_label = app_label_name
         managed = manage_db
         db_table = "adp_ssvc"
@@ -3367,7 +3384,7 @@ class WasFindings(models.Model):
         blank=True,
         null=True,
         related_name="was_findings",
-        help_text="FK: CVE linked to this finding."
+        help_text="FK: CVE linked to this finding.",
     )
     # service = models.ForeignKey(
     #     "Service",

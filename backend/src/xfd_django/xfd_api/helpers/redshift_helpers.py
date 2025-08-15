@@ -1,6 +1,13 @@
-import json
+"""Helper functions for parsing and normalizing CVE, CVSS, and SSVC data from.
+
+Redshift or CVE JSON feeds.
+"""
+
+# Standard Python Libraries
 from datetime import datetime
+import json
 from typing import Any, Dict, List, Optional, Tuple
+
 
 def safe_json_loads(raw_text: Optional[str]) -> Optional[Any]:
     """Parse JSON if present; sanitize obvious malformed backslashes first."""
@@ -12,7 +19,10 @@ def safe_json_loads(raw_text: Optional[str]) -> Optional[Any]:
     except json.JSONDecodeError:
         return None
 
-def pick_english_description(descriptions: Optional[List[Dict[str, Any]]]) -> Optional[str]:
+
+def pick_english_description(
+    descriptions: Optional[List[Dict[str, Any]]]
+) -> Optional[str]:
     """Choose first English description.value, fallback to first value."""
     if not descriptions:
         return None
@@ -22,8 +32,13 @@ def pick_english_description(descriptions: Optional[List[Dict[str, Any]]]) -> Op
             if value:
                 return str(value)
     # fallback
-    value = descriptions[0].get("value") if descriptions and isinstance(descriptions[0], dict) else None
+    value = (
+        descriptions[0].get("value")
+        if descriptions and isinstance(descriptions[0], dict)
+        else None
+    )
     return str(value) if value else None
+
 
 def extract_references(references: Optional[List[Dict[str, Any]]]) -> List[str]:
     """Return list of reference URLs as strings."""
@@ -36,9 +51,13 @@ def extract_references(references: Optional[List[Dict[str, Any]]]) -> List[str]:
             urls.append(str(url_value))
     return urls
 
-def extract_cvss(metrics: Optional[List[Dict[str, Any]]]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
+
+def extract_cvss(
+    metrics: Optional[List[Dict[str, Any]]]
+) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
     """
     Return (version, vector, base_score, base_severity, source_type).
+
     Prefer CVSS v4.0 if present, fallback to v3.1/v3.0.
     """
     if not metrics:
@@ -84,9 +103,11 @@ def extract_cvss(metrics: Optional[List[Dict[str, Any]]]) -> Tuple[Optional[str]
         )
     return None, None, None, None, None
 
+
 def extract_ssvc(adp_items: Optional[List[Dict[str, Any]]]) -> Dict[str, Optional[str]]:
     """
-    From containers_adp[*].metrics[*].other.content.options (array of single-key dicts),
+    From containers_adp[*].metrics[*].other.content.options (array of single-key dicts),.
+
     pick Exploitation / Automatable / Technical Impact.
     Also pull provider shortName, title, content.version, content.timestamp, providerMetadata.dateUpdated.
     If multiple ADP items exist, caller should already have filtered to the latest per CVE.
@@ -105,7 +126,9 @@ def extract_ssvc(adp_items: Optional[List[Dict[str, Any]]]) -> Dict[str, Optiona
         return result
 
     adp_item = adp_items[0]  # latest already chosen in SQL
-    result["adp_provider"] = str(adp_item.get("providerMetadata", {}).get("shortName") or "")
+    result["adp_provider"] = str(
+        adp_item.get("providerMetadata", {}).get("shortName") or ""
+    )
     result["adp_title"] = str(adp_item.get("title") or "")
 
     metrics_list = adp_item.get("metrics") or []
@@ -128,10 +151,14 @@ def extract_ssvc(adp_items: Optional[List[Dict[str, Any]]]) -> Dict[str, Optiona
                 elif key_normalized == "technical_impact":
                     result["technical_impact"] = str(option_value)
         break  # only the first SSVC block
-    result["adp_date_updated"] = str(adp_item.get("providerMetadata", {}).get("dateUpdated") or "")
+    result["adp_date_updated"] = str(
+        adp_item.get("providerMetadata", {}).get("dateUpdated") or ""
+    )
     return result
 
+
 def parse_iso8601(value: Optional[str]) -> Optional[datetime]:
+    """Parse ISO 8601 date string, handling 'Z' suffix as UTC."""
     if not value:
         return None
     # no regex; rely on fromisoformat tolerant variant where possible
@@ -143,8 +170,37 @@ def parse_iso8601(value: Optional[str]) -> Optional[datetime]:
     except ValueError:
         return None
 
+
 def newdata_set(cve_object, field_name: str, value):
+    """Set a field on the cve_object if the value is not None."""
     if value is not None:
         setattr(cve_object, field_name, value)
         return True
     return False
+
+
+def extract_weaknesses_from_problem_types(problem_types_json) -> list[str]:
+    """
+    From containers_cna_problem_types (list of objects), gather CWE IDs (or descriptions).
+
+    into a flat list of strings suitable for Cve.weaknesses.
+    Structure usually looks like:
+      [{"descriptions":[{"cweId":"CWE-79","description":"...","lang":"en","type":"CWE"}]}, ...]
+    """
+    out: list[str] = []
+    if not isinstance(problem_types_json, list):
+        return out
+
+    for entry in problem_types_json:
+        descs = entry.get("descriptions") or []
+        for d in descs:
+            cwe = d.get("cweId")
+            if cwe:
+                out.append(str(cwe))
+            else:
+                # fallback to english description if no cweId
+                if str(d.get("lang", "")).lower().startswith("en") and d.get(
+                    "description"
+                ):
+                    out.append(str(d["description"]))
+    return list(dict.fromkeys(out))
