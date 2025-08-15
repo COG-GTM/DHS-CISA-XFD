@@ -185,7 +185,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Organization ${cellValues.row.organization_name}`}
+            aria-label={`Organization name: ${cellValues.row.organization_name}`}
           >
             {cellValues.row.organization_name}
           </Box>
@@ -201,7 +201,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Domain address for ${cellValues.row.organization_name}: ${cellValues.row.name}`}
+            aria-label={`Domain address for organization ${cellValues.row.organization_name}: ${cellValues.row.name}`}
           >
             {cellValues.row.name}
           </Box>
@@ -217,7 +217,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`IP address for ${cellValues.row.organization_name}: ${cellValues.row.ip}`}
+            aria-label={`IP address for organization ${cellValues.row.organization_name}: ${cellValues.row.ip}`}
           >
             {cellValues.row.ip}
           </Box>
@@ -233,7 +233,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Ports for ${cellValues.row.organization_name}: ${cellValues.row.ports_preview}`}
+            aria-label={`Ports for organization ${cellValues.row.organization_name}: ${cellValues.row.ports_preview}`}
           >
             {cellValues.row.ports_preview}
           </Box>
@@ -249,7 +249,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Services for ${cellValues.row.organization_name}: ${cellValues.row.services_preview}`}
+            aria-label={`Services for organization ${cellValues.row.organization_name}: ${cellValues.row.services_preview}`}
           >
             {cellValues.row.services_preview}
           </Box>
@@ -265,7 +265,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Vulnerabilities count for ${cellValues.row.organization_name}: ${cellValues.row.vulnerabilities_count}`}
+            aria-label={`Vulnerabilities count for organization ${cellValues.row.organization_name}: ${cellValues.row.vulnerabilities_count}`}
           >
             {cellValues.row.vulnerabilities_count}
           </Box>
@@ -281,7 +281,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Date last updated for ${cellValues.row.organization_name}: ${cellValues.row.updated_at}`}
+            aria-label={`Date last updated for organization ${cellValues.row.organization_name}: ${cellValues.row.updated_at}`}
           >
             {cellValues.row.updated_at}
           </Box>
@@ -297,7 +297,7 @@ export const Domains: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Created date for ${cellValues.row.organization_name}: ${cellValues.row.created_at}`}
+            aria-label={`Created date for organization ${cellValues.row.organization_name}: ${cellValues.row.created_at}`}
           >
             {cellValues.row.created_at}
           </Box>

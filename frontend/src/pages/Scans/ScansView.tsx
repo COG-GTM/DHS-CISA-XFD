@@ -409,7 +409,7 @@ const ScansView: React.FC = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Description for scan ${cellValues.row.name}: ${cellValues.row.description}`}
+            aria-label={`Description for ${cellValues.row.name} scan: ${cellValues.row.description}`}
           >
             {cellValues.row.description}
           </Box>
