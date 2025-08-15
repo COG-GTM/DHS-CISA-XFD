@@ -172,14 +172,11 @@ export const DrawerInterior: React.FC<Props> = (props) => {
       )
     : [];
 
-  console.log('noServicesFacet', noServicesFacet);
   const portFacet: any[] = facets?.['services.port']
     ? facets['services.port'][0].data.sort(
         (a: { value: number }, b: { value: number }) => a.value - b.value
       )
     : [];
-
-  console.log('portFacet', portFacet);
 
   const fromDomainFacet: any[] = facets?.['from_root_domain']
     ? facets['from_root_domain'][0].data.sort(

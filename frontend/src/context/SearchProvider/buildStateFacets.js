@@ -79,8 +79,6 @@ export default function buildStateFacets(aggregations) {
       }
     ];
   }
-  // console.log(`buildStateFacets: ${JSON.stringify(facets)}`);
-  console.log('facets', facets);
 
   if (Object.keys(facets).length > 0) {
     return facets;

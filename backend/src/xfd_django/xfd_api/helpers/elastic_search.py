@@ -362,16 +362,6 @@ def build_request(state: DomainSearchBody) -> Dict[str, Any]:
                     }
                 }
             },
-            # "services_missing": {
-            #     "filter": {
-            #         "script": {
-            #             "script": {
-            #                 "source": "doc['services'].size() == 0",
-            #                 "lang": "painless"
-            #             }
-            #         }
-            #     }
-            # },
             "vulnerabilities": {
                 "nested": {"path": "vulnerabilities"},
                 "aggs": {
