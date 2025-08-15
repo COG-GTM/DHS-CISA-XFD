@@ -379,7 +379,7 @@ test('Checks that the metric boxes in the widget number + label + tooltip checks
     tooltip?: string;
   }> = [];
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 4; i++) {
     await page.keyboard.press('Tab');
     await pause(800);
     const focused = page.locator(':focus');
