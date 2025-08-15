@@ -46,7 +46,6 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
             if (entries.length === 0) return null;
 
             const [, items] = entries[0];
-            console.log('Menu Items:', menuItems);
             return (
               <React.Fragment key={index}>
                 {items &&
@@ -218,7 +217,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                       role="menuitem"
                                       aria-label={subItem.menuItemTitle}
                                       onClick={async () => {
-                                        await onMenuItemClick(item);
+                                        await onMenuItemClick(subItem);
                                         toggleDrawer(false)();
                                       }}
                                     >
