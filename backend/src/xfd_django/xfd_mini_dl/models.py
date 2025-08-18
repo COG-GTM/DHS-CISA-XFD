@@ -1512,6 +1512,7 @@ class TicketEvent(models.Model):
             models.Index(fields=["vuln_scan"]),
             models.Index(fields=["ticket", "port_scan"]),
             models.Index(fields=["ticket", "vuln_scan"]),
+            models.Index(fields=["ticket", "-event_timestamp", "id"])
         ]
         db_table = "ticket_event"
         unique_together = ("event_timestamp", "ticket", "action")
