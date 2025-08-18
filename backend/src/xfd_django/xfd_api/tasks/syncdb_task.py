@@ -280,9 +280,9 @@ def update_table(
             """,
                 [table_name],
             )
-            existing_defs = [
+            existing_defs = [  # pylint: disable=unnecessary-comprehension
                 (name, definition) for name, definition in idx_cursor.fetchall()
-            ]  # nosec R1721
+            ]
 
         for model_index in model._meta.indexes:
             if not index_exists_in_db(model_index, existing_defs):
