@@ -351,6 +351,9 @@ class Cve(AutoLengthCheckModel):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
         db_table = "cve"
 
 
@@ -1503,6 +1506,14 @@ class TicketEvent(models.Model):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            models.Index(fields=["ticket"]),
+            models.Index(fields=["port_scan"]),
+            models.Index(fields=["vuln_scan"]),
+            models.Index(fields=["ticket", "port_scan"]),
+            models.Index(fields=["ticket", "vuln_scan"]),
+            models.Index(fields=["ticket", "-event_timestamp", "id"]),
+        ]
         db_table = "ticket_event"
         unique_together = ("event_timestamp", "ticket", "action")
 
@@ -2787,6 +2798,14 @@ class Ticket(models.Model):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            # 1. Ensure fast lookup by ticket id for upserts
+            models.Index(fields=["id"], name="tickets_id_idx"),
+            # 2. Optional: fast filtering on IP (if you query per IP)
+            models.Index(fields=["ip_string"], name="tickets_ip_idx"),
+            # 3. Optional: cover “open” tickets if you often filter by is_open
+            models.Index(fields=["is_open"], name="tickets_is_open_idx"),
+        ]
         db_table = "ticket"
         unique_together = ["id"]
 
@@ -2999,6 +3018,15 @@ class PortScan(AutoLengthCheckModel):
             models.Index(
                 fields=["organization", "ip_string", "port", "-time_scanned"],
                 name="portscan_latest_lookup_idx",
+            ),
+            models.Index(
+                fields=["organization", "ip_string", "port", "latest"],
+                name="portscan_latest_idx",
+            ),
+            models.Index(
+                fields=["organization", "ip_string", "port", "time_scanned"],
+                name="portscan_latest_true_idx",
+                condition=models.Q(latest=True),
             ),
         ]
         db_table = "port_scan"
