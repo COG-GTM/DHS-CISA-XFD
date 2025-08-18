@@ -139,7 +139,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Event type for log ${cellValues.row.id}: ${cellValues.row.event_type}`}
+            aria-label={`Event Type for Log ${cellValues.row.id}: ${cellValues.row.event_type}`}
           >
             {cellValues.row.event_type}
           </Box>
@@ -160,7 +160,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Acting user name for log ${cellValues.row.id}: ${p?.full_name || 'N/A'}`}
+            aria-label={`Acting User Name for Log ${cellValues.row.id}: ${p?.full_name || 'N/A'}`}
           >
             {p?.full_name || 'N/A'}
           </Box>
@@ -181,7 +181,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Acting user email for log ${cellValues.row.id}: ${p?.email || 'N/A'}`}
+            aria-label={`Acting User Email for Log ${cellValues.row.id}: ${p?.email || 'N/A'}`}
           >
             {p?.email || 'N/A'}
           </Box>
@@ -202,7 +202,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Acted-on user name for log ${cellValues.row.id}: ${u?.full_name || 'N/A'}`}
+            aria-label={`Acted-On User Name for Log ${cellValues.row.id}: ${u?.full_name || 'N/A'}`}
           >
             {u?.full_name || 'N/A'}
           </Box>
@@ -223,7 +223,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Acted-on user email for log ${cellValues.row.id}: ${u?.email || 'N/A'}`}
+            aria-label={`Acted-On User Email for Log ${cellValues.row.id}: ${u?.email || 'N/A'}`}
           >
             {u?.email || 'N/A'}
           </Box>
@@ -239,7 +239,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Organization for log ${cellValues.row.id}: ${cellValues.row.payload?.organization?.name || cellValues.row.payload?.from_organization?.name || 'N/A'}`}
+            aria-label={`Organization for Log ${cellValues.row.id}: ${cellValues.row.payload?.organization?.name || cellValues.row.payload?.from_organization?.name || 'N/A'}`}
           >
             {cellValues.row.payload?.organization?.name ||
               cellValues.row.payload?.from_organization?.name ||
@@ -257,7 +257,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Region for log ${cellValues.row.id}: ${cellValues.row.payload?.user_performed_assignment?.region_id || cellValues.row.payload?.user_performed_removal?.region_id || cellValues.row.payload?.user_performed_approval?.region_id || cellValues.row.payload?.user_performed_invite?.region_id || 'N/A'}`}
+            aria-label={`Region for Log ${cellValues.row.id}: ${cellValues.row.payload?.user_performed_assignment?.region_id || cellValues.row.payload?.user_performed_removal?.region_id || cellValues.row.payload?.user_performed_approval?.region_id || cellValues.row.payload?.user_performed_invite?.region_id || 'N/A'}`}
           >
             {cellValues.row.payload?.user_performed_assignment?.region_id ||
               cellValues.row.payload?.user_performed_removal?.region_id ||
@@ -277,7 +277,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Role for log ${cellValues.row.id}: ${cellValues.row.payload?.role || 'N/A'}`}
+            aria-label={`Role for Log ${cellValues.row.id}: ${cellValues.row.payload?.role || 'N/A'}`}
           >
             {cellValues.row.payload?.role || 'N/A'}
           </Box>
@@ -293,7 +293,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`State for log ${cellValues.row.id}: ${
+            aria-label={`State for Log ${cellValues.row.id}: ${
               cellValues.row.payload?.state ||
               cellValues.row.payload?.user_performed_assignment?.state ||
               cellValues.row.payload?.user_performed_removal?.state ||
@@ -323,7 +323,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`User Type for log ${cellValues.row.id}: ${cellValues.row.payload?.user?.user_type || cellValues.row.payload?.user_to_approve?.user_type || 'N/A'}`}
+            aria-label={`User Type for Log ${cellValues.row.id}: ${cellValues.row.payload?.user?.user_type || cellValues.row.payload?.user_to_approve?.user_type || 'N/A'}`}
           >
             {cellValues.row.payload?.user?.user_type ||
               cellValues.row.payload?.user_to_approve?.user_type ||
@@ -364,7 +364,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Timestamp for log ${cellValues.row.id}: ${cellValues.value}`}
+            aria-label={`Timestamp for Log ${cellValues.row.id}: ${cellValues.value}`}
           >
             {formatTimestamp(cellValues.row.created_at)}
           </Box>
@@ -381,7 +381,7 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Result for log ${cellValues.row.id}: ${cellValues.row.result}`}
+            aria-label={`Result for Log ${cellValues.row.id}: ${cellValues.row.result}`}
             sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             {isSuccess ? (
@@ -401,7 +401,7 @@ export const Logs: FC<LogsProps> = () => {
       flex: 0.5,
       renderCell: (cellValues: GridRenderEditCellParams) => (
         <IconButton
-          aria-label={`Details for log ${cellValues.row.id}`}
+          aria-label={`Details for Log ${cellValues.row.id}`}
           tabIndex={cellValues.tabIndex}
           color="primary"
           onClick={() => {

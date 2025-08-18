@@ -64,7 +64,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Full name for user: ${cellValues.row.full_name}`}
+            aria-label={`Full Name for User: ${cellValues.row.full_name}`}
           >
             {cellValues.row.full_name}
           </Box>
@@ -80,7 +80,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Email for ${cellValues.row.full_name}: ${cellValues.row.email}`}
+            aria-label={`Email for User ${cellValues.row.full_name}: ${cellValues.row.email}`}
           >
             {cellValues.row.email}
           </Box>
@@ -96,7 +96,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`State for ${cellValues.row.full_name}: ${cellValues.row.state}`}
+            aria-label={`State for User ${cellValues.row.full_name}: ${cellValues.row.state}`}
           >
             {cellValues.row.state}
           </Box>
@@ -112,7 +112,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Created At date for ${cellValues.row.full_name}: ${cellValues.row.created_at}`}
+            aria-label={`Created At Date for User ${cellValues.row.full_name}: ${cellValues.row.created_at}`}
           >
             {cellValues.row.created_at}
           </Box>
@@ -149,7 +149,7 @@ export const RegionUsers: React.FC = () => {
               color="success"
               onClick={() => handleApproveClick(cellValues.row)}
               disabled={user?.user_type === 'globalView'}
-              aria-label={`Approve user: ${cellValues.row.full_name}`}
+              aria-label={`Approve User: ${cellValues.row.full_name}`}
             >
               Approve
             </Button>
@@ -159,7 +159,7 @@ export const RegionUsers: React.FC = () => {
               color="error"
               onClick={() => handleDenyClick(cellValues.row)}
               disabled={user?.user_type === 'globalView'}
-              aria-label={`Deny user: ${cellValues.row.full_name}`}
+              aria-label={`Deny User: ${cellValues.row.full_name}`}
             >
               Deny
             </Button>
@@ -178,7 +178,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Full name for user: ${cellValues.row.full_name}`}
+            aria-label={`Full Name for User: ${cellValues.row.full_name}`}
           >
             {cellValues.row.full_name}
           </Box>
@@ -194,7 +194,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Email for ${cellValues.row.full_name}: ${cellValues.row.email}`}
+            aria-label={`Email for User ${cellValues.row.full_name}: ${cellValues.row.email}`}
           >
             {cellValues.row.email}
           </Box>
@@ -210,7 +210,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`State for ${cellValues.row.full_name}: ${cellValues.row.state}`}
+            aria-label={`State for User ${cellValues.row.full_name}: ${cellValues.row.state}`}
           >
             {cellValues.row.state}
           </Box>
@@ -226,7 +226,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Last Logged In date for ${cellValues.row.full_name}: ${cellValues.row.last_logged_in}`}
+            aria-label={`Last Logged In Date for User ${cellValues.row.full_name}: ${cellValues.row.last_logged_in}`}
           >
             {cellValues.row.last_logged_in}
           </Box>
@@ -242,7 +242,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Organizations for ${cellValues.row.full_name}: ${cellValues.row.organizations.join(', ')}`}
+            aria-label={`Organizations for User ${cellValues.row.full_name}: ${cellValues.row.organizations.join(', ')}`}
           >
             {cellValues.row.organizations.join(', ')}
           </Box>
@@ -259,7 +259,7 @@ export const RegionUsers: React.FC = () => {
       return (
         <Box
           component="span"
-          aria-label={`Region ID for ${cellValues.row.full_name}: ${cellValues.row.region_id}`}
+          aria-label={`Region ID for User ${cellValues.row.full_name}: ${cellValues.row.region_id}`}
         >
           {cellValues.row.region_id}
         </Box>
@@ -280,7 +280,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Organization name: ${cellValues.row.name}`}
+            aria-label={`Organization Name: ${cellValues.row.name}`}
           >
             {cellValues.row.name}
           </Box>
@@ -296,7 +296,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Date Updated At for ${cellValues.row.name}: ${cellValues.row.updated_at}`}
+            aria-label={`Date Updated At for Organization ${cellValues.row.name}: ${cellValues.row.updated_at}`}
           >
             {cellValues.row.updated_at}
           </Box>
@@ -312,7 +312,7 @@ export const RegionUsers: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`State name for ${cellValues.row.name}: ${cellValues.row.state_name}`}
+            aria-label={`State Name for Organization ${cellValues.row.name}: ${cellValues.row.state_name}`}
           >
             {cellValues.row.state_name}
           </Box>

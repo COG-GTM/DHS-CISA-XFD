@@ -239,7 +239,7 @@ export const ScanTasksView: React.FC = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Created At date for Scan Task ${cellValues.row.id}: ${cellValues.row.created_at}`}
+            aria-label={`Created At Date for Scan Task ${cellValues.row.id}: ${cellValues.row.created_at}`}
           >
             {cellValues.row.created_at}
           </Box>
@@ -255,7 +255,7 @@ export const ScanTasksView: React.FC = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Finished At date for Scan Task ${cellValues.row.id}: ${cellValues.row.finished_at}`}
+            aria-label={`Finished At Date for Scan Task ${cellValues.row.id}: ${cellValues.row.finished_at}`}
           >
             {cellValues.row.finished_at}
           </Box>
@@ -270,7 +270,7 @@ export const ScanTasksView: React.FC = () => {
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
-            aria-label={`Details for scan task ${cellValues.row.id}`}
+            aria-label={`View Details for scan task ${cellValues.row.id}`}
             tabIndex={cellValues.tabIndex}
             color="primary"
             onClick={() => {

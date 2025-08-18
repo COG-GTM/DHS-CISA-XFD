@@ -134,7 +134,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Full name for user: ${cellValues.row.full_name}`}
+            aria-label={`Full Name for User: ${cellValues.row.full_name}`}
           >
             {cellValues.row.full_name}
           </Box>
@@ -150,7 +150,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Email for ${cellValues.row.full_name}: ${cellValues.row.email}`}
+            aria-label={`Email for User ${cellValues.row.full_name}: ${cellValues.row.email}`}
           >
             {cellValues.row.email}
           </Box>
@@ -166,7 +166,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Region for ${cellValues.row.full_name}: ${cellValues.row.region_id}`}
+            aria-label={`Region for User ${cellValues.row.full_name}: ${cellValues.row.region_id}`}
           >
             {cellValues.row.region_id}
           </Box>
@@ -182,7 +182,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Organizations for ${cellValues.row.full_name}: ${cellValues.row.orgs}`}
+            aria-label={`Organizations for User ${cellValues.row.full_name}: ${cellValues.row.orgs}`}
           >
             {cellValues.row.orgs}
           </Box>
@@ -198,7 +198,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`User type for ${cellValues.row.full_name}: ${cellValues.row.user_type}`}
+            aria-label={`User Type for User ${cellValues.row.full_name}: ${cellValues.row.user_type}`}
           >
             {cellValues.row.user_type}
           </Box>
@@ -222,7 +222,7 @@ export const Users: React.FC = () => {
           >
             <Box
               component="span"
-              aria-label={`Approval date for ${params.row.full_name}: ${dateApproved}`}
+              aria-label={`Approval Date for User ${params.row.full_name}: ${dateApproved}`}
             >
               {dateApproved
                 ? format(new Date(dateApproved), 'MM-dd-yyyy hh:mm a')
@@ -277,7 +277,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Date ToU signed for ${cellValues.row.full_name}: ${cellValues.row.dateToUSigned}`}
+            aria-label={`Date ToU signed for User ${cellValues.row.full_name}: ${cellValues.row.dateToUSigned}`}
           >
             {cellValues.row.dateToUSigned}
           </Box>
@@ -293,7 +293,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`ToU version for ${cellValues.row.full_name}: ${cellValues.row.accepted_terms_version}`}
+            aria-label={`ToU Version for User ${cellValues.row.full_name}: ${cellValues.row.accepted_terms_version}`}
           >
             {cellValues.row.accepted_terms_version}
           </Box>
@@ -318,7 +318,7 @@ export const Users: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Last logged in date for ${cellValues.row.full_name}: ${cellValues.row.lastLoggedInString}`}
+            aria-label={`Last Logged In Date for User ${cellValues.row.full_name}: ${cellValues.row.lastLoggedInString}`}
           >
             {cellValues.row.lastLoggedInString}
           </Box>
@@ -332,7 +332,7 @@ export const Users: React.FC = () => {
       flex: 0.5,
       disableExport: true,
       renderCell: (cellValues: GridRenderCellParams) => {
-        const ariaLabel = `View or edit user ${cellValues.row.full_name}`;
+        const ariaLabel = `View or Edit User ${cellValues.row.full_name}`;
         const descriptionId = `description-${cellValues.row.id}`;
         return (
           <>

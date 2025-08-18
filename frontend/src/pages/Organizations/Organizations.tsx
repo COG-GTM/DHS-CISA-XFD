@@ -130,7 +130,7 @@ export const Organizations: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Organization name: ${cellValues.row.name}`}
+            aria-label={`Organization Name: ${cellValues.row.name}`}
           >
             {cellValues.row.name}
           </Box>
@@ -146,7 +146,7 @@ export const Organizations: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`State for organization ${cellValues.row.name}: ${cellValues.row.state}`}
+            aria-label={`State for Organization ${cellValues.row.name}: ${cellValues.row.state}`}
           >
             {cellValues.row.state}
           </Box>
@@ -162,7 +162,7 @@ export const Organizations: React.FC = () => {
         return (
           <Box
             component="span"
-            aria-label={`Region for organization ${cellValues.row.name}: ${cellValues.row.region_id}`}
+            aria-label={`Region for Organization ${cellValues.row.name}: ${cellValues.row.region_id}`}
           >
             {cellValues.row.region_id}
           </Box>
@@ -179,7 +179,7 @@ export const Organizations: React.FC = () => {
       filterable: false,
       disableColumnMenu: true,
       renderCell: (cellValues: GridRenderCellParams) => {
-        const ariaLabel = `View or edit organization ${cellValues.row.name}`;
+        const ariaLabel = `View or Edit Organization ${cellValues.row.name}`;
         const descriptionId = `description-${cellValues.row.id}`;
         return (
           <>

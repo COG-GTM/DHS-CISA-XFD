@@ -312,7 +312,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`Vulnerability title: ${cellValues.row.title}`}
+              aria-label={`Vulnerability Title: ${cellValues.row.title}`}
             >
               {truncateString(cellValues.row.title ?? '')}
             </Box>
@@ -347,7 +347,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
                 lineHeight: 1,
                 pb: '2px'
               }}
-              aria-label={`Severity level for ${cellValues.row.title}: ${severityText}`}
+              aria-label={`Severity Level for Vulnerability ${cellValues.row.title}: ${severityText}`}
             >
               {severityText}
             </Box>
@@ -363,7 +363,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`KEV status for ${cellValues.row.title}: ${cellValues.row.kev}`}
+              aria-label={`KEV Status for Vulnerability ${cellValues.row.title}: ${cellValues.row.kev}`}
             >
               {cellValues.row.kev}
             </Box>
@@ -379,7 +379,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => (
           <Box
             component="span"
-            aria-label={`Ransomware status for ${cellValues.row.title}: ${cellValues.row.ransomware}`}
+            aria-label={`Ransomware Status for Vulnerability ${cellValues.row.title}: ${cellValues.row.ransomware}`}
           >
             {cellValues.row.ransomware}
           </Box>
@@ -394,7 +394,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`Domain address for ${cellValues.row.title}: ${cellValues.row.domain}`}
+              aria-label={`Domain Name for Vulnerability ${cellValues.row.title}: ${cellValues.row.domain}`}
               tabIndex={cellValues.tabIndex}
             >
               {cellValues.row.domain}
@@ -411,7 +411,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`Products affected by ${cellValues.row.title}: ${cellValues.row.product}`}
+              aria-label={`Products affected by Vulnerability ${cellValues.row.title}: ${cellValues.row.product}`}
             >
               {cellValues.row.product}
             </Box>
@@ -427,7 +427,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`Date created at for ${cellValues.row.title}: ${cellValues.row.created_at}`}
+              aria-label={`Date Created At for Vulnerability ${cellValues.row.title}: ${cellValues.row.created_at}`}
             >
               {cellValues.row.created_at}
             </Box>
@@ -443,7 +443,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
           return (
             <Box
               component="span"
-              aria-label={`Vulnerability status for ${cellValues.row.title}: ${cellValues.row.state}`}
+              aria-label={`Status for Vulnerability ${cellValues.row.title}: ${cellValues.row.state}`}
             >
               {cellValues.row.state}
             </Box>
@@ -462,7 +462,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         renderCell: (cellValues: GridRenderCellParams<VulnerabilityRow>) => {
           return (
             <IconButton
-              aria-label={`Vulnerability details for ${cellValues.row.title}`}
+              aria-label={`View Details for Vulnerability ${cellValues.row.title}`}
               tabIndex={cellValues.tabIndex}
               color="primary"
               onClick={() =>
