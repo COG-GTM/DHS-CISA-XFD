@@ -65,7 +65,7 @@ def test_scheduler_respects_frequency_window(org):
     scan = Scan.objects.create(
         name="censys",
         concurrent_tasks=1,
-        frequency=12600,
+        frequency=126000,
         last_run=timezone.now() - timedelta(hours=12),
     )
     scheduler = Scheduler()
