@@ -23,9 +23,7 @@ from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
 from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.tasks.refresh_vs_summaries import handler as refresh_vs_summaries
-from xfd_api.tasks.utils.mdl_insert_utils import (
-    fill_cidr_live_ips_bulk_update,
-)
+from xfd_api.tasks.utils.mdl_insert_utils import fill_cidr_live_ips_bulk_update
 from xfd_mini_dl.models import (
     ApiKey,
     Cidr,
