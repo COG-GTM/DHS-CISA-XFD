@@ -150,6 +150,7 @@ export const ScanTasksView: React.FC = () => {
           }
         );
         // if (result.length === 0) return;
+        console.log('API result:', result, 'Count:', count);
         setScanTasks(result);
         setTotalResults(count);
         setPaginationModel((prev) => ({
@@ -458,7 +459,7 @@ export const ScanTasksView: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   href={`${
-                    process.env.CLOUDWATCH_URL
+                    import.meta.env.VITE_CLOUDWATCH_URL
                   }#logsV2:log-groups/log-group/${import.meta.env.VITE_FARGATE_LOG_GROUP!}/log-events/worker$252Fmain$252F${
                     (detailsParams?.row?.fargate_task_arn.match('.*/(.*)') || [
                       ''
@@ -477,22 +478,39 @@ export const ScanTasksView: React.FC = () => {
           )}
           {(() => {
             const rawInput = detailsParams?.row?.input;
-            if (!rawInput) return '';
-            try {
-              const parsedJSON = JSON.parse(rawInput);
-              const formattedJSON = JSON.stringify(parsedJSON, null, 2);
-              if (formattedJSON === '{}' || formattedJSON === '[]') return '';
+            if (!rawInput || rawInput === 'null') {
               return (
                 <>
                   <Typography variant="h6" component="div">
                     Input:
                   </Typography>
+                  <Typography variant="logText">
+                    No input data available.
+                  </Typography>
+                </>
+              );
+            }
+            try {
+              const parsedJSON = JSON.parse(rawInput);
+              const formattedJSON = JSON.stringify(parsedJSON, null, 2);
+              return (
+                <>
+                  <Typography variant="h3">Input:</Typography>
                   <pre>{formattedJSON}</pre>
                 </>
               );
             } catch (e) {
               console.log(e);
-              return '';
+              return (
+                <>
+                  <Typography variant="h6" component="div">
+                    Input:
+                  </Typography>
+                  <Typography color="error" variant="h3">
+                    Invalid input data format.
+                  </Typography>
+                </>
+              );
             }
           })()}
           <Typography variant="h6" component="div">
