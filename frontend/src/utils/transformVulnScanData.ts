@@ -27,7 +27,7 @@ export function formatRange(
   const endStr = formatShortDate(end);
 
   if (!startStr || !endStr) {
-    return 'Not Available';
+    return 'No Dates Available';
   }
 
   return `${startStr} - ${endStr}`;
