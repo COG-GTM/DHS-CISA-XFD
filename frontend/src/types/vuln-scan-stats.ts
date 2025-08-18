@@ -58,7 +58,19 @@ export interface VulnScanSummary {
   top_5_occurring_kevs?: CVEItem[] | null;
 
   included_tickets?: object[] | null;
-  top_5_risky_hosts?: object[] | null;
+  top_5_risky_hosts?:
+    | object[]
+    | {
+        [ip: string]: {
+          rrs: number;
+          low: number;
+          medium: number;
+          high: number;
+          critical: number;
+          total: number;
+          domain_id: string;
+        } | null;
+      };
 }
 
 export interface HostSummaries {
@@ -109,7 +121,8 @@ export interface PortScanServiceSummaries {
   organization?: string | null;
   service_name?: string | null;
   open_port_count?: number | null;
-  risky_ports?: [];
+  risky_ports?: [] | number[] | null;
+  unique_ip_count?: number | null;
   unique_service_count?: number | null;
 }
 
