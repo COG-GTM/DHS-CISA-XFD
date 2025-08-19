@@ -288,6 +288,7 @@ export const ScanTasksView: React.FC = () => {
     'shodan',
     'lookingGlass',
     'dnstwist',
+    'redshift',
     'rootDomainSync',
     'was_sync',
     'was',
@@ -302,6 +303,12 @@ export const ScanTasksView: React.FC = () => {
     'finished',
     'failed'
   ];
+
+  const isLocal = import.meta.env.VITE_IS_LOCAL === '1';
+
+  const filteredScanNameValues = isLocal
+    ? scanNameValues.filter((name) => name !== 'redshift')
+    : scanNameValues;
 
   const scanNameDropdown = (
     <>
@@ -318,7 +325,7 @@ export const ScanTasksView: React.FC = () => {
         open={openNameMenu}
         onClose={() => setAnchorElName(null)}
       >
-        {scanNameValues.map((name, index) => (
+        {filteredScanNameValues.map((name, index) => (
           <MenuItem
             key={index + name}
             value={name}
