@@ -111,7 +111,7 @@ def fetch_in_chunks_keyset_frozen(
             ORDER BY {q_time}, {q_id}
             LIMIT {chunk_size}
         """  # nosec B608
-        print(query)
+        LOGGER.info(query)
 
         chunk = query_redshift(query, params=params)
         if not chunk:

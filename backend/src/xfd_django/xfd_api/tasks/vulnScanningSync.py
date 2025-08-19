@@ -30,7 +30,6 @@ from xfd_api.tasks.utils.vs_vuln_scans import (
 from xfd_api.utils.scan_utils.alerting import ScanExecutionError
 from xfd_mini_dl.models import NMIServiceGroup, RiskyServiceGroup
 
-
 LOGGER = logging.getLogger(__name__)
 
 IS_LOCAL = os.getenv("IS_LOCAL")

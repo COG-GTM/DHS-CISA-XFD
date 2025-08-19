@@ -290,11 +290,16 @@ def update_table(
         for model_index in model._meta.indexes:
             if not index_exists_in_db(model_index, existing_defs):
                 try:
-                    print(f"Adding index '{model_index.name}' to table '{table_name}'")
+                    LOGGER.info(
+                        "Adding index '%s' to table '%s'", model_index.name, table_name
+                    )
                     schema_editor.add_index(model, model_index)
                 except Exception as e:
-                    print(
-                        f"Failed to add index '{model_index.name}' on '{table_name}': {e}"
+                    LOGGER.error(
+                        "Failed to add index '%s' on '%s': %s",
+                        model_index.name,
+                        table_name,
+                        e,
                     )
 
 
