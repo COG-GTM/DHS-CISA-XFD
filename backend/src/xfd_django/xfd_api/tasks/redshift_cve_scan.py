@@ -3,12 +3,12 @@
 import logging
 import os
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Third-Party Libraries
 import django
 from django.db import transaction
-from xfd_api.tasks.vulnScanningSync import fetch_from_redshift_with_params
+from utils.query_redshift import fetch_from_redshift_with_params
 from xfd_mini_dl.models import Cve as CveModel
 from xfd_mini_dl.models import CveSsvc
 
@@ -20,7 +20,6 @@ from ..helpers.redshift_helpers import (
     newdata_set,
     parse_iso8601,
     pick_english_description,
-    safe_json_loads,
 )
 
 # Setup logging
@@ -44,45 +43,36 @@ def handler(event):
         return {"statusCode": 500, "body": str(e)}
 
 
-def parse_redshift_row(row_values: List[Any]) -> dict:
-    """Extract and parse all expected Redshift row fields."""
+def parse_redshift_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Parse a Redshift row (dict) into a structured dict for CveModel."""
     return {
-        "cve_name": str(row_values[0]) if len(row_values) > 0 else None,
-        "assigner_short_name": str(row_values[1])
-        if len(row_values) > 1 and row_values[1]
-        else None,
-        "cna_title": str(row_values[2])
-        if len(row_values) > 2 and row_values[2]
-        else None,
-        "descriptions_json": safe_json_loads(
-            row_values[3] if len(row_values) > 3 else None
-        ),
-        "affected_json": safe_json_loads(
-            row_values[4] if len(row_values) > 4 else None
-        ),
-        "metrics_json": safe_json_loads(row_values[5] if len(row_values) > 5 else None),
-        "problem_types_json": safe_json_loads(
-            row_values[6] if len(row_values) > 6 else None
-        ),
-        "references_json": safe_json_loads(
-            row_values[7] if len(row_values) > 7 else None
-        ),
-        "source_json": safe_json_loads(row_values[8] if len(row_values) > 8 else None),
-        "adp_json": safe_json_loads(row_values[9] if len(row_values) > 9 else None),
-        "published_at": parse_iso8601(row_values[10])
-        if len(row_values) > 10 and row_values[10]
-        else None,
-        "modified_at": parse_iso8601(row_values[11])
-        if len(row_values) > 11 and row_values[11]
-        else None,
+        "cve_name": row.get("cve_id"),
+        "assigner_short_name": row.get("assigner"),
+        "cna_title": row.get("title"),
+        "descriptions_json": row.get("descriptions"),
+        "affected_json": row.get("affected"),
+        "metrics_json": row.get("metrics"),
+        "problem_types_json": row.get("problem_types"),
+        "references_json": row.get("references"),
+        "source_json": row.get("source"),
+        "adp_json": row.get("adp"),
+        "published_at": row.get("published_at"),
+        "modified_at": row.get("modified_at"),
+        "state": row.get("state"),
+        "date_reserved": row.get("date_reserved"),
+        "assigner_org_id": row.get("assigner_org_id"),
+        "cna_provider_org_id": row.get("cna_provider_org_id"),
+        "cna_provider_short_name": row.get("cna_provider_short_name"),
+        "cna_provider_date_updated": row.get("cna_provider_date_updated"),
     }
 
 
 def create_or_update_cve(parsed: dict) -> CveModel:
-    """Create or minimally patch a CveModel record."""
+    """Create or minimally patch a CveModel record (supports CVSS v3 + v4)."""
     weaknesses_list = extract_weaknesses_from_problem_types(
         parsed["problem_types_json"]
     )
+
     description_text = (
         pick_english_description(parsed["descriptions_json"])
         if isinstance(parsed["descriptions_json"], list)
@@ -93,15 +83,13 @@ def create_or_update_cve(parsed: dict) -> CveModel:
         if isinstance(parsed["references_json"], list)
         else []
     )
-    (
-        cvss_version,
-        cvss_vector,
-        cvss_base_score,
-        cvss_base_severity,
-        cvss_source_type,
-    ) = extract_cvss(
+
+    # NEW: dict result with both versions possible
+    cvss_results: dict[str, dict[str, Optional[Any]]] = extract_cvss(
         parsed["metrics_json"] if isinstance(parsed["metrics_json"], list) else []
     )
+    v3 = cvss_results.get("v3", {}) or {}
+    v4 = cvss_results.get("v4", {}) or {}
 
     defaults = {
         "description": description_text,
@@ -119,42 +107,29 @@ def create_or_update_cve(parsed: dict) -> CveModel:
         else None,
         "cna_problem_types_json": parsed["problem_types_json"] or None,
         "weaknesses": weaknesses_list or None,
+        # Store both CVSS versions if present
+        "cvss_v3_version": v3.get("version"),
+        "cvss_v3_vector_string": v3.get("vector"),
+        "cvss_v3_base_score": v3.get("base_score"),
+        "cvss_v3_base_severity": v3.get("base_severity"),
+        "cvss_v4_version": v4.get("version"),
+        "cvss_v4_vector_string": v4.get("vector"),
+        "cvss_v4_base_score": v4.get("base_score"),
+        "cvss_v4_base_severity": v4.get("base_severity"),
     }
-
-    # CVSS preference
-    if cvss_source_type == "v4":
-        defaults.update(
-            {
-                "cvss_v4_version": cvss_version,
-                "cvss_v4_vector_string": cvss_vector,
-                "cvss_v4_base_score": cvss_base_score,
-                "cvss_v4_base_severity": cvss_base_severity,
-            }
-        )
-    elif cvss_source_type == "v3":
-        defaults.update(
-            {
-                "cvss_v3_version": cvss_version,
-                "cvss_v3_vector_string": cvss_vector,
-                "cvss_v3_base_score": cvss_base_score,
-                "cvss_v3_base_severity": cvss_base_severity,
-            }
-        )
 
     cve_object, _ = CveModel.objects.get_or_create(
         name=parsed["cve_name"], defaults=defaults
     )
+
+    # Patch minimal non-CVSS fields only if currently empty
     patch_minimal_fields(
         cve_object, parsed, description_text, reference_urls_list, weaknesses_list
     )
-    patch_cvss(
-        cve_object,
-        cvss_source_type,
-        cvss_version,
-        cvss_vector,
-        cvss_base_score,
-        cvss_base_severity,
-    )
+
+    # NEW: pass the dict so both v3 and v4 can be patched independently
+    patch_cvss(cve_object, cvss_results)
+
     return cve_object
 
 
@@ -183,33 +158,34 @@ def patch_minimal_fields(
         cve_object.save(update_fields=updated_fields)
 
 
-def patch_cvss(
-    cve_object,
-    cvss_source_type,
-    cvss_version,
-    cvss_vector,
-    cvss_base_score,
-    cvss_base_severity,
-):
-    """Patch CVSS fields with newer data."""
-    fields_to_update = []
+def patch_cvss(cve_object, cvss_results: dict[str, dict[str, Optional[Any]]]) -> None:
+    """
+    Patch CVSS v3 and v4 fields with newer data if available.
+
+    Expects cvss_results in the form returned by extract_cvss().
+    """
+    fields_to_update: list[str] = []
+
     mapping = {
-        "v4": [
-            ("cvss_v4_version", cvss_version),
-            ("cvss_v4_vector_string", cvss_vector),
-            ("cvss_v4_base_score", cvss_base_score),
-            ("cvss_v4_base_severity", cvss_base_severity),
-        ],
         "v3": [
-            ("cvss_v3_version", cvss_version),
-            ("cvss_v3_vector_string", cvss_vector),
-            ("cvss_v3_base_score", cvss_base_score),
-            ("cvss_v3_base_severity", cvss_base_severity),
+            ("cvss_v3_version", cvss_results["v3"].get("version")),
+            ("cvss_v3_vector_string", cvss_results["v3"].get("vector")),
+            ("cvss_v3_base_score", cvss_results["v3"].get("base_score")),
+            ("cvss_v3_base_severity", cvss_results["v3"].get("base_severity")),
+        ],
+        "v4": [
+            ("cvss_v4_version", cvss_results["v4"].get("version")),
+            ("cvss_v4_vector_string", cvss_results["v4"].get("vector")),
+            ("cvss_v4_base_score", cvss_results["v4"].get("base_score")),
+            ("cvss_v4_base_severity", cvss_results["v4"].get("base_severity")),
         ],
     }
-    for field, value in mapping.get(cvss_source_type, []):
-        if newdata_set(cve_object, field, value):
-            fields_to_update.append(field)
+
+    for version_key, field_mappings in mapping.items():
+        for field, value in field_mappings:
+            if newdata_set(cve_object, field, value):
+                fields_to_update.append(field)
+
     if fields_to_update:
         cve_object.save(update_fields=fields_to_update)
 
@@ -239,14 +215,14 @@ def upsert_ssvc(cve_object, adp_json):
     )
 
 
-def upsert_cve_from_redshift_row(row_values: List[Any]) -> None:
-    """Orchestrates parsing, CVE upsert, and SSVC update."""
-    parsed = parse_redshift_row(row_values)
-    if not parsed["cve_name"]:
+def upsert_cve_from_redshift_row(row: Dict[str, Any]) -> None:
+    """Parse a Redshift result row (dict), upsert the CVE, then upsert SSVC."""
+    parsed = parse_redshift_row(row)  # parse_redshift_row should accept a dict now
+    if not parsed.get("cve_name"):
         return
     with transaction.atomic():
         cve_object = create_or_update_cve(parsed)
-        upsert_ssvc(cve_object, parsed["adp_json"])
+        upsert_ssvc(cve_object, parsed.get("adp_json"))
 
 
 def build_redshift_sql() -> str:
@@ -294,46 +270,38 @@ def sync_cve_from_redshift(max_batches: int = 100) -> int:
     batches = 0
 
     while True:
-        # Params: last_key, last_key (twice) for the '%s = '' OR %s' predicate
-        params: Tuple[Any, Any] = (last_key, last_key)
+        params: Tuple[Any, Any] = (last_key, last_key)  # keyset pagination guard
+        LOGGER.debug("Fetching Redshift rows with last_key=%r", last_key)
         rows: List[Dict[str, Any]] = fetch_from_redshift_with_params(sql, params)
 
         if not rows:
+            LOGGER.info("No more rows returned from Redshift; stopping.")
             break
 
+        LOGGER.info("Fetched %d rows from Redshift (batch %d).", len(rows), batches + 1)
+
         for row in rows:
-            ordered_values = [
-                row.get("cve_id"),
-                row.get("assigner"),
-                row.get("title"),
-                row.get("descriptions"),
-                row.get("affected"),
-                row.get("metrics"),
-                row.get("problem_types"),
-                row.get("references"),
-                row.get("source"),
-                row.get("adp"),
-                row.get("published_at"),
-                row.get("modified_at"),
-                row.get("state"),
-                row.get("date_reserved"),
-                row.get("assigner_org_id"),
-                row.get("cna_provider_org_id"),
-                row.get("cna_provider_short_name"),
-                row.get("cna_provider_date_updated"),
-            ]
-            upsert_cve_from_redshift_row(ordered_values)
-            last_key = str(row.get("cve_id") or last_key)
-            total_processed += 1
+            cve_id = row.get("cve_id")
+            try:
+                upsert_cve_from_redshift_row(row)  # pass dict directly
+                total_processed += 1
+                last_key = str(cve_id or last_key)
+                LOGGER.debug("Upserted CVE %s; last_key now %r", cve_id, last_key)
+            except Exception as e:
+                LOGGER.exception("Failed to upsert CVE %r: %s", cve_id, e)
 
         batches += 1
         if batches >= max_batches:
             LOGGER.warning(
-                "Stopping after %s batches to avoid long Lambda runtime.", max_batches
+                "Stopping after %s batches to avoid long runtime.", max_batches
             )
             break
 
-    LOGGER.info("Redshift CVE sync complete: %s rows processed", total_processed)
+    LOGGER.info(
+        "Redshift CVE sync complete: %s rows processed (last_key=%r).",
+        total_processed,
+        last_key,
+    )
     return total_processed
 
 

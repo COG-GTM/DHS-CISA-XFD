@@ -13,8 +13,7 @@ import {
   Button,
   IconButton,
   Toolbar,
-  Typography,
-  useTheme
+  Typography
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import cisaLogo from 'assets/cisaSeal.svg';
@@ -28,6 +27,7 @@ export interface MenuItemType {
   users?: number;
   onClick?: any;
   href?: string;
+  subMenuItems?: MenuItemType[];
 }
 
 // TODO: Update bucket/key names when provided.
@@ -38,13 +38,23 @@ const LEARNING_CENTER_DOC_KEYS = {
   glossary: 'CyHy Dashboard VS Glossary.pdf',
   faq: 'CyHy Dashboard VS FAQ.pdf',
   methodology: 'CyHy Dashboard VS Methodology.pdf',
-  userGuide: 'CyHy Dashboard User Guide.pdf'
+  userGuide: 'CyHy Dashboard User Guide.pdf',
+  communications: 'Vulnerability Snapshot Communications Sector.pdf',
+  financialServices: 'Vulnerability Snapshot Financial Services Sector.pdf',
+  foodAndAgriculture: 'Vulnerability Snapshot Food and Agriculture Sector.pdf',
+  healthcareAndPublicHealth:
+    'Vulnerability Snapshot Healthcare and Public Health Sector.pdf',
+  informationTechnology:
+    'Vulnerability Snapshot Information Technology Sector.pdf',
+  transportationSystems:
+    'Vulnerability Snapshot Transportation Systems Sector.pdf',
+  waterAndWastewater:
+    'Vulnerability Snapshot Water and Wastewater Systems Sector.pdf'
 };
 
 export const Header: React.FC = () => {
   const history = useHistory();
   const { apiPost, logout } = useAuthContext();
-  const theme = useTheme();
   const { userLevel } = useUserLevel();
   const [openDrawer, setOpenDrawer] = React.useState(false);
   const toggleDrawer = (newOpen: boolean) => () => {
@@ -57,11 +67,6 @@ export const Header: React.FC = () => {
       users: GLOBAL_ADMIN
     },
     {
-      menuItemTitle: 'User Registration',
-      path: '/region-admin-dashboard',
-      users: REGIONAL_ADMIN
-    },
-    {
       menuItemTitle: 'Manage Organizations',
       path: '/organizations',
       users: REGIONAL_ADMIN
@@ -69,6 +74,11 @@ export const Header: React.FC = () => {
     {
       menuItemTitle: 'Manage Users',
       path: '/users',
+      users: REGIONAL_ADMIN
+    },
+    {
+      menuItemTitle: 'User Registration',
+      path: '/region-admin-dashboard',
       users: REGIONAL_ADMIN
     }
   ].filter(({ users }) => users <= userLevel);
@@ -85,19 +95,6 @@ export const Header: React.FC = () => {
       onClick: logout
     }
   ].filter(({ users }) => users <= userLevel);
-
-  // const scanningResults: MenuItemType[] = [
-  //   {
-  //     menuItemTitle: 'Overview',
-  //     path: '/overview',
-  //     users: STANDARD_USER
-  //   },
-  //   {
-  //     menuItemTitle: 'Vulnerability Scanning',
-  //     path: '/VSDashboard',
-  //     users: STANDARD_USER
-  //   }
-  // ].filter(({ users }) => users <= userLevel);
 
   const vulnScanningMenuItems: MenuItemType[] = [
     {
@@ -137,12 +134,82 @@ export const Header: React.FC = () => {
     history.push('/VSDashboard');
   };
 
-  const learningCenterMenuItems: MenuItemType[] = [
+  const sectorVulnSnapshotsMenuItems: MenuItemType[] = [
     {
-      menuItemTitle: 'VS Glossary',
+      menuItemTitle: 'Communications',
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
-        object_key: LEARNING_CENTER_DOC_KEYS.glossary
+        object_key: LEARNING_CENTER_DOC_KEYS.communications
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Financial Services',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.financialServices
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Food and Agriculture',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.foodAndAgriculture
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Healthcare and Public Health',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.healthcareAndPublicHealth
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Information Technology',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.informationTechnology
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Transportation Systems',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.transportationSystems
+      },
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Water and Wastewater Systems',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.waterAndWastewater
+      },
+      users: STANDARD_USER
+    }
+  ].filter(({ users }) => users <= userLevel);
+
+  const learningCenterMenuItems: MenuItemType[] = [
+    {
+      menuItemTitle: 'CISA Resources',
+      path: 'https://www.cisa.gov',
+      users: STANDARD_USER
+    },
+    {
+      menuItemTitle: 'Sector Vulnerability Snapshots',
+      users: STANDARD_USER,
+      // Nest sectorVulnSnapshotsMenuItems here
+      subMenuItems: sectorVulnSnapshotsMenuItems
+    },
+    {
+      menuItemTitle: 'User Guide',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
       },
       users: STANDARD_USER
     },
@@ -155,24 +222,20 @@ export const Header: React.FC = () => {
       users: STANDARD_USER
     },
     {
+      menuItemTitle: 'VS Glossary',
+      objectStoreParams: {
+        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
+        object_key: LEARNING_CENTER_DOC_KEYS.glossary
+      },
+      users: STANDARD_USER
+    },
+
+    {
       menuItemTitle: 'VS Methodology',
       objectStoreParams: {
         bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
         object_key: LEARNING_CENTER_DOC_KEYS.methodology
       },
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'User Guide',
-      objectStoreParams: {
-        bucket_name: LEARNING_CENTER_DOC_BUCKET_NAME,
-        object_key: LEARNING_CENTER_DOC_KEYS.userGuide
-      },
-      users: STANDARD_USER
-    },
-    {
-      menuItemTitle: 'CISA Resources',
-      path: 'https://www.cisa.gov',
       users: STANDARD_USER
     }
   ].filter(({ users }) => users <= userLevel);
@@ -228,7 +291,6 @@ export const Header: React.FC = () => {
   );
 
   const allMenuItems: { [section: string]: MenuItemType[] }[] = [
-    // { 'Scanning Results': scanningResults },
     { 'Vulnerability Scanning': vulnScanningMenuItems },
     { 'Findings Library': inventoryMenuItems },
     { 'Learning Center': learningCenterMenuItems },
@@ -295,7 +357,7 @@ export const Header: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         height: '84px',
-        zIndex: theme.zIndex.FilterDrawerV2 + 1
+        zIndex: (theme) => theme.zIndex.appBar
       }}
     >
       <Toolbar disableGutters sx={{ maxWidth: '1152px', width: '100%', p: 0 }}>

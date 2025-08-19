@@ -6,7 +6,7 @@ Redshift or CVE JSON feeds.
 # Standard Python Libraries
 from datetime import datetime
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 
 def safe_json_loads(raw_text: Optional[str]) -> Optional[Any]:
@@ -53,55 +53,58 @@ def extract_references(references: Optional[List[Dict[str, Any]]]) -> List[str]:
 
 
 def extract_cvss(
-    metrics: Optional[List[Dict[str, Any]]]
-) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
+    metrics_list: list[dict[str, Any]]
+) -> dict[str, dict[str, Optional[Any]]]:
     """
-    Return (version, vector, base_score, base_severity, source_type).
+    Extract both CVSS v3 and v4 details from CNA metrics.
 
-    Prefer CVSS v4.0 if present, fallback to v3.1/v3.0.
+    Returns:
+        {
+          "v3": {"version": str|None, "vector": str|None, "base_score": float|str|None, "base_severity": str|None},
+          "v4": {"version": str|None, "vector": str|None, "base_score": float|str|None, "base_severity": str|None},
+        }
     """
-    if not metrics:
-        return None, None, None, None, None
+    result: dict[str, dict[str, Optional[Any]]] = {
+        "v3": {
+            "version": None,
+            "vector": None,
+            "base_score": None,
+            "base_severity": None,
+        },
+        "v4": {
+            "version": None,
+            "vector": None,
+            "base_score": None,
+            "base_severity": None,
+        },
+    }
 
-    cvss_v4 = None
-    cvss_v3 = None
+    if not isinstance(metrics_list, list):
+        return result
 
-    for metric in metrics:
-        cvss_v4_candidate = metric.get("cvssV4_0")
-        if cvss_v4_candidate:
-            cvss_v4 = cvss_v4_candidate
-            break
+    for metric in metrics_list:
+        if not isinstance(metric, dict):
+            continue
 
-    if not cvss_v4:
-        for metric in metrics:
-            cvss_v31_candidate = metric.get("cvssV3_1")
-            if cvss_v31_candidate:
-                cvss_v3 = cvss_v31_candidate
-                break
-        if not cvss_v3:
-            for metric in metrics:
-                cvss_v30_candidate = metric.get("cvssV3_0")
-                if cvss_v30_candidate:
-                    cvss_v3 = cvss_v30_candidate
-                    break
+        v3_data = metric.get("cvssV3_1") or metric.get("cvssV3_0")
+        if isinstance(v3_data, dict):
+            result["v3"] = {
+                "version": v3_data.get("version"),
+                "vector": v3_data.get("vectorString"),
+                "base_score": v3_data.get("baseScore"),
+                "base_severity": v3_data.get("baseSeverity"),
+            }
 
-    if cvss_v4:
-        return (
-            str(cvss_v4.get("version", "4.0")),
-            str(cvss_v4.get("vectorString", "")),
-            str(cvss_v4.get("baseScore", "")),
-            str(cvss_v4.get("baseSeverity", "")),
-            "v4",
-        )
-    if cvss_v3:
-        return (
-            str(cvss_v3.get("version", "3.x")),
-            str(cvss_v3.get("vectorString", "")),
-            str(cvss_v3.get("baseScore", "")),
-            str(cvss_v3.get("baseSeverity", "")),
-            "v3",
-        )
-    return None, None, None, None, None
+        v4_data = metric.get("cvssV4_0")
+        if isinstance(v4_data, dict):
+            result["v4"] = {
+                "version": v4_data.get("version"),
+                "vector": v4_data.get("vectorString"),
+                "base_score": v4_data.get("baseScore"),
+                "base_severity": v4_data.get("baseSeverity"),
+            }
+
+    return result
 
 
 def extract_ssvc(adp_items: Optional[List[Dict[str, Any]]]) -> Dict[str, Optional[str]]:
