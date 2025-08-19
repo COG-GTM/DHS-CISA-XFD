@@ -468,7 +468,8 @@ def update_user_v2(user_id, user_data, current_user):
             )
 
         # Check if allowed fields to update then execute
-        updates = user_data.dict(exclude_unset=True)
+        # updates = user_data.dict(exclude_unset=True)
+        updates = user_data.model_dump(exclude_unset=True)
         allowed_fields = get_allowed_user_update_fields(current_user, user)
 
         # Check for disallowed fields before applying updates
@@ -511,6 +512,7 @@ def update_user_v2(user_id, user_data, current_user):
             "state": updated_user.state,
             "user_type": updated_user.user_type,
             "last_logged_in": user.last_logged_in,
+            "first_login": user.first_login,
             "accepted_terms_version": user.accepted_terms_version,
             "roles": [
                 {

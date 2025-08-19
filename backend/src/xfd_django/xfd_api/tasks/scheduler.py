@@ -134,7 +134,6 @@ class Scheduler:
 
             try:
                 resp = sqs.send_message_batch(QueueUrl=queue_url, Entries=entries)
-                LOGGER.info("Batch sent successfully")
 
                 # Handle any failed messages
                 if "Failed" in resp:
@@ -195,8 +194,7 @@ class Scheduler:
                 scan.last_run = timezone.make_aware(
                     scan.last_run, timezone.get_current_timezone()
                 )
-            # Assuming scan.frequency is expressed in days, convert to seconds.
-            frequency_seconds = scan.frequency * 86400
+            frequency_seconds = scan.frequency
             if (timezone.now() - scan.last_run).total_seconds() < frequency_seconds:
                 return False
 
@@ -221,7 +219,7 @@ class Scheduler:
             ).order_by("-finished_at")
         ).first()
         if last_finished_scan_task and last_finished_scan_task.finished_at:
-            frequency_seconds = scan.frequency * 86400
+            frequency_seconds = scan.frequency
             if timezone.is_naive(last_finished_scan_task.finished_at):
                 last_finished_scan_task.finished_at = timezone.make_aware(
                     last_finished_scan_task.finished_at, timezone.get_current_timezone()

@@ -9,6 +9,7 @@ import os
 from django.apps import apps
 from django.db import connections
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.backends.utils import strip_quotes
 from django.db.utils import OperationalError, ProgrammingError
 from psycopg2.errors import WrongObjectType
 
@@ -190,6 +191,30 @@ def process_m2m_tables(schema_editor: BaseDatabaseSchemaEditor, models, database
                     )
 
 
+def index_exists_in_db(model_index, existing_defs):
+    """
+    Return True if an index with the same name or the same definition already exists.
+
+    existing_defs is a list of (indexname, indexdef) from pg_indexes.
+    """
+    fields = [strip_quotes(f) for f in model_index.fields]
+    condition = getattr(model_index, "condition", None)
+
+    for name, definition in existing_defs:
+        # Exact name match: definitely exists
+        if name == model_index.name:
+            return True
+
+        # Match by same fields in the same order
+        if all(f in definition for f in fields):
+            if condition:
+                if str(condition).lower() in definition.lower():
+                    return True
+            else:
+                return True
+    return False
+
+
 def update_table(
     schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
 ):
@@ -247,6 +272,30 @@ def update_table(
                     table_name,
                     e,
                 )
+
+        # Add missing indexes
+        with connections[database].cursor() as idx_cursor:
+            idx_cursor.execute(
+                """
+                SELECT indexname, indexdef
+                FROM pg_indexes
+                WHERE tablename = %s;
+            """,
+                [table_name],
+            )
+            existing_defs = [  # pylint: disable=unnecessary-comprehension
+                (name, definition) for name, definition in idx_cursor.fetchall()
+            ]
+
+        for model_index in model._meta.indexes:
+            if not index_exists_in_db(model_index, existing_defs):
+                try:
+                    print(f"Adding index '{model_index.name}' to table '{table_name}'")
+                    schema_editor.add_index(model, model_index)
+                except Exception as e:
+                    print(
+                        f"Failed to add index '{model_index.name}' on '{table_name}': {e}"
+                    )
 
 
 def cleanup_stale_tables(models, database):

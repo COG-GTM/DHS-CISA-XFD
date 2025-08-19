@@ -577,8 +577,10 @@ def get_allowed_user_update_fields(current_user, target_user):
             "approved_by",
             "accepted_terms_version",
             "login_blocked_by_maintenance",
+            "first_login",
         }
-    elif (
+
+    if (
         is_regional_admin(current_user)
         and current_user.region_id == target_user.region_id
     ):
@@ -590,12 +592,17 @@ def get_allowed_user_update_fields(current_user, target_user):
             "date_approved",
             "approved_by",
         }
-    elif (
-        current_user.id == target_user.id
-        and current_user.can_select_own_state is True
-        and current_user.invite_pending is True
-    ):
-        return {"can_select_own_state", "state", "region_id"}
+
+    # Self-updates:
+    if current_user.id == target_user.id:
+        allowed = {"first_login"}  # allow the user to dismiss their own first_login
+        if (
+            current_user.can_select_own_state is True
+            and current_user.invite_pending is True
+        ):
+            allowed |= {"can_select_own_state", "state", "region_id"}
+        return allowed
+
     return set()
 
 
