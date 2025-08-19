@@ -24,9 +24,7 @@ from xfd_api.models import Domain, Service, Vulnerability
 from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.tasks.refresh_vs_summaries import handler as refresh_vs_summaries
-from xfd_api.utils.scan_utils.vuln_scanning_sync_utils import (
-    fill_cidr_live_ips_bulk_update,
-)
+from xfd_api.tasks.utils.mdl_insert_utils import fill_cidr_live_ips_bulk_update
 from xfd_mini_dl.models import (
     ApiKey,
     Cidr,
@@ -686,7 +684,7 @@ def populate_sample_data():
         )
         sys.stdout.flush()
 
-    # fill_cidr_live_ips()
+    # Fill CIDR Live Ips
     fill_cidr_live_ips_bulk_update()
 
     # Create or refresh materialized views

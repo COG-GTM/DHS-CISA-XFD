@@ -130,7 +130,6 @@ class Scheduler:
 
             try:
                 resp = sqs.send_message_batch(QueueUrl=queue_url, Entries=entries)
-                print("Batch sent successfully")
 
                 # Handle any failed messages
                 for failure in resp.get("Failed", []):
@@ -178,9 +177,6 @@ class Scheduler:
         is_passive = getattr(scan_schema, "is_passive", False)
         global_scan = getattr(scan_schema, "global_scan", False)
 
-        # Assuming scan.frequency is expressed in days, convert to seconds.
-        frequency_seconds = scan.frequency * 86400
-
         # Don't run non-passive scans on passive organizations.
         if organization and organization.is_passive and not is_passive:
             return False
@@ -195,7 +191,7 @@ class Scheduler:
                 scan.last_run = timezone.make_aware(
                     scan.last_run, timezone.get_current_timezone()
                 )
-            if (timezone.now() - scan.last_run).total_seconds() < frequency_seconds:
+            if (timezone.now() - scan.last_run).total_seconds() < scan.frequency:
                 return False
 
         def filter_scan_tasks(tasks):
@@ -225,7 +221,7 @@ class Scheduler:
                 )
             if (
                 timezone.now() - last_finished_scan_task.finished_at
-            ).total_seconds() < frequency_seconds:
+            ).total_seconds() < scan.frequency:
                 return False
 
         if (

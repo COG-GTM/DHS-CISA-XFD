@@ -18,6 +18,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { setFrequency } from 'pages/Scan/Scan';
 import { ScanForm, ScanFormValues } from 'components/ScanForm';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+
 import {
   Alert,
   Button as MuiButton,
@@ -28,7 +29,9 @@ import {
   DialogContentText,
   IconButton,
   Paper,
-  DialogTitle
+  DialogTitle,
+  Snackbar,
+  SnackbarCloseReason
 } from '@mui/material';
 
 interface Errors extends Partial<Scan> {
@@ -65,6 +68,8 @@ const ScansView: React.FC = () => {
   const deleteModalRef = useRef<ModalRef>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [open, setOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
 
   const [values] = useState<ScanFormValues>({
     name: 'censys',
@@ -129,10 +134,14 @@ const ScansView: React.FC = () => {
         }
       });
       setScans(scans.concat(scan));
+      setSnackbarMsg('Scan created successfully!');
+      setSnackbarOpen(true);
     } catch (e: any) {
       setErrors({
         global: e.message ?? e.toString()
       });
+      setSnackbarMsg(`Scan creation failed: ${e.message ?? e.toString()}`);
+      setSnackbarOpen(true);
       console.log(e);
     }
   };
@@ -184,6 +193,18 @@ const ScansView: React.FC = () => {
   };
   const handleClose = () => {
     setOpen(false);
+  };
+
+  type SnackbarCloseReason = 'timeout' | 'clickaway';
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleSnackbarClose = (
+    event: React.SyntheticEvent<any> | Event,
+    reason?: SnackbarCloseReason
+  ) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+    triggerRef.current?.focus();
   };
 
   const handleClick = () => {
@@ -392,6 +413,18 @@ const ScansView: React.FC = () => {
           </ButtonGroup>
         </ModalFooter>
       </Modal>
+      <Snackbar
+        open={snackbarOpen}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarMsg.includes('failed') ? 'error' : 'success'}
+          sx={{ width: '100%' }}
+        >
+          <span tabIndex={0}>{snackbarMsg}</span>
+        </Alert>
+      </Snackbar>
     </>
   );
 };
