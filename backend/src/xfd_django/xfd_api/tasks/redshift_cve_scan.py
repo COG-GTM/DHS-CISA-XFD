@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # Third-Party Libraries
 import django
 from django.db import transaction
-from utils.query_redshift import fetch_from_redshift_with_params
+from .utils.query_redshift import fetch_from_redshift_with_params
 from xfd_mini_dl.models import Cve as CveModel
 from xfd_mini_dl.models import CveSsvc
 
