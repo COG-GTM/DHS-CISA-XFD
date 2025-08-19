@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import os
+from typing import Any, Tuple
 
 # Third-Party Libraries
 import psycopg2
@@ -72,6 +73,31 @@ def fetch_from_redshift(query):
         end_time = datetime.datetime.now()
         duration_seconds = (end_time - start_time).total_seconds()
         LOGGER.info(f"[Redshift] [{duration_seconds}s] [{len(result)} records] {query}")
+        return result
+    except Exception as e:
+        LOGGER.info("Error fetching data from Redshift: %s", e)
+        LOGGER.info("Erroneous query: %s", query)
+        return []
+
+
+def fetch_from_redshift_with_params(query: str, params: Tuple[Any, ...]):
+    """
+    Fetch data from Redshift with parameters and log execution time.
+
+    Mirrors fetch_from_redshift() but forwards params to query_redshift().
+    """
+    if IS_LOCAL:
+        data_set = detect_data_set(query)
+        return load_test_data(data_set)
+
+    start_time = datetime.datetime.now()
+    try:
+        result = query_redshift(query, params=params)
+        duration_seconds = (datetime.datetime.now() - start_time).total_seconds()
+        # Do NOT log params to avoid leaking sensitive values
+        LOGGER.info(
+            "[Redshift] [%.3fs] [%s records] %s", duration_seconds, len(result), query
+        )
         return result
     except Exception as e:
         LOGGER.info("Error fetching data from Redshift: %s", e)
