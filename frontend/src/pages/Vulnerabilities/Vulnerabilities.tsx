@@ -373,7 +373,7 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
         }
       },
       {
-        field: 'ransomware',
+        field: 'is_kev_ransomware',
         headerName: 'Ransomware',
         minWidth: 100,
         flex: 0.5,
