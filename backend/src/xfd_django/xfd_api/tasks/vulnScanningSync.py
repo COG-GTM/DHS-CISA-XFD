@@ -6,6 +6,7 @@ port scans, hosts, and tickets from Redshift into the Django models.
 
 # Standard Python Libraries
 import logging
+from logging import FileHandler
 import os
 
 # Third-Party Libraries
@@ -29,16 +30,56 @@ from xfd_api.tasks.utils.vs_vuln_scans import (
 from xfd_api.utils.scan_utils.alerting import ScanExecutionError
 from xfd_mini_dl.models import NMIServiceGroup, RiskyServiceGroup
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s: %(message)s",
-    filename="vuln_scanning_sync.log",
-)
 LOGGER = logging.getLogger(__name__)
+
 IS_LOCAL = os.getenv("IS_LOCAL")
 SCAN_NAME = "VulnScanningSync"
 
 VS_PULL_DATE_RANGE = os.getenv("VS_PULL_DATE_RANGE", "2")
+
+
+def setup_vuln_sync_logging(
+    filename: str = "vuln_scanning_sync.log",
+    logger_name: str = "xfd",  # Use the main logger
+) -> None:
+    """Attach a file handler that reuses the unified formatter & filters. Runs once."""
+    # Don't add twice
+    if any(
+        isinstance(handler, FileHandler)
+        and getattr(handler, "baseFilename", "").endswith(filename)
+        for handler in LOGGER.handlers
+    ):
+        return
+
+    # Find a formatter to reuse: prefer a handler on the unified logger, else root
+    def _find_formatter_and_filters():
+        for current_logger in (logging.getLogger(logger_name), logging.getLogger()):
+            for handler in current_logger.handlers:
+                if handler.formatter:
+                    return handler.formatter, list(handler.filters) or []
+        # Fallback: no configured handlers yet
+        return (
+            logging.Formatter(
+                "[%(asctime)s.%(msecs)03d] %(levelname)s "
+                "[%(name)s:%(funcName)s:%(lineno)d] - %(message)s",
+                "%Y-%m-%d %H:%M:%S",
+            ),
+            [],
+        )
+
+    formatter, filters = _find_formatter_and_filters()
+
+    file_handler = FileHandler(filename)
+    file_handler.setLevel(LOGGER.getEffectiveLevel())
+    file_handler.setFormatter(formatter)
+    for filter in filters:  # reuse any handler-level filters (e.g., redaction)
+        file_handler.addFilter(filter)
+
+    # Also inherit logger-level filters
+    for filter in LOGGER.filters:
+        file_handler.addFilter(filter)
+
+    LOGGER.addHandler(file_handler)
 
 
 def handler(event):
@@ -54,16 +95,18 @@ def handler(event):
     Returns:
         dict: Response containing the status code and message.
     """
-    print("VS_PULL_DATE_RANGE: ", VS_PULL_DATE_RANGE)
+    LOGGER.info("VS_PULL_DATE_RANGE: %s", VS_PULL_DATE_RANGE)
     try:
         main()
         return {"status_code": 200, "body": "VS Sync completed successfully"}
     except Exception as e:
+        LOGGER.exception("Error occurred: %s", e)
         raise ScanExecutionError(SCAN_NAME, str(e), event) from e
 
 
 def main():  # pylint: disable=R0915
     """Execute the vulnerability scanning synchronization task."""
+    setup_vuln_sync_logging()
     LOGGER.info("Started VulnScanningSync scan...")
 
     LOGGER.info("Running syncdb")
