@@ -337,29 +337,6 @@ export const Logs: FC<LogsProps> = () => {
       headerName: 'Timestamp',
       minWidth: 100,
       flex: 1.25,
-      // valueGetter: (cellValues: GridRenderEditCellParams) => {
-      //   const value = cellValues?.row.created_at;
-      //   if (!value) return null;
-      //   try {
-      //     const utcDate = parseISO(value);
-      //     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      //     return toZonedTime(utcDate, timeZone);
-      //   } catch (error) {
-      //     console.error('Error parsing date:', error);
-      //     return null;
-      //   }
-      // },
-      // // Return formatted string for display
-      // valueFormatter: (cellValues: GridRenderEditCellParams) => {
-      //   const value = cellValues.value;
-      //   if (!(value instanceof Date)) return 'N/A';
-      //   try {
-      //     return format(value, 'MM/dd/yyyy hh:mm a');
-      //   } catch {
-      //     return 'N/A';
-      //   }
-      // }
-
       renderCell: (cellValues: GridRenderEditCellParams) => {
         return (
           <Box
