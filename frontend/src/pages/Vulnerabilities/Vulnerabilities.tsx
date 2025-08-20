@@ -294,8 +294,6 @@ export const Vulnerabilities: React.FC<VulnerabilitiesProps> = ({
     [vulnerabilities]
   );
 
-  console.log('Vulnerabilities', vulnerabilities);
-
   const vulCols: GridColDef<VulnerabilityRow>[] = useMemo(
     () => [
       {
