@@ -110,7 +110,7 @@ export const ScanTasksView: React.FC = () => {
         global:
           e.status === 422 ? 'Unable to kill scan' : (e.message ?? e.toString())
       });
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -150,7 +150,6 @@ export const ScanTasksView: React.FC = () => {
           }
         );
         // if (result.length === 0) return;
-        console.log('API result:', result, 'Count:', count);
         setScanTasks(result);
         setTotalResults(count);
         setPaginationModel((prev) => ({
@@ -447,7 +446,7 @@ export const ScanTasksView: React.FC = () => {
         <DialogTitle id="alert-dialog-title">{'Scan Details'}</DialogTitle>
         <DialogContent>
           {detailsParams?.row?.fargate_task_arn && (
-            <>
+            <Box pb={2}>
               <Typography variant="h6" component="div">
                 Logs:
               </Typography>
@@ -474,7 +473,7 @@ export const ScanTasksView: React.FC = () => {
                 token={token ?? ''}
                 url={`${import.meta.env.VITE_API_URL}/scan-tasks/${detailsParams?.row?.id}/logs`}
               />
-            </>
+            </Box>
           )}
           {(() => {
             const rawInput = detailsParams?.row?.input;
@@ -500,10 +499,10 @@ export const ScanTasksView: React.FC = () => {
                 </>
               );
             } catch (e) {
-              console.log(e);
+              console.error(e);
               return (
                 <>
-                  <Typography variant="h6" component="div">
+                  <Typography variant="h6" component="div" pt={2}>
                     Input:
                   </Typography>
                   <Typography color="error" variant="h3">
@@ -513,10 +512,12 @@ export const ScanTasksView: React.FC = () => {
               );
             }
           })()}
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" pt={2}>
             Output:
           </Typography>
-          <pre>{detailsParams?.row?.output || 'None'}</pre>
+          <Typography variant="logText">
+            {detailsParams?.row?.output || 'None'}
+          </Typography>
 
           {detailsParams?.row.status !== 'finished' &&
             detailsParams?.row.status !== 'failed' && (
