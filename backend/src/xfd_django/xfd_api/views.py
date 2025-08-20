@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from typing import List, Optional, Union
 from uuid import UUID
@@ -56,6 +57,7 @@ from .api_methods.stats import (
     get_stats_comparison_data,
     get_user_ports_count,
     get_user_services_count,
+    get_v2_trending_data,
     get_vs_condensed_trending_data,
     get_vs_trending_data,
     stats_latest_vulns,
@@ -156,6 +158,8 @@ from .tools.user_logger_decorator import (
     get_user_sync,
     log_action,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 # Define API router
 api_router = APIRouter()
@@ -384,7 +388,7 @@ async def get_call_all_cves(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {e}",
+            detail="Unexpected error: {}".format(e),
         )
 
     # serialize
@@ -782,19 +786,18 @@ async def update_granular_scan(
     )
 
 
-@api_router.get(
-    "/v2/organizations",
+@api_router.post(
+    "/v2/organizations/search",
     dependencies=[Depends(get_current_active_user)],
-    response_model=List[OrganizationSchema.GetOrganizationSchema],
+    response_model=OrganizationSchema.PaginatedOrganizationsResponse,
     tags=["Organizations"],
 )
-async def list_organizations_v2(
-    state: Optional[List[str]] = Query(None),
-    region_id: Optional[List[str]] = Query(None),
+async def search_organizations_v2(
+    payload: OrganizationSchema.OrganizationSearch,
     current_user: User = Depends(get_current_active_user),
 ):
-    """Retrieve a list of all organizations (version 2)."""
-    return organization.list_organizations_v2(state, region_id, current_user)
+    """Search organizations data grid."""
+    return organization.search_organizations_v2(payload, current_user)
 
 
 @api_router.post(
@@ -1160,7 +1163,7 @@ async def dns_twist_sync(
     try:
         return await dns_twist_sync_post(sync_body, request, current_user)
     except Exception as e:
-        print(e)
+        LOGGER.error("Error occurred during DNSTwist sync: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
@@ -1213,6 +1216,22 @@ async def get_vs_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/v2/stats/trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.V2TrendResponse,
+    response_model_exclude_none=True,
+    tags=["Stats"],
+)
+async def get_v2_trending_stats(
+    filter_data: stat_schema.V2TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve Summary data filtered by the user - V2."""
+    result = get_v2_trending_data(filter_data, current_user)
+    return result
 
 
 @api_router.post(
@@ -1752,8 +1771,10 @@ async def get_call_all_cybersixgill(
     except HTTPException:
         raise
     except Exception as e:
+        LOGGER.error("Sync error: %s", e)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Sync error: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Sync error: {}".format(e),
         )
 
     # attach checksum header
