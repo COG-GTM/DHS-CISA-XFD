@@ -20,6 +20,21 @@ const Settings: React.FC = () => {
             .join(', ')}
       </h2>
       <h2>Region: {user && user.region_id ? user.region_id : 'None'} </h2>
+      {(user?.user_type === 'analytics' ||
+        user?.user_type === 'globalAdmin') && (
+        <>
+          <Button
+            type="button"
+            onClick={() => {
+              window.location.href = `${import.meta.env.VITE_API_URL}/matomo/index.php`;
+            }}
+          >
+            Matomo
+          </Button>
+          <br />
+          <br />
+        </>
+      )}
       <Button type="button" onClick={logout}>
         Logout
       </Button>
