@@ -58,10 +58,10 @@ def save_ip_to_datalake(ip_obj):
                     },
                 )
                 if created:
-                    print("Created ip")
+                    LOGGER.info("Created ip")
                 return obj
     except Exception as e:
-        print("Error saving IP to Datalake:", e)
+        LOGGER.error("Error saving IP to Datalake: %s", e)
         # optionally re-raise or handle accordingly
         return None
 
@@ -94,7 +94,7 @@ def save_cve_to_datalake(cve_obj):
                     defaults={key: cve_obj[key] for key in cve_updated_values}
                     | {"id": str(1)},
                 )
-                print("Updated CVE" if not created else "Created CVE")
+                LOGGER.info("Updated CVE" if not created else "Created CVE")
                 return cve_record
             else:
                 # Insert but ignore if the record already exists
@@ -103,7 +103,7 @@ def save_cve_to_datalake(cve_obj):
                 )
                 return obj
     except Exception as e:
-        print("Error saving CVE to Datalake", e)
+        LOGGER.error("Error saving CVE to Datalake: %s", e)
         return None
 
 

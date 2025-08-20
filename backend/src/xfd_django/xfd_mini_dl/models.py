@@ -16,7 +16,6 @@ from netfields import InetAddressField
 manage_db = True
 app_label_name = "xfd_mini_dl"
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -343,6 +342,36 @@ class Cve(AutoLengthCheckModel):
         blank=True,
         help_text="Many to many relationship to list of affected Products (CPE).",
     )
+    source_attribution = models.CharField(
+        blank=True,
+        null=True,
+        max_length=64,
+        help_text="Origin of this CVE record (e.g., 'AE/Redshift').",
+    )
+
+    assigner = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text="Short name of the CVE assigner (e.g., 'CISA-ADP', 'AMD').",
+    )
+
+    title = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Short title from CNA/ADP when available.",
+    )
+
+    cna_source_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'source' object."
+    )
+    cna_affected_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'affected' array/object."
+    )
+    cna_problem_types_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'problemTypes' structure."
+    )
+
     # tickets = models.ManyToManyField("Ticket", related_name='cves', blank=True)
     # vuln_scans = models.ManyToManyField("VulnScan", related_name='cves', blank=True)
 
@@ -355,6 +384,43 @@ class Cve(AutoLengthCheckModel):
             models.Index(fields=["name"]),
         ]
         db_table = "cve"
+
+
+class CveSsvc(models.Model):
+    """SSVC triplet + ADP provenance, flattened from AE/Redshift."""
+
+    cve = models.OneToOneField("Cve", on_delete=models.CASCADE, related_name="ssvc")
+
+    exploitation = models.CharField(max_length=32, blank=True, null=True, db_index=True)
+    automatable = models.CharField(max_length=32, blank=True, null=True, db_index=True)
+    technical_impact = models.CharField(
+        max_length=32, blank=True, null=True, db_index=True
+    )
+
+    adp_provider = models.CharField(
+        max_length=128, blank=True, null=True, db_index=True
+    )
+    adp_title = models.TextField(blank=True, null=True)
+    ssvc_version = models.CharField(max_length=16, blank=True, null=True)
+    ssvc_timestamp = models.DateTimeField(blank=True, null=True, db_index=True)
+    adp_date_updated = models.DateTimeField(blank=True, null=True, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    class Meta:
+        """Meta class for CveSsvc."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "adp_ssvc"
+        indexes = [
+            models.Index(fields=["exploitation"]),
+            models.Index(fields=["automatable"]),
+            models.Index(fields=["technical_impact"]),
+            models.Index(fields=["adp_provider"]),
+            models.Index(fields=["adp_date_updated"]),
+        ]
 
 
 class Notification(AutoLengthCheckModel):
@@ -2547,7 +2613,8 @@ class Ip(models.Model):
                     socket.inet_pton(socket.AF_INET6, self.ip)
                     self.ip_version = "IPv6"
                 except OSError:
-                    raise ValueError(f"Invalid IP address: {self.ip}")
+                    LOGGER.exception("Invalid IP address: %s", self.ip)
+                    raise ValueError
 
         super().save(*args, **kwargs)
 
@@ -3338,6 +3405,14 @@ class WasFindings(models.Model):
         blank=True,
         null=True,
         help_text="FK: Foreign Key to the linked subdomain",
+    )
+    cve = models.ForeignKey(
+        "Cve",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="was_findings",
+        help_text="FK: CVE linked to this finding.",
     )
     # service = models.ForeignKey(
     #     "Service",
