@@ -343,6 +343,36 @@ class Cve(AutoLengthCheckModel):
         blank=True,
         help_text="Many to many relationship to list of affected Products (CPE).",
     )
+    source_attribution = models.CharField(
+        blank=True,
+        null=True,
+        max_length=64,
+        help_text="Origin of this CVE record (e.g., 'AE/Redshift').",
+    )
+
+    assigner = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text="Short name of the CVE assigner (e.g., 'CISA-ADP', 'AMD').",
+    )
+
+    title = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Short title from CNA/ADP when available.",
+    )
+
+    cna_source_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'source' object."
+    )
+    cna_affected_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'affected' array/object."
+    )
+    cna_problem_types_json = models.JSONField(
+        blank=True, null=True, help_text="Raw CNA 'problemTypes' structure."
+    )
+
     # tickets = models.ManyToManyField("Ticket", related_name='cves', blank=True)
     # vuln_scans = models.ManyToManyField("VulnScan", related_name='cves', blank=True)
 
@@ -351,7 +381,47 @@ class Cve(AutoLengthCheckModel):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
         db_table = "cve"
+
+
+class CveSsvc(models.Model):
+    """SSVC triplet + ADP provenance, flattened from AE/Redshift."""
+
+    cve = models.OneToOneField("Cve", on_delete=models.CASCADE, related_name="ssvc")
+
+    exploitation = models.CharField(max_length=32, blank=True, null=True, db_index=True)
+    automatable = models.CharField(max_length=32, blank=True, null=True, db_index=True)
+    technical_impact = models.CharField(
+        max_length=32, blank=True, null=True, db_index=True
+    )
+
+    adp_provider = models.CharField(
+        max_length=128, blank=True, null=True, db_index=True
+    )
+    adp_title = models.TextField(blank=True, null=True)
+    ssvc_version = models.CharField(max_length=16, blank=True, null=True)
+    ssvc_timestamp = models.DateTimeField(blank=True, null=True, db_index=True)
+    adp_date_updated = models.DateTimeField(blank=True, null=True, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    class Meta:
+        """Meta class for CveSsvc."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "adp_ssvc"
+        indexes = [
+            models.Index(fields=["exploitation"]),
+            models.Index(fields=["automatable"]),
+            models.Index(fields=["technical_impact"]),
+            models.Index(fields=["adp_provider"]),
+            models.Index(fields=["adp_date_updated"]),
+        ]
 
 
 class Notification(AutoLengthCheckModel):
@@ -689,7 +759,7 @@ class Organization(AutoLengthCheckModel):
     )
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -831,7 +901,7 @@ class Role(models.Model):
     )
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by_id",
         blank=True,
         null=True,
@@ -839,7 +909,7 @@ class Role(models.Model):
     )
     approved_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="approved_by_id",
         related_name="approved_roles",
         blank=True,
@@ -848,7 +918,7 @@ class Role(models.Model):
     )
     user = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="user_id",
         related_name="roles",
         blank=True,
@@ -857,7 +927,7 @@ class Role(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="organization_id",
         related_name="user_roles",
         blank=True,
@@ -994,7 +1064,7 @@ class Scan(models.Model):
     concurrent_tasks = models.IntegerField(db_column="concurrent_tasks", default=1)
     created_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="created_by",
         blank=True,
         null=True,
@@ -1277,7 +1347,7 @@ class User(AutoLengthCheckModel):
     )
     first_login = models.BooleanField(
         db_column="first_login",
-        null=True,
+        default=True,
         help_text="A boolean field identifying a users first approved login for prompts.",
     )
     can_select_own_state = models.BooleanField(
@@ -1293,7 +1363,7 @@ class User(AutoLengthCheckModel):
     )
     approved_by = models.ForeignKey(
         "User",
-        models.DO_NOTHING,
+        models.SET_NULL,
         db_column="approved_by_id",
         blank=True,
         null=True,
@@ -1503,6 +1573,14 @@ class TicketEvent(models.Model):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            models.Index(fields=["ticket"]),
+            models.Index(fields=["port_scan"]),
+            models.Index(fields=["vuln_scan"]),
+            models.Index(fields=["ticket", "port_scan"]),
+            models.Index(fields=["ticket", "vuln_scan"]),
+            models.Index(fields=["ticket", "-event_timestamp", "id"]),
+        ]
         db_table = "ticket_event"
         unique_together = ("event_timestamp", "ticket", "action")
 
@@ -2787,6 +2865,14 @@ class Ticket(models.Model):
 
         app_label = app_label_name
         managed = manage_db
+        indexes = [
+            # 1. Ensure fast lookup by ticket id for upserts
+            models.Index(fields=["id"], name="tickets_id_idx"),
+            # 2. Optional: fast filtering on IP (if you query per IP)
+            models.Index(fields=["ip_string"], name="tickets_ip_idx"),
+            # 3. Optional: cover “open” tickets if you often filter by is_open
+            models.Index(fields=["is_open"], name="tickets_is_open_idx"),
+        ]
         db_table = "ticket"
         unique_together = ["id"]
 
@@ -2999,6 +3085,15 @@ class PortScan(AutoLengthCheckModel):
             models.Index(
                 fields=["organization", "ip_string", "port", "-time_scanned"],
                 name="portscan_latest_lookup_idx",
+            ),
+            models.Index(
+                fields=["organization", "ip_string", "port", "latest"],
+                name="portscan_latest_idx",
+            ),
+            models.Index(
+                fields=["organization", "ip_string", "port", "time_scanned"],
+                name="portscan_latest_true_idx",
+                condition=models.Q(latest=True),
             ),
         ]
         db_table = "port_scan"
@@ -3310,6 +3405,14 @@ class WasFindings(models.Model):
         blank=True,
         null=True,
         help_text="FK: Foreign Key to the linked subdomain",
+    )
+    cve = models.ForeignKey(
+        "Cve",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="was_findings",
+        help_text="FK: CVE linked to this finding.",
     )
     # service = models.ForeignKey(
     #     "Service",
