@@ -191,26 +191,23 @@ def patch_cvss(cve_object, cvss_results: dict[str, dict[str, Optional[Any]]]) ->
 
 
 def upsert_ssvc(cve_object, adp_json):
-    """Upsert SSVC data."""
-    ssvc_payload = extract_ssvc(adp_json if isinstance(adp_json, list) else [])
-    exploitation_value = ssvc_payload.get("exploitation")
-    automatable_value = ssvc_payload.get("automatable")
-    technical_impact_value = ssvc_payload.get("technical_impact")
-    for key in ("exploitation_value", "automatable_value", "technical_impact_value"):
-        val = locals()[key]
-        if isinstance(val, str):
-            locals()[key] = val.lower()
+    """Upsert SSVC data into CveSsvc model."""
+    ssvc = extract_ssvc(adp_json if isinstance(adp_json, list) else [])
+    exploitation = (ssvc.get("exploitation") or "").lower() or None
+    automatable = (ssvc.get("automatable") or "").lower() or None
+    technical_impact = (ssvc.get("technical_impact") or "").lower() or None
+
     CveSsvc.objects.update_or_create(
         cve=cve_object,
         defaults={
-            "exploitation": exploitation_value,
-            "automatable": automatable_value,
-            "technical_impact": technical_impact_value,
-            "adp_provider": ssvc_payload.get("adp_provider"),
-            "adp_title": ssvc_payload.get("adp_title"),
-            "ssvc_version": ssvc_payload.get("ssvc_version"),
-            "ssvc_timestamp": parse_iso8601(ssvc_payload.get("ssvc_timestamp")),
-            "adp_date_updated": parse_iso8601(ssvc_payload.get("adp_date_updated")),
+            "exploitation": exploitation,
+            "automatable": automatable,
+            "technical_impact": technical_impact,
+            "adp_provider": ssvc.get("adp_provider"),
+            "adp_title": ssvc.get("adp_title"),
+            "ssvc_version": ssvc.get("ssvc_version"),
+            "ssvc_timestamp": parse_iso8601(ssvc.get("ssvc_timestamp")),
+            "adp_date_updated": parse_iso8601(ssvc.get("adp_date_updated")),
         },
     )
 

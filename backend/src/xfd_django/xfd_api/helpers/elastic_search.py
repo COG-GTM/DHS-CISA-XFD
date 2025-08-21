@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 
 from ..schema_models.search import DomainSearchBody
 
-# Initialize logger
 LOGGER = logging.getLogger(__name__)
 
 # Define non-keyword fields
@@ -302,7 +301,6 @@ def build_request(state: DomainSearchBody) -> Dict[str, Any]:
     filter_list, post_filter_clause = build_request_filter(
         refined_filters, should_return_no_results
     )
-    # print("Filters:", filter_list)
     LOGGER.info("Filters: %s", filter_list)
     if post_filter_clause:
         LOGGER.info("Post-filter: %s", post_filter_clause)
