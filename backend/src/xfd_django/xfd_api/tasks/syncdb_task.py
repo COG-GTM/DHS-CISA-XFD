@@ -250,6 +250,57 @@ def update_table(
                 )
                 schema_editor.add_field(model, field)
 
+        # --- NEW: Sync nullability for existing columns ---
+        cursor.execute(
+            """
+            SELECT column_name, is_nullable
+            FROM information_schema.columns
+            WHERE table_name = %s
+              AND table_schema = 'public';
+            """,
+            [table_name],
+        )
+        nullability_info = {
+            row[0]: (row[1].lower() == "yes") for row in cursor.fetchall()
+        }
+
+        for field in model._meta.fields:
+            if field.column in existing_columns:
+                actual_nullable = nullability_info.get(field.column, True)
+                desired_nullable = field.null
+                if actual_nullable != desired_nullable:
+                    safe_table_name = connections[database].ops.quote_name(table_name)
+                    safe_column_name = connections[database].ops.quote_name(
+                        field.column
+                    )
+
+                    if not desired_nullable:
+                        # Before trying SET NOT NULL, check if column already has NULLs
+                        cursor.execute(
+                            f"SELECT COUNT(*) FROM {safe_table_name} WHERE {safe_column_name} IS NULL;"
+                        )
+                        null_count = cursor.fetchone()[0]
+                        if null_count > 0:
+                            print(
+                                f"⚠️ Cannot set NOT NULL on {table_name}.{field.column}: "
+                                f"{null_count} row(s) contain NULL values. "
+                                f"Please clean up data manually."
+                            )
+                            continue  # skip ALTER
+                        alter_sql = f"ALTER TABLE {safe_table_name} ALTER COLUMN {safe_column_name} SET NOT NULL;"
+                    else:
+                        alter_sql = f"ALTER TABLE {safe_table_name} ALTER COLUMN {safe_column_name} DROP NOT NULL;"
+
+                    try:
+                        cursor.execute(alter_sql)
+                        print(
+                            f"Updated nullability of column '{field.column}' in table '{table_name}' "
+                            f"to {'NULL' if desired_nullable else 'NOT NULL'}"
+                        )
+                    except Exception as e:
+                        print(
+                            f"⚠️ Failed to update nullability of {table_name}.{field.column}: {e}"
+                        )
         # Remove extra columns
         extra_columns = existing_columns - db_fields
         for column in extra_columns:
