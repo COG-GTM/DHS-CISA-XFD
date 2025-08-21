@@ -7,6 +7,8 @@ from datetime import timedelta
 from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
+from fastapi import HTTPException
+from xfd_api.auth import is_global_write_admin
 from xfd_api.schema_models.metrics import (
     DailyCount,
     DailyStatusCount,
@@ -24,6 +26,8 @@ default_metrics_window = 7
 
 def get_scan_daily_status_counts(scan_id: str, window_days: int, current_user):
     """Get daily HTTP status counts for a specific scan over a given time window."""
+    if not is_global_write_admin(current_user):
+        raise HTTPException(status_code=403, detail="Unauthorized access.")
     cutoff = (timezone.now() - timedelta(days=window_days - 1)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
@@ -68,6 +72,8 @@ def transform_daily_status_counts(queryset, scan_id, window_days):
 
 def list_scans_org_count_by_status(window_days, current_user):
     """List non-global scans and count distinct orgs for each http status in a given time window."""
+    if not is_global_write_admin(current_user):
+        raise HTTPException(status_code=403, detail="Unauthorized access.")
     cutoff = (timezone.now() - timedelta(days=window_days - 1)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )

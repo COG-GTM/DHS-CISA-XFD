@@ -6,7 +6,7 @@ import os
 from django.core.management.base import BaseCommand
 from django.db import connections
 from xfd_api.tasks.helpers.syncdb_helpers.adjust_columns import adjust_column_types
-from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import (
+from xfd_api.tasks.helpers.syncdb_helpers.create_sample_data import (
     populate_sample_data,
     populate_scan_results,
 )
