@@ -301,9 +301,9 @@ def build_request(state: DomainSearchBody) -> Dict[str, Any]:
     filter_list, post_filter_clause = build_request_filter(
         refined_filters, should_return_no_results
     )
-    LOGGER.info("Filters: {}".format(filter_list))
+    LOGGER.info("Filters: %s",filter_list)
     if post_filter_clause:
-        LOGGER.info("Post-filter: {} ".format(post_filter_clause))
+        LOGGER.info("Post-filter: %s",post_filter_clause)
 
     # Base query
     query = {
