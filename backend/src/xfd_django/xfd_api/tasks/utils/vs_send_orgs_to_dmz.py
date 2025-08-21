@@ -46,7 +46,7 @@ def send_organizations_to_dmz():
             "Error sending organizations to DMZ sync endpoint:\n%s",
             traceback.format_exc(),
         )
-        print(e)
+        LOGGER.exception("Error sending organizations to DMZ sync endpoint: %s", e)
         raise SyncError(SCAN_NAME, str(e), "Error sending organizations to dmz") from e
 
 
@@ -121,7 +121,7 @@ def send_csv_to_sync(csv_data, bounds):
         try:
             error_data = response.json()
             error_detail = error_data.get("detail", error_data)
-            print(http_err)
+            LOGGER.error(http_err)
         except ValueError:
             error_detail = response.text
         LOGGER.error(

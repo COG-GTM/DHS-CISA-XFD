@@ -84,8 +84,9 @@ def bulk_insert_ips_and_link_to_port_scans(
         try:
             owner_id = org_id_dict.get(port_scan.get("owner"))
             if not owner_id:
-                print(
-                    f"{port_scan.get('owner')} is not a recognized organization, skipping host"
+                LOGGER.warning(
+                    "%s is not a recognized organization, skipping host",
+                    port_scan.get("owner"),
                 )
                 continue
 
@@ -113,7 +114,7 @@ def bulk_insert_ips_and_link_to_port_scans(
                 }
             )
         except Exception as e:
-            print(f"Error staging port scan: {e}")
+            LOGGER.exception("Error staging port scan: %s", e)
             raise IngestionError(SCAN_NAME, str(e), "Failed staging port scans") from e
 
     # Step 2: Bulk insert IPs, ignoring conflicts (safe due to unique_together constraint)
@@ -168,7 +169,7 @@ def bulk_insert_ips_and_link_to_port_scans(
             )
             port_scan_objs.append(port_scan_obj)
         except Exception as e:
-            print(f"Error building PortScan object: {e}")
+            LOGGER.exception("Error building PortScan object: %s", e)
             raise IngestionError(SCAN_NAME, str(e), "Failed building port scans") from e
 
     if port_scan_objs:
@@ -296,7 +297,7 @@ def create_port_scan_summary(summary_date=None):
             )
 
     except Exception as e:
-        print("Error creating port scan summary: {}".format(e))
+        LOGGER.exception("Error creating port scan summary: %s", e)
         raise QueryError(SCAN_NAME, str(e), "Error creating port scan summary") from e
 
 
@@ -349,7 +350,7 @@ def create_port_scan_service_summaries(summary_date=None):
                     },
                 )
     except Exception as e:
-        print("Error creating port scan service summary: {}".format(e))
+        LOGGER.exception("Error creating port scan service summary: %s", e)
         raise QueryError(
             SCAN_NAME, str(e), "Error creating port scan service summary"
         ) from e
@@ -389,4 +390,4 @@ def enforce_latest_flag_port_scan():
         cursor.execute(sql)
 
     duration = time.time() - start
-    print("Completed enforce_latest_flag in {:.2f}s".format(duration))
+    LOGGER.info("Completed enforce_latest_flag in %.2fs", duration)
