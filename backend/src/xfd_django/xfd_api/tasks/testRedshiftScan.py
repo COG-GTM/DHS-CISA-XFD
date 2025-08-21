@@ -66,8 +66,7 @@ def run_csv_ingest(csv_path: str = DEFAULT_CSV_PATH) -> int:
     records = load_rows_from_csv(csv_path)
     processed = 0
     for rec in records:
-        ordered_values = [rec.get(k) for k in ORDERED_KEYS]
-        upsert_cve_from_redshift_row(ordered_values)
+        upsert_cve_from_redshift_row(rec)
         processed += 1
     return processed
 
