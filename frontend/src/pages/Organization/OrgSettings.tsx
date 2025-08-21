@@ -349,6 +349,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             label="Root Domains"
             type="root_domains"
             disableAddButton
+            disableDelete
             organization={organization}
             userType={user?.user_type}
             setOrganization={setOrganization}
@@ -362,6 +363,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
             label="IP Blocks"
             type="ip_blocks"
             disableAddButton
+            disableDelete
             organization={organization}
             userType={user?.user_type}
             setOrganization={setOrganization}
@@ -376,6 +378,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
               label="Tags"
               type="tags"
               disableAddButton
+              disableDelete
               organization={organization}
               userType={user?.user_type}
               setOrganization={setOrganization}
