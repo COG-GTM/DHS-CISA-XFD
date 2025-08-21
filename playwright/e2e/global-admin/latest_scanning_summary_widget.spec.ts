@@ -1,5 +1,4 @@
 import { test, expect } from '../../axe-test';
-import type { TestInfo, Page } from '@playwright/test';
 
 test.describe('Latest Scanning Summary - Page Resize', () => {
   test('Widget is responsive and reload-safe', async ({ page }) => {
