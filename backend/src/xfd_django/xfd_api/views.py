@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from typing import List, Optional, Union
 from uuid import UUID
@@ -158,6 +159,8 @@ from .tools.user_logger_decorator import (
     get_user_sync,
     log_action,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 # Define API router
 api_router = APIRouter()
@@ -377,7 +380,7 @@ async def get_call_all_cves(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {e}",
+            detail="Unexpected error: {}".format(e),
         )
 
     # serialize
@@ -1152,7 +1155,7 @@ async def dns_twist_sync(
     try:
         return await dns_twist_sync_post(sync_body, request, current_user)
     except Exception as e:
-        print(e)
+        LOGGER.error("Error occurred during DNSTwist sync: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
@@ -1760,8 +1763,10 @@ async def get_call_all_cybersixgill(
     except HTTPException:
         raise
     except Exception as e:
+        LOGGER.error("Sync error: %s", e)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Sync error: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Sync error: {}".format(e),
         )
 
     # attach checksum header

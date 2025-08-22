@@ -110,7 +110,7 @@ export const ScanTasksView: React.FC = () => {
         global:
           e.status === 422 ? 'Unable to kill scan' : (e.message ?? e.toString())
       });
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -288,6 +288,7 @@ export const ScanTasksView: React.FC = () => {
     'shodan',
     'lookingGlass',
     'dnstwist',
+    'redshift',
     'rootDomainSync',
     'was_sync',
     'was',
@@ -302,6 +303,12 @@ export const ScanTasksView: React.FC = () => {
     'finished',
     'failed'
   ];
+
+  const isLocal = import.meta.env.VITE_IS_LOCAL === '1';
+
+  const filteredScanNameValues = isLocal
+    ? scanNameValues.filter((name) => name !== 'redshift')
+    : scanNameValues;
 
   const scanNameDropdown = (
     <>
@@ -318,7 +325,7 @@ export const ScanTasksView: React.FC = () => {
         open={openNameMenu}
         onClose={() => setAnchorElName(null)}
       >
-        {scanNameValues.map((name, index) => (
+        {filteredScanNameValues.map((name, index) => (
           <MenuItem
             key={index + name}
             value={name}
@@ -446,7 +453,7 @@ export const ScanTasksView: React.FC = () => {
         <DialogTitle id="alert-dialog-title">{'Scan Details'}</DialogTitle>
         <DialogContent>
           {detailsParams?.row?.fargate_task_arn && (
-            <>
+            <Box pb={2}>
               <Typography variant="h6" component="div">
                 Logs:
               </Typography>
@@ -458,7 +465,7 @@ export const ScanTasksView: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   href={`${
-                    process.env.CLOUDWATCH_URL
+                    import.meta.env.VITE_CLOUDWATCH_URL
                   }#logsV2:log-groups/log-group/${import.meta.env.VITE_FARGATE_LOG_GROUP!}/log-events/worker$252Fmain$252F${
                     (detailsParams?.row?.fargate_task_arn.match('.*/(.*)') || [
                       ''
@@ -473,32 +480,51 @@ export const ScanTasksView: React.FC = () => {
                 token={token ?? ''}
                 url={`${import.meta.env.VITE_API_URL}/scan-tasks/${detailsParams?.row?.id}/logs`}
               />
-            </>
+            </Box>
           )}
           {(() => {
             const rawInput = detailsParams?.row?.input;
-            if (!rawInput) return '';
-            try {
-              const parsedJSON = JSON.parse(rawInput);
-              const formattedJSON = JSON.stringify(parsedJSON, null, 2);
-              if (formattedJSON === '{}' || formattedJSON === '[]') return '';
+            if (!rawInput || rawInput === 'null') {
               return (
                 <>
                   <Typography variant="h6" component="div">
                     Input:
                   </Typography>
+                  <Typography variant="logText">
+                    No input data available.
+                  </Typography>
+                </>
+              );
+            }
+            try {
+              const parsedJSON = JSON.parse(rawInput);
+              const formattedJSON = JSON.stringify(parsedJSON, null, 2);
+              return (
+                <>
+                  <Typography variant="h3">Input:</Typography>
                   <pre>{formattedJSON}</pre>
                 </>
               );
             } catch (e) {
-              console.log(e);
-              return '';
+              console.error(e);
+              return (
+                <>
+                  <Typography variant="h6" component="div" pt={2}>
+                    Input:
+                  </Typography>
+                  <Typography color="error" variant="h3">
+                    Invalid input data format.
+                  </Typography>
+                </>
+              );
             }
           })()}
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" pt={2}>
             Output:
           </Typography>
-          <pre>{detailsParams?.row?.output || 'None'}</pre>
+          <Typography variant="logText">
+            {detailsParams?.row?.output || 'None'}
+          </Typography>
 
           {detailsParams?.row.status !== 'finished' &&
             detailsParams?.row.status !== 'failed' && (
