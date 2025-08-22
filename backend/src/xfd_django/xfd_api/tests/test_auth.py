@@ -239,7 +239,7 @@ def test_jwt_secret_missing(mock_get_jwt):
     )
 
     assert response.status_code == 500
-    assert response.json()["detail"] == "JWT_SECRET is not defined"
+    assert response.json()["detail"] == "Internal Server Error"
 
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
