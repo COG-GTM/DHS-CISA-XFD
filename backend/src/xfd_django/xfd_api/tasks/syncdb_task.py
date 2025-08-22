@@ -283,7 +283,7 @@ def update_table(
                         )
                         null_count = cursor.fetchone()[0]
                         if null_count > 0:
-                            print(
+                            LOGGER.warning(
                                 "⚠️ Cannot set NOT NULL on {}.{}: {} row(s) contain NULL values. "
                                 "Please clean up data manually.".format(
                                     table_name, field.column, null_count
@@ -296,7 +296,7 @@ def update_table(
 
                     try:
                         cursor.execute(alter_sql)
-                        print(
+                        LOGGER.info(
                             "Updated nullability of column '{}' in table '{}' to {}".format(
                                 field.column,
                                 table_name,
@@ -304,7 +304,7 @@ def update_table(
                             )
                         )
                     except Exception as e:
-                        print(
+                        LOGGER.error(
                             "⚠️ Failed to update nullability of {}.{}: {}".format(
                                 table_name, field.column, e
                             )
