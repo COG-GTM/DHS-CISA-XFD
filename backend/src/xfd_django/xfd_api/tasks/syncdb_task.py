@@ -277,7 +277,7 @@ def update_table(
                     if not desired_nullable:
                         # Before trying SET NOT NULL, check if column already has NULLs
                         cursor.execute(
-                            f"SELECT COUNT(*) FROM {safe_table_name} WHERE {safe_column_name} IS NULL;"
+                            f"SELECT COUNT(*) FROM {safe_table_name} WHERE {safe_column_name} IS NULL;"  # nosec B608
                         )
                         null_count = cursor.fetchone()[0]
                         if null_count > 0:
