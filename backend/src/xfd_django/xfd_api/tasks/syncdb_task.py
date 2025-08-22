@@ -284,10 +284,11 @@ def update_table(
                         null_count = cursor.fetchone()[0]
                         if null_count > 0:
                             LOGGER.warning(
-                                "⚠️ Cannot set NOT NULL on {}.{}: {} row(s) contain NULL values. "
-                                "Please clean up data manually.".format(
-                                    table_name, field.column, null_count
-                                )
+                                "⚠️ Cannot set NOT NULL on %s.%s: %s row(s) contain NULL values. "
+                                "Please clean up data manually.",
+                                table_name,
+                                field.column,
+                                null_count,
                             )
                             continue  # skip ALTER
                         alter_sql = f"ALTER TABLE {safe_table_name} ALTER COLUMN {safe_column_name} SET NOT NULL;"
@@ -297,17 +298,17 @@ def update_table(
                     try:
                         cursor.execute(alter_sql)
                         LOGGER.info(
-                            "Updated nullability of column '{}' in table '{}' to {}".format(
-                                field.column,
-                                table_name,
-                                "NULL" if desired_nullable else "NOT NULL",
-                            )
+                            "Updated nullability of column '%s' in table '%s' to %s",
+                            field.column,
+                            table_name,
+                            "NULL" if desired_nullable else "NOT NULL",
                         )
                     except Exception as e:
                         LOGGER.error(
-                            "⚠️ Failed to update nullability of {}.{}: {}".format(
-                                table_name, field.column, e
-                            )
+                            "⚠️ Failed to update nullability of %s.%s: %s",
+                            table_name,
+                            field.column,
+                            e,
                         )
         # Remove extra columns
         extra_columns = existing_columns - db_fields
