@@ -4,6 +4,7 @@
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import logging
 import os
 import re
 from typing import Optional
@@ -37,6 +38,8 @@ JWT_ALGORITHM = settings.JWT_ALGORITHM
 JWT_TIMEOUT_HOURS = settings.JWT_TIMEOUT_HOURS
 OAUTH_META_SECRET = os.getenv("CSRF_SECRET", "super-secret")
 
+
+LOGGER = logging.getLogger(__name__)
 
 # User Types excluded from maintenance login blockers.
 LOGIN_BLOCKED_EXCLUSIONS = ["globalAdmin", "regionalAdmin"]
@@ -119,7 +122,7 @@ def get_user_by_api_key(api_key: str):
         api_key_instance.save(update_fields=["last_used"])
         return api_key_instance.user
     except ApiKey.DoesNotExist:
-        print("API Key not found")
+        LOGGER.warning("API Key not found")
         return None
 
 
@@ -144,7 +147,7 @@ def get_current_active_user(
                 user_id = payload.get("id")
 
                 if user_id is None:
-                    print("No user ID found in token")
+                    LOGGER.warning("No user ID found in token")
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="Invalid token",
@@ -153,14 +156,14 @@ def get_current_active_user(
                 # Fetch the user by ID from the database
                 user = User.objects.get(id=user_id)
             except jwt.ExpiredSignatureError:
-                print("Token has expired")
+                LOGGER.warning("Token has expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token has expired",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
             except jwt.InvalidTokenError:
-                print("Invalid token")
+                LOGGER.warning("Invalid token")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token",
@@ -173,14 +176,14 @@ def get_current_active_user(
         )
 
     if user is None:
-        print("User not authenticated")
+        LOGGER.warning("User not authenticated")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
 
     if user.invite_pending:
-        print("User is not active or approved")
+        LOGGER.warning("User is not active or approved")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unauthorized",
@@ -217,7 +220,7 @@ def get_current_active_user_unsafe(
                 user_id = payload.get("id")
 
                 if user_id is None:
-                    print("No user ID found in token")
+                    LOGGER.warning("No user ID found in token")
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="Invalid token",
@@ -226,14 +229,14 @@ def get_current_active_user_unsafe(
                 # Fetch the user by ID from the database
                 user = User.objects.get(id=user_id)
             except jwt.ExpiredSignatureError:
-                print("Token has expired")
+                LOGGER.warning("Token has expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token has expired",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
             except jwt.InvalidTokenError:
-                print("Invalid token")
+                LOGGER.warning("Invalid token")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token",
@@ -246,7 +249,7 @@ def get_current_active_user_unsafe(
         )
 
     if user is None:
-        print("User not authenticated")
+        LOGGER.warning("User not authenticated")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
@@ -392,7 +395,8 @@ async def process_user(decoded_token):
         #         status_code=403, detail="Login is currently blocked due to maintenance."
         #     )
         if not JWT_SECRET:
-            raise HTTPException(status_code=500, detail="JWT_SECRET is not defined")
+            LOGGER.error("JWT_SECRET is not defined in settings.")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # Generate JWT token
         signed_token = jwt.encode(
             {
@@ -454,7 +458,7 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
 
         # Decode the token without verifying the signature (if needed)
         decoded_token = jwt.decode(id_token, options={"verify_signature": False})
-        print("decoded token: {}".format(decoded_token))
+        LOGGER.info("decoded token: %s", decoded_token)
         return {
             "refresh_token": refresh_token,
             "id_token": id_token,
@@ -463,7 +467,7 @@ async def get_jwt_from_code(auth_code: str, code_verifier: str):
         }
 
     except Exception as error:
-        print("get_jwt_from_code post error: {}".format(error))
+        LOGGER.error("get_jwt_from_code post error: %s", error)
 
 
 def is_global_write_admin(current_user) -> bool:

@@ -157,8 +157,7 @@ def assign_organizations_to_sectors(
                     *Organization.objects.using(db_name).filter(id__in=organization_ids)
                 )
     except Exception as e:
-        print("Error assigning organization to sectors:")
-        print(e)
+        LOGGER.error("Error assigning organization to sectors: %s", e)
         raise e
 
 
@@ -195,7 +194,7 @@ def process_sector(request, sector_child_dict):
             )
             sector_child_dict[sector_obj.id] = request["children"]
         except Exception as e:
-            print("Error occurred creating sector", e)
+            LOGGER.error("Error occurred creating sector: %s", e)
 
 
 def process_networks(networks):
@@ -212,7 +211,7 @@ def process_networks(networks):
                 {"network": cidr, "start_ip": address[0], "end_ip": address[-1]}
             )
         except Exception as e:
-            print("Invalid CIDR Format", e)
+            LOGGER.error("Invalid CIDR Format: %s", e)
     return network_list
 
 
@@ -308,7 +307,7 @@ def save_organization_to_mdl(
     Returns:
         Organization: The created or updated organization instance.
     """
-    # print("Saving Organization")
+    LOGGER.debug("Saving Organization")
     location_obj = None
     if location:
         try:
@@ -325,7 +324,7 @@ def save_organization_to_mdl(
                 },
             )
         except Exception as e:
-            print("Error creating location", e)
+            LOGGER.error("Error creating location", e)
 
     org_obj = None
     try:
@@ -387,7 +386,7 @@ def save_organization_to_mdl(
             org_obj = organization_obj
         pass
     except Exception as e:
-        print("Error occurred creating org", e)
+        LOGGER.error("Error occurred creating org", e)
 
     if org_obj:
         # Create CIDRs and link them
@@ -439,7 +438,6 @@ def save_cidr_to_mdl(cidr_dict: dict, org: Organization, db_name="mini_data_lake
                 },
             )
     except IntegrityError as e:
-        print("IntegrityError:", e)
+        LOGGER.error("IntegrityError: %s", e)
     except Exception as e:
-        print(type(e))
-        print("Error occurred while creating or updating CIDR:", e)
+        LOGGER.error("Error occurred while creating or updating CIDR: %s", e)
