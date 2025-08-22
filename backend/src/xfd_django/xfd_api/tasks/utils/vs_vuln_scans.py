@@ -5,7 +5,6 @@ from collections import Counter
 from ipaddress import ip_network
 import logging
 import os
-import traceback
 from typing import Dict
 
 # Third-Party Libraries
@@ -81,13 +80,11 @@ def process_vulnerability_scans(vuln_scans, org_id_dict):
             try:
                 save_vuln_scan(vuln_scan_dict)
             except Exception as e:
-                LOGGER.error("Error saving vulnerability scan: %s", e)
-                print(traceback.format_exc())
+                LOGGER.exception("Error saving vulnerability scan: %s", e)
                 # Raise to catch in the outer block
                 raise e
         except Exception as e:
-            LOGGER.error("Error processing Vulnerability Scan: %s", e)
-            print(traceback.format_exc())
+            LOGGER.exception("Error processing Vulnerability Scan: %s", e)
             raise IngestionError(
                 SCAN_NAME, str(e), "Failed processing vulnerability scans"
             ) from e

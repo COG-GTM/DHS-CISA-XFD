@@ -2,6 +2,7 @@
 # File: xfd_api/utils/db_utils.py
 # Standard Python Libraries
 from collections import defaultdict, deque
+import logging
 import os
 
 # Third-Party Libraries
@@ -11,6 +12,8 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.backends.utils import strip_quotes
 from django.db.utils import OperationalError, ProgrammingError
 from psycopg2.errors import WrongObjectType
+
+LOGGER = logging.getLogger(__name__)
 
 
 def table_exists_in_db(table_name, database):
@@ -52,10 +55,10 @@ def synchronize(target_app_label=None, using=None):
     # Used only for syncing a duplicate database that mirrors the xfd_mini_dl schema
     if using:
         database = using
-    print(
-        "Synchronizing database schema for app '{}' in database '{}'...".format(
-            target_app_label, database
-        )
+    LOGGER.info(
+        "Synchronizing database schema for app '%s' in database '%s'...",
+        target_app_label,
+        database,
     )
 
     # Warning: Cursor automatically closes after use of 'with'
@@ -64,14 +67,14 @@ def synchronize(target_app_label=None, using=None):
         # Compute allowed table names from the models we are syncing.
         allowed_tables = {m._meta.db_table for m in ordered_models}
         for model in ordered_models:
-            print("Processing model: {}".format(model.__name__))
+            LOGGER.info("Processing model: %s", model.__name__)
             process_model(schema_editor, model, database, allowed_tables)
 
-        print("Processing Many-to-Many tables...")
+        LOGGER.info("Processing Many-to-Many tables...")
         process_m2m_tables(schema_editor, ordered_models, database)
 
         if target_app_label == "xfd_mini_dl":
-            print("Ensuring GiST index exists on ip.ip...")
+            LOGGER.info("Ensuring GiST index exists on ip.ip...")
             with connections[database].cursor() as cursor:
                 cursor.execute(
                     """
@@ -90,7 +93,7 @@ def synchronize(target_app_label=None, using=None):
 
         cleanup_stale_tables(ordered_models, database)
 
-    print("Database synchronization complete.")
+    LOGGER.info("Database synchronization complete.")
 
 
 def get_ordered_models(target_app_label):
@@ -133,10 +136,9 @@ def get_ordered_models(target_app_label):
     # Any models not yet added are in a dependency cycle.
     remaining = [model for model in models if model not in ordered]
     if remaining:
-        print(
-            "Circular dependencies detected among: {}".format(
-                ", ".join(m.__name__ for m in remaining)
-            )
+        LOGGER.warning(
+            "Circular dependencies detected among: %s",
+            ", ".join(m.__name__ for m in remaining),
         )
         # Sort them deterministically (alphabetically) so that, for example, 'User' comes before 'Organization'
         remaining_sorted = sorted(remaining, key=lambda m: m.__name__)
@@ -158,14 +160,14 @@ def process_model(
             table_exists = cursor.fetchone()[0] is not None
 
             if table_exists:
-                print("Updating table for model: {}".format(model.__name__))
+                LOGGER.info("Updating table for model: %s", model.__name__)
                 update_table(schema_editor, model, database, allowed_tables)
             else:
-                print("Creating table for model: {}".format(model.__name__))
+                LOGGER.info("Creating table for model: %s", model.__name__)
                 schema_editor.create_model(model)
 
         except Exception as e:
-            print("Error processing model {}: {}".format(model.__name__, e))
+            LOGGER.error("Error processing model %s: %s", model.__name__, e)
 
 
 def process_m2m_tables(schema_editor: BaseDatabaseSchemaEditor, models, database):
@@ -180,13 +182,12 @@ def process_m2m_tables(schema_editor: BaseDatabaseSchemaEditor, models, database
                 table_exists = cursor.fetchone()[0] is not None
 
                 if not table_exists:
-                    print("Creating Many-to-Many table: {}".format(m2m_table_name))
+                    LOGGER.info("Creating Many-to-Many table: %s", m2m_table_name)
                     schema_editor.create_model(field.remote_field.through)
                 else:
-                    print(
-                        "Many-to-Many table {} already exists. Skipping.".format(
-                            m2m_table_name
-                        )
+                    LOGGER.info(
+                        "Many-to-Many table %s already exists. Skipping.",
+                        m2m_table_name,
                     )
 
 
@@ -239,14 +240,15 @@ def update_table(
                     if related_table not in allowed_tables or not table_exists_in_db(
                         related_table, database
                     ):
-                        print(
-                            "Skipping addition of foreign key field '{}' on model '{}' because referenced table '{}' does not exist yet.".format(
-                                field.column, model.__name__, related_table
-                            )
+                        LOGGER.warning(
+                            "Skipping addition of foreign key field '%s' on model '%s' because referenced table '%s' does not exist yet.",
+                            field.column,
+                            model.__name__,
+                            related_table,
                         )
                         continue
-                print(
-                    "Adding column '{}' to table '{}'".format(field.column, table_name)
+                LOGGER.info(
+                    "Adding column '%s' to table '%s'", field.column, table_name
                 )
                 schema_editor.add_field(model, field)
 
@@ -310,8 +312,8 @@ def update_table(
         # Remove extra columns
         extra_columns = existing_columns - db_fields
         for column in extra_columns:
-            print(
-                "Removing extra column '{}' from table '{}'".format(column, table_name)
+            LOGGER.info(
+                "Removing extra column '%s' from table '%s'", column, table_name
             )
             try:
                 safe_table_name = connections[database].ops.quote_name(table_name)
@@ -321,10 +323,11 @@ def update_table(
                 )
                 cursor.execute(query)
             except Exception as e:
-                print(
-                    "Error dropping column '{}' from table '{}': {}".format(
-                        column, table_name, e
-                    )
+                LOGGER.error(
+                    "Error dropping column '%s' from table '%s': %s",
+                    column,
+                    table_name,
+                    e,
                 )
 
         # Add missing indexes
@@ -344,17 +347,22 @@ def update_table(
         for model_index in model._meta.indexes:
             if not index_exists_in_db(model_index, existing_defs):
                 try:
-                    print(f"Adding index '{model_index.name}' to table '{table_name}'")
+                    LOGGER.info(
+                        "Adding index '%s' to table '%s'", model_index.name, table_name
+                    )
                     schema_editor.add_index(model, model_index)
                 except Exception as e:
-                    print(
-                        f"Failed to add index '{model_index.name}' on '{table_name}': {e}"
+                    LOGGER.error(
+                        "Failed to add index '%s' on '%s': %s",
+                        model_index.name,
+                        table_name,
+                        e,
                     )
 
 
 def cleanup_stale_tables(models, database):
     """Remove tables that no longer correspond to any Django model or Many-to-Many relationship."""
-    print("Checking for stale tables...")
+    LOGGER.info("Checking for stale tables...")
 
     with connections[database].cursor() as cursor:
         model_tables = {model._meta.db_table for model in models if model._meta.managed}
@@ -395,7 +403,7 @@ def cleanup_stale_tables(models, database):
         existing_tables = existing_tables - all_views
         stale_tables = existing_tables - expected_tables
         for table in stale_tables:
-            print("Removing stale table: {}".format(table))
+            LOGGER.info("Removing stale table: %s", table)
             try:
                 # Use `quote_ident` to safely handle table names with special characters or reserved words
                 cursor.execute(
@@ -404,11 +412,11 @@ def cleanup_stale_tables(models, database):
                     )
                 )
             except OperationalError as e:
-                print("Error dropping stale table {}: {}".format(table, e))
+                LOGGER.error("Error dropping stale table %s: %s", table, e)
             except WrongObjectType as e:
-                print("Tried to drop a non table entity {}: {}".format(table, e))
+                LOGGER.error("Tried to drop a non table entity %s: %s", table, e)
             except ProgrammingError as e:
-                print("Issue dropping entity {}: {}".format(table, e))
+                LOGGER.error("Issue dropping entity %s: %s", table, e)
 
 
 def drop_all_tables(app_label=None):
@@ -432,10 +440,10 @@ def drop_all_tables(app_label=None):
         )
 
     database = db_mapping.get(app_label, "default")
-    print(
-        "Resetting database schema for app '{}' in database '{}'...".format(
-            app_label, database
-        )
+    LOGGER.info(
+        "Resetting database schema for app '%s' in database '%s'...",
+        app_label,
+        database,
     )
 
     with connections[database].cursor() as cursor:
@@ -448,6 +456,6 @@ def drop_all_tables(app_label=None):
             )
             cursor.execute("GRANT ALL ON SCHEMA public TO public;")
         except Exception as e:
-            print("Error resetting schema: {}".format(e))
+            LOGGER.error("Error resetting schema: %s", e)
 
-    print("Database schema reset successfully.")
+    LOGGER.info("Database schema reset successfully.")

@@ -2,6 +2,7 @@
 # Standard Python Libraries
 from asyncio import Semaphore
 from datetime import date, datetime, timedelta
+import logging
 import secrets
 import uuid
 
@@ -39,6 +40,8 @@ from xfd_mini_dl.models import (
 )
 
 client = TestClient(app)
+
+LOGGER = logging.getLogger(__name__)
 
 search_fields = {
     "title": "DNS Twist Domains",
@@ -201,11 +204,11 @@ def redis_client():
 @pytest.fixture(scope="session", autouse=True)
 def ensure_fastapi_state(redis_client):
     """Ensure FastAPI's app.state.redis is set before running any tests."""
-    print("Setting up FastAPI Redis state...")
+    LOGGER.info("Setting up FastAPI Redis state...")
     app.state.redis = redis_client  # Inject into FastAPI state
     app.state.redis_semaphore = Semaphore(20)
     yield
-    print("Cleaning up FastAPI Redis state...")
+    LOGGER.info("Cleaning up FastAPI Redis state...")
     del app.state.redis  # Cleanup after tests
 
 
@@ -763,7 +766,7 @@ def test_vs_trends_invalid_org():
         headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
         json=payload,
     )
-    print(response)
+    LOGGER.info(response)
     assert response.status_code == 404
     assert response.json()["detail"] == "Invalid organization ID."
 

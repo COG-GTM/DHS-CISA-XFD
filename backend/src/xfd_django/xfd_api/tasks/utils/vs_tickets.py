@@ -104,7 +104,7 @@ def fetch_ticket_chunks_frozen(start_dt, end_dt, chunk_size=5000):
             ORDER BY last_change, _id
             LIMIT {chunk_size}
         """  # nosec B608
-        print(query)
+        LOGGER.info(query)
 
         rows = query_redshift(query, params=params)
         if not rows:
