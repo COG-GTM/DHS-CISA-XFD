@@ -634,6 +634,8 @@ def populate_sample_data():
     LOGGER.info("Populating vuln_scans, port_scans, tickets, and ticket_events...")
     for idx, org in enumerate(orgs, start=1):
         try:
+            if idx == 1:
+                continue
             with transaction.atomic():
                 # Bulk create CVEs (once per run)
                 build_fake_cve()  # Generates 1 or skips if exists. You could loop N times if needed.
