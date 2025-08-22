@@ -216,7 +216,7 @@ def index_exists_in_db(model_index, existing_defs):
 
 def update_table(
     schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
-):
+):  # pylint: disable=R0915
     """Update an existing table for the given model. Ensure columns match fields."""
     table_name = model._meta.db_table
     db_fields = {field.column for field in model._meta.fields}
@@ -282,9 +282,10 @@ def update_table(
                         null_count = cursor.fetchone()[0]
                         if null_count > 0:
                             print(
-                                f"⚠️ Cannot set NOT NULL on {table_name}.{field.column}: "
-                                f"{null_count} row(s) contain NULL values. "
-                                f"Please clean up data manually."
+                                "⚠️ Cannot set NOT NULL on {}.{}: {} row(s) contain NULL values. "
+                                "Please clean up data manually.".format(
+                                    table_name, field.column, null_count
+                                )
                             )
                             continue  # skip ALTER
                         alter_sql = f"ALTER TABLE {safe_table_name} ALTER COLUMN {safe_column_name} SET NOT NULL;"
@@ -294,12 +295,17 @@ def update_table(
                     try:
                         cursor.execute(alter_sql)
                         print(
-                            f"Updated nullability of column '{field.column}' in table '{table_name}' "
-                            f"to {'NULL' if desired_nullable else 'NOT NULL'}"
+                            "Updated nullability of column '{}' in table '{}' to {}".format(
+                                field.column,
+                                table_name,
+                                "NULL" if desired_nullable else "NOT NULL",
+                            )
                         )
                     except Exception as e:
                         print(
-                            f"⚠️ Failed to update nullability of {table_name}.{field.column}: {e}"
+                            "⚠️ Failed to update nullability of {}.{}: {}".format(
+                                table_name, field.column, e
+                            )
                         )
         # Remove extra columns
         extra_columns = existing_columns - db_fields
