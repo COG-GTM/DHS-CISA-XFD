@@ -955,7 +955,12 @@ def get_summary_dict(summary, numeric_fields, complex_fields=None):
             data[field] = getattr(summary, field, None)
 
     # Always include summary_date, start_date, and end_date if present
-    for date_field in ["summary_date", "start_date", "end_date"]:
+    for date_field in [
+        "summary_date",
+        "start_date",
+        "end_date",
+        "enrolled_in_vs_timestamp",
+    ]:
         if hasattr(summary, date_field):
             data[date_field] = getattr(summary, date_field)
 
