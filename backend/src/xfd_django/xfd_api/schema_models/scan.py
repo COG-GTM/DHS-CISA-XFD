@@ -420,6 +420,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Pull in WAS finding data from commercial mdl",
     ),
+    "was_lz_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in WAS data from commercial mdl and sync to LZ MDL",
+    ),
     "xpanse_sync": ScanSchema(
         type="fargate",
         is_passive=True,

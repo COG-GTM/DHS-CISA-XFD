@@ -144,6 +144,7 @@ from .schema_models.vulnerability import (
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
+from .schema_models.was_sync import GetWasScanSummariesResponse
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
     get_organization_sync,
@@ -1927,3 +1928,52 @@ def generate_presigned_object_store_url(
         ObjectStorePresignedUrlResponse: _description_
     """
     return get_object_store_presigned_url(current_user, body)
+
+# POST
+@api_router.post(
+    "/was_scan_summaries",
+    response_model=GetWasScanSummariesResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["WAS Scan Summaries"],
+)
+async def get_was_scan_summaries_endpoint(
+        response: Response,
+        current_user: User = Depends(get_current_active_user),
+        page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+        per_page: int = Query(100, ge=1, description="How many items per page."),
+):
+    """
+    Return paginated WAS scan summaries plus an X‑Salted‑Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - Only authenticated users may call this.
+    """
+    try:
+        total_pages, records = await get_all_was_scan_summaries(
+            current_user=current_user,
+            page=page,
+            per_page=per_page,
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {error}",
+        )
+
+    # Serialize ORM objects to plain dicts
+    raw_records = [WasScanSummarySchema.from_orm(record).dict() for record in records]
+    payload = jsonable_encoder(raw_records)
+
+    response_body = {"status": "ok", "payload": payload}
+
+    # Compute salted checksum
+    json_string = json.dumps(response_body, default=str, sort_keys=True)
+    checksum = hashlib.sha256((SALT + json_string).encode()).hexdigest()
+    response.headers["X-Salted-Checksum"] = checksum
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=response_body,
+        headers={"X-Salted-Checksum": checksum},
+    )
