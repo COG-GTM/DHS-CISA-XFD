@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Box, Typography, ButtonBase } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Result } from '../../context/SearchProvider';
+import { Result } from 'context/SearchProvider';
 // @ts-ignore:next-line
 import { parseISO, formatDistanceToNow } from 'date-fns';
 import DOMPurify from 'dompurify';
@@ -180,7 +180,7 @@ export const ResultCard: React.FC<Props> = (props) => {
 
   return (
     <StyledButtonBase
-      aria-label="view domain details"
+      aria-label={`View domain details for ${name.raw}`}
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => {

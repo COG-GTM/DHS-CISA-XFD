@@ -4,24 +4,48 @@ import { Button } from '@trussworks/react-uswds';
 import { Alert, AlertTitle, Box, Grid, Typography } from '@mui/material';
 import { CrossfeedWarning } from 'components/WarningBanner';
 import { initialNotificationValues, MaintenanceNotification } from 'types';
+import { v4 as uuidv4 } from 'uuid';
+import pkceChallenge from 'pkce-challenge';
 
 const LoginButton = () => {
   // TODO: Capture default values here once determined
-  const domain = process.env.REACT_APP_COGNITO_DOMAIN || 'default_value';
-  const clientId = process.env.REACT_APP_COGNITO_CLIENT_ID || 'default_value';
+  const domain = import.meta.env.VITE_COGNITO_DOMAIN || 'default_value';
+  const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID || 'default_value';
   const callbackUrl =
-    process.env.REACT_APP_COGNITO_CALLBACK_URL || 'default_value';
-  const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+    import.meta.env.VITE_COGNITO_CALLBACK_URL || 'default_value';
 
-  const redirectToAuth = () => {
-    // Adjust this callback URL once determined
-    window.location.href = `https://${domain}/oauth2/authorize?identity_provider=Okta&redirect_uri=${encodedCallbackUrl}&response_type=CODE&client_id=${clientId}&scope=email openid profile`;
+  const redirectToAuth = async () => {
+    const { code_challenge, code_verifier } = await pkceChallenge();
+    const state = uuidv4();
+
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/auth/set-oauth-cookies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          code_verifier,
+          state
+        })
+      });
+      console.log('Cookies set, redirecting to Okta...');
+      const authorizeUrl = `https://${domain}/oauth2/authorize?identity_provider=Okta&redirect_uri=${encodeURIComponent(
+        callbackUrl
+      )}&response_type=code&client_id=${clientId}&scope=email+openid+profile&state=${state}&code_challenge=${encodeURIComponent(
+        code_challenge
+      )}&code_challenge_method=S256`;
+
+      window.location.href = authorizeUrl;
+    } catch (err) {
+      console.error('Error setting cookies before redirect:', err);
+    }
   };
 
   return (
     <Button
       onClick={redirectToAuth}
       type={'button'}
+      size="big"
       style={{ width: 'fit-content' }}
     >
       Sign in with LOGIN.GOV
@@ -75,20 +99,25 @@ export const AuthLogin: React.FC<{ showSignUp?: boolean }> = () => {
     </Grid>
   );
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-around"
-      height="100%"
-    >
-      {notification?.status === 'active' && platformNotification}
-      <Typography variant="h2" textAlign="center" sx={{ mt: 5 }}>
-        Welcome to CyHy Dashboard
-      </Typography>
-      <Box pt={3} mb={3} display="flex" justifyContent="center">
+    <Box display="flex" flexDirection="column" height={'calc(100vh - 108px)'}>
+      <Box flex={0.5} display="flex" />
+      <Box
+        flex={0.5}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Typography variant="h1" textAlign="center">
+          Welcome to CyHy Dashboard
+        </Typography>
+      </Box>
+      <Box flex={1} display="flex" justifyContent="center" alignItems="center">
         <LoginButton />
       </Box>
-      <CrossfeedWarning />
+      <Box flex={1} display="flex" />
+      <Box justifyContent="center" alignItems="center" pb={5}>
+        <CrossfeedWarning />
+      </Box>
     </Box>
   );
 };

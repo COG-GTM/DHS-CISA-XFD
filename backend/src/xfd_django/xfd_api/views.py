@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from typing import List, Optional, Union
 from uuid import UUID
@@ -13,6 +14,7 @@ from fastapi import (
     Body,
     Depends,
     HTTPException,
+    Path,
     Query,
     Request,
     Response,
@@ -55,6 +57,7 @@ from .api_methods.stats import (
     get_stats_comparison_data,
     get_user_ports_count,
     get_user_services_count,
+    get_v2_trending_data,
     get_vs_condensed_trending_data,
     get_vs_trending_data,
     stats_latest_vulns,
@@ -78,12 +81,14 @@ from .api_methods.vulnerability import (
     get_vulnerability_by_id,
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
+    v2_get_vulnerability_by_id,
 )
 from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import (
     get_current_active_user,
     get_current_active_user_unsafe,
     handle_okta_callback,
+    set_oauth_cookies_response,
 )
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
@@ -138,9 +143,12 @@ from .schema_models.user_log_schema import (
 )
 from .schema_models.vulnerability import (
     CredBreachVulnerabilityResponse,
+    GetV2VulnerabilityResponse,
+    GetVulnerabilityByIdRequest,
     GetVulnerabilityResponse,
     ShodanVulnerabiltyResponse,
     VsVulnerabilityResponse,
+    VulnByIdRequest,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
@@ -151,6 +159,8 @@ from .tools.user_logger_decorator import (
     get_user_sync,
     log_action,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 # Define API router
 api_router = APIRouter()
@@ -289,6 +299,21 @@ async def callback_route(request: Request):
         raise HTTPException(status_code=400, detail=str(error))
 
 
+# Set PKCE and state cookies for OAuth
+@api_router.post("/auth/set-oauth-cookies", tags=["Auth"])
+async def set_oauth_cookies(request: Request):
+    """Set PKCE code_verifier and state cookies for OAuth flow."""
+    body = await request.json()
+    state = body.get("state")
+    code_verifier = body.get("code_verifier")
+
+    if not state or not code_verifier:
+        raise HTTPException(
+            status_code=400, detail="Missing PKCE code_verifier or state"
+        )
+    return set_oauth_cookies_response(state, code_verifier)
+
+
 # ========================================
 #   CPE Endpoints
 # ========================================
@@ -364,7 +389,7 @@ async def get_call_all_cves(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {e}",
+            detail="Unexpected error: {}".format(e),
         )
 
     # serialize
@@ -762,19 +787,18 @@ async def update_granular_scan(
     )
 
 
-@api_router.get(
-    "/v2/organizations",
+@api_router.post(
+    "/v2/organizations/search",
     dependencies=[Depends(get_current_active_user)],
-    response_model=List[OrganizationSchema.GetOrganizationSchema],
+    response_model=OrganizationSchema.PaginatedOrganizationsResponse,
     tags=["Organizations"],
 )
-async def list_organizations_v2(
-    state: Optional[List[str]] = Query(None),
-    region_id: Optional[List[str]] = Query(None),
+async def search_organizations_v2(
+    payload: OrganizationSchema.OrganizationSearch,
     current_user: User = Depends(get_current_active_user),
 ):
-    """Retrieve a list of all organizations (version 2)."""
-    return organization.list_organizations_v2(state, region_id, current_user)
+    """Search organizations data grid."""
+    return organization.search_organizations_v2(payload, current_user)
 
 
 @api_router.post(
@@ -1140,7 +1164,7 @@ async def dns_twist_sync(
     try:
         return await dns_twist_sync_post(sync_body, request, current_user)
     except Exception as e:
-        print(e)
+        LOGGER.error("Error occurred during DNSTwist sync: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
@@ -1193,6 +1217,22 @@ async def get_vs_trending_stats(
 ):
     """Retrieve VS Summary data filtered by the user."""
     return get_vs_trending_data(filter_data.filters, current_user)
+
+
+@api_router.post(
+    "/v2/stats/trends",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=stat_schema.V2TrendResponse,
+    response_model_exclude_none=True,
+    tags=["Stats"],
+)
+async def get_v2_trending_stats(
+    filter_data: stat_schema.V2TrendStatsPayloadSchema,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retrieve Summary data filtered by the user - V2."""
+    result = get_v2_trending_data(filter_data, current_user)
+    return result
 
 
 @api_router.post(
@@ -1602,7 +1642,26 @@ async def call_get_vulnerability_by_id(
 
 
 @api_router.get(
-    "/vulnerabilities/{scan_source}/{vulnerability_id}",
+    "/v2/vulnerabilities/{vuln_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetV2VulnerabilityResponse,
+    tags=["Vulnerabilities"],
+)
+async def v2_call_get_vulnerability_by_id(
+    vuln_id: str = Path(..., description="Vulnerability ID"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(
+        None, gt=0, description="Limit for scan history"
+    ),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get vulnerability by id."""
+    request = VulnByIdRequest(history=history, history_limit=history_limit)
+    return v2_get_vulnerability_by_id(vuln_id, request, current_user)
+
+
+@api_router.get(
+    "/v2/vulnerability_details/{vulnerability_id}",
     dependencies=[Depends(get_current_active_user)],
     response_model=Union[
         CredBreachVulnerabilityResponse,
@@ -1612,13 +1671,22 @@ async def call_get_vulnerability_by_id(
     tags=["Vulnerabilities"],
 )
 async def get_vulnerability_by_source_id_route(
-    scan_source: str,
-    vulnerability_id: str,
+    vulnerability_id: str = Path(..., description="The ID of the vulnerability"),
+    scan_source: Optional[str] = Query(None, description="Scan source (e.g. shodan)"),
+    history: Optional[bool] = Query(False, description="Include ticket history"),
+    history_limit: Optional[int] = Query(
+        10, gt=0, description="Limit for scan history"
+    ),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get vulnerability by id."""
+    """Get vulnerability details by Id: V2."""
+    request = GetVulnerabilityByIdRequest(
+        scan_source=scan_source, history=history, history_limit=history_limit
+    )
     return get_vulnerability_by_scan_source_and_id(
-        scan_source, vulnerability_id, current_user
+        vulnerability_id=vulnerability_id,
+        request=request,
+        current_user=current_user,
     )
 
 
@@ -1704,8 +1772,10 @@ async def get_call_all_cybersixgill(
     except HTTPException:
         raise
     except Exception as e:
+        LOGGER.error("Sync error: %s", e)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Sync error: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Sync error: {}".format(e),
         )
 
     # attach checksum header
