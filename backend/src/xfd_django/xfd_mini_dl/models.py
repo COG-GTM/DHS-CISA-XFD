@@ -12,7 +12,6 @@ from netfields import InetAddressField
 manage_db = True
 app_label_name = "xfd_mini_dl"
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -1920,15 +1919,25 @@ class VulnScanSummary(models.Model):
     )
     start_date = models.DateTimeField(
         help_text="Timestamp of the earliest last_change in the collection",
+        null=True,
+        blank=True,
     )
     end_date = models.DateTimeField(
         help_text="Timestamp of the latest last_change in the collection",
+        null=True,
+        blank=True,
     )
     organization = models.ForeignKey(
         Organization,
         related_name="vuln_scan_summaries",
         on_delete=models.CASCADE,
         help_text="Foreign key relationship to the organization the summary is built for.",
+    )
+    enrolled_in_vs_timestamp = models.DateTimeField(
+        db_column="enrolled_in_vs_timestamp",
+        null=True,
+        blank=True,
+        help_text="Date the stakeholder enrolled in VS.",
     )
     assets_owned_count = models.IntegerField(
         null=True,
@@ -2605,7 +2614,8 @@ class Ip(models.Model):
                     socket.inet_pton(socket.AF_INET6, self.ip)
                     self.ip_version = "IPv6"
                 except OSError:
-                    raise ValueError(f"Invalid IP address: {self.ip}")
+                    LOGGER.exception("Invalid IP address: %s", self.ip)
+                    raise ValueError
 
         super().save(*args, **kwargs)
 

@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from typing import List, Optional, Union
 from uuid import UUID
@@ -92,7 +93,7 @@ from .auth import (
     get_current_active_user,
     get_current_active_user_unsafe,
     handle_okta_callback,
-    set_oauth_cookies_response,
+    sign_oauth_data,
 )
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
@@ -166,6 +167,8 @@ from .tools.user_logger_decorator import (
     get_user_sync,
     log_action,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 # Define API router
 api_router = APIRouter()
@@ -304,19 +307,16 @@ async def callback_route(request: Request):
         raise HTTPException(status_code=400, detail=str(error))
 
 
-# Set PKCE and state cookies for OAuth
-@api_router.post("/auth/set-oauth-cookies", tags=["Auth"])
-async def set_oauth_cookies(request: Request):
-    """Set PKCE code_verifier and state cookies for OAuth flow."""
-    body = await request.json()
-    state = body.get("state")
-    code_verifier = body.get("code_verifier")
-
+# Return signed OAuth metadata
+@api_router.post("/auth/get-oauth-meta", tags=["Auth"])
+async def get_oauth_meta(payload: dict):
+    """Return signed OAuth metadata."""
+    state = payload.get("state")
+    code_verifier = payload.get("code_verifier")
     if not state or not code_verifier:
-        raise HTTPException(
-            status_code=400, detail="Missing PKCE code_verifier or state"
-        )
-    return set_oauth_cookies_response(state, code_verifier)
+        raise HTTPException(status_code=400, detail="Missing parameters")
+    signed_token = sign_oauth_data(state, code_verifier)
+    return {"signedToken": signed_token}
 
 
 # ========================================
@@ -394,7 +394,7 @@ async def get_call_all_cves(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {e}",
+            detail="Unexpected error: {}".format(e),
         )
 
     # serialize
@@ -1217,7 +1217,7 @@ async def dns_twist_sync(
     try:
         return await dns_twist_sync_post(sync_body, request, current_user)
     except Exception as e:
-        print(e)
+        LOGGER.error("Error occurred during DNSTwist sync: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
@@ -1825,8 +1825,10 @@ async def get_call_all_cybersixgill(
     except HTTPException:
         raise
     except Exception as e:
+        LOGGER.error("Sync error: %s", e)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Sync error: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Sync error: {}".format(e),
         )
 
     # attach checksum header

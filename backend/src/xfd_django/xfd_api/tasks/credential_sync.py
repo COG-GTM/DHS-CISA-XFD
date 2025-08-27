@@ -26,7 +26,6 @@ from xfd_mini_dl.models import (
     SubDomains,
 )
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -63,6 +62,7 @@ def handler(command_options):
             "body": "DMZ credential breaches and exposures sync completed successfully.",
         }
     except Exception as e:
+        LOGGER.error("Error during DMZ credential sync: %s", e)
         return {"status_code": 500, "body": str(e)}
 
 
@@ -198,7 +198,7 @@ def process_response(response, org):
                     )
                 breaches_saved = True
             except Exception as e:
-                print("Error saving Cred Breaches: {error}".format(error=e))
+                LOGGER.error("Error saving Cred Breaches: %s", e)
 
     cred_exposures_array = data.get("credential_exposures", [])
     if cred_exposures_array:
@@ -267,9 +267,7 @@ def process_response(response, org):
                 )
                 exposures_saved = True
             except Exception as e:
-                print("Error saving Credential Exposure: {error}".format(error=e))
-
-    # return total pages and if exposures or breaches were saved
+                LOGGER.error("Error saving Credential Exposure: %s", e)
     return {
         "total_pages": total_pages,
         "data_saved": exposures_saved or breaches_saved,
