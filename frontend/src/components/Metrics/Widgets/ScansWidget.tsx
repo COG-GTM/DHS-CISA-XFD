@@ -1,25 +1,41 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react';
+import React, {
+  useEffect,
+  useCallback,
+  useState,
+  useMemo,
+  useRef
+} from 'react';
+import { Box, Paper } from '@mui/material';
 import {
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip
-} from '@mui/material';
-import { ResponsiveLine } from '@nivo/line';
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridCellParams
+} from '@mui/x-data-grid';
+import { SparkLineChart } from '@mui/x-charts/SparkLineChart';
 import dayjs from 'dayjs';
+import { visuallyHidden } from '@mui/utils';
 import { useAuthContext } from 'context';
 import * as MetricsStyles from '../style';
+import InfoLabel from 'components/Dashboard/InfoLabel';
 import {
   ScanDetails,
   ScanSummaries,
   OrgCountByStatus,
   ScanSummary
 } from '../../../types/metrics';
+
+const scanMetricsTooltip = [
+  {
+    id: 'Scan Metrics',
+    content:
+      'This widget shows success/failure metrics for non-global scans over the displayed time period (default is 7 days). ' +
+      'The "Scan Result Summary" table lists scans and . The “Total Orgs” column shows the total number of organizations that the scan was run against. ' +
+      'Each status code column (e.g. 200, 404, 500) shows how many unique organizations returned that status code at least once within the time window. ' +
+      'The “HTTP Status Trends" table appears when you select a scan. It shows daily trends as small line charts (sparklines) for each status code, over the date range. ' +
+      'Status codes follow the categories defined in RFC 9110 (HTTP Semantics): 1xx = informational responses, 2xx = successful responses, 3xx = redirects, 4xx = client errors, and 5xx = server errors. '
+  }
+];
 
 const generateDateRange = (days: number): string[] => {
   const today = dayjs().startOf('day');
@@ -49,8 +65,10 @@ const ScansWidget: React.FC = () => {
   const [selectedScanId, setSelectedScanId] = useState<string | null>(null);
   const [scanDetails, setScanDetails] = useState<ScanDetails | null>(null);
 
-  const { cardRoot, cardSmall, cardTitle, header, body } =
-    MetricsStyles.classesMetrics;
+  const { cardRoot, cardSmall, header, body } = MetricsStyles.classesMetrics;
+
+  // Focus target for details region (Chart 2)
+  const detailsRegionRef = useRef<HTMLDivElement | null>(null);
 
   const fetchScanSummaries = useCallback(async () => {
     const result = await apiGet('/metrics/scans');
@@ -59,7 +77,7 @@ const ScansWidget: React.FC = () => {
 
   const fetchScanDetails = useCallback(
     async (scanId: string) => {
-      const result = await apiGet(`/metrics/scans/${scanId}`);
+      const result = await apiGet('/metrics/scans/' + scanId);
       setScanDetails(result || null);
     },
     [apiGet]
@@ -69,11 +87,25 @@ const ScansWidget: React.FC = () => {
     fetchScanSummaries();
   }, [fetchScanSummaries]);
 
+  // When details load, move keyboard focus to the details region (Chart 2)
+  useEffect(() => {
+    if (scanDetails && detailsRegionRef.current) {
+      requestAnimationFrame(function () {
+        if (detailsRegionRef.current) {
+          detailsRegionRef.current.focus();
+        }
+      });
+    }
+  }, [scanDetails]);
+
   const handleScanClick = (scanId: string) => {
     setSelectedScanId(scanId);
     fetchScanDetails(scanId);
   };
 
+  // =========================
+  // Summary Grid (top table)
+  // =========================
   const allStatusCodes: number[] = useMemo(() => {
     return scanSummaries?.scans
       ? Array.from(
@@ -92,39 +124,220 @@ const ScansWidget: React.FC = () => {
     return scanSummaries?.metrics_window_days ?? 'N';
   }, [scanSummaries]);
 
-  const dateRange = useMemo(
+  type SummaryRow = {
+    id: string;
+    name: string;
+    total_orgs: number;
+    // dynamic status code fields, e.g., s200, s404
+    [key: string]: any;
+  };
+
+  const summaryRows: SummaryRow[] = useMemo(() => {
+    if (!scanSummaries?.scans) return [];
+    return scanSummaries.scans.map((scan) => {
+      const row: SummaryRow = {
+        id: scan.id,
+        name: scan.name,
+        total_orgs: scan.total_orgs
+      };
+      scan.org_counts_by_status.forEach((s) => {
+        row['s' + s.http_status] = s.org_count;
+      });
+      // Ensure all codes exist so columns line up
+      allStatusCodes.forEach((code) => {
+        const key = 's' + code;
+        if (typeof row[key] === 'undefined') row[key] = 0;
+      });
+      return row;
+    });
+  }, [scanSummaries, allStatusCodes]);
+
+  const summaryColumns: GridColDef[] = useMemo(() => {
+    const base: GridColDef[] = [
+      {
+        field: 'name',
+        headerName: 'Scan Name',
+        minWidth: 140,
+        flex: 1.6,
+        renderCell: (params: GridRenderCellParams<SummaryRow>) => (
+          <Box component="span" aria-label={'Scan name ' + params.row.name}>
+            {params.row.name}
+          </Box>
+        )
+      },
+      {
+        field: 'total_orgs',
+        headerName: 'Total Orgs',
+        minWidth: 110,
+        flex: 0.7,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params: GridRenderCellParams<SummaryRow>) => (
+          <Box
+            component="span"
+            aria-label={
+              'Total organizations ' +
+              params.row.total_orgs +
+              ' for scan ' +
+              params.row.name
+            }
+          >
+            {params.row.total_orgs}
+          </Box>
+        )
+      }
+    ];
+
+    const statusCols: GridColDef[] = allStatusCodes.map((code) => ({
+      field: 's' + code,
+      headerName: String(code),
+      minWidth: 80,
+      flex: 0.6,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params: GridRenderCellParams<SummaryRow>) => (
+        <Box
+          component="span"
+          aria-label={
+            'HTTP status ' +
+            code +
+            ' organization count ' +
+            params.value +
+            ' for scan ' +
+            params.row.name
+          }
+        >
+          {params.value}
+        </Box>
+      )
+    }));
+
+    return [...base, ...statusCols];
+  }, [allStatusCodes]);
+
+  // =========================
+  // Details Grid (bottom table)
+  // =========================
+  const dateRange: string[] = useMemo(
     () =>
       scanDetails ? generateDateRange(scanDetails.metrics_window_days) : [],
     [scanDetails]
   );
 
-  const normalizedDetails = useMemo(() => {
-    if (!scanDetails) return [];
+  const dateRangeLabel = useMemo(() => {
+    if (!dateRange.length) return '';
+    return dateRange[0] + '–' + dateRange[dateRange.length - 1];
+  }, [dateRange]);
 
+  type DetailRow = {
+    id: string;
+    http_status: number;
+    counts: number[]; // aligned to dateRange
+    total: number;
+  };
+
+  const detailRows: DetailRow[] = useMemo(() => {
+    if (!scanDetails) return [];
     return scanDetails.daily_status_counts.map((status) => {
-      const countMap = Object.fromEntries(
+      const countMap: Record<string, number> = Object.fromEntries(
         status.daily_counts.map((d) => [d.date, d.count])
       );
-
-      const series = dateRange.map((date) => ({
-        x: date,
-        y: countMap[date] ?? 0
-      }));
-
+      const counts = dateRange.map((d) => countMap[d] ?? 0);
+      const total = counts.reduce((a, b) => a + b, 0);
       return {
+        id: String(status.http_status),
         http_status: status.http_status,
-        total: series.reduce((acc, d) => acc + d.y, 0),
-        lineData: [
-          {
-            id: status.http_status.toString(),
-            data: series,
-            color: getStatusColor(status.http_status)
-          }
-        ]
+        counts,
+        total
       };
     });
   }, [scanDetails, dateRange]);
 
+  const detailColumns: GridColDef[] = useMemo(() => {
+    const cols: GridColDef[] = [
+      {
+        field: 'http_status',
+        headerName: 'Status Code',
+        minWidth: 120,
+        flex: 0.6,
+        renderCell: (params: GridRenderCellParams<DetailRow>) => (
+          <Box
+            component="span"
+            aria-label={
+              'HTTP status code ' +
+              params.row.http_status +
+              ' for scan ' +
+              (scanDetails ? scanDetails.name : '')
+            }
+          >
+            {params.row.http_status}
+          </Box>
+        )
+      },
+      {
+        field: 'counts',
+        headerName: 'Trend',
+        minWidth: 220,
+        flex: 1.2,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        renderCell: (params: GridRenderCellParams<DetailRow>) => {
+          const color = getStatusColor(params.row.http_status);
+          const ariaText =
+            'HTTP ' +
+            params.row.http_status +
+            ' trend for scan ' +
+            (scanDetails ? scanDetails.name : '') +
+            ' over ' +
+            dateRangeLabel;
+          return (
+            <Box sx={{ width: '100%' }} aria-label={ariaText}>
+              <SparkLineChart
+                data={params.row.counts}
+                height={40}
+                plotType="line"
+                showHighlight={false}
+                curve="linear"
+                color={color}
+              />
+            </Box>
+          );
+        }
+      },
+      {
+        field: 'total',
+        headerName: 'Total',
+        minWidth: 100,
+        flex: 0.5,
+        align: 'right',
+        headerAlign: 'right',
+        renderCell: (params: GridRenderCellParams<DetailRow>) => (
+          <Box
+            component="span"
+            aria-label={
+              'HTTP Status ' +
+              params.row.http_status +
+              ' total count ' +
+              params.row.total +
+              ' for scan ' +
+              (scanDetails ? scanDetails.name : '') +
+              ' over last ' +
+              (scanDetails ? scanDetails.metrics_window_days : '') +
+              ' days'
+            }
+          >
+            {params.row.total}
+          </Box>
+        )
+      }
+    ];
+    return cols;
+  }, [dateRangeLabel, scanDetails]);
+
+  // =========================
+  // Accessible grouping labels for status categories in header (summary)
+  // =========================
   const statusCategoryLabels: Record<number, string> = {
     1: 'Informational',
     2: 'Success',
@@ -132,7 +345,6 @@ const ScansWidget: React.FC = () => {
     4: 'Client Error',
     5: 'Server Error'
   };
-
   const getCategoryCounts = (codes: number[]) => {
     return codes.reduce(
       (acc, code) => {
@@ -143,22 +355,51 @@ const ScansWidget: React.FC = () => {
       {} as Record<number, number>
     );
   };
-
   const categoryCounts = getCategoryCounts(allStatusCodes);
+
+  // Helper to render an extra, visually-hidden description before the grid
+  const SummaryHeader: React.FC = () => (
+    <Box component="p" sx={visuallyHidden as any}>
+      {'Grouped columns: ' +
+        Object.entries(categoryCounts)
+          .map(function (pair) {
+            return (
+              (statusCategoryLabels[Number(pair[0])] || 'Other') +
+              ' has ' +
+              pair[1] +
+              ' columns'
+            );
+          })
+          .join('. ')}
+    </Box>
+  );
 
   return (
     <Paper
       elevation={0}
       className={cardRoot}
-      style={{ padding: '0.5rem 1.25rem' }}
+      style={{ padding: '1.25rem 1.25rem' }}
     >
       <div className={cardSmall}>
         <div className={header}>
-          <h2
-            style={{ fontSize: '1.25rem', fontWeight: 600, color: '#07648D' }}
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            aria-label="Scan Metrics heading with information tooltip"
           >
-            Scan Success Metrics
-          </h2>
+            <Box>
+              <InfoLabel
+                label="Scan Metrics"
+                typographyVariant="h2"
+                viewDetails
+                tooltipContentJson={scanMetricsTooltip}
+                labelStyle={{
+                  fontWeight: 600,
+                  color: '#07648D',
+                  margin: 0
+                }}
+              />
+            </Box>
+          </Box>
         </div>
         <div className={body}>
           {scanSummaries?.scans?.length ? (
@@ -169,120 +410,33 @@ const ScansWidget: React.FC = () => {
               <h4 style={{ fontWeight: 'normal', margin: 0 }}>
                 Organization count per scan for each HTTP Status Code
               </h4>
-              <TableContainer>
-                <Table size="small" aria-label="Scan status table">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        align="center"
-                        colSpan={2}
-                        style={{ borderBottom: '1px solid #ddd' }}
-                      ></TableCell>
-                      {Object.entries(categoryCounts).map(
-                        ([cat, count], idx, arr) => {
-                          const isLast = idx === arr.length - 1;
-                          return (
-                            <TableCell
-                              key={`label-${cat}`}
-                              align="center"
-                              colSpan={count}
-                              style={{
-                                fontWeight: 'bold',
-                                fontSize: '0.75rem',
-                                borderBottom: '1px solid #ddd',
-                                borderRight: !isLast
-                                  ? '1px solid #ddd'
-                                  : undefined
-                              }}
-                            >
-                              {statusCategoryLabels[Number(cat)] || 'Other'}
-                            </TableCell>
-                          );
-                        }
-                      )}
-                    </TableRow>
 
-                    <TableRow>
-                      <TableCell
-                        align="center"
-                        style={{
-                          fontWeight: 'bold',
-                          borderBottom: '1px solid #ddd'
-                        }}
-                      >
-                        Scan Name
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        style={{
-                          fontWeight: 'bold',
-                          borderBottom: '1px solid #ddd'
-                        }}
-                      >
-                        Total Orgs
-                      </TableCell>
-                      {allStatusCodes.map((code) => (
-                        <TableCell
-                          align="center"
-                          key={code}
-                          style={{
-                            fontWeight: 'bold',
-                            borderBottom: '1px solid #ddd',
-                            borderRight: undefined
-                          }}
-                        >
-                          {code}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(scanSummaries?.scans ?? []).map((scan) => {
-                      const countMap = Object.fromEntries(
-                        scan.org_counts_by_status.map((s: OrgCountByStatus) => [
-                          s.http_status,
-                          s.org_count
-                        ])
-                      );
+              <SummaryHeader />
 
-                      return (
-                        <Tooltip
-                          key={scan.id}
-                          title={
-                            <span className={cardTitle}>
-                              Click to view scan metrics
-                            </span>
-                          }
-                          placement="right"
-                          arrow
-                        >
-                          <TableRow
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => handleScanClick(scan.id)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleScanClick(scan.id);
-                              }
-                            }}
-                          >
-                            <TableCell align="center">{scan.name}</TableCell>
-                            <TableCell align="center">
-                              {scan.total_orgs}
-                            </TableCell>
-                            {allStatusCodes.map((code) => (
-                              <TableCell align="center" key={code}>
-                                {countMap[code] ?? 0}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        </Tooltip>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <Box mt={1} aria-label="Scan status summary table">
+                <DataGrid
+                  rows={summaryRows}
+                  columns={summaryColumns}
+                  disableRowSelectionOnClick
+                  hideFooter
+                  onCellKeyDown={(
+                    params: GridCellParams,
+                    event: React.KeyboardEvent
+                  ) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleScanClick(String(params.row.id));
+                    }
+                  }}
+                  onCellClick={(params) =>
+                    handleScanClick(String(params.row.id))
+                  }
+                  getRowClassName={() => 'clickable-row'}
+                  sx={{
+                    '& .clickable-row': { cursor: 'pointer' }
+                  }}
+                />
+              </Box>
             </>
           ) : (
             <h3>No scans available</h3>
@@ -294,61 +448,30 @@ const ScansWidget: React.FC = () => {
                 {scanDetails.name} HTTP Status Trends (Last{' '}
                 {scanDetails.metrics_window_days} Days)
               </h3>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell style={{ fontWeight: 'bold' }}>
-                        Status Code
-                      </TableCell>
-                      <TableCell style={{ fontWeight: 'bold' }}>
-                        Sparkline
-                      </TableCell>
-                      <TableCell align="right" style={{ fontWeight: 'bold' }}>
-                        Total
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {normalizedDetails.map((row) => (
-                      <TableRow key={row.http_status}>
-                        <TableCell>{row.http_status}</TableCell>
-                        <TableCell>
-                          <div style={{ height: '40px', width: '100%' }}>
-                            <ResponsiveLine
-                              data={row.lineData}
-                              margin={{
-                                top: 10,
-                                right: 10,
-                                bottom: 10,
-                                left: 10
-                              }}
-                              xScale={{ type: 'point' }}
-                              yScale={{
-                                type: 'linear',
-                                stacked: false,
-                                min: 0
-                              }}
-                              axisTop={null}
-                              axisRight={null}
-                              axisBottom={null}
-                              axisLeft={null}
-                              enableGridX={false}
-                              enableGridY={false}
-                              enablePoints={false}
-                              colors={(d) => getStatusColor(Number(d.id))}
-                              lineWidth={2}
-                              isInteractive={false}
-                              useMesh={true}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell align="right">{row.total}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <Box
+                mt={1}
+                ref={detailsRegionRef}
+                tabIndex={-1}
+                role="region"
+                aria-live="polite"
+                aria-label={
+                  'HTTP status trends table for scan ' + scanDetails.name
+                }
+              >
+                <DataGrid
+                  rows={detailRows}
+                  columns={detailColumns}
+                  getRowId={(row) => row.id}
+                  disableRowSelectionOnClick
+                  hideFooter
+                  sx={{
+                    '& .MuiDataGrid-cell:focus-within': {
+                      outline: '2px solid #1976d2',
+                      outlineOffset: '-2px'
+                    }
+                  }}
+                />
+              </Box>
             </Box>
           )}
         </div>
