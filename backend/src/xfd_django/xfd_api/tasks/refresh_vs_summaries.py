@@ -11,10 +11,7 @@ from django.utils import timezone
 LOGGER = logging.getLogger(__name__)
 # Third-Party Libraries
 from xfd_api.tasks.utils.vs_host_scans import create_daily_host_summary
-from xfd_api.tasks.utils.vs_port_scans import (
-    create_port_scan_service_summaries,
-    create_port_scan_summary,
-)
+from xfd_api.tasks.utils.vs_port_scans import create_port_scan_summary
 from xfd_api.tasks.utils.vs_vuln_scans import create_vuln_scan_summary
 from xfd_mini_dl.models import HostSummary, Organization
 
@@ -107,12 +104,14 @@ def handler(event):
 
         except Exception as e:
             LOGGER.error("error saving Port summary: %s", e)
-        try:
-            LOGGER.info("Creating port service summaries.")
-            create_port_scan_service_summaries()
 
-        except Exception as e:
-            LOGGER.error("error saving port service summary: %s", e)
+        # TODO: Not used yet but needs to be optimized (takes 12+ hours to complete)
+        # try:
+        #     LOGGER.info("Creating port service summaries.")
+        #     create_port_scan_service_summaries()
+
+        # except Exception as e:
+        #     LOGGER.error("error saving port service summary: %s", e)
 
         try:
             LOGGER.info("Creating VS summaries.")
