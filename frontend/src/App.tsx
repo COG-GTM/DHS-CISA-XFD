@@ -1,3 +1,4 @@
+// frontend/src/App.tsx
 import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -35,19 +36,16 @@ import {
 import { LayoutWithSearch, RouteGuard } from 'components';
 import './styles.scss';
 import { Authenticator } from '@aws-amplify/ui-react';
-//import { RiskWithSearch } from 'pages/Risk/Risk';
 import { StaticsContextProvider } from 'context/StaticsContextProvider';
 import { SavedSearchContextProvider } from 'context/SavedSearchContextProvider';
 import { FilterDrawerContextProvider } from 'context/FilterDrawerContextProvider';
 import { VulnerabilityScanWithSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
 
+// Client-only inspector (no babel, no servers)
+import { Inspector, type InspectParams } from 'react-dev-inspector';
+
 API.configure({
-  endpoints: [
-    {
-      name: 'crossfeed',
-      endpoint: import.meta.env.VITE_API_URL
-    }
-  ]
+  endpoints: [{ name: 'crossfeed', endpoint: import.meta.env.VITE_API_URL }]
 });
 
 if (import.meta.env.VITE_USE_COGNITO) {
@@ -62,28 +60,45 @@ const instance = createInstance({
   urlBase: `${import.meta.env.VITE_API_URL}/matomo`,
   siteId: 1,
   disabled: false,
-  heartBeat: {
-    // optional, enabled by default
-    active: true, // optional, default value: true
-    seconds: 15 // optional, default value: `15
-  },
-  linkTracking: false // optional, default value: true
-  // configurations: { // optional, default value: {}
-  //   // any valid matomo configuration, all below are optional
-  //   disableCookies: true,
-  //   setSecureCookie: true,
-  //   setRequestMethod: 'POST'
-  // }
+  heartBeat: { active: true, seconds: 15 },
+  linkTracking: false
 });
 
 const LinkTracker = () => {
   const location = useLocation();
   const { trackPageView } = useMatomo();
-
   useEffect(() => trackPageView({}), [location, trackPageView]);
-
   return null;
 };
+
+// Read local root from Vite env (fallback keeps it usable if someone forgets the .env)
+const LOCAL_ROOT = import.meta.env.VITE_LOCAL_FRONTEND_ROOT as string;
+
+// Fixed container root (what Vite/inspector reports from inside Docker)
+const CONTAINER_ROOT = '/app';
+
+// Map container path → local path and open VS Code via URL scheme
+function openInVSCode({ codeInfo }: InspectParams) {
+  let abs = codeInfo.absolutePath;
+
+  // Some toolchains only provide relativePath — synthesize an absolute container path
+  if (!abs && codeInfo.relativePath) {
+    abs = `${CONTAINER_ROOT}/${codeInfo.relativePath}`.replace(/\/{2,}/g, '/');
+  }
+  if (!abs) return;
+
+  // Translate /app/... → /Users/... (or whatever devs set)
+  if (abs.startsWith(CONTAINER_ROOT)) {
+    abs = abs.replace(CONTAINER_ROOT, LOCAL_ROOT);
+  }
+
+  const line = codeInfo.lineNumber ?? 1;
+  const col = codeInfo.columnNumber ?? 1;
+
+  // Open VS Code directly; encode just in case there are spaces in the path
+  const url = `vscode://file${abs}:${line}:${col}`;
+  window.location.href = encodeURI(url);
+}
 
 const App: React.FC = () => (
   <MatomoProvider value={instance}>
@@ -97,12 +112,19 @@ const App: React.FC = () => (
                   <FilterDrawerContextProvider>
                     <LayoutWithSearch>
                       <LinkTracker />
+
+                      {/* Hotkey: ctrl+shift+cmd+c -> click element to open in VS Code */}
+                      <Inspector
+                        keys={['ctrl', 'shift', 'command', 'c']}
+                        disableLaunchEditor
+                        onInspectElement={openInVSCode}
+                      />
+
                       <Switch>
                         <RouteGuard
                           exact
                           path="/"
                           unauth={AuthLogin}
-                          // component={VulnerabilityScan}
                           component={VulnerabilityScanWithSearch}
                         />
                         <Route
@@ -144,17 +166,13 @@ const App: React.FC = () => (
                           path="/inventory/domains"
                           component={Domains}
                         />
-                        {/* <RouteGuard
-                          path="/overview"
-                          component={RiskWithSearch}
-                        /> */}
                         <RouteGuard
                           path="/VSDashboard"
                           component={VulnerabilityScanWithSearch}
                         />
                         <RouteGuard
-                          path="/inventory/vulnerabilities"
                           exact
+                          path="/inventory/vulnerabilities"
                           component={Vulnerabilities}
                           permissions={[
                             'globalView',
