@@ -26,6 +26,11 @@ def rebuild_org_id_dict(db_name="mini_data_lake"):
         if org.acronym  # defensive check
     }
 
+def random_past_datetime(min_days: int, max_days: int) -> timezone.datetime:
+    """Return a random datetime between `min_days` and `max_days` ago."""
+    days_ago = random.randint(min_days, max_days)
+    seconds = random.randint(0, 86400)  # random time within the day
+    return timezone.now() - timedelta(days=days_ago, seconds=seconds)
 
 def build_fake_host_summaries():
     """Build a fake Ticket for a pssed org."""
@@ -34,12 +39,8 @@ def build_fake_host_summaries():
     for org in all_orgs:
         try:
             summary_date = timezone.now().date()
-            start_date = timezone.now() - timedelta(
-                days=random.randint(25, 60), seconds=random.randint(0, 86400)
-            )
-            end_date = timezone.now() - timedelta(
-                days=random.randint(1, 5), seconds=random.randint(0, 86400)
-            )
+            start_date = random_past_datetime(25, 60)
+            end_date = random_past_datetime(1, 5)
             host_done_count = random.randint(3000, 5000)
             host_waiting_count = random.randint(0, 50)
             host_running_count = random.randint(0, 50)
@@ -66,6 +67,14 @@ def build_fake_host_summaries():
                     "up_host_count": up_host_count,
                     "down_host_count": down_host_count,
                     "scanned_asset_count": total_count,
+                    "port_scan_min_timestamp": random_past_datetime(25, 60),
+                    "port_scan_max_timestamp": random_past_datetime(1, 5),
+                    "vuln_scan_min_timestamp": random_past_datetime(25, 60),
+                    "vuln_scan_max_timestamp": random_past_datetime(1, 5),
+                    "net_scan1_min_timestamp": random_past_datetime(25, 60),
+                    "net_scan1_max_timestamp": random_past_datetime(1, 5),
+                    "net_scan2_min_timestamp": random_past_datetime(25, 60),
+                    "net_scan2_max_timestamp": random_past_datetime(1, 5),
                 },
             )
         except Exception as e:
