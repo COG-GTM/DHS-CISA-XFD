@@ -50,27 +50,27 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
 
         -- PORTSCAN timestamps
         MIN(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS portscan_min_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS port_scan_min_timestamp,
         MAX(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS portscan_max_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS port_scan_max_timestamp,
 
         -- VULNSCAN timestamps
         MIN(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vulnscan_min_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vuln_scan_min_timestamp,
         MAX(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vulnscan_max_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vuln_scan_max_timestamp,
 
         -- NETSCAN1 timestamps
         MIN(CASE WHEN POSITION('\"NETSCAN1\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN1\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan1_min_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN1\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS net_scan1_min_timestamp,
         MAX(CASE WHEN POSITION('\"NETSCAN1\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN1\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan1_max_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN1\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS net_scan1_max_timestamp,
 
         -- NETSCAN2 timestamps
         MIN(CASE WHEN POSITION('\"NETSCAN2\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN2\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan2_min_timestamp,
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN2\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS net_scan2_min_timestamp,
         MAX(CASE WHEN POSITION('\"NETSCAN2\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN2\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan2_max_timestamp
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN2\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS net_scan2_max_timestamp
 
     FROM (
         SELECT
@@ -122,14 +122,14 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                     "scanned_asset_count": row["scanned_asset_count"],
                     "done_min_timestamp": row["done_min_timestamp"],
                     "done_max_timestamp": row["done_max_timestamp"],
-                    "portscan_min_timestamp": row["portscan_min_timestamp"],
-                    "portscan_max_timestamp": row["portscan_max_timestamp"],
-                    "vulnscan_min_timestamp": row["vulnscan_min_timestamp"],
-                    "vulnscan_max_timestamp": row["vulnscan_max_timestamp"],
-                    "netscan1_min_timestamp": row["netscan1_min_timestamp"],
-                    "netscan1_max_timestamp": row["netscan1_max_timestamp"],
-                    "netscan2_min_timestamp": row["netscan2_min_timestamp"],
-                    "netscan2_max_timestamp": row["netscan2_max_timestamp"],
+                    "port_scan_min_timestamp": row["port_scan_min_timestamp"],
+                    "port_scan_max_timestamp": row["port_scan_max_timestamp"],
+                    "vuln_scan_min_timestamp": row["vuln_scan_min_timestamp"],
+                    "vuln_scan_max_timestamp": row["vuln_scan_max_timestamp"],
+                    "net_scan1_min_timestamp": row["net_scan1_min_timestamp"],
+                    "net_scan1_max_timestamp": row["net_scan1_max_timestamp"],
+                    "net_scan2_min_timestamp": row["net_scan2_min_timestamp"],
+                    "net_scan2_max_timestamp": row["net_scan2_max_timestamp"],
                 },
             )
         except Organization.DoesNotExist:
