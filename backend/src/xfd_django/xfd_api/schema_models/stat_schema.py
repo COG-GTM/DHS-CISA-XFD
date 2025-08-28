@@ -231,6 +231,14 @@ class HostScanSummaryResponse(BaseModel):
     up_host_count: Optional[int] = 0
     down_host_count: Optional[int] = 0
     scanned_asset_count: Optional[int] = 0
+    port_scan_min_timestamp: Optional[datetime] = None
+    port_scan_max_timestamp: Optional[datetime] = None
+    vuln_scan_min_timestamp: Optional[datetime] = None
+    vuln_scan_max_timestamp: Optional[datetime] = None
+    net_scan1_min_timestamp: Optional[datetime] = None
+    net_scan1_max_timestamp: Optional[datetime] = None
+    net_scan2_min_timestamp: Optional[datetime] = None
+    net_scan2_max_timestamp: Optional[datetime] = None
 
 
 class PortScanSummaryResponse(BaseModel):
@@ -338,6 +346,14 @@ class HostScanSummaryV2Response(BaseModel):
     up_host_count: Optional[int] = 0
     down_host_count: Optional[int] = 0
     scanned_asset_count: Optional[int] = 0
+    port_scan_min_timestamp: Optional[datetime] = None
+    port_scan_max_timestamp: Optional[datetime] = None
+    vuln_scan_min_timestamp: Optional[datetime] = None
+    vuln_scan_max_timestamp: Optional[datetime] = None
+    net_scan1_min_timestamp: Optional[datetime] = None
+    net_scan1_max_timestamp: Optional[datetime] = None
+    net_scan2_min_timestamp: Optional[datetime] = None
+    net_scan2_max_timestamp: Optional[datetime] = None
 
 
 class PortScanSummaryV2Response(BaseModel):
@@ -546,6 +562,14 @@ class HostSummaryModel(BaseSummaryModel):
     up_host_count: Optional[int]
     down_host_count: Optional[int]
     scanned_asset_count: Optional[int]
+    port_scan_min_timestamp: Optional[datetime]
+    port_scan_max_timestamp: Optional[datetime]
+    vuln_scan_min_timestamp: Optional[datetime]
+    vuln_scan_max_timestamp: Optional[datetime]
+    net_scan1_min_timestamp: Optional[datetime]
+    net_scan1_max_timestamp: Optional[datetime]
+    net_scan2_min_timestamp: Optional[datetime]
+    net_scan2_max_timestamp: Optional[datetime]
 
 
 # ---------- Common Comparison Result ----------
