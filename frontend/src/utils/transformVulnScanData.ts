@@ -111,20 +111,20 @@ function computeVulnerabilityScanLabel(data: StatsTrendsRawData): {
     );
     if (r.label) return { label: r.label, usedStart: r.start, usedEnd: r.end };
   }
-  // 3) host_summaries net min/max
+  // 3) host_summaries net min/max → **show no active hosts message**
   if (
     latestHost &&
     (!isBlankLike((latestHost as any).net_scan1_min_timestamp) ||
       !isBlankLike((latestHost as any).net_scan1_max_timestamp))
   ) {
-    const r = fmtPair(
-      (latestHost as any).net_scan1_min_timestamp,
-      (latestHost as any).net_scan1_max_timestamp
-    );
-    if (r.label) return { label: r.label, usedStart: r.start, usedEnd: r.end };
+    // Explicitly return a message, do not surface dates here
+    return { label: 'No active hosts' };
   }
   // 4) fallback message
-  return { label: 'Reach out to Vulnerability Mailbox' };
+  return {
+    label:
+      'No results found. if unexpected, please submit an entry using the Support menu.'
+  };
 }
 // ------------------------------------------
 
