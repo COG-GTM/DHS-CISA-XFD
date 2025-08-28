@@ -16,7 +16,6 @@ from xfd_api.tasks.utils.datetime_utils import freeze_window
 from xfd_api.tasks.utils.mdl_insert_utils import fill_cidr_live_ips_bulk_update
 from xfd_api.tasks.utils.vs_host_scans import create_daily_host_summary
 from xfd_api.tasks.utils.vs_port_scans import (
-    create_port_scan_service_summaries,
     create_port_scan_summary,
     fetch_port_scans_from_redshift,
 )
@@ -168,14 +167,15 @@ def main():  # pylint: disable=R0915
     except Exception as e:
         LOGGER.error("Failed to create port scan summary: %s", e, exc_info=True)
 
-    LOGGER.info("Creating port scan service summaries...")
-    try:
-        create_port_scan_service_summaries()
-        LOGGER.info("Finished port scan service summaries")
-    except Exception as e:
-        LOGGER.error(
-            "Failed to create port scan service summaries: %s", e, exc_info=True
-        )
+    # TODO: Not used yet but needs to be optimized (takes 12+ hours to complete)
+    # LOGGER.info("Creating port scan service summaries...")
+    # try:
+    #     create_port_scan_service_summaries()
+    #     LOGGER.info("Finished port scan service summaries")
+    # except Exception as e:
+    #     LOGGER.error(
+    #         "Failed to create port scan service summaries: %s", e, exc_info=True
+    #     )
 
     LOGGER.info("Creating vulnerability scan summary...")
     try:

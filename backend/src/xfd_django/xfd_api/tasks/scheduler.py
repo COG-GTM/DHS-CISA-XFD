@@ -212,26 +212,7 @@ class Scheduler:
         if last_running_scan_task:
             return False
 
-        last_finished_scan_task = filter_scan_tasks(
-            ScanTask.objects.filter(
-                status__in=["finished", "failed"], finished_at__isnull=False
-            ).order_by("-finished_at")
-        ).first()
-        if last_finished_scan_task and last_finished_scan_task.finished_at:
-            if timezone.is_naive(last_finished_scan_task.finished_at):
-                last_finished_scan_task.finished_at = timezone.make_aware(
-                    last_finished_scan_task.finished_at, timezone.get_current_timezone()
-                )
-            if (
-                timezone.now() - last_finished_scan_task.finished_at
-            ).total_seconds() < scan.frequency:
-                return False
-
-        if (
-            last_finished_scan_task
-            and last_finished_scan_task.finished_at
-            and scan.is_single_scan
-        ):
+        if scan.is_single_scan:
             LOGGER.info("Single scan")
             return False
 
