@@ -1,3 +1,5 @@
+"""Proxy handler for Matomo analytics requests."""
+
 # Standard Python Libraries
 import logging
 
@@ -10,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def sanitize_and_stream_response(proxy_response: Response) -> StreamingResponse:
-    """Wraps a proxy response in StreamingResponse and strips conflicting headers."""
+    """Wrap proxy response in StreamingResponse and strip conflicting headers."""
     # Filter headers that can cause issues when manually constructing a response
     safe_headers = {
         key: value
@@ -27,8 +29,7 @@ def sanitize_and_stream_response(proxy_response: Response) -> StreamingResponse:
 
 
 async def matomo_proxy_request(request: Request, MATOMO_URL: str, path: str):
-    """Proxy requests to the Matomo analytics instance."""
-
+    """Proxy request to the Matomo analytics instance."""
     # Public paths -- directly allowed
     allowed_paths = ["/matomo.php", "/matomo.js"]
     if any(
