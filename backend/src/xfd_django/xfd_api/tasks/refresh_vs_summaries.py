@@ -26,11 +26,13 @@ def rebuild_org_id_dict(db_name="mini_data_lake"):
         if org.acronym  # defensive check
     }
 
+
 def random_past_datetime(min_days: int, max_days: int) -> timezone.datetime:
     """Return a random datetime between `min_days` and `max_days` ago."""
     days_ago = random.randint(min_days, max_days)
     seconds = random.randint(0, 86400)  # random time within the day
     return timezone.now() - timedelta(days=days_ago, seconds=seconds)
+
 
 def build_fake_host_summaries():
     """Build a fake Ticket for a pssed org."""
