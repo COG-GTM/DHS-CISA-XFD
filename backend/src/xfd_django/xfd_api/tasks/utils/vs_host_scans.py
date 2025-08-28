@@ -29,20 +29,61 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
     LOGGER.info("Starting host summary creation directly from Redshift...")
 
     redshift_query = """
+    SELECT
+        owner,
+        -- existing metrics
+        MIN(last_change) AS start_date,
+        MAX(last_change) AS end_date,
+        SUM(CASE WHEN status = 'DONE' THEN 1 ELSE 0 END)    AS host_done_count,
+        SUM(CASE WHEN status = 'WAITING' THEN 1 ELSE 0 END) AS host_waiting_count,
+        SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
+        SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END)   AS host_ready_count,
+        SUM(CASE WHEN POSITION('\"up\":true'  IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS up_host_count,
+        SUM(CASE WHEN POSITION('\"up\":false' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS down_host_count,
+        COUNT(DISTINCT ip) AS scanned_asset_count,
+
+        -- DONE timestamps
+        MIN(CASE WHEN POSITION('\"DONE\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"DONE\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS done_min,
+        MAX(CASE WHEN POSITION('\"DONE\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"DONE\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS done_max,
+
+        -- PORTSCAN timestamps
+        MIN(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS portscan_min,
+        MAX(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS portscan_max,
+
+        -- VULNSCAN timestamps
+        MIN(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vulnscan_min,
+        MAX(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vulnscan_max,
+
+        -- NETSCAN1 timestamps
+        MIN(CASE WHEN POSITION('\"NETSCAN1\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN1\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan1_min,
+        MAX(CASE WHEN POSITION('\"NETSCAN1\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN1\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan1_max,
+
+        -- NETSCAN2 timestamps
+        MIN(CASE WHEN POSITION('\"NETSCAN2\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN2\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan2_min,
+        MAX(CASE WHEN POSITION('\"NETSCAN2\":\"' IN ls) > 0
+                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"NETSCAN2\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS netscan2_max
+
+    FROM (
         SELECT
             owner,
-            MIN(last_change) AS start_date,
-            MAX(last_change) AS end_date,
-            SUM(CASE WHEN status = 'DONE' THEN 1 ELSE 0 END) AS host_done_count,
-            SUM(CASE WHEN status = 'WAITING' THEN 1 ELSE 0 END) AS host_waiting_count,
-            SUM(CASE WHEN status = 'RUNNING' THEN 1 ELSE 0 END) AS host_running_count,
-            SUM(CASE WHEN status = 'READY' THEN 1 ELSE 0 END) AS host_ready_count,
-            SUM(CASE WHEN POSITION('\"up\":true' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS up_host_count,
-            SUM(CASE WHEN POSITION('\"up\":false' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS down_host_count,
-            COUNT(DISTINCT ip) AS scanned_asset_count
+            last_change,
+            status,
+            state,
+            ip,
+            json_serialize(latest_scan) AS ls
         FROM vmtableau.hosts
         WHERE last_change >= GETDATE() - INTERVAL '100 days'
-        GROUP BY owner;
+    ) t
+    GROUP BY owner;
     """
 
     summary_rows = fetch_from_redshift(redshift_query)
