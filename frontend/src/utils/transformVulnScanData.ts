@@ -114,12 +114,12 @@ function computeVulnerabilityScanLabel(data: StatsTrendsRawData): {
   // 3) host_summaries net min/max
   if (
     latestHost &&
-    (!isBlankLike((latestHost as any).net_scan_min_timestamp) ||
-      !isBlankLike((latestHost as any).net_scan_max_timestamp))
+    (!isBlankLike((latestHost as any).net_scan1_min_timestamp) ||
+      !isBlankLike((latestHost as any).net_scan1_max_timestamp))
   ) {
     const r = fmtPair(
-      (latestHost as any).net_scan_min_timestamp,
-      (latestHost as any).net_scan_max_timestamp
+      (latestHost as any).net_scan1_min_timestamp,
+      (latestHost as any).net_scan1_max_timestamp
     );
     if (r.label) return { label: r.label, usedStart: r.start, usedEnd: r.end };
   }
