@@ -1,17 +1,20 @@
-// transformVulnScanData.ts
+// utils/transformVulnScanData.ts
 import {
   SeverityByProminenceGraphData,
   StatsTrendsRawData,
   VulnScanDataTransformed
 } from 'types/vuln-scan-stats';
 
+export const NO_DATA_FALLBACK_LABEL =
+  'No results found. if unexpected, please submit an entry using the Support menu.';
+
 export function formatShortDate(
   dateInput: string | Date | null | undefined
 ): string {
   if (!dateInput) return '';
-  const d = new Date(dateInput);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-US', {
+  const dateObj = new Date(dateInput);
+  if (Number.isNaN(dateObj.getTime())) return '';
+  return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -22,62 +25,71 @@ export function formatRange(
   start?: string | Date | null | undefined,
   end?: string | Date | null | undefined
 ): string {
-  const s = formatShortDate(start);
-  const e = formatShortDate(end);
-  if (!s && !e) return 'No Dates Available';
-  if (s && e) return `${s} - ${e}`;
-  return s || e; // show the one we have
+  const startStr = formatShortDate(start);
+  const endStr = formatShortDate(end);
+  if (!startStr && !endStr) return 'No Dates Available';
+  if (startStr && endStr) return `${startStr} - ${endStr}`;
+  return startStr || endStr;
 }
 
 // ---------- helpers for fallback ----------
-const isBlankLike = (v: unknown) => {
-  if (v === null || v === undefined) return true;
-  const s = String(v).trim();
+const isBlankLike = (value: unknown) => {
+  if (value === null || value === undefined) return true;
+  const stringVal = String(value).trim();
   return (
-    !s || /^n\/?a$/i.test(s) || /^null$/i.test(s) || /^undefined$/i.test(s)
+    !stringVal ||
+    /^n\/?a$/i.test(stringVal) ||
+    /^null$/i.test(stringVal) ||
+    /^undefined$/i.test(stringVal)
   );
 };
 
-const parseDate = (v: unknown): Date | null => {
-  if (isBlankLike(v)) return null;
-  const d = new Date(String(v));
-  return Number.isNaN(d.getTime()) ? null : d;
+const parseDate = (value: unknown): Date | null => {
+  if (isBlankLike(value)) return null;
+  const dateObj = new Date(String(value));
+  return Number.isNaN(dateObj.getTime()) ? null : dateObj;
 };
 
-const fmt = (d: Date) =>
+const formatDateLabel = (dateObj: Date) =>
   new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
-  }).format(d);
+  }).format(dateObj);
 
-const fmtPair = (
-  s?: unknown,
-  e?: unknown
+const buildRangeLabel = (
+  startValue?: unknown,
+  endValue?: unknown
 ): { label: string | null; start?: string; end?: string } => {
-  const sDate = parseDate(s);
-  const eDate = parseDate(e);
-  if (sDate && eDate) {
+  const startDate = parseDate(startValue);
+  const endDate = parseDate(endValue);
+
+  if (startDate && endDate) {
     return {
-      label: `${fmt(sDate)} - ${fmt(eDate)}`,
-      start: sDate.toISOString(),
-      end: eDate.toISOString()
+      label: `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`,
+      start: startDate.toISOString(),
+      end: endDate.toISOString()
     };
   }
-  if (eDate) {
-    return { label: fmt(eDate), start: undefined, end: eDate.toISOString() };
+  if (endDate) {
+    return { label: formatDateLabel(endDate), end: endDate.toISOString() };
   }
-  if (sDate) {
-    return { label: fmt(sDate), start: sDate.toISOString(), end: undefined };
-  }
-  // if we had non-empty raw strings that didn’t parse, still surface them
-  const sStr = isBlankLike(s) ? '' : String(s);
-  const eStr = isBlankLike(e) ? '' : String(e);
-  if (sStr || eStr) {
+  if (startDate) {
     return {
-      label: sStr && eStr ? `${sStr} - ${eStr}` : sStr || eStr,
-      start: sStr || undefined,
-      end: eStr || undefined
+      label: formatDateLabel(startDate),
+      start: startDate.toISOString()
+    };
+  }
+
+  // If non-empty raw strings didn’t parse, still surface them
+  const startRaw = isBlankLike(startValue) ? '' : String(startValue);
+  const endRaw = isBlankLike(endValue) ? '' : String(endValue);
+  if (startRaw || endRaw) {
+    return {
+      label:
+        startRaw && endRaw ? `${startRaw} - ${endRaw}` : startRaw || endRaw,
+      start: startRaw || undefined,
+      end: endRaw || undefined
     };
   }
   return { label: null };
@@ -91,44 +103,45 @@ function computeVulnerabilityScanLabel(data: StatsTrendsRawData): {
 } {
   const latestVuln = getLatestSummary(data.vuln_scan_summaries);
   const latestHost = getLatestSummary(data.host_summaries);
+
   // 1) vuln_scan_summaries start/end
   if (
     latestVuln &&
     (!isBlankLike(latestVuln.start_date) || !isBlankLike(latestVuln.end_date))
   ) {
-    const r = fmtPair(latestVuln.start_date, latestVuln.end_date);
-    if (r.label) return { label: r.label, usedStart: r.start, usedEnd: r.end };
+    const range = buildRangeLabel(latestVuln.start_date, latestVuln.end_date);
+    if (range.label)
+      return { label: range.label, usedStart: range.start, usedEnd: range.end };
   }
+
   // 2) host_summaries vuln min/max
   if (
     latestHost &&
     (!isBlankLike((latestHost as any).vuln_scan_min_timestamp) ||
       !isBlankLike((latestHost as any).vuln_scan_max_timestamp))
   ) {
-    const r = fmtPair(
+    const range = buildRangeLabel(
       (latestHost as any).vuln_scan_min_timestamp,
       (latestHost as any).vuln_scan_max_timestamp
     );
-    if (r.label) return { label: r.label, usedStart: r.start, usedEnd: r.end };
+    if (range.label)
+      return { label: range.label, usedStart: range.start, usedEnd: range.end };
   }
-  // 3) host_summaries net min/max → **show no active hosts message**
+
+  // 3) host_summaries net min/max → explicit message, no dates
   if (
     latestHost &&
     (!isBlankLike((latestHost as any).net_scan1_min_timestamp) ||
       !isBlankLike((latestHost as any).net_scan1_max_timestamp))
   ) {
-    // Explicitly return a message, do not surface dates here
     return { label: 'No active hosts' };
   }
-  // 4) fallback message
-  return {
-    label:
-      'No results found. if unexpected, please submit an entry using the Support menu.'
-  };
-}
-// ------------------------------------------
 
-// unchanged util; keep in file
+  // 4) fallback message (sentinel)
+  return { label: NO_DATA_FALLBACK_LABEL };
+}
+
+// unchanged util
 function getLatestSummary<T extends { summary_date?: string | null }>(
   summaries: T[] | undefined
 ): T | undefined {
@@ -205,7 +218,6 @@ export const transformVulnScanData = (
   return {
     vulnScanSummary: [
       {
-        // keep existing hostScan formatting logic
         hostScan: formatRange(
           latestHostSummary?.start_date,
           latestHostSummary?.end_date
@@ -213,7 +225,6 @@ export const transformVulnScanData = (
         vulnerabilityScan: vulLabel.label,
         assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
         assetsScanned: latestHostSummary?.scanned_asset_count ?? 0,
-        // expose the dates that actually back the label (good for consistency)
         startDate: vulLabel.usedStart ?? '',
         endDate: vulLabel.usedEnd ?? ''
       }
