@@ -179,7 +179,9 @@ async def get_redis_client(request: Request):
 
 
 # Matomo Logo Redirect
-@api_router.get("/plugins/Morpheus/images/logo.svg")
+@api_router.get(
+    "/plugins/Morpheus/images/logo.svg",
+)
 async def redirect_logo():
     """Redirect to the Matomo logo."""
     return RedirectResponse(
@@ -188,8 +190,10 @@ async def redirect_logo():
 
 
 # Matomo Index Redirect
-@api_router.get("/index.php")
-async def redirect_index():
+@api_router.get(
+    "/index.php",
+)
+async def redirect_index(request: Request):
     """Redirect to the Matomo index page."""
     return RedirectResponse(url="/matomo/index.php", status_code=308)
 
@@ -200,9 +204,15 @@ async def redirect_index():
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     tags=["Analytics"],
 )
-async def matomo_proxy(path: str, request: Request):
+async def matomo_proxy(
+    path: str,
+    request: Request,
+    # current_user: User = Depends(get_current_active_user)
+):
     """Proxy requests to the Matomo analytics instance."""
     MATOMO_URL = os.getenv("VITE_MATOMO_URL", "")
+    # if (current_user.user_type not in ["analytics"]):
+    #     raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to Matomo
     return await matomo_proxy_handler.matomo_proxy_request(request, MATOMO_URL, path)
