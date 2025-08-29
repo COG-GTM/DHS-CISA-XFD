@@ -559,7 +559,7 @@ def test_register_approve_success(mock_email):
     assert data["body"] == "User registration approved."
     mock_email.assert_called_once_with(
         user_to_approve.email,
-        subject="CyHy Dashboard Registration Approved",
+        subject="CISA CyHy Dashboard Account Approved",
         first_name=user_to_approve.first_name,
         last_name=user_to_approve.last_name,
         template="crossfeed_approval_notification.html",

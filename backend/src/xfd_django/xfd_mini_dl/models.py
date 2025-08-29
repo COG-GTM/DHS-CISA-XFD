@@ -2626,6 +2626,46 @@ class HostSummary(models.Model):
         blank=True,
         help_text="Count of Ip addresses that have been scanned",
     )
+    port_scan_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest port_scan run on a host owned by the org.",
+    )
+    port_scan_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent port_scan run on a host owned by the org.",
+    )
+    vuln_scan_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest vuln_scan run on a host owned by the org.",
+    )
+    vuln_scan_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent vuln_scan run on a host owned by the org.",
+    )
+    net_scan1_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest net_scan1 run on a host owned by the org.",
+    )
+    net_scan1_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent net_scan1 run on a host owned by the org.",
+    )
+    net_scan2_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest net_scan2 run on a host owned by the org.",
+    )
+    net_scan2_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent net_scan2 run on a host owned by the org.",
+    )
 
     class Meta:
         """The Meta class for HostSummary."""
