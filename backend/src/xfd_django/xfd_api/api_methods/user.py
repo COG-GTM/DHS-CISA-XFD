@@ -2,13 +2,14 @@
 
 # Standard Python Libraries
 from datetime import datetime
+import logging
 import os
 
 # Third-Party Libraries
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
 from django.forms import model_to_dict
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from xfd_mini_dl.models import Organization, Role, User, UserType
 
 from ..auth import (
@@ -28,6 +29,9 @@ from ..helpers.email import (
 from ..helpers.regionStateMap import REGION_STATE_MAP
 from ..helpers.uuid_helpers import is_valid_uuid
 from ..tools.serializers import serialize_user
+
+# Configure logging
+LOGGER = logging.getLogger(__name__)
 
 
 # GET: /users/me
@@ -97,8 +101,8 @@ def get_me(current_user):
         raise HTTPException(status_code=404, detail="User not found")
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail="Unknown error")
+        LOGGER.exception("Unhandled error occurred: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /users/me/acceptTerms
@@ -305,8 +309,8 @@ def get_users_by_region_id(region_id, current_user):
         raise http_exc
 
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        LOGGER.exception("Unhandled error occurred: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # GET: /users/state/{state}
@@ -371,7 +375,7 @@ def get_users_v2(state, region_id, invite_pending, current_user):
     """Retrieve a list of users based on optional filter parameters."""
     try:
         # Check if user is a regional admin or global admin
-        if not is_regional_admin(current_user) or is_global_view_admin(current_user):
+        if not (is_regional_admin(current_user) or is_global_view_admin(current_user)):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         filters = {}
@@ -464,7 +468,8 @@ def update_user_v2(user_id, user_data, current_user):
             )
 
         # Check if allowed fields to update then execute
-        updates = user_data.dict(exclude_unset=True)
+        # updates = user_data.dict(exclude_unset=True)
+        updates = user_data.model_dump(exclude_unset=True)
         allowed_fields = get_allowed_user_update_fields(current_user, user)
 
         # Check for disallowed fields before applying updates
@@ -507,6 +512,7 @@ def update_user_v2(user_id, user_data, current_user):
             "state": updated_user.state,
             "user_type": updated_user.user_type,
             "last_logged_in": user.last_logged_in,
+            "first_login": user.first_login,
             "accepted_terms_version": user.accepted_terms_version,
             "roles": [
                 {
@@ -528,8 +534,8 @@ def update_user_v2(user_id, user_data, current_user):
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
-        print("Error updating user: {}".format(e))
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+        LOGGER.exception("Error updating user: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # PUT: /users/{user_id}/register/approve
@@ -575,7 +581,7 @@ def approve_user_registration(user_id, current_user):
     try:
         send_registration_approved_email(
             user.email,
-            subject="CyHy Dashboard Registration Approved",
+            subject="CISA CyHy Dashboard Account Approved",
             first_name=user.first_name,
             last_name=user.last_name,
             template="crossfeed_approval_notification.html",
@@ -647,10 +653,8 @@ def deny_user_registration(user_id: str, current_user: User):
     except ObjectDoesNotExist:
         raise HTTPException(status_code=404, detail="User not found.")
     except Exception as e:
-        print("Error denying registration: {}".format(e))
-        raise HTTPException(
-            status_code=500, detail="Error processing registration denial."
-        )
+        LOGGER.exception("Error denying registration: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # POST: /users
@@ -748,5 +752,5 @@ def invite(new_user_data, current_user):
         raise http_exc
 
     except Exception as e:
-        print("Error inviting user: {}".format(e))
-        raise HTTPException(status_code=500, detail="Error inviting user.")
+        LOGGER.exception("Error inviting user: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
