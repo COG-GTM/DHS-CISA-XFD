@@ -1,6 +1,6 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import hashlib
 import json
 import logging
@@ -26,6 +26,9 @@ from redis import asyncio as aioredis
 import xfd_api.api_methods.dmz_sync as cybersix_module
 from xfd_api.auth import is_global_write_admin
 from xfd_mini_dl.models import User
+
+#xfd_api helpers
+from xfd_api.helpers.checksum_response import build_checksum_response
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
@@ -82,6 +85,11 @@ from .api_methods.vulnerability import (
     get_vulnerability_by_scan_source_and_id,
     search_vulnerabilities,
     v2_get_vulnerability_by_id,
+)
+from .api_methods.was_sync import (
+    get_was_findings_queryset,
+    get_all_was_scan_summaries,
+    paginate_queryset,
 )
 from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import (
@@ -152,7 +160,12 @@ from .schema_models.vulnerability import (
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
 )
-from .schema_models.was_sync import GetWasScanSummariesResponse
+from .schema_models.was_sync import (
+    GetWasScanSummariesResponse,
+    WasFinding,
+    WasScanSummarySchema,
+    GetAllWasFindingsResponse,
+)
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
     get_organization_sync,
@@ -1999,6 +2012,11 @@ def generate_presigned_object_store_url(
     """
     return get_object_store_presigned_url(current_user, body)
 
+
+#==========================
+# WAS Scan Endpoints  #
+#==========================
+
 # POST
 @api_router.post(
     "/was_scan_summaries",
@@ -2038,12 +2056,55 @@ async def get_was_scan_summaries_endpoint(
     response_body = {"status": "ok", "payload": payload}
 
     # Compute salted checksum
-    json_string = json.dumps(response_body, default=str, sort_keys=True)
-    checksum = hashlib.sha256((SALT + json_string).encode()).hexdigest()
-    response.headers["X-Salted-Checksum"] = checksum
+    return build_checksum_response(response_body, response, status.HTTP_201_CREATED)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=response_body,
-        headers={"X-Salted-Checksum": checksum},
-    )
+#WAS Findings Sync
+@api_router.post(
+    "/dmz_sync/was_findings",
+    response_model=GetAllWasFindingsResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["WAS findings to sync to LZ db"],
+)
+async def get_call_all_was_findings(  # noqa: D401
+        response: Response,
+        current_user: User = Depends(get_current_active_user),
+        page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+        per_page: int = Query(
+            200, ge=1, le=1000, description="How many items per page (max 1000)."
+        ),
+        since_date: date | None = Query(
+            default=None,
+            description="Optional date filter (records last_detected >= this).",
+        ),
+):
+    """
+    Return paginated WAS findings plus an X-Salted-Checksum header for integrity.
+    """
+    # Enforce write-admin access using the shared helper
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
+        )
+
+    try:
+        queryset = get_was_findings_queryset(since_date)
+        total_pages, records = paginate_queryset(queryset, page, per_page)
+    except Exception as error:
+        LOGGER.exception("Failed to build WAS findings page: %s", error)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error: {}".format(error),
+        ) from error
+
+    payload_items = [WasFinding.model_validate(record, from_attributes=True) for record in records]
+    response_body = {
+        "status": "ok",
+        "payload": jsonable_encoder(payload_items),
+        "total_pages": total_pages,
+        "current_page": page,
+    }
+
+    return build_checksum_response(response_body,
+                                   response,
+                                   status.HTTP_201_CREATED)
