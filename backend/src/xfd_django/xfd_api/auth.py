@@ -110,9 +110,8 @@ async def get_token_from_header(request: Request) -> Optional[str]:
         if auth_header.startswith("Bearer "):
             return auth_header[7:]  # Remove 'Bearer ' prefix
         return auth_header  # Return the token directly if no 'Bearer ' prefix
-    # LOGGER.debug("Request Cookies: ", request.cookies)
     for name in ("token",):
-        print("Request cookies: ", request.cookies)
+        LOGGER.debug("Request Cookies: ", request.cookies)
         v = request.cookies.get(name)
         if v and v not in ("null", "undefined", "None", ""):
             return v

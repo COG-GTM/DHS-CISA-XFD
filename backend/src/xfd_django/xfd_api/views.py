@@ -21,7 +21,7 @@ from fastapi import (
     status,
 )
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
 import xfd_api.api_methods.dmz_sync as cybersix_module
 from xfd_api.auth import is_global_write_admin
@@ -178,41 +178,19 @@ async def get_redis_client(request: Request):
 # ========================================
 
 
-# Matomo Logo Redirect
-@api_router.get(
-    "/plugins/Morpheus/images/logo.svg",
-)
-async def redirect_logo():
-    """Redirect to the Matomo logo."""
-    return RedirectResponse(
-        url="/matomo/plugins/Morpheus/images/logo.svg?matomo", status_code=308
-    )
-
-
-# Matomo Index Redirect
-@api_router.get(
-    "/index.php",
-)
-async def redirect_index(request: Request):
-    """Redirect to the Matomo index page."""
-    return RedirectResponse(url="/matomo/index.php", status_code=308)
-
-
 # Matomo Proxy
 @api_router.api_route(
     "/matomo/{path:path}",
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
     tags=["Analytics"],
 )
 async def matomo_proxy(
-    path: str,
-    request: Request,
-    # current_user: User = Depends(get_current_active_user)
+    path: str, request: Request, current_user: User = Depends(get_current_active_user)
 ):
     """Proxy requests to the Matomo analytics instance."""
     MATOMO_URL = os.getenv("VITE_MATOMO_URL", "")
-    # if (current_user.user_type not in ["analytics"]):
-    #     raise HTTPException(status_code=403, detail="Unauthorized")
+    if current_user.user_type not in ["analytics", "globalView", "globalAdmin"]:
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to Matomo
     return await matomo_proxy_handler.matomo_proxy_request(request, MATOMO_URL, path)

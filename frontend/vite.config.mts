@@ -40,17 +40,14 @@ export default defineConfig(({ mode }) => ({
       // Keep tracking public so hits aren’t blocked
       '/matomo/matomo.php': {
         target: 'http://backend:3000',
-        changeOrigin: true
+        changeOrigin: false,
+        xfwd: true
       },
       // Everything else under /matomo: backend enforces Depends(get_current_active_user)
       '/matomo': {
         target: 'http://backend:3000',
-        changeOrigin: true
-      },
-      // Optional: convenience redirect endpoint
-      '/index.php': {
-        target: 'http://backend:3000',
-        changeOrigin: true
+        changeOrigin: false,
+        xfwd: true
       }
     }
   },
