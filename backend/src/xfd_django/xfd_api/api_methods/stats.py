@@ -618,6 +618,14 @@ FIELD_AGGREGATION_MAP = {
     "avg_summary_date": None,  # this is derived, not aggregated
     "start_date": "min",
     "end_date": "max",
+    "port_scan_min_timestamp": "min",
+    "port_scan_max_timestamp": "max",
+    "vuln_scan_min_timestamp": "min",
+    "vuln_scan_max_timestamp": "max",
+    "net_scan1_min_timestamp": "min",
+    "net_scan1_max_timestamp": "max",
+    "net_scan2_min_timestamp": "min",
+    "net_scan2_max_timestamp": "max",
     "cvss_base_score": "max",
     "rrs": "max",
     "count": "sum",
@@ -960,6 +968,14 @@ def get_summary_dict(summary, numeric_fields, complex_fields=None):
         "start_date",
         "end_date",
         "enrolled_in_vs_timestamp",
+        "port_scan_min_timestamp",
+        "port_scan_max_timestamp",
+        "vuln_scan_min_timestamp",
+        "vuln_scan_max_timestamp",
+        "net_scan1_min_timestamp",
+        "net_scan1_max_timestamp",
+        "net_scan2_min_timestamp",
+        "net_scan2_max_timestamp",
     ]:
         if hasattr(summary, date_field):
             data[date_field] = getattr(summary, date_field)
