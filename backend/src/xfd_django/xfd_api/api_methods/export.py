@@ -43,6 +43,7 @@ def serialize_exported_data(data, mode, columns):
         writer.writerow(fields)
         writer.writerows(data.values_list(*fields))
         return buf.getvalue()
+    return None
 
 
 def validate_org_filter(filters, current_user):
@@ -218,7 +219,6 @@ def export(request_body: ExportPayload, current_user: User):
         vulnerability_data = vulnerability_export(filters, current_user)
         LOGGER.info(vulnerability_data.values("id")[:5])
         collected_data = vulnerability_data
-        pass
     return {
         "mode": mode,
         "collection": collection,
