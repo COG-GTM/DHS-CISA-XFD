@@ -49,7 +49,7 @@ resource "aws_iam_role_policy_attachment" "pe_ssm_service" {
 
 resource "aws_iam_role_policy" "pe_s3_policy" {
   count       = var.create_pe_instance ? 1 : 0
-  name_prefix = "crossfeed-db-accessor-s3-${var.stage}"
+  name_prefix = "crossfeed-pe-s3-${var.stage}"
   role        = aws_iam_role.pe[0].id
   policy      = <<EOF
 {
@@ -94,7 +94,7 @@ EOF
 
 resource "aws_iam_role_policy" "pe_sqs_send_message_policy" {
   count       = var.create_pe_instance ? 1 : 0
-  name_prefix = "ec2-send-sqs-message-${var.stage}"
+  name_prefix = "pe-ec2-send-sqs-message-${var.stage}"
   role        = aws_iam_role.pe[0].id
   policy = jsonencode({
     Version = "2012-10-17",
@@ -122,9 +122,9 @@ resource "aws_instance" "pe" {
   associate_public_ip_address = false
 
   depends_on = [
-    aws_iam_instance_profile.db_accessor,
+    aws_iam_instance_profile.pe,
     aws_security_group.allow_internal,
-    aws_subnet.backend
+    aws_subnet.pe
   ]
   tags = {
     Project = var.project
@@ -138,7 +138,7 @@ resource "aws_instance" "pe" {
   vpc_security_group_ids = [var.is_dmz ? aws_security_group.allow_internal[0].id : aws_security_group.allow_internal_lz[0].id]
   subnet_id              = var.is_dmz ? aws_subnet.pe[0].id : data.aws_ssm_parameter.subnet_db_1_id[0].value
 
-  iam_instance_profile = aws_iam_instance_profile.db_accessor[0].id
+  iam_instance_profile = aws_iam_instance_profile.pe[0].id
   user_data            = file("./ssm-agent-install.sh")
   lifecycle {
     # prevent_destroy = true
