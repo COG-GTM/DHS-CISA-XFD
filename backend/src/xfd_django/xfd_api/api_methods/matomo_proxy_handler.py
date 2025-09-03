@@ -228,18 +228,10 @@ def _stream_back_with_rewrites(
 async def _call_proxy_with_headers(
     *, path: str, request: Request, target_base: str, fwd_headers: Dict[str, str]
 ) -> Response:
-    try:
-        return await proxy.proxy_request(
-            path=path,
-            request=request,
-            target_url=target_base,
-            extra_headers=fwd_headers,
-        )
-    except TypeError:
-        cloned_req = _clone_request_with_headers(request, fwd_headers)
-        return await proxy.proxy_request(
-            path=path, request=cloned_req, target_url=target_base
-        )
+    cloned_req = _clone_request_with_headers(request, fwd_headers)
+    return await proxy.proxy_request(
+        request=cloned_req, target_url=target_base, path=path
+    )
 
 
 async def matomo_proxy_request(request: Request, MATOMO_URL: str, path: str):
@@ -247,7 +239,7 @@ async def matomo_proxy_request(request: Request, MATOMO_URL: str, path: str):
     target_base = (MATOMO_URL or "").strip().rstrip("/")
     if not target_base.startswith(("http://", "https://")):
         msg = "VITE_MATOMO_URL must include http(s) scheme, e.g. http://matomo:80"
-        LOGGER.error(msg + " (got: {!r})".format(MATOMO_URL))
+        LOGGER.error("%s (got: %r)", msg, MATOMO_URL)
         return Response(status_code=500, content=msg.encode())
 
     clean_path = path.lstrip("/")
