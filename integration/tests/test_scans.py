@@ -13,6 +13,7 @@ X_API_KEY = os.environ["X_API_KEY"]
 HEADERS = {"X-API-KEY": X_API_KEY}
 BAD_HEADERS = {"X-API-KEY": "invalid-key"}
 BAD_ID = "00000000-0000-0000-0000-000000000000"
+INVALID = "notauuid"
 BAD_KEY = "invalid_api_key"
 TIMEOUT = 10
 
@@ -258,11 +259,19 @@ def test_get_scan_success(test_scan):
 @pytest.mark.integration
 def test_get_scan_not_found():
     """GET /scans/{scan_id} with a non‑existent ID should return 404."""
-    bad_id = "00000000-0000-0000-0000-000000000000"
-    url = f"{BASE_URL}/scans/{bad_id}"
+    url = f"{BASE_URL}/scans/{BAD_ID}"
 
     resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
     assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
+
+
+@pytest.mark.integration
+def test_get_scan_invalid():
+    """GET /scans/{scan_id} with invalid value should return 500."""
+    url = f"{BASE_URL}/scans/{INVALID}"
+
+    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+    assert resp.status_code == 500, f"Expected 500 Not Found, got {resp.status_code}"
 
 
 # ========================================
@@ -433,7 +442,6 @@ def make_update_payload(scan_id, original_scan, new_name="patched scan"):
 @pytest.mark.integration
 def test_update_scan_not_found(org_id):
     """PUT a non‑existent scan_id should return 404."""
-    bad_id = "00000000-0000-0000-0000-000000000000"
     payload = {
         "name": "won't matter",
         "arguments": {},
@@ -448,12 +456,37 @@ def test_update_scan_not_found(org_id):
     }
 
     resp = requests.put(
-        f"{BASE_URL}/scans/{bad_id}",
+        f"{BASE_URL}/scans/{BAD_ID}",
         json=payload,
         headers=HEADERS,
         timeout=TIMEOUT,
     )
     assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
+
+
+@pytest.mark.integration
+def test_update_scan_invalid(org_id):
+    """PUT a invalid value should return 500."""
+    payload = {
+        "name": "won't matter",
+        "arguments": {},
+        "organizations": [org_id],
+        "tags": [],
+        "frequency": 100,
+        "frequencyUnit": "day",
+        "is_granular": False,
+        "is_user_modifiable": False,
+        "is_single_scan": False,
+        "concurrent_tasks": 1,
+    }
+
+    resp = requests.put(
+        f"{BASE_URL}/scans/{INVALID}",
+        json=payload,
+        headers=HEADERS,
+        timeout=TIMEOUT,
+    )
+    assert resp.status_code == 500, f"Expected 500, got {resp.status_code}"
 
 
 @pytest.mark.integration
@@ -534,13 +567,23 @@ def test_delete_scan_success(test_scan):
 @pytest.mark.integration
 def test_delete_scan_not_found():
     """DELETE a non-existent scan should return 404 Not Found."""
-    bad_id = "00000000-0000-0000-0000-000000000000"
     resp = requests.delete(
-        f"{BASE_URL}/scans/{bad_id}",
+        f"{BASE_URL}/scans/{BAD_ID}",
         headers=HEADERS,
         timeout=TIMEOUT,
     )
     assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
+
+
+@pytest.mark.integration
+def test_delete_scan_invalid():
+    """DELETE a non-existent scan should return 500 Not Found."""
+    resp = requests.delete(
+        f"{BASE_URL}/scans/{INVALID}",
+        headers=HEADERS,
+        timeout=TIMEOUT,
+    )
+    assert resp.status_code == 500, f"Expected 500, got {resp.status_code}"
 
 
 # ========================================
@@ -565,13 +608,23 @@ def test_run_scan_success(test_scan):
 @pytest.mark.integration
 def test_run_scan_not_found():
     """POST /scans/{scan_id}/run for a non-existent ID should return 404."""
-    bad_id = "00000000-0000-0000-0000-000000000000"
     resp = requests.post(
-        f"{BASE_URL}/scans/{bad_id}/run",
+        f"{BASE_URL}/scans/{BAD_ID}/run",
         headers=HEADERS,
         timeout=TIMEOUT,
     )
     assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
+
+
+@pytest.mark.integration
+def test_run_scan_invalid():
+    """POST /scans/{scan_id}/run for a non-existent ID should return 500."""
+    resp = requests.post(
+        f"{BASE_URL}/scans/{INVALID}/run",
+        headers=HEADERS,
+        timeout=TIMEOUT,
+    )
+    assert resp.status_code == 500, f"Expected 500 Not Found, got {resp.status_code}"
 
 
 # ========================================
