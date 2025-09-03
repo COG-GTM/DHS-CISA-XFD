@@ -38,6 +38,7 @@ from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.export import export
 from .api_methods.object_store import get_object_store_presigned_url
 from .api_methods.pshtt_sync import pshtt_sync_post
 from .api_methods.queue_monitoring import list_queues
@@ -111,6 +112,7 @@ from .schema_models.dmz_sync import (
 )
 from .schema_models.dns_twist_sync import DnsTwistSyncBody, DnsTwistSyncResponse
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
+from .schema_models.export import ExportPayload, ExportResponse
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
 from .schema_models.object_store import (
@@ -411,6 +413,24 @@ async def get_call_all_cves(
         content=response_obj,
         headers={"X-Salted-Checksum": checksum},
     )
+
+
+# ========================================
+#   New Export Endpoint
+# ========================================
+
+
+@api_router.post(
+    "/export",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ExportResponse,
+    tags=["Export"],
+)
+async def export_post(
+    request_body: ExportPayload, current_user: User = Depends(get_current_active_user)
+):
+    """Call export."""
+    return export(request_body, current_user)
 
 
 # ========================================
