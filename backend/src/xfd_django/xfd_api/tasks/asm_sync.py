@@ -19,7 +19,6 @@ from xfd_mini_dl.models import (
     Cidr,
     CidrOrgs,
     DataSource,
-    Ip,
     IpsSubs,
     Organization,
     SubDomains,
@@ -110,8 +109,9 @@ def flag_asset_changes():
 
 
 def flag_cidr_changes():
-    """Mark Cidrs that were not seen in the last scan as not current,
-    and return (organization_id, cidr_id) for cidrorgs that were closed.
+    """Mark Cidrs that were not seen in the last scan as not current.
+
+    return (organization_id, cidr_id) for cidrorgs that were closed.
     """
     cutoff_date = timezone.now().date() - datetime.timedelta(days=3)
 
@@ -119,7 +119,9 @@ def flag_cidr_changes():
     cidrorgs_to_close = CidrOrgs.objects.filter(last_seen__lt=cutoff_date)
 
     # Capture their (org_id, cidr_id) before updating
-    closed_pairs = cidrorgs_to_close.values_list("organization_id", "cidr_id").distinct()
+    closed_pairs = cidrorgs_to_close.values_list(
+        "organization_id", "cidr_id"
+    ).distinct()
 
     # Mark them as not current
     cidrorgs_to_close.update(current=False)
@@ -139,6 +141,7 @@ def flag_cidr_changes():
     Cidr.objects.filter(cidrorgs__current=True).distinct().update(retired=False)
 
     return list(closed_pairs)
+
 
 def enumerate_subs(org_list=None):
     """Query roots and identify related subdomains."""
