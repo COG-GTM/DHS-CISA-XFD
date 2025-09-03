@@ -17,8 +17,6 @@ INVALID = "notauuid"
 BAD_KEY = "invalid_api_key"
 TIMEOUT = 10
 
-# ——— Regression tests for /organizations ———
-
 
 @pytest.fixture(scope="session")
 def all_organizations():
