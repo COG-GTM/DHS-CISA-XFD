@@ -10,6 +10,8 @@ from logging import FileHandler
 import os
 
 # Third-Party Libraries
+from xfd_api.tasks.asm_sync import flag_cidr_changes
+from xfd_api.tasks.utils.link_ips_to_cidrs import bulk_assign_ips_to_cidrs
 from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.tasks.syncdb_task import synchronize
 from xfd_api.tasks.utils.datetime_utils import freeze_window
@@ -118,6 +120,12 @@ def main():  # pylint: disable=R0915
     # Load request data
     org_id_dict = fetch_orgs_from_redshift()
     # org_id_dict = fetch_org_id_dict_fast()
+
+    # Close unseen cidrs
+    flag_cidr_changes()
+
+    # Flag ips related to closed cidrs:
+    bulk_assign_ips_to_cidrs()
 
     # Process Vulnerability Scans
     fetch_vuln_scans_from_redshift(ps_start_dt, ps_end_dt, org_id_dict)
