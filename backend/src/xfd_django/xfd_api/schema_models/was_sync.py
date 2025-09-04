@@ -1,5 +1,4 @@
 """Schema models for WAS scan summaries."""
-"""Cve schema."""
 # Standard Python Libraries
 from datetime import date
 from typing import Any, Dict, List, Optional
