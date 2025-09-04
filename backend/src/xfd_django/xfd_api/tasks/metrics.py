@@ -194,7 +194,7 @@ def _collect_mean_wait_time_for_pending_users(end_dt):
         output_field=DurationField(),
     )
     qs = (
-        User.objects.filter(invite_pending=True)
+        User.objects.filter(invite_pending=True, created_at__lte=end_dt)
         .annotate(region_num=region_expr)
         .values("region_num")
         .annotate(

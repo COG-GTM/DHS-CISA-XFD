@@ -10,6 +10,7 @@ import uuid
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Q
 from netfields import InetAddressField
 
 # , NetManager
@@ -230,8 +231,14 @@ class CustomerMetrics(AutoLengthCheckModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["date", "region"],
-                name="uniq_customer_metrics_by_date_region",
-            )
+                condition=Q(region__isnull=False),
+                name="uniq_metrics_date_region_when_region_set",
+            ),
+            models.UniqueConstraint(
+                fields=["date"],
+                condition=Q(region__isnull=True),
+                name="uniq_metrics_date_when_region_null",
+            ),
         ]
         indexes = [
             models.Index(fields=["date"], name="idx_customer_metrics_date"),
