@@ -2,7 +2,8 @@
 # Standard Python Libraries
 from datetime import date
 import logging
-from typing import Iterable, List, Tuple
+import math
+from typing import Iterable, Tuple
 
 # Third-Party Libraries
 from django.db.models import QuerySet
@@ -44,16 +45,14 @@ READ_ONLY_FIELDS = (
 
 async def get_all_was_scan_summaries(
     page: int, per_page: int
-) -> tuple[int, List[WasScanSummary]]:
-    """Return (total_pages, list_of_records) for the requested page."""
-    # You could also scope by current_user if needed:
-    base_queryset = WasScanSummary.objects.all().order_by("-start_date")
-    total_count = base_queryset.count()
-    total_pages = max(1, (total_count + per_page - 1))
+) -> tuple[int, list[WasScanSummary]]:
+    """Retrieve paginated WAS scan summaries."""
+    qs = WasScanSummary.objects.all().order_by("-start_date")
+    total_count = qs.count()
+    total_pages = max(1, math.ceil(total_count / per_page))  # <- proper ceil
 
     offset = (page - 1) * per_page
-    records = list(base_queryset[offset : offset + per_page])
-
+    records = list(qs[offset : offset + per_page])
     return total_pages, records
 
 

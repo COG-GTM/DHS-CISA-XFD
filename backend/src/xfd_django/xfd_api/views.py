@@ -2046,13 +2046,19 @@ async def get_was_scan_summaries_endpoint(
         )
 
     # Serialize ORM objects to plain dicts
-    raw_records = [WasScanSummarySchema.from_orm(record).dict() for record in records]
-    payload = jsonable_encoder(raw_records)
+    payload = [
+        WasScanSummarySchema.model_validate(record, from_attributes=True).model_dump()
+        for record in records
+    ]
 
-    response_body = {"status": "ok", "payload": payload}
+    response_body = {
+        "status": "ok",
+        "payload": jsonable_encoder(payload),
+        "total_pages": total_pages,
+        "current_page": page,
+    }
 
-    # Compute salted checksum
-    return build_checksum_response(response_body, response, status.HTTP_201_CREATED)
+    return build_checksum_response(response_body, response, status.HTTP_200_OK)
 
 
 # WAS Findings Sync
