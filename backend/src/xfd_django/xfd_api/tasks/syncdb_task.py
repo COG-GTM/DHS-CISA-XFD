@@ -217,7 +217,7 @@ def index_exists_in_db(model_index, existing_defs):
 
 def update_table(
     schema_editor: BaseDatabaseSchemaEditor, model, database, allowed_tables
-):
+):  # pylint: disable=R0915
     """Update an existing table for the given model. Ensure columns match fields."""
     table_name = model._meta.db_table
     db_fields = {field.column for field in model._meta.fields}
@@ -252,6 +252,64 @@ def update_table(
                 )
                 schema_editor.add_field(model, field)
 
+        # --- NEW: Sync nullability for existing columns ---
+        cursor.execute(
+            """
+            SELECT column_name, is_nullable
+            FROM information_schema.columns
+            WHERE table_name = %s
+              AND table_schema = 'public';
+            """,
+            [table_name],
+        )
+        nullability_info = {
+            row[0]: (row[1].lower() == "yes") for row in cursor.fetchall()
+        }
+
+        for field in model._meta.fields:
+            if field.column in existing_columns:
+                actual_nullable = nullability_info.get(field.column, True)
+                desired_nullable = field.null
+                if actual_nullable != desired_nullable:
+                    safe_table_name = connections[database].ops.quote_name(table_name)
+                    safe_column_name = connections[database].ops.quote_name(
+                        field.column
+                    )
+
+                    if not desired_nullable:
+                        # Before trying SET NOT NULL, check if column already has NULLs
+                        cursor.execute(
+                            f"SELECT COUNT(*) FROM {safe_table_name} WHERE {safe_column_name} IS NULL;"  # nosec B608
+                        )
+                        null_count = cursor.fetchone()[0]
+                        if null_count > 0:
+                            LOGGER.warning(
+                                "⚠️ Cannot set NOT NULL on %s.%s: %s row(s) contain NULL values. "
+                                "Please clean up data manually.",
+                                table_name,
+                                field.column,
+                                null_count,
+                            )
+                            continue  # skip ALTER
+                        alter_sql = f"ALTER TABLE {safe_table_name} ALTER COLUMN {safe_column_name} SET NOT NULL;"
+                    else:
+                        alter_sql = f"ALTER TABLE {safe_table_name} ALTER COLUMN {safe_column_name} DROP NOT NULL;"
+
+                    try:
+                        cursor.execute(alter_sql)
+                        LOGGER.info(
+                            "Updated nullability of column '%s' in table '%s' to %s",
+                            field.column,
+                            table_name,
+                            "NULL" if desired_nullable else "NOT NULL",
+                        )
+                    except Exception as e:
+                        LOGGER.error(
+                            "⚠️ Failed to update nullability of %s.%s: %s",
+                            table_name,
+                            field.column,
+                            e,
+                        )
         # Remove extra columns
         extra_columns = existing_columns - db_fields
         for column in extra_columns:
