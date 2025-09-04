@@ -110,13 +110,13 @@ def test_get_call_all_was_findings_forbidden_non_admin():
 
 @pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
 def test_get_call_all_was_findings_forbidden_no_user_type():
-    """Requests with user_type=None should be forbidden by the write-admin gate."""
+    """Requests with no role should be forbidden by the write-admin gate."""
     now = datetime.now(timezone.utc)
     no_type_user = User.objects.create(
         first_name="NoType",
         last_name="User",
         email=f"{uuid.uuid4()}@example.com",
-        user_type=None,  # explicitly no role
+        user_type="",  # explicitly no role
         invite_pending=False,  # <-- ensure user is active so auth passes
         created_at=now,
         updated_at=now,
