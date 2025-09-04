@@ -5,6 +5,10 @@ from datetime import datetime, timedelta, timezone
 # Third-Party Libraries
 import pytest
 from xfd_api.tasks import metrics as metrics_mod
+from xfd_api.tasks.utils.export_customer_metrics import (
+    _default_fieldnames,
+    export_customer_metrics,
+)
 from xfd_mini_dl.models import CustomerMetrics, Organization, Role, User, UserType
 
 
@@ -19,6 +23,13 @@ def frozen_now(monkeypatch):
     monkeypatch.setattr(metrics_mod.dj_timezone, "now", lambda: fixed)
     monkeypatch.setattr("django.utils.timezone.now", lambda: fixed)
     return fixed
+
+
+@pytest.fixture
+def freeze_export_clock(monkeypatch, frozen_now):
+    """Freeze django.utils.timezone.now() to match 'frozen_now' and keep 'yesterday' consistent between tests."""
+    monkeypatch.setattr("django.utils.timezone.now", lambda: frozen_now)
+    return frozen_now
 
 
 def _force_created_at(user, ts):
@@ -264,3 +275,76 @@ def test_idempotent_update_or_create(frozen_now):
     assert first["updated"] == 0
     assert second["created"] == 0
     assert second["updated"] == expected_rows
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_export_csv_default_fieldnames_filters_yesterday_only(freeze_export_clock):
+    """Test exporting customer metrics to CSV with default fieldnames and filtering for yesterday's data only."""
+    metrics_mod.collect_and_upsert_customer_metrics({}, {})
+    start_dt, end_dt, target_date = _yesterday_window_from_metrics()
+
+    # Create older rows with a subset of regions to prove filtering works (date != yesterday)
+    older_date = target_date - timedelta(days=2)
+    CustomerMetrics.objects.create(date=older_date, region=None)
+    CustomerMetrics.objects.create(date=older_date, region=1)
+
+    # Export using default fieldnames
+    filename, csv_bytes = export_customer_metrics()
+
+    assert filename == "cyhy_dashboard_customer_metrics_{}.csv".format(
+        target_date.isoformat()
+    )
+
+    # Parse CSV
+    content = csv_bytes.decode("utf-8")
+    lines = [line for line in content.splitlines() if line.strip() != ""]
+    assert len(lines) >= 1  # at least header
+
+    # Header should equal _default_fieldnames(CustomerMetrics)
+    expected_header = _default_fieldnames(CustomerMetrics)
+    header = lines[0].split(",")
+    assert header == expected_header
+
+    # Data row count should equal number of rows for yesterday (your task creates one per region in REGIONS)
+    data_rows = lines[1:]
+    assert len(data_rows) == len(metrics_mod.REGIONS)
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_export_csv_with_explicit_fields_and_values(freeze_export_clock):
+    """Test exporting customer metrics to CSV with explicit fieldnames and verifying sample values."""
+    # Ensure rows exist for yesterday
+    metrics_mod.collect_and_upsert_customer_metrics({}, {})
+    start_dt, end_dt, target_date = _yesterday_window_from_metrics()
+
+    # Pick a tight set of columns and verify ordering and sample values
+    cols = ("date", "region", "users_invite_pending")
+    filename, csv_bytes = export_customer_metrics(fieldnames=cols)
+    assert filename.endswith(
+        "{}{}.csv".format(target_date.isoformat(), "")
+    )  # simple suffix check
+
+    # Parse rows
+    content = csv_bytes.decode("utf-8").splitlines()
+    assert content[0].split(",") == list(cols)
+
+    # Should have one row per region yesterday
+    rows = content[1:]
+    assert len(rows) == len(metrics_mod.REGIONS)
+
+    sample_indices = [0, len(rows) - 1]
+    for idx in sample_indices:
+        parts = rows[idx].split(",")
+        assert parts[0] == target_date.isoformat()
+        assert parts[2] == "0"
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "mini_data_lake"])
+def test_export_csv_raises_on_missing_date_field_candidates(freeze_export_clock):
+    """Test that exporting customer metrics to CSV raises ValueError when no date field candidates exist."""
+    metrics_mod.collect_and_upsert_customer_metrics({}, {})
+
+    with pytest.raises(ValueError):
+        export_customer_metrics(
+            date_field_candidates=("does_not_exist", "also_missing")
+        )
