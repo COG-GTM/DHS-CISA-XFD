@@ -77,7 +77,8 @@ def _build_forward_headers(request: Request, public_prefix: str) -> Dict[str, st
     xuri = request.url.path
     if request.url.query:
         xuri = "{}?{}".format(xuri, request.url.query)
-    hdrs["x-forwarded-uri"] = xuri
+    hdrs["x-forwarded-uri"] = public_prefix  # Passing prefix only avoids redirect loop
+    hdrs["x-original-uri"] = xuri  # Tracking full path for logging purposes
     return hdrs
 
 
