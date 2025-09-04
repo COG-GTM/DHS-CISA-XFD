@@ -1,11 +1,13 @@
-
+"""WAS Sync API Methods."""
+# Standard Python Libraries
 from datetime import date
-from django.db.models import QuerySet
 import logging
-from typing import List, Tuple, Iterable
+from typing import Iterable, List, Tuple
 
-from xfd_mini_dl.models import WasScanSummary
-from xfd_mini_dl.models import WasFindings
+# Third-Party Libraries
+from django.db.models import QuerySet
+from xfd_mini_dl.models import WasFindings, WasScanSummary
+
 LOGGER = logging.getLogger(__name__)
 
 READ_ONLY_FIELDS = (
@@ -40,19 +42,20 @@ READ_ONLY_FIELDS = (
 )
 
 
-async def get_all_was_scan_summaries(page: int, per_page: int) -> tuple[int, List[WasScanSummary]]:
-    """
-    Return (total_pages, list_of_records) for the requested page.
-    """
+async def get_all_was_scan_summaries(
+    page: int, per_page: int
+) -> tuple[int, List[WasScanSummary]]:
+    """Return (total_pages, list_of_records) for the requested page."""
     # You could also scope by current_user if needed:
     base_queryset = WasScanSummary.objects.all().order_by("-start_date")
     total_count = base_queryset.count()
-    total_pages = (total_count + per_page - 1)
+    total_pages = total_count + per_page - 1
 
     offset = (page - 1) * per_page
     records = list(base_queryset[offset : offset + per_page])
 
     return total_pages, records
+
 
 def get_was_findings_queryset(since_date: date | None) -> QuerySet:
     """
@@ -73,7 +76,9 @@ def get_was_findings_queryset(since_date: date | None) -> QuerySet:
     return queryset.only(*READ_ONLY_FIELDS).order_by("finding_uid")
 
 
-def paginate_queryset(queryset: QuerySet, page: int, per_page: int) -> Tuple[int, Iterable[WasFindings]]:
+def paginate_queryset(
+    queryset: QuerySet, page: int, per_page: int
+) -> Tuple[int, Iterable[WasFindings]]:
     """
     Paginate a queryset.
 
@@ -92,5 +97,7 @@ def paginate_queryset(queryset: QuerySet, page: int, per_page: int) -> Tuple[int
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
     page_records = queryset[start_index:end_index]
-    LOGGER.info("WAS findings page=%s per_page=%s total_pages=%s", page, per_page, total_pages)
+    LOGGER.info(
+        "WAS findings page=%s per_page=%s total_pages=%s", page, per_page, total_pages
+    )
     return total_pages, page_records

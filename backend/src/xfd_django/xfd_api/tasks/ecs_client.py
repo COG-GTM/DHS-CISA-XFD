@@ -91,7 +91,9 @@ class ECSClient:
                             "SHODAN_API_KEY": command_options["SHODAN_API_KEY"],
                             "PE_SHODAN_API_KEYS": os.getenv("PE_SHODAN_API_KEYS"),
                             "QUALYS_USERNAME": os.getenv("QUALYS_USERNAME=dhscs3cd"),
-                            "QUALYS_PASSWORD": os.getenv("QUALYS_PASSWORD=34Ai*%TYHNM*IKL<drtgh"),
+                            "QUALYS_PASSWORD": os.getenv(
+                                "QUALYS_PASSWORD=34Ai*%TYHNM*IKL<drtgh"
+                            ),
                             "WHOIS_XML_KEY": os.getenv("WHOIS_XML_KEY"),
                             "WHOIS_XML_THREAD_COUNT": os.getenv(
                                 "WHOIS_XML_THREAD_COUNT"

@@ -1,10 +1,12 @@
 """
 WAS Findings LZ sync scan hitting the FastAPI endpoint.
+
 Mirrors the conventions used in nist_lz_sync.py.
 """
 
+# Standard Python Libraries
 # --- Standard Libraries ---
-from datetime import datetime, date, timezone
+from datetime import date, datetime
 import hashlib
 import json
 import logging
@@ -12,16 +14,18 @@ import os
 from typing import Any, Dict, Iterable, Optional
 from urllib.parse import urljoin
 
+# Third-Party Libraries
 # --- Third-Party Libraries ---
 import django
-import requests
 from django.db import transaction
+import requests
 
 # --- Django setup ---
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
+# Third-Party Libraries
 # --- Project Imports ---
 from xfd_api.helpers.date_time_helpers import calculate_days_back
 from xfd_mini_dl.models import WasFindings

@@ -2,13 +2,16 @@
 """Cve schema."""
 # Standard Python Libraries
 from datetime import date
-from typing import List, Optional, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 # Third-Party Libraries
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class WasScanSummarySchema(BaseModel):
+    """Serializable representation of a WAS scan summary for API transport."""
+
     summary_uid: UUID
     start_date: date
     end_date: date
@@ -47,11 +50,15 @@ class WasScanSummarySchema(BaseModel):
     sensitive_content_count: int
 
     class Config:
+        """Pydantic configuration."""
+
         orm_mode = True
         validate_assignment = True
 
 
 class GetWasScanSummariesResponse(BaseModel):
+    """Envelope returned by the DMZ sync WAS endpoint for scan summaries."""
+
     status: str = Field("ok")
     payload: List[WasScanSummarySchema]
 
@@ -59,7 +66,7 @@ class GetWasScanSummariesResponse(BaseModel):
 class WasFinding(BaseModel):
     """Serializable representation of a WAS finding for API transport."""
 
-    finding_uid: str
+    finding_uid: UUID
     finding_type: Optional[str] = None
     webapp_id: Optional[int] = None
     was_org_id: Optional[str] = None
@@ -78,20 +85,21 @@ class WasFinding(BaseModel):
     name: Optional[str] = None
     cvss_v3_attack_vector: Optional[str] = None
     cwe_list: Optional[List[Optional[int]]] = None
-    wasc_list: Optional[dict] = None
+    wasc_list: Optional[List[Dict[str, Any]]] = None
     last_tested: Optional[date] = None
     fixed_date: Optional[date] = None
     is_ignored: Optional[bool] = None
     url: Optional[str] = None
     qid: Optional[int] = None
     response: Optional[str] = None
-    cve_id: Optional[str] = None
-    sub_domain_id: Optional[str] = None
-
+    cve_id: Optional[UUID] = Field(default=None)
+    sub_domain_id: Optional[int] = Field(default=None)
     model_config = ConfigDict(from_attributes=True)
+
 
 class GetAllWasFindingsResponse(BaseModel):
     """Envelope returned by the DMZ sync WAS endpoint."""
+
     status: str
     payload: list[WasFinding]
     total_pages: int

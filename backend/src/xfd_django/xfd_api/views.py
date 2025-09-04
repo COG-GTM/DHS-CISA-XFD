@@ -1,6 +1,6 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
-from datetime import datetime, timezone, date
+from datetime import date, datetime, timezone
 import hashlib
 import json
 import logging
@@ -25,10 +25,10 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from redis import asyncio as aioredis
 import xfd_api.api_methods.dmz_sync as cybersix_module
 from xfd_api.auth import is_global_write_admin
-from xfd_mini_dl.models import User
 
-#xfd_api helpers
+# xfd_api helpers
 from xfd_api.helpers.checksum_response import build_checksum_response
+from xfd_mini_dl.models import User
 
 # from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
@@ -87,8 +87,8 @@ from .api_methods.vulnerability import (
     v2_get_vulnerability_by_id,
 )
 from .api_methods.was_sync import (
-    get_was_findings_queryset,
     get_all_was_scan_summaries,
+    get_was_findings_queryset,
     paginate_queryset,
 )
 from .api_methods.xpanse_sync import xpanse_sync_post
@@ -161,10 +161,10 @@ from .schema_models.vulnerability import (
     VulnerabilitySearchResponse,
 )
 from .schema_models.was_sync import (
+    GetAllWasFindingsResponse,
     GetWasScanSummariesResponse,
     WasFinding,
     WasScanSummarySchema,
-    GetAllWasFindingsResponse,
 )
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
@@ -2010,9 +2010,10 @@ def generate_presigned_object_store_url(
     return get_object_store_presigned_url(current_user, body)
 
 
-#==========================
+# ==========================
 # WAS Scan Endpoints  #
-#==========================
+# ==========================
+
 
 # POST
 @api_router.post(
@@ -2023,10 +2024,9 @@ def generate_presigned_object_store_url(
     tags=["WAS Scan Summaries"],
 )
 async def get_was_scan_summaries_endpoint(
-        response: Response,
-        current_user: User = Depends(get_current_active_user),
-        page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
-        per_page: int = Query(100, ge=1, description="How many items per page."),
+    response: Response,
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(100, ge=1, description="How many items per page."),
 ):
     """
     Return paginated WAS scan summaries plus an X‑Salted‑Checksum header for integrity.
@@ -2036,7 +2036,6 @@ async def get_was_scan_summaries_endpoint(
     """
     try:
         total_pages, records = await get_all_was_scan_summaries(
-            current_user=current_user,
             page=page,
             per_page=per_page,
         )
@@ -2055,7 +2054,8 @@ async def get_was_scan_summaries_endpoint(
     # Compute salted checksum
     return build_checksum_response(response_body, response, status.HTTP_201_CREATED)
 
-#WAS Findings Sync
+
+# WAS Findings Sync
 @api_router.post(
     "/dmz_sync/was_findings",
     response_model=GetAllWasFindingsResponse,
@@ -2064,20 +2064,19 @@ async def get_was_scan_summaries_endpoint(
     tags=["WAS findings to sync to LZ db"],
 )
 async def get_call_all_was_findings(  # noqa: D401
-        response: Response,
-        current_user: User = Depends(get_current_active_user),
-        page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
-        per_page: int = Query(
-            200, ge=1, le=1000, description="How many items per page (max 1000)."
-        ),
-        since_date: date | None = Query(
-            default=None,
-            description="Optional date filter (records last_detected >= this).",
-        ),
+    response: Response,
+    current_user: User = Depends(get_current_active_user),
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(
+        200, ge=1, le=1000, description="How many items per page (max 1000)."
+    ),
+    since_date: date
+    | None = Query(
+        default=None,
+        description="Optional date filter (records last_detected >= this).",
+    ),
 ):
-    """
-    Return paginated WAS findings plus an X-Salted-Checksum header for integrity.
-    """
+    """Return paginated WAS findings plus an X-Salted-Checksum header for integrity."""
     # Enforce write-admin access using the shared helper
     if not is_global_write_admin(current_user):
         raise HTTPException(
@@ -2094,7 +2093,9 @@ async def get_call_all_was_findings(  # noqa: D401
             detail="Unexpected error: {}".format(error),
         ) from error
 
-    payload_items = [WasFinding.model_validate(record, from_attributes=True) for record in records]
+    payload_items = [
+        WasFinding.model_validate(record, from_attributes=True) for record in records
+    ]
     response_body = {
         "status": "ok",
         "payload": jsonable_encoder(payload_items),
@@ -2102,6 +2103,4 @@ async def get_call_all_was_findings(  # noqa: D401
         "current_page": page,
     }
 
-    return build_checksum_response(response_body,
-                                   response,
-                                   status.HTTP_201_CREATED)
+    return build_checksum_response(response_body, response, status.HTTP_201_CREATED)
