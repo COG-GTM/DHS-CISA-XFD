@@ -49,7 +49,7 @@ async def get_all_was_scan_summaries(
     # You could also scope by current_user if needed:
     base_queryset = WasScanSummary.objects.all().order_by("-start_date")
     total_count = base_queryset.count()
-    total_pages = total_count + per_page - 1
+    total_pages = max(1, (total_count + per_page - 1))
 
     offset = (page - 1) * per_page
     records = list(base_queryset[offset : offset + per_page])

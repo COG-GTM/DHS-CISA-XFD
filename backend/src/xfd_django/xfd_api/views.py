@@ -2076,11 +2076,19 @@ async def get_call_all_was_findings(  # noqa: D401
         description="Optional date filter (records last_detected >= this).",
     ),
 ):
-    """Return paginated WAS findings plus an X-Salted-Checksum header for integrity."""
-    # Enforce write-admin access using the shared helper
+    """
+    Return paginated WAS findings plus an X-Salted-Checksum header for integrity.
+
+    Notes:
+    - Authorization is enforced via `is_global_write_admin`.
+    - Pagination is controlled by `page` and `per_page`.
+    - The response body is JSON-serializable and signed with a salted checksum header.
+    """
+    # Enforce write-admin access using the shared helper (no functional change)
     if not is_global_write_admin(current_user):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access.",
         )
 
     try:
@@ -2103,4 +2111,5 @@ async def get_call_all_was_findings(  # noqa: D401
         "current_page": page,
     }
 
+    # Keep the same 201 return and checksum behavior
     return build_checksum_response(response_body, response, status.HTTP_201_CREATED)
