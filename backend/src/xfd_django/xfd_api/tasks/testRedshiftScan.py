@@ -1,14 +1,23 @@
-import os, sys
+# Standard Python Libraries
+import os
+import sys
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
+# Third-Party Libraries
 import django
+
 django.setup()
+# Standard Python Libraries
 # --- end bootstrap ---
 import csv
 from typing import Any, Dict, List
+
+# Third-Party Libraries
 from xfd_api.tasks.redshift_cve_scan import upsert_cve_from_redshift_row
+
 # Direct path to your CSV file
 DEFAULT_CSV_PATH = "xfd_api/tasks/redshift_query_20250814143429.csv"
 CSV_TO_KEYS = {
@@ -40,9 +49,10 @@ ORDERED_KEYS = [
     "modified_at",
 ]
 
+
 def load_rows_from_csv(csv_path: str) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
-    with open(csv_path, "r", encoding="utf-8", newline="") as f:
+    with open(csv_path, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         for raw in reader:
             mapped = {}
@@ -60,6 +70,7 @@ def load_rows_from_csv(csv_path: str) -> List[Dict[str, Any]]:
             rows.append(mapped)
     return rows
 
+
 def run_csv_ingest(csv_path: str = DEFAULT_CSV_PATH) -> int:
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"CSV not found at {csv_path}")
@@ -69,6 +80,7 @@ def run_csv_ingest(csv_path: str = DEFAULT_CSV_PATH) -> int:
         upsert_cve_from_redshift_row(rec)
         processed += 1
     return processed
+
 
 def main() -> int:
     count = run_csv_ingest()
