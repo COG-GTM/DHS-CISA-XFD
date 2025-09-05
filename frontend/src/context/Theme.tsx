@@ -91,6 +91,7 @@ declare module '@mui/material/styles' {
 declare module '@mui/material/Typography' {
   interface TypographyPropsVariantOverrides {
     boldBody: true;
+    largeBody: true;
     logText: true;
     globalNav: true;
     link: true;
