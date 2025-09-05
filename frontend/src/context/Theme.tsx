@@ -94,6 +94,7 @@ declare module '@mui/material/Typography' {
     largeBody: true;
     logText: true;
     globalNav: true;
+    largeBody: true;
     link: true;
     miniStatCallout: true;
     statCallout: true;
