@@ -1014,7 +1014,9 @@ def search_organizations_v2(payload, current_user):
             return {"result": [], "count": 0}
 
         f = Q()
-        if not is_global_view_admin(current_user):
+        if not is_global_view_admin(current_user) and not is_regional_admin(
+            current_user
+        ):
             f &= Q(id__in=memberships)
 
         f = apply_organization_filters(f, payload.filters or {})
