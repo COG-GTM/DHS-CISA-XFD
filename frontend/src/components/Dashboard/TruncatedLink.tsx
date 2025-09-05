@@ -25,7 +25,7 @@ const TruncatedLink = ({
 
   return (
     <Tooltip
-      title={showTooltip ? tooltipText || safeText : ''}
+      title={showTooltip ? safeTooltipText : ''}
       placement={'right'}
       enterDelay={300}
       leaveDelay={200}
