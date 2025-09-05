@@ -9,7 +9,7 @@ from django.db import connections
 VW_SERVICE_VERSION = "20250823"
 MAT_VW_COMBINED_VULNS_VERSION = "20250903"  # bumped due to schema change
 DOMAIN_MAT_VIEW_VERSION = "20250823"
-DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250903"  # depends on combined MV
+DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250903"  # bumped due to combined depenedency
 
 LOGGER = logging.getLogger(__name__)
 
@@ -950,7 +950,7 @@ def create_domain_search_mat_view(database):
         LOGGER.info("Domain details materialized view created.")
 
 
-# Optional orchestration utility
+# Orchestration utility
 def create_all_materialized(database):
     """Build everything in a dependency-safe order."""
     create_service_mat_view(database)  # independent
