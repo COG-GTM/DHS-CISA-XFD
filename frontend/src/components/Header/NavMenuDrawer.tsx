@@ -385,7 +385,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                                     color: 'primary.dark'
                                                   }}
                                                 >
-                                                  {item.menuItemTitle}
+                                                  {subItem.menuItemTitle}
                                                 </Typography>
                                               }
                                             />
