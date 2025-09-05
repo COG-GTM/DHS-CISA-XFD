@@ -9,7 +9,8 @@ import {
   ListItem,
   ListItemButton,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Typography
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -36,7 +37,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
   const theme = useTheme();
   const DrawerList = (
     <Box
-      sx={{ width: 250, pt: 3 }}
+      sx={{ width: 250, pt: 0 }}
       role="presentation"
       onKeyDown={(e) => {
         if (e.key === 'Escape') toggleDrawer(false)();
@@ -68,20 +69,41 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                       }}
                       aria-haspopup="true"
                       aria-expanded={openCollapse === sectionTitle}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
                     >
                       <ListItemText
-                        primary={sectionTitle}
-                        sx={{ fontWeight: 'bold' }}
+                        primary={
+                          <Typography
+                            variant="globalNav"
+                            sx={{
+                              color:
+                                openCollapse === sectionTitle
+                                  ? theme.palette.primary.darker
+                                  : theme.palette.primary.dark
+                            }}
+                          >
+                            {sectionTitle}
+                          </Typography>
+                        }
                       />
-                      <ListItemIcon>
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          marginLeft: 'auto',
+                          color:
+                            openCollapse === sectionTitle
+                              ? theme.palette.primary.darker
+                              : theme.palette.primary.dark
+                        }}
+                      >
                         {openCollapse === sectionTitle ? (
-                          <KeyboardArrowUpIcon
-                            sx={{ color: theme.palette.primary.dark }}
-                          />
+                          <KeyboardArrowUpIcon />
                         ) : (
-                          <KeyboardArrowDownIcon
-                            sx={{ color: theme.palette.primary.dark }}
-                          />
+                          <KeyboardArrowDownIcon />
                         )}
                       </ListItemIcon>
                     </ListItemButton>
@@ -116,7 +138,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                     toggleDrawer(false)();
                                   }}
                                 >
-                                  <ListItemText primary={item.menuItemTitle} />
+                                  <ListItemText
+                                    primary={
+                                      <Typography
+                                        variant="globalNav"
+                                        sx={{
+                                          color: 'primary.dark'
+                                        }}
+                                      >
+                                        {item.menuItemTitle}
+                                      </Typography>
+                                    }
+                                  />
                                 </ListItemButton>
                               </ListItem>
                             );
@@ -138,7 +171,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                     toggleDrawer(false)();
                                   }}
                                 >
-                                  <ListItemText primary={item.menuItemTitle} />
+                                  <ListItemText
+                                    primary={
+                                      <Typography
+                                        variant="globalNav"
+                                        sx={{
+                                          color: 'primary.dark'
+                                        }}
+                                      >
+                                        {item.menuItemTitle}
+                                      </Typography>
+                                    }
+                                  />
                                 </ListItemButton>
                               </ListItem>
                             );
@@ -161,7 +205,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                   aria-label={item.menuItemTitle}
                                   onClick={toggleDrawer(false)}
                                 >
-                                  <ListItemText primary={item.menuItemTitle} />
+                                  <ListItemText
+                                    primary={
+                                      <Typography
+                                        variant="globalNav"
+                                        sx={{
+                                          color: 'primary.dark'
+                                        }}
+                                      >
+                                        {item.menuItemTitle}
+                                      </Typography>
+                                    }
+                                  />
                                 </ListItemButton>
                               </ListItem>
                             );
@@ -183,7 +238,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                   role="menuitem"
                                   aria-label={item.menuItemTitle}
                                 >
-                                  <ListItemText primary={item.menuItemTitle} />
+                                  <ListItemText
+                                    primary={
+                                      <Typography
+                                        variant="globalNav"
+                                        sx={{
+                                          color: 'primary.dark'
+                                        }}
+                                      >
+                                        {item.menuItemTitle}
+                                      </Typography>
+                                    }
+                                  />
                                 </ListItemButton>
                               </ListItem>
                             );
@@ -203,7 +269,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                   aria-label={item.menuItemTitle}
                                   onClick={toggleDrawer(false)}
                                 >
-                                  <ListItemText primary={item.menuItemTitle} />
+                                  <ListItemText
+                                    primary={
+                                      <Typography
+                                        variant="globalNav"
+                                        sx={{
+                                          color: 'primary.dark'
+                                        }}
+                                      >
+                                        {item.menuItemTitle}
+                                      </Typography>
+                                    }
+                                  />
                                 </ListItemButton>
                               </ListItem>
                             );
@@ -226,26 +303,48 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                     role="menuitem"
                                     aria-haspopup="true"
                                     aria-label={item.menuItemTitle}
+                                    sx={{
+                                      display: 'flex', // Make it a flex container
+                                      alignItems: 'center', // Vertically center content
+                                      width: '100%' // Ensure it takes full width
+                                    }}
                                   >
                                     <ListItemText
-                                      primary={item.menuItemTitle}
+                                      sx={{ flex: 1 }} // <-- Add this line!
+                                      primary={
+                                        <Typography
+                                          variant="subMenuText"
+                                          sx={{
+                                            color:
+                                              openSubCollapse ===
+                                              `${index}-${subIndex}`
+                                                ? theme.palette.primary.darker
+                                                : theme.palette.primary.dark
+                                          }}
+                                        >
+                                          {item.menuItemTitle}
+                                        </Typography>
+                                      }
                                     />
-                                    <ListItemIcon>
+                                    <Box
+                                      sx={{
+                                        marginLeft: 'auto',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color:
+                                          openSubCollapse ===
+                                          `${index}-${subIndex}`
+                                            ? theme.palette.primary.darker
+                                            : theme.palette.primary.dark
+                                      }}
+                                    >
                                       {openSubCollapse ===
                                       `${index}-${subIndex}` ? (
-                                        <KeyboardArrowUpIcon
-                                          sx={{
-                                            color: theme.palette.primary.dark
-                                          }}
-                                        />
+                                        <KeyboardArrowUpIcon />
                                       ) : (
-                                        <KeyboardArrowDownIcon
-                                          sx={{
-                                            color: theme.palette.primary.dark
-                                          }}
-                                        />
+                                        <KeyboardArrowDownIcon />
                                       )}
-                                    </ListItemIcon>
+                                    </Box>
                                   </ListItemButton>
                                 </ListItem>
                                 <Collapse
@@ -270,9 +369,25 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                               await onMenuItemClick(subItem);
                                               toggleDrawer(false)();
                                             }}
+                                            sx={{
+                                              '&:hover .MuiTypography-root, &:focus .MuiTypography-root, &.Mui-selected .MuiTypography-root':
+                                                {
+                                                  color:
+                                                    theme.palette.primary.darker
+                                                }
+                                            }}
                                           >
                                             <ListItemText
-                                              primary={subItem.menuItemTitle}
+                                              primary={
+                                                <Typography
+                                                  variant="subMenuText"
+                                                  sx={{
+                                                    color: 'primary.dark'
+                                                  }}
+                                                >
+                                                  {item.menuItemTitle}
+                                                </Typography>
+                                              }
                                             />
                                           </ListItemButton>
                                         </ListItem>
@@ -342,7 +457,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                               toggleDrawer(false)();
                             }}
                           >
-                            <ListItemText primary={item.menuItemTitle} />
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="globalNav"
+                                  sx={{
+                                    color: 'primary.dark'
+                                  }}
+                                >
+                                  {item.menuItemTitle}
+                                </Typography>
+                              }
+                            />
                           </ListItemButton>
                         </ListItem>
                       );
@@ -364,7 +490,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                               toggleDrawer(false)();
                             }}
                           >
-                            <ListItemText primary={item.menuItemTitle} />
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="globalNav"
+                                  sx={{
+                                    color: 'primary.dark'
+                                  }}
+                                >
+                                  {item.menuItemTitle}
+                                </Typography>
+                              }
+                            />
                           </ListItemButton>
                         </ListItem>
                       );
@@ -387,7 +524,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                             aria-label={item.menuItemTitle}
                             onClick={toggleDrawer(false)}
                           >
-                            <ListItemText primary={item.menuItemTitle} />
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="globalNav"
+                                  sx={{
+                                    color: 'primary.dark'
+                                  }}
+                                >
+                                  {item.menuItemTitle}
+                                </Typography>
+                              }
+                            />
                           </ListItemButton>
                         </ListItem>
                       );
@@ -409,7 +557,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                             role="menuitem"
                             aria-label={item.menuItemTitle}
                           >
-                            <ListItemText primary={item.menuItemTitle} />
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="globalNav"
+                                  sx={{
+                                    color: 'primary.dark'
+                                  }}
+                                >
+                                  {item.menuItemTitle}
+                                </Typography>
+                              }
+                            />
                           </ListItemButton>
                         </ListItem>
                       );
@@ -429,7 +588,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                             aria-label={item.menuItemTitle}
                             onClick={toggleDrawer(false)}
                           >
-                            <ListItemText primary={item.menuItemTitle} />
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="globalNav"
+                                  sx={{
+                                    color: 'primary.dark'
+                                  }}
+                                >
+                                  {item.menuItemTitle}
+                                </Typography>
+                              }
+                            />
                           </ListItemButton>
                         </ListItem>
                       );
@@ -452,7 +622,18 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                               aria-haspopup="true"
                               aria-label={item.menuItemTitle}
                             >
-                              <ListItemText primary={item.menuItemTitle} />
+                              <ListItemText
+                                primary={
+                                  <Typography
+                                    variant="globalNav"
+                                    sx={{
+                                      color: 'primary.dark'
+                                    }}
+                                  >
+                                    {item.menuItemTitle}
+                                  </Typography>
+                                }
+                              />
                               <ListItemIcon>
                                 {openCollapse === `${index}-${subIndex}` ? (
                                   <KeyboardArrowUpIcon
@@ -492,7 +673,16 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                       }}
                                     >
                                       <ListItemText
-                                        primary={subItem.menuItemTitle}
+                                        primary={
+                                          <Typography
+                                            variant="globalNav"
+                                            sx={{
+                                              color: 'primary.dark'
+                                            }}
+                                          >
+                                            {subItem.menuItemTitle}
+                                          </Typography>
+                                        }
                                       />
                                     </ListItemButton>
                                   </ListItem>
