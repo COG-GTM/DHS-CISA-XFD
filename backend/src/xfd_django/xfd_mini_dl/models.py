@@ -1902,15 +1902,25 @@ class VulnScanSummary(models.Model):
     )
     start_date = models.DateTimeField(
         help_text="Timestamp of the earliest last_change in the collection",
+        null=True,
+        blank=True,
     )
     end_date = models.DateTimeField(
         help_text="Timestamp of the latest last_change in the collection",
+        null=True,
+        blank=True,
     )
     organization = models.ForeignKey(
         Organization,
         related_name="vuln_scan_summaries",
         on_delete=models.CASCADE,
         help_text="Foreign key relationship to the organization the summary is built for.",
+    )
+    enrolled_in_vs_timestamp = models.DateTimeField(
+        db_column="enrolled_in_vs_timestamp",
+        null=True,
+        blank=True,
+        help_text="Date the stakeholder enrolled in VS.",
     )
     assets_owned_count = models.IntegerField(
         null=True,
@@ -2498,6 +2508,46 @@ class HostSummary(models.Model):
         null=True,
         blank=True,
         help_text="Count of Ip addresses that have been scanned",
+    )
+    port_scan_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest port_scan run on a host owned by the org.",
+    )
+    port_scan_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent port_scan run on a host owned by the org.",
+    )
+    vuln_scan_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest vuln_scan run on a host owned by the org.",
+    )
+    vuln_scan_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent vuln_scan run on a host owned by the org.",
+    )
+    net_scan1_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest net_scan1 run on a host owned by the org.",
+    )
+    net_scan1_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent net_scan1 run on a host owned by the org.",
+    )
+    net_scan2_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest net_scan2 run on a host owned by the org.",
+    )
+    net_scan2_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent net_scan2 run on a host owned by the org.",
     )
 
     class Meta:
@@ -6972,6 +7022,86 @@ class Vulnerability(models.Model):
     solution = models.TextField(blank=True, null=True)
     synopsis = models.TextField(blank=True, null=True)
     results = models.TextField(blank=True, null=True)
+
+    # ===== CVE columns (prefixed) =====
+    cve_row_id = models.TextField(blank=True, null=True)
+    cve_name = models.CharField(max_length=255, blank=True, null=True)
+    cve_published_at = models.DateTimeField(blank=True, null=True)
+    cve_modified_at = models.DateTimeField(blank=True, null=True)
+    cve_status = models.TextField(blank=True, null=True)
+    cve_description = models.TextField(blank=True, null=True)
+
+    cve_cvss_v2_source = models.TextField(blank=True, null=True)
+    cve_cvss_v2_type = models.TextField(blank=True, null=True)
+    cve_cvss_v2_version = models.TextField(blank=True, null=True)
+    cve_cvss_v2_vector_string = models.TextField(blank=True, null=True)
+    cve_cvss_v2_base_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_cvss_v2_base_severity = models.TextField(blank=True, null=True)
+    cve_cvss_v2_exploitability_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_cvss_v2_impact_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+
+    cve_cvss_v3_source = models.TextField(blank=True, null=True)
+    cve_cvss_v3_type = models.TextField(blank=True, null=True)
+    cve_cvss_v3_version = models.TextField(blank=True, null=True)
+    cve_cvss_v3_vector_string = models.TextField(blank=True, null=True)
+    cve_cvss_v3_base_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_cvss_v3_base_severity = models.TextField(blank=True, null=True)
+    cve_cvss_v3_exploitability_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_cvss_v3_impact_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+
+    cve_cvss_v4_source = models.TextField(blank=True, null=True)
+    cve_cvss_v4_type = models.TextField(blank=True, null=True)
+    cve_cvss_v4_version = models.TextField(blank=True, null=True)
+    cve_cvss_v4_vector_string = models.TextField(blank=True, null=True)
+    cve_cvss_v4_base_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_cvss_v4_base_severity = models.TextField(blank=True, null=True)
+    cve_cvss_v4_exploitability_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_cvss_v4_impact_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+
+    cve_weaknesses = models.JSONField(blank=True, null=True)
+    cve_reference_urls = models.JSONField(blank=True, null=True)
+    cve_cpe_list = models.JSONField(blank=True, null=True)
+    cve_dve_score = models.DecimalField(
+        max_digits=100, decimal_places=5, blank=True, null=True
+    )
+    cve_source_attribution = models.TextField(blank=True, null=True)
+    cve_assigner = models.TextField(blank=True, null=True)
+    cve_title = models.TextField(blank=True, null=True)
+    cve_cna_source_json = models.JSONField(blank=True, null=True)
+    cve_cna_affected_json = models.JSONField(blank=True, null=True)
+    cve_cna_problem_types_json = models.JSONField(blank=True, null=True)
+
+    # ===== ADP/SSVC latest row (prefixed) =====
+    adp_id = models.TextField(blank=True, null=True)
+    adp_cve_id = models.TextField(blank=True, null=True)
+    adp_exploitation = models.TextField(blank=True, null=True)
+    adp_automatable = models.TextField(blank=True, null=True)
+    adp_technical_impact = models.TextField(blank=True, null=True)
+    adp_provider = models.TextField(blank=True, null=True)
+    adp_title = models.TextField(blank=True, null=True)
+    adp_ssvc_version = models.TextField(blank=True, null=True)
+    adp_ssvc_timestamp = models.DateTimeField(blank=True, null=True)
+    adp_date_updated = models.DateTimeField(blank=True, null=True)
+    adp_created_at = models.DateTimeField(blank=True, null=True)
+    adp_updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         """Set Vulnerability model metadata."""
