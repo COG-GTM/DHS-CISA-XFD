@@ -2,7 +2,7 @@
 Generate a new API key for an existing user and (optionally) write it to xfd_api/tasks/.env.
 
 Usage:
-    python manage.py generate_dev_api_key --email craig.duhn@associates.cisa.dhs.gov
+    python manage.py generate_dev_api_key --email <your_user_name>@<your_domain_name>
     python manage.py generate_dev_api_key                     # uses LOCAL_MDL_USERNAME
     python manage.py generate_dev_api_key --no-write-env
 """
