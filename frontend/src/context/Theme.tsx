@@ -93,6 +93,7 @@ declare module '@mui/material/Typography' {
     boldBody: true;
     logText: true;
     globalNav: true;
+    largeBody: true;
     link: true;
     miniStatCallout: true;
     statCallout: true;
