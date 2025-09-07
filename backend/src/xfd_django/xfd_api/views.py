@@ -27,7 +27,6 @@ import xfd_api.api_methods.dmz_sync as cybersix_module
 from xfd_api.auth import is_global_write_admin
 from xfd_mini_dl.models import User
 
-# from .schemas import Cpe
 from .api_methods import api_key as api_key_methods
 from .api_methods import dmz_sync as dmz_sync_methods
 from .api_methods import notification as notification_methods
@@ -38,6 +37,7 @@ from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.export_customer_metrics import export_customer_metrics
 from .api_methods.object_store import get_object_store_presigned_url
 from .api_methods.pshtt_sync import pshtt_sync_post
 from .api_methods.queue_monitoring import list_queues
@@ -493,6 +493,45 @@ async def call_search_logs_filtered(
             status_code=500, detail="Serialization error: {}".format(str(e))
         )
     return LogSearchResponseFilters(result=result, count=count)
+
+
+# ========================================
+#   Metrics Dashboard Endpoints
+# ========================================
+
+
+@api_router.get(
+    "/metrics/customers",
+    dependencies=[Depends(get_current_active_user)],
+    tags=["Metrics"],
+    responses={
+        200: {
+            "content": {"text/csv": {}},
+            "description": "CSV of CustomerMetrics for yesterday.",
+        }
+    },
+)
+async def call_export_customer_metrics_csv(
+    current_user: User = Depends(get_current_active_user),
+):
+    """Export yesterday's CustomerMetrics as CSV."""
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized access."
+        )
+
+    try:
+        filename, payload = export_customer_metrics()
+        headers = {
+            "Content-Disposition": 'attachment; filename="{}"'.format(filename),
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+        return Response(content=payload, media_type="text/csv", headers=headers)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error exporting customer metrics CSV: {}".format(e),
+        )
 
 
 # ========================================

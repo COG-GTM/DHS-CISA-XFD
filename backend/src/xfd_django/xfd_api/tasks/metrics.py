@@ -20,18 +20,16 @@ from django.db.models import (
     Avg,
     Case,
     Count,
-    DateTimeField,
-    DurationField,
+    DateField,
     Exists,
     ExpressionWrapper,
-    F,
     IntegerField,
     OuterRef,
     Q,
     Value,
     When,
 )
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, TruncDate
 from django.utils import timezone as dj_timezone
 from xfd_mini_dl.models import CustomerMetrics, Organization, Role, User
 
@@ -185,23 +183,30 @@ def _collect_mean_wait_time_for_pending_users(end_dt):
     """
     Average wait time for users currently awaiting approval.
 
-    mean(end_dt - created_at) grouped by region.
-    Returns dict[region] -> timedelta (or None).
+    Computes whole-day waits per user:
+        whole_days = (end_dt.date() - user.created_at.date()).days
+    Returns dict[region] -> {'pending_count': int, 'avg_wait': Decimal}
     """
     region_expr = _region_int_from_char("region_id")
-    wait_expr = ExpressionWrapper(
-        Value(end_dt, output_field=DateTimeField()) - F("created_at"),
-        output_field=DurationField(),
+
+    end_date_val = Value(end_dt.date(), output_field=DateField())
+    whole_days_expr = ExpressionWrapper(
+        end_date_val - TruncDate("created_at"),
+        output_field=IntegerField(),
     )
+
+    avg_days = Avg(whole_days_expr)
+
     qs = (
         User.objects.filter(invite_pending=True, created_at__lte=end_dt)
         .annotate(region_num=region_expr)
         .values("region_num")
         .annotate(
             pending_count=Count("id"),
-            avg_wait=Avg(wait_expr),
+            avg_wait=avg_days,
         )
     )
+
     return {
         row["region_num"]: {
             "pending_count": row["pending_count"],

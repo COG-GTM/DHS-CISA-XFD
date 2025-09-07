@@ -127,6 +127,13 @@ class Cpe(AutoLengthCheckModel):
 class CustomerMetrics(AutoLengthCheckModel):
     """Daily org and user metrics aggregated by region."""
 
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="PK: Unique identifier for a CustomerMetrics row.",
+    )
+
     date = models.DateField(
         db_column="date",
         help_text="Metrics observation date (UTC).",
@@ -209,11 +216,13 @@ class CustomerMetrics(AutoLengthCheckModel):
         help_text="Users that have logged in within past 30 days.",
     )
 
-    mean_approval_time = models.DurationField(
+    mean_approval_time = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
         db_column="mean_approval_time",
         null=True,
         blank=True,
-        help_text="Mean wait time (as a PostgreSQL INTERVAL) for users currently awaiting approval.",
+        help_text="Mean wait time in days of users waiting for approval.",
     )
 
     created_at = models.DateTimeField(

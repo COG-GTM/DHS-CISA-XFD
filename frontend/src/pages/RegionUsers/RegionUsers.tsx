@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { initializeUser, User, Organization as OrganizationType } from 'types';
 import ConfirmDialog from 'components/Dialog/ConfirmDialog';
+import { ExportCustomerMetricsButton } from 'components/Metrics/Widgets/ExportCustomerMetricsButton';
 import InfoDialog from 'components/Dialog/InfoDialog';
 import { useAuthContext } from 'context';
 import { Alert, Box, Button, Paper, Stack, Typography } from '@mui/material';
@@ -639,6 +640,7 @@ export const RegionUsers: React.FC = () => {
           {`${formattedUserType} Dashboard`}
         </Typography>
         <br />
+        <ExportCustomerMetricsButton />
         <Typography variant="h2" style={{ fontSize: '1.25rem' }} pb={2} pt={2}>
           Pending Requests
         </Typography>
