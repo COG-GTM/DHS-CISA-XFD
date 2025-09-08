@@ -10,12 +10,17 @@ import time
 # Third-Party Libraries
 import boto3
 import django
-from xfd_api.helpers.email import ensure_zscaler_cert_downloaded
-from xfd_api.schema_models.scan import SCAN_SCHEMA
 
+# Initialize Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xfd_django.settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
+
+# Third-Party Libraries
+# Django-Dependant Imports
+from xfd_api.helpers.email import ensure_zscaler_cert_downloaded
+from xfd_api.schema_models.scan import SCAN_SCHEMA
+from xfd_api.tasks.helpers.log_scan_result import log_scan_result
 
 # Setup logging
 LOGGER = logging.getLogger(__name__)
@@ -151,7 +156,22 @@ def main():
         )
 
         try:
-            scan_fn(task_options)
+            result = scan_fn(task_options)
+
+            # Log returned http status and message body
+            if isinstance(result, dict):
+                http_status = result.get("status_code") or result.get("statusCode")
+                message_body = result.get("body")
+            else:
+                http_status = None
+                message_body = str(result)
+
+            log_scan_result(
+                scan_id=task_options.get("scanId"),
+                organization_id=task_options.get("organizationId"),
+                http_status=http_status,
+                message=message_body,
+            )
             # Delete message after processing
             receipt_handle = message_data.get("ReceiptHandle")
             if receipt_handle:

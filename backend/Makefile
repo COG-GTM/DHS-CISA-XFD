@@ -23,7 +23,10 @@ syncmdl-populate:
 syncmdl-dangerously-force:
 	docker compose exec backend python manage.py syncmdl --dangerouslyforce
 
-# Syncronize the secondary database
+syncmdl-metrics:
+	docker compose exec backend python manage.py syncmdl --metrics
+
+# Synchronize the secondary database
 syncmdl_secondary:
 	docker compose exec backend python manage.py syncmdl_secondary
 

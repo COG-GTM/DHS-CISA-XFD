@@ -174,7 +174,7 @@ export interface ScanningSummary {
   vulnerabilityScan: string;
   assetsOwned: number;
   assetsScanned: number;
-  startDate: string;
+  startDate?: string;
   endDate: string;
 }
 
