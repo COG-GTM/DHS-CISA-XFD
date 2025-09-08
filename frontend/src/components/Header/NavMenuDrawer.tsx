@@ -44,7 +44,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
       }}
     >
       <nav aria-label="Main navigation">
-        <List>
+        <List disablePadding>
           {menuItems.map((section, index) => {
             const entries = Object.entries(section);
             if (entries.length === 0) return null;
@@ -113,7 +113,7 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                     timeout="auto"
                     unmountOnExit
                   >
-                    <List component="div" sx={{ pl: 1 }}>
+                    <List component="div" disablePadding sx={{ pl: 1 }}>
                       {items &&
                         items.length > 0 &&
                         items.map((item, subIndex) => {
@@ -303,14 +303,9 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                     role="menuitem"
                                     aria-haspopup="true"
                                     aria-label={item.menuItemTitle}
-                                    sx={{
-                                      display: 'flex', // Make it a flex container
-                                      alignItems: 'center', // Vertically center content
-                                      width: '100%' // Ensure it takes full width
-                                    }}
                                   >
                                     <ListItemText
-                                      sx={{ flex: 1 }} // <-- Add this line!
+                                      sx={{ flex: 1 }}
                                       primary={
                                         <Typography
                                           variant="subMenuText"
@@ -354,7 +349,11 @@ export const NavMenuDrawer: React.FC<NavMenuDrawerProps> = ({
                                   timeout="auto"
                                   unmountOnExit
                                 >
-                                  <List component="div" sx={{ pl: 1 }}>
+                                  <List
+                                    component="div"
+                                    disablePadding
+                                    sx={{ pl: 1 }}
+                                  >
                                     {item.subMenuItems?.map(
                                       (subItem, subSubIndex) => (
                                         <ListItem
