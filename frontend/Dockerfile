@@ -9,7 +9,7 @@ COPY ./package* ./
 
 COPY patches/ ./patches
 
-# RUN npm install -g npm@9 --legacy-peer-deps
+RUN npm install -g npm@9 --legacy-peer-deps
 
 RUN npm ci --legacy-peer-deps
 
