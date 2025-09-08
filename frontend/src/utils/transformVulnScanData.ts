@@ -16,7 +16,7 @@ export function formatShortDate(
   if (Number.isNaN(dateObj.getTime())) return '';
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric'
   });
 }
@@ -28,7 +28,8 @@ export function formatRange(
   const startStr = formatShortDate(start);
   const endStr = formatShortDate(end);
   if (!startStr && !endStr) return 'No Dates Available';
-  if (startStr && endStr) return `${startStr} - ${endStr}`;
+  // Ensures only end date is shown per CRASM-3140
+  if (startStr && endStr) return `${endStr}`;
   return startStr || endStr;
 }
 
@@ -52,7 +53,7 @@ const parseDate = (value: unknown): Date | null => {
 
 const formatDateLabel = (dateObj: Date) =>
   new Intl.DateTimeFormat('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric'
   }).format(dateObj);
@@ -65,11 +66,8 @@ const buildRangeLabel = (
   const endDate = parseDate(endValue);
 
   if (startDate && endDate) {
-    return {
-      label: `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`,
-      start: startDate.toISOString(),
-      end: endDate.toISOString()
-    };
+    // Ensures only end date is shown per CRASM-3140
+    return { label: formatDateLabel(endDate), end: endDate.toISOString() };
   }
   if (endDate) {
     return { label: formatDateLabel(endDate), end: endDate.toISOString() };
