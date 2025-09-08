@@ -1,6 +1,0 @@
-# frontend/Dockerfile.proxy
-
-FROM nginx:1.25-alpine
-# (we'll bind-mount nginx.conf at runtime, so no COPY needed)
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
