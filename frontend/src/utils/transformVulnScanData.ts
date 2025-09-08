@@ -16,7 +16,7 @@ export function formatShortDate(
   if (Number.isNaN(dateObj.getTime())) return '';
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric'
   });
 }
@@ -53,7 +53,7 @@ const parseDate = (value: unknown): Date | null => {
 
 const formatDateLabel = (dateObj: Date) =>
   new Intl.DateTimeFormat('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric'
   }).format(dateObj);
