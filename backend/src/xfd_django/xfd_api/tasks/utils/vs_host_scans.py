@@ -43,16 +43,44 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
         COUNT(DISTINCT ip) AS scanned_asset_count,
 
         -- PORTSCAN timestamps
-        MIN(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS port_scan_min_timestamp,
-        MAX(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS port_scan_max_timestamp,
+        MIN(
+            CASE
+                WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS port_scan_min_timestamp,
+        MAX(
+            CASE
+                WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS port_scan_max_timestamp,
 
         -- VULNSCAN timestamps
-        MIN(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vuln_scan_min_timestamp,
-        MAX(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vuln_scan_max_timestamp,
+        MIN(
+            CASE
+                WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS vuln_scan_min_timestamp,
+        MAX(
+            CASE
+                WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS vuln_scan_max_timestamp,
 
         -- NETSCAN1 timestamps
         MIN(CASE WHEN POSITION('\"NETSCAN1\":\"' IN ls) > 0

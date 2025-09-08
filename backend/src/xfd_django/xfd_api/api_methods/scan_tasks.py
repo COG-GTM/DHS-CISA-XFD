@@ -93,6 +93,7 @@ def list_scan_tasks(search_data: Optional[ScanTaskSearch], current_user):
                     "is_single_scan": task.scan.is_single_scan,
                     "manual_run_pending": task.scan.manual_run_pending,
                     "concurrent_tasks": task.scan.concurrent_tasks,
+                    "total_orgs": task.scan.total_orgs,
                 }
             results.append(
                 {
