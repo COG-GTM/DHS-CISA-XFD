@@ -9,9 +9,8 @@ import type { PluginOption } from 'vite';
 import { inspectorServer } from '@react-dev-inspector/vite-plugin';
 
 export default defineConfig(({ mode, command }) => {
-  const enableInspector =
-    command === 'serve' &&
-    (process.env.VITE_ENABLE_INSPECTOR ?? 'true') !== 'false';
+  // Only enable inspector for dev builds (Excludes 'preview')
+  const enableInspector = command === 'serve' && mode !== 'production';
 
   return {
     define: { global: 'window' },
