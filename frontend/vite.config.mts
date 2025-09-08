@@ -4,8 +4,6 @@ import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { visualizer } from 'rollup-plugin-visualizer';
 import type { PluginOption } from 'vite';
-// ✅ add the Vite inspector plugin (this injects source info into JSX)
-// import Inspector from 'react-dev-inspector/plugins/vite';
 import { inspectorServer } from '@react-dev-inspector/vite-plugin';
 
 export default defineConfig(({ mode, command }) => {

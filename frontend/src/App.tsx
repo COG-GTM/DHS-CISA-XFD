@@ -40,9 +40,7 @@ import { StaticsContextProvider } from 'context/StaticsContextProvider';
 import { SavedSearchContextProvider } from 'context/SavedSearchContextProvider';
 import { FilterDrawerContextProvider } from 'context/FilterDrawerContextProvider';
 import { VulnerabilityScanWithSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
-
-// Inspector overlay; Vite plugin must also be enabled in dev
-import { Inspector, type InspectParams } from 'react-dev-inspector';
+import { DevInspector, type InspectParams } from './utils/devInspector';
 
 API.configure({
   endpoints: [{ name: 'crossfeed', endpoint: import.meta.env.VITE_API_URL }]
@@ -117,17 +115,9 @@ const App: React.FC = () => (
                   <FilterDrawerContextProvider>
                     <LayoutWithSearch>
                       <LinkTracker />
-
-                      {import.meta.env.DEV && (
-                        <Inspector
-                          // Use the key names expected by the library
-                          // keys={['control', 'shift', 'meta', 'c']}
-                          // Override with custom editor
-                          disableLaunchEditor
-                          onClickElement={openInVSCode}
-                        />
-                      )}
-
+                      <DevInspector
+                        onClickElement={openInVSCode}
+                      ></DevInspector>
                       <Switch>
                         <RouteGuard
                           exact
