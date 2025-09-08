@@ -46,7 +46,7 @@ jobs:
       PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
       PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
       PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
-      PW_XFD_LOGIN: ${{ secrets.PW_XFD_USERNAME }}
+      PW_XFD_LOGIN: ${{ secrets.PW_XFD_LOGIN }}
       PW_HEADLESS: true
       PW_CI: true
       ENVIRONMENT: staging
@@ -104,7 +104,7 @@ jobs:
       run:
         working-directory: ./integration
     env:
-      BACKEND_DOMAIN: api.staging-cd.crossfeed.cyber.dhs.gov
+      BACKEND_DOMAIN: https://api.staging-cd.crossfeed.cyber.dhs.gov
       X_API_KEY: ${{ secrets.X_API_KEY }}
     steps:
       - uses: actions/checkout@v3
@@ -165,7 +165,7 @@ jobs:
       PW_XFD_USERNAME: ${{ secrets.PW_XFD_USERNAME }}
       PW_XFD_PASSWORD: ${{ secrets.PW_XFD_PASSWORD }}
       PW_XFD_2FA_SECRET: ${{ secrets.PW_XFD_2FA_SECRET }}
-      PW_XFD_LOGIN: ${{ secrets.PW_XFD_USERNAME }} # or hardcode if needed
+      PW_XFD_LOGIN: ${{ secrets.PW_XFD_LOGIN }}
       PW_HEADLESS: true
       ENVIRONMENT: integration
       GIT_BRANCH: integration
@@ -222,7 +222,7 @@ jobs:
       run:
         working-directory: ./integration
     env:
-      BACKEND_DOMAIN: api.integration.crossfeed.cyber.dhs.gov
+      BACKEND_DOMAIN: https://api.integration.crossfeed.cyber.dhs.gov
       X_API_KEY: ${{ secrets.X_API_KEY }}
     steps:
       - uses: actions/checkout@v3
