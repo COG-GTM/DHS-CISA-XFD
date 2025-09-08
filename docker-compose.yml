@@ -31,7 +31,7 @@ services:
       - ./.env
     environment:
       - CHOKIDAR_USEPOLLING=true
-    command: npm run dev -- --port 5173 --host 0.0.0.0
+    command: npm run dev -- --port 3000 --host 0.0.0.0
     depends_on:
       - backend
     networks:

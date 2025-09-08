@@ -41,7 +41,7 @@ import { SavedSearchContextProvider } from 'context/SavedSearchContextProvider';
 import { FilterDrawerContextProvider } from 'context/FilterDrawerContextProvider';
 import { VulnerabilityScanWithSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
 
-// Client-only inspector (no babel, no servers)
+// Inspector overlay; Vite plugin must also be enabled in dev
 import { Inspector, type InspectParams } from 'react-dev-inspector';
 
 API.configure({
@@ -71,31 +71,36 @@ const LinkTracker = () => {
   return null;
 };
 
-// Read local root from Vite env (fallback keeps it usable if someone forgets the .env)
-const LOCAL_ROOT = import.meta.env.VITE_LOCAL_FRONTEND_ROOT as string;
-
-// Fixed container root (what Vite/inspector reports from inside Docker)
+// Local absolute frontend root (set in .env)
+const LOCAL_FRONTEND_ROOT =
+  (import.meta.env.VITE_LOCAL_FRONTEND_ROOT as string) || '';
 const CONTAINER_ROOT = '/app';
 
-// Map container path → local path and open VS Code via URL scheme
+// Map container path to local path and open in VS Code via URL scheme
 function openInVSCode({ codeInfo }: InspectParams) {
+  // Handle potential missing codeInfo
+  if (!codeInfo) return;
+
   let abs = codeInfo.absolutePath;
 
-  // Some toolchains only provide relativePath — synthesize an absolute container path
+  // Create an absolute container path if only relative is provided
   if (!abs && codeInfo.relativePath) {
     abs = `${CONTAINER_ROOT}/${codeInfo.relativePath}`.replace(/\/{2,}/g, '/');
   }
+
+  // Handle potential missing abs path result
   if (!abs) return;
 
-  // Translate /app/... → /Users/... (or whatever devs set)
-  if (abs.startsWith(CONTAINER_ROOT)) {
-    abs = abs.replace(CONTAINER_ROOT, LOCAL_ROOT);
+  // Translate container path to local machine root
+  if (LOCAL_FRONTEND_ROOT && abs.startsWith(CONTAINER_ROOT)) {
+    abs = abs.replace(CONTAINER_ROOT, LOCAL_FRONTEND_ROOT);
   }
 
+  // Line/Column info
   const line = codeInfo.lineNumber ?? 1;
   const col = codeInfo.columnNumber ?? 1;
 
-  // Open VS Code directly; encode just in case there are spaces in the path
+  // Open VS Code (host must have VS Code installed to handle the scheme)
   const url = `vscode://file${abs}:${line}:${col}`;
   window.location.href = encodeURI(url);
 }
@@ -113,12 +118,15 @@ const App: React.FC = () => (
                     <LayoutWithSearch>
                       <LinkTracker />
 
-                      {/* Hotkey: ctrl+shift+cmd+c -> click element to open in VS Code */}
-                      <Inspector
-                        keys={['ctrl', 'shift', 'command', 'c']}
-                        disableLaunchEditor
-                        onInspectElement={openInVSCode}
-                      />
+                      {import.meta.env.DEV && (
+                        <Inspector
+                          // Use the key names expected by the library
+                          // keys={['control', 'shift', 'meta', 'c']}
+                          // Override with custom editor
+                          disableLaunchEditor
+                          onClickElement={openInVSCode}
+                        />
+                      )}
 
                       <Switch>
                         <RouteGuard
