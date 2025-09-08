@@ -2,7 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { Inspector } from 'react-dev-inspector';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
@@ -15,7 +14,6 @@ if (!rootElement) throw new Error('Failed to find root element');
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <Inspector />
     <App />
   </React.StrictMode>
 );
