@@ -176,6 +176,8 @@ export interface ScanningSummary {
   assetsScanned: number;
   startDate: string;
   endDate: string;
+  enrolledDate: string;
+  recentlyEnrolled: boolean;
 }
 
 export type VulnScanDataTransformed = {
