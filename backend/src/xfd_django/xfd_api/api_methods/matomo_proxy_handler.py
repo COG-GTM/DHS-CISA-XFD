@@ -2,7 +2,7 @@
 # Standard Python Libraries
 import logging
 import os
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, List, Tuple
 from urllib.parse import urlparse, urlunparse
 
 # Third-Party Libraries
@@ -39,21 +39,26 @@ def _pick_public_host_and_proto(request: Request) -> tuple[str, str]:
     hdr = request.headers
     xfh = hdr.get("x-forwarded-host")
     if xfh:
-        public_host = xfh.split(",")[0].strip()
+        public_host = xfh.split(",", 1)[0].strip()
         proto = (
-            (hdr.get("x-forwarded-proto") or request.url.scheme).split(",")[0].strip()
+            (hdr.get("x-forwarded-proto") or request.url.scheme)
+            .split(",", 1)[0]
+            .strip()
         )
         return public_host, proto
+
     origin = hdr.get("origin")
     if origin:
         u = urlparse(origin)
         if u.netloc:
             return (u.netloc, u.scheme or request.url.scheme)
+
     ref = hdr.get("referer")
     if ref:
         u = urlparse(ref)
         if u.netloc:
             return (u.netloc, u.scheme or request.url.scheme)
+
     return (hdr.get("host", ""), request.url.scheme)
 
 
@@ -61,24 +66,27 @@ def _build_forward_headers(request: Request, public_prefix: str) -> Dict[str, st
     public_host, public_proto = _pick_public_host_and_proto(request)
     client_ip = getattr(request.client, "host", "")
     prior_xff = request.headers.get("x-forwarded-for")
+    # cache URL parts once
+    url = request.url
+    path = url.path
+    query = url.query
 
-    hdrs: Dict[str, str] = {}
-    hdrs["forwarded"] = "for={};proto={};host={}".format(
-        client_ip, public_proto, public_host
-    )
-    hdrs["x-forwarded-for"] = (
-        "{}, {}".format(prior_xff, client_ip) if prior_xff else client_ip
-    )
-    hdrs["x-forwarded-host"] = public_host
-    hdrs["x-forwarded-proto"] = public_proto
-    hdrs["x-forwarded-prefix"] = public_prefix
-
-    # FULL original path + query as seen by the browser
-    xuri = request.url.path
-    if request.url.query:
-        xuri = "{}?{}".format(xuri, request.url.query)
-    hdrs["x-forwarded-uri"] = public_prefix  # Passing prefix only avoids redirect loop
-    hdrs["x-original-uri"] = xuri  # Tracking full path for logging purposes
+    # Build headers dict in one go to minimize rehashing
+    hdrs: Dict[str, str] = {
+        "forwarded": "for={};proto={};host={}".format(
+            client_ip, public_proto, public_host
+        ),
+        "x-forwarded-for": (
+            "{}, {}".format(prior_xff, client_ip) if prior_xff else client_ip
+        ),
+        "x-forwarded-host": public_host,
+        "x-forwarded-proto": public_proto,
+        "x-forwarded-prefix": public_prefix,
+        # Passing prefix only avoids redirect loop (preserve current behavior)
+        "x-forwarded-uri": public_prefix,
+        # Track full original path+query for diagnostics (preserve current behavior)
+        "x-original-uri": "{}?{}".format(path, query) if query else path,
+    }
     return hdrs
 
 
@@ -93,17 +101,17 @@ def _rewrite_location_header(
     loc = headers.get("location")
     if not loc:
         return
+
     loc = loc.strip()
     if not loc:
         headers["location"] = _join_public(public_prefix, "/")
         return
 
     # helper to turn ".../index.php" (no query) into ".../"
-    def _dir_if_index_no_query(path, query):
+    def _dir_if_index_no_query(path: str, query: str) -> str:
         if (
             path.endswith("/index.php") or path == "/index.php" or path == "index.php"
         ) and not query:
-            # keep same base, just drop "index.php"
             if path.endswith("/index.php"):
                 return path[: -len("/index.php")] + "/"
             # "index.php" alone → "/matomo/"
@@ -113,7 +121,6 @@ def _rewrite_location_header(
     # 1) Absolute internal
     if loc.startswith(target_base):
         suffix = loc[len(target_base) :]
-        # Split off query (if any)
         qpos = suffix.find("?")
         path_only = suffix if qpos == -1 else suffix[:qpos]
         query_only = "" if qpos == -1 else suffix[qpos + 1 :]
@@ -131,11 +138,7 @@ def _rewrite_location_header(
             if not path.startswith(public_prefix):
                 path = _join_public(public_prefix, path if path != "/" else "/")
             path = _dir_if_index_no_query(path, parsed.query)
-            new = parsed._replace(
-                scheme=public_proto,
-                netloc=public_host,
-                path=path,
-            )
+            new = parsed._replace(scheme=public_proto, netloc=public_host, path=path)
             headers["location"] = urlunparse(new)
             return
         return
@@ -144,18 +147,18 @@ def _rewrite_location_header(
     if loc.startswith("/"):
         # keep "/" as directory
         path = loc if loc != "/" else _join_public(public_prefix, "/")
-        # drop index.php if no query
         qpos = path.find("?")
         path_only = path if qpos == -1 else path[:qpos]
         query_only = "" if qpos == -1 else path[qpos + 1 :]
         path_only = _dir_if_index_no_query(path_only, query_only)
-        headers["location"] = (
+        new_loc = (
             _join_public(public_prefix, path_only)
             if not path_only.startswith(public_prefix)
             else path_only
         )
         if query_only:
-            headers["location"] = headers["location"] + "?" + query_only
+            new_loc = new_loc + "?" + query_only
+        headers["location"] = new_loc
         return
 
     # 4) Query-only or "./" → index.php (these *do* need index.php)
@@ -171,28 +174,28 @@ def _rewrite_location_header(
         loc = loc[2:]
 
     # 6) Other relative
-    # If it’s plain "index.php" with no query → directory
     qpos = loc.find("?")
     rel_path = loc if qpos == -1 else loc[:qpos]
     rel_query = "" if qpos == -1 else loc[qpos + 1 :]
     rel_path = _dir_if_index_no_query(rel_path, rel_query)
-    headers["location"] = _join_public(public_prefix, "/" + rel_path)
-    if rel_query:
-        headers["location"] = headers["location"] + "?" + rel_query
+    new_rel = _join_public(public_prefix, "/" + rel_path)
+    headers["location"] = new_rel + ("?" + rel_query if rel_query else "")
 
 
 def _clone_request_with_headers(request: Request, extra: Dict[str, str]) -> Request:
     scope: Scope = dict(request.scope)
-    original: List[Tuple[bytes, bytes]] = list(scope.get("headers", []))
+    # avoid recreating sets per-iteration
     drop_keys = {"host", "content-length", "connection"} | set(extra.keys())
-    filtered: List[Tuple[bytes, bytes]] = []
-    for k, v in original:
-        lname = k.decode("latin-1").lower()
-        if lname in drop_keys:
-            continue
-        filtered.append((k, v))
-    for name, value in extra.items():
-        filtered.append((name.encode("latin-1"), str(value).encode("latin-1")))
+    filtered: List[Tuple[bytes, bytes]] = [
+        (k, v)
+        for (k, v) in list(scope.get("headers", []))
+        if k.decode("latin-1").lower() not in drop_keys
+    ]
+    # append extras (encode once)
+    filtered.extend(
+        (name.encode("latin-1"), str(value).encode("latin-1"))
+        for name, value in extra.items()
+    )
     scope["headers"] = filtered
     return Request(scope, receive=request.receive)
 
@@ -205,11 +208,13 @@ def _stream_back_with_rewrites(
     public_host: str,
     public_proto: str,
 ) -> StreamingResponse:
+    # Filter headers in one pass
     safe_headers = {
         k: v
         for k, v in upstream_resp.headers.items()
         if k.lower() not in STRIP_RESPONSE_HEADERS
     }
+
     _rewrite_location_header(
         MutableHeaders(safe_headers),
         target_base=target_base.rstrip("/"),
@@ -218,11 +223,12 @@ def _stream_back_with_rewrites(
         public_proto=public_proto,
     )
 
-    body_iter: Iterable[bytes] = (upstream_resp.body,)
+    # StreamingResponse can take a tuple/iterable; keep identical behavior
     resp = StreamingResponse(
-        body_iter, status_code=upstream_resp.status_code, headers=safe_headers
+        (upstream_resp.body,),
+        status_code=upstream_resp.status_code,
+        headers=safe_headers,
     )
-
     return resp
 
 
@@ -257,7 +263,6 @@ async def matomo_proxy_request(request: Request, MATOMO_URL: str, path: str):
                     upstream.headers, "getlist", lambda k: [upstream.headers.get(k)]
                 )("set-cookie"),
             )
-
             public_host, public_proto = _pick_public_host_and_proto(request)
             return _stream_back_with_rewrites(
                 upstream,
@@ -288,10 +293,8 @@ async def matomo_proxy_request(request: Request, MATOMO_URL: str, path: str):
 
     # normal proxied requests
     fwd_headers = _build_forward_headers(request, PUBLIC_PREFIX)
-    public_host, public_proto = (
-        fwd_headers["x-forwarded-host"],
-        fwd_headers["x-forwarded-proto"],
-    )
+    public_host = fwd_headers["x-forwarded-host"]
+    public_proto = fwd_headers["x-forwarded-proto"]
 
     # Guard 2: if the browser hit /matomo/index.php (no query), upstream must see "/"
     proxied_path = clean_path
