@@ -64,6 +64,7 @@ const buildRangeLabel = (
   const startDate = parseDate(startValue);
   const endDate = parseDate(endValue);
 
+  // This function is primarily using "endDate" per CRASM-3140
   if (startDate && endDate) {
     return {
       label: `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`,
@@ -109,9 +110,9 @@ function computeVulnerabilityScanLabel(data: StatsTrendsRawData): {
     latestVuln &&
     (!isBlankLike(latestVuln.start_date) || !isBlankLike(latestVuln.end_date))
   ) {
-    const range = buildRangeLabel(latestVuln.start_date, latestVuln.end_date);
-    if (range.label)
-      return { label: range.label, usedStart: range.start, usedEnd: range.end };
+    // Removed start_date per CRASM-3140
+    const range = buildRangeLabel(latestVuln.end_date);
+    if (range.label) return { label: range.label, usedEnd: range.end };
   }
 
   // 2) host_summaries vuln min/max
@@ -124,8 +125,7 @@ function computeVulnerabilityScanLabel(data: StatsTrendsRawData): {
       (latestHost as any).vuln_scan_min_timestamp,
       (latestHost as any).vuln_scan_max_timestamp
     );
-    if (range.label)
-      return { label: range.label, usedStart: range.start, usedEnd: range.end };
+    if (range.label) return { label: range.label, usedEnd: range.end };
   }
 
   // 3) host_summaries net min/max → explicit message, no dates
@@ -219,13 +219,15 @@ export const transformVulnScanData = (
     vulnScanSummary: [
       {
         hostScan: formatRange(
-          latestHostSummary?.start_date,
+          // Commented out per CRASM-3140
+          // latestHostSummary?.start_date,
           latestHostSummary?.end_date
         ),
         vulnerabilityScan: vulLabel.label,
         assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
         assetsScanned: latestHostSummary?.scanned_asset_count ?? 0,
-        startDate: vulLabel.usedStart ?? '',
+        // Commented out per CRASM-3140
+        // startDate: vulLabel.usedStart ?? '',
         endDate: vulLabel.usedEnd ?? ''
       }
     ],
