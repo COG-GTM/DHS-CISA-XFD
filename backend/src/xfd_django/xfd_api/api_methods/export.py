@@ -2,6 +2,8 @@
 
 # Standard Python Libraries
 import csv
+from datetime import date, datetime
+from decimal import Decimal
 import io
 import logging
 from typing import Any
@@ -30,19 +32,48 @@ SEVERITY_MAP = {
 }
 
 
+DANGEROUS_PREFIXES = ("=", "+", "-", "@")
+
+
+def _sanitize_cell(value):
+    """Sanitize cell value to prevent CSV injection."""
+    if value is None:
+        return ""
+    if isinstance(value, (int, float, Decimal, bool, date, datetime)):
+        return value
+
+    s = str(value)
+
+    # Neutralize cells that could be interpreted as formulas or commands
+    if s and (s[0] in DANGEROUS_PREFIXES or s[0].isspace()):
+        return "'" + s
+    return s
+
+
 def serialize_exported_data(data, mode, columns):
-    """Serialize exported data to CSV or JSON based on mode and selected columns."""
+    """Serialize exported data to CSV or JSON based on mode and selected columns, safely."""
     fields = [col.value for col in columns]
 
     if mode == "json":
+        # For JSON we return plain values; browsers won't execute formulas here.
         return list(data.values(*fields))
 
     if mode == "csv":
-        buf = io.StringIO()
-        writer = csv.writer(buf)
+        buf = io.StringIO(newline="")
+        writer = csv.writer(
+            buf,
+            quoting=csv.QUOTE_MINIMAL,  # quoting handles commas/newlines safely
+            lineterminator="\r\n",  # friendlier for Excel on Windows
+        )
+
         writer.writerow(fields)
-        writer.writerows(data.values_list(*fields))
-        return buf.getvalue()
+        for row in data.values_list(*fields):
+            writer.writerow([_sanitize_cell(v) for v in row])
+
+        # Optional: add BOM so Excel auto-detects UTF-8
+        text = buf.getvalue()
+        return "\ufeff" + text
+
     return None
 
 
