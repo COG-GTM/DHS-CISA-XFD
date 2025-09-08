@@ -89,7 +89,7 @@ from .auth import (
     get_current_active_user,
     get_current_active_user_unsafe,
     handle_okta_callback,
-    set_oauth_cookies_response,
+    sign_oauth_data,
 )
 from .login_gov import callback
 from .schema_models import organization_schema as OrganizationSchema
@@ -300,19 +300,16 @@ async def callback_route(request: Request):
         raise HTTPException(status_code=400, detail=str(error))
 
 
-# Set PKCE and state cookies for OAuth
-@api_router.post("/auth/set-oauth-cookies", tags=["Auth"])
-async def set_oauth_cookies(request: Request):
-    """Set PKCE code_verifier and state cookies for OAuth flow."""
-    body = await request.json()
-    state = body.get("state")
-    code_verifier = body.get("code_verifier")
-
+# Return signed OAuth metadata
+@api_router.post("/auth/get-oauth-meta", tags=["Auth"])
+async def get_oauth_meta(payload: dict):
+    """Return signed OAuth metadata."""
+    state = payload.get("state")
+    code_verifier = payload.get("code_verifier")
     if not state or not code_verifier:
-        raise HTTPException(
-            status_code=400, detail="Missing PKCE code_verifier or state"
-        )
-    return set_oauth_cookies_response(state, code_verifier)
+        raise HTTPException(status_code=400, detail="Missing parameters")
+    signed_token = sign_oauth_data(state, code_verifier)
+    return {"signedToken": signed_token}
 
 
 # ========================================

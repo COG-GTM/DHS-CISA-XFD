@@ -177,21 +177,6 @@ services:
     networks:
       - backend
 
-  playwright:
-    container_name: playwright
-    image: mcr.microsoft.com/playwright:v1.50.1-jammy
-    working_dir: /workspace
-    volumes:
-      - ./playwright:/workspace
-      - ~/.cache:/root/.cache  # Cache Playwright browser downloads
-    env_file:
-      ./playwright/.env
-    environment:
-      - HOME=/root
-    command: >
-      /bin/bash -c "npm ci && npx playwright install --with-deps && npx playwright test"
-    restart: always
-
 volumes:
   postgres-data:
   es-data:

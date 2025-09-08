@@ -1902,15 +1902,25 @@ class VulnScanSummary(models.Model):
     )
     start_date = models.DateTimeField(
         help_text="Timestamp of the earliest last_change in the collection",
+        null=True,
+        blank=True,
     )
     end_date = models.DateTimeField(
         help_text="Timestamp of the latest last_change in the collection",
+        null=True,
+        blank=True,
     )
     organization = models.ForeignKey(
         Organization,
         related_name="vuln_scan_summaries",
         on_delete=models.CASCADE,
         help_text="Foreign key relationship to the organization the summary is built for.",
+    )
+    enrolled_in_vs_timestamp = models.DateTimeField(
+        db_column="enrolled_in_vs_timestamp",
+        null=True,
+        blank=True,
+        help_text="Date the stakeholder enrolled in VS.",
     )
     assets_owned_count = models.IntegerField(
         null=True,
@@ -2498,6 +2508,46 @@ class HostSummary(models.Model):
         null=True,
         blank=True,
         help_text="Count of Ip addresses that have been scanned",
+    )
+    port_scan_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest port_scan run on a host owned by the org.",
+    )
+    port_scan_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent port_scan run on a host owned by the org.",
+    )
+    vuln_scan_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest vuln_scan run on a host owned by the org.",
+    )
+    vuln_scan_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent vuln_scan run on a host owned by the org.",
+    )
+    net_scan1_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest net_scan1 run on a host owned by the org.",
+    )
+    net_scan1_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent net_scan1 run on a host owned by the org.",
+    )
+    net_scan2_min_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the oldest net_scan2 run on a host owned by the org.",
+    )
+    net_scan2_max_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the most recent net_scan2 run on a host owned by the org.",
     )
 
     class Meta:

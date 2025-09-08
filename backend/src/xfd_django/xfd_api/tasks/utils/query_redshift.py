@@ -37,7 +37,7 @@ def query_redshift(query, params=None):
         if params:
             cursor.execute(query, params)
         else:
-            cursor.execute(query)  # <-- this avoids the IndexError
+            cursor.execute(query)
         results = cursor.fetchall()
         return [dict(row) for row in results]
     except Exception as e:
@@ -137,7 +137,6 @@ def fetch_in_chunks_keyset_frozen(
             ORDER BY {q_time}, {q_id}
             LIMIT {chunk_size}
         """  # nosec B608
-        LOGGER.info(query)
 
         chunk = query_redshift(query, params=params)
         if not chunk:

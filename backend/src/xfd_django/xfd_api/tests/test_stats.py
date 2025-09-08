@@ -558,6 +558,7 @@ def test_vs_trends_success():
         start_date=now - timedelta(days=7),
         end_date=now,
         organization=org,
+        enrolled_in_vs_timestamp=now - timedelta(days=200),
         assets_owned_count=100,
         false_positive_count=5,
         vulnerable_host_count=50,
@@ -667,6 +668,7 @@ def test_vs_condensed_trends_success():
         start_date=now - timedelta(days=7),
         end_date=now,
         organization=org,
+        enrolled_in_vs_timestamp=now - timedelta(days=300),
         assets_owned_count=200,
         false_positive_count=0,
         vulnerable_host_count=100,
@@ -919,6 +921,7 @@ def test_v2_trends_condensed_segments_aggregation():
             start_date=summary_date - timedelta(days=i + 1),
             end_date=summary_date - timedelta(days=i),
             organization=org,
+            enrolled_in_vs_timestamp=summary_date.date() - timedelta(days=200),
             assets_owned_count=10 * (i + 1),
             vulnerable_host_count=5 * (i + 1),
         )

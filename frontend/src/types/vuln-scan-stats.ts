@@ -12,6 +12,7 @@ export interface VulnScanSummary {
   start_date?: string | null;
   end_date?: string | null;
   organization?: string | null;
+  enrolled_in_vs_timestamp?: string | null;
 
   asset_count?: number | null;
   assets_owned_count?: number | null;

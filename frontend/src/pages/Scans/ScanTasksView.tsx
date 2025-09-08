@@ -182,11 +182,86 @@ export const ScanTasksView: React.FC = () => {
   }));
 
   const scansTasksCols: GridColDef[] = [
-    { field: 'id', headerName: 'ID', minWidth: 100, flex: 2 },
-    { field: 'status', headerName: 'Status', minWidth: 100, flex: 1 },
-    { field: 'name', headerName: 'Name', minWidth: 100, flex: 1 },
-    { field: 'created_at', headerName: 'Created At', minWidth: 200, flex: 1 },
-    { field: 'finished_at', headerName: 'Finished At', minWidth: 200, flex: 1 },
+    {
+      field: 'id',
+      headerName: 'ID',
+      minWidth: 100,
+      flex: 2,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component={'span'}
+            aria-label={`Scan Task ID: ${cellValues.row.id}`}
+          >
+            {cellValues.row.id}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component={'span'}
+            aria-label={`Status for Scan Task ${cellValues.row.id}: ${cellValues.row.status}`}
+          >
+            {cellValues.row.status}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'name',
+      headerName: 'Name',
+      minWidth: 100,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component={'span'}
+            aria-label={`Name for Scan Task ${cellValues.row.id}: ${cellValues.row.name}`}
+          >
+            {cellValues.row.name}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'created_at',
+      headerName: 'Created At',
+      minWidth: 200,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component={'span'}
+            aria-label={`Created At Date for Scan Task ${cellValues.row.id}: ${cellValues.row.created_at}`}
+          >
+            {cellValues.row.created_at}
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'finished_at',
+      headerName: 'Finished At',
+      minWidth: 200,
+      flex: 1,
+      renderCell: (cellValues: GridRenderCellParams) => {
+        return (
+          <Box
+            component={'span'}
+            aria-label={`Finished At Date for Scan Task ${cellValues.row.id}: ${cellValues.row.finished_at}`}
+          >
+            {cellValues.row.finished_at}
+          </Box>
+        );
+      }
+    },
     {
       field: 'details',
       headerName: 'Details',
@@ -195,7 +270,7 @@ export const ScanTasksView: React.FC = () => {
       renderCell: (cellValues: GridRenderCellParams) => {
         return (
           <IconButton
-            aria-label={`Details for scan task ${cellValues.row.id}`}
+            aria-label={`View Details for scan task ${cellValues.row.id}`}
             tabIndex={cellValues.tabIndex}
             color="primary"
             onClick={() => {

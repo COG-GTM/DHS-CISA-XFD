@@ -2,9 +2,11 @@
 # Standard Python Libraries
 import logging
 import os
+import time
 
 # Third-Party Libraries
 from elasticsearch import Elasticsearch, helpers
+from elasticsearch.exceptions import TransportError
 
 # Constants
 DOMAINS_INDEX = "domains-5"
@@ -100,8 +102,8 @@ class ESClient:
         ]
         self._bulk_update(actions)
 
-    def update_domains(self, domains):
-        """Update or insert domains into Elasticsearch."""
+    def update_domains(self, domains, max_retries=5, backoff_base=2):
+        """Update or insert domains into Elasticsearch with retry and backoff."""
         actions = [
             {
                 "_op_type": "update",
@@ -116,7 +118,51 @@ class ESClient:
             }
             for domain in domains
         ]
-        self._bulk_update(actions)
+
+        attempt = 0
+        while attempt <= max_retries:
+            try:
+                success, response = helpers.bulk(
+                    self.client,
+                    actions,
+                    raise_on_error=False,
+                    raise_on_exception=False,
+                    request_timeout=60,
+                )
+
+                failed = [
+                    item
+                    for item in response
+                    if "update" in item and item["update"].get("error")
+                ]
+                success_count = success
+                failure_count = len(failed)
+
+                logging.info(
+                    f"Bulk sync: {success_count} succeeded, {failure_count} failed."
+                )
+
+                if failure_count:
+                    for i, item in enumerate(failed):
+                        logging.warning(
+                            "Error on document %s: %s", i, item["update"]["error"]
+                        )
+
+                return  # Exit after success (even with partial failures)
+
+            except TransportError as sync_error:
+                if sync_error.status_code == 429:
+                    wait_time = backoff_base**attempt
+                    logging.warning(
+                        "429 received, retrying in %s seconds...", wait_time
+                    )
+                    time.sleep(wait_time)
+                    attempt += 1
+                else:
+                    logging.error("Unexpected error during bulk update: %s", sync_error)
+                    raise sync_error
+
+        raise Exception("Max retries exceeded for bulk update.")
 
     def delete_all(self):
         """Delete all indices in Elasticsearch."""

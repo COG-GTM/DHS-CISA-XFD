@@ -217,6 +217,50 @@ def create_vuln_scan_summary(summary_date=None):
         )
 
         if not included.exists():
+            VulnScanSummary.objects.update_or_create(
+                summary_date=summary_date,
+                organization=org,
+                defaults={
+                    "enrolled_in_vs_timestamp": org.enrolled_in_vs_timestamp,
+                    "start_date": None,
+                    "end_date": None,
+                    "assets_owned_count": get_asset_owned_count(org),
+                    "false_positive_count": 0,
+                    "vulnerable_host_count": 0,
+                    "unique_service_count": 0,
+                    "risky_services_count": 0,
+                    "unsupported_software_count": 0,
+                    "unique_os_count": 0,
+                    "low_severity_count": 0,
+                    "medium_severity_count": 0,
+                    "high_severity_count": 0,
+                    "critical_severity_count": 0,
+                    "unique_low_severity_count": 0,
+                    "unique_medium_severity_count": 0,
+                    "unique_high_severity_count": 0,
+                    "unique_critical_severity_count": 0,
+                    "low_kev_count": 0,
+                    "medium_kev_count": 0,
+                    "high_kev_count": 0,
+                    "critical_kev_count": 0,
+                    "critical_max_age": None,
+                    "high_max_age": None,
+                    "medium_max_age": None,
+                    "low_max_age": None,
+                    "kev_max_age": None,
+                    "critical_kev_max_age": None,
+                    "high_kev_max_age": None,
+                    "medium_kev_max_age": None,
+                    "low_kev_max_age": None,
+                    "one_to_five_vulns_count": 0,
+                    "six_to_nine_vulns_count": 0,
+                    "ten_plus_vulns_count": 0,
+                    "top_5_occurring_cves": [],
+                    "top_5_occurring_kevs": [],
+                    "included_tickets": {},
+                    "top_5_risky_hosts": {},
+                },
+            )
             continue  # Skip orgs with no valid tickets
 
         start_date = included.aggregate(Min("updated_timestamp"))[
@@ -257,7 +301,7 @@ def create_vuln_scan_summary(summary_date=None):
                     for o, u in qs.values_list("opened_timestamp", "updated_timestamp")
                     if o and u
                 ),
-                default=0,
+                default=None,
             )
 
         critical_max = max_ticket_life(included.filter(cvss_severity=4))
@@ -396,6 +440,7 @@ def create_vuln_scan_summary(summary_date=None):
             summary_date=summary_date,
             organization=org,
             defaults={
+                "enrolled_in_vs_timestamp": org.enrolled_in_vs_timestamp,
                 "start_date": start_date,
                 "end_date": end_date,
                 "assets_owned_count": get_asset_owned_count(org),
