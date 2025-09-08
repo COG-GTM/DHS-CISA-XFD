@@ -40,7 +40,8 @@ import { StaticsContextProvider } from 'context/StaticsContextProvider';
 import { SavedSearchContextProvider } from 'context/SavedSearchContextProvider';
 import { FilterDrawerContextProvider } from 'context/FilterDrawerContextProvider';
 import { VulnerabilityScanWithSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
-import { DevInspector, type InspectParams } from './utils/devInspector';
+import { DevInspector } from './utils/devInspector';
+import { openInVSCode } from './utils/openInVSCode';
 
 API.configure({
   endpoints: [{ name: 'crossfeed', endpoint: import.meta.env.VITE_API_URL }]
@@ -68,40 +69,6 @@ const LinkTracker = () => {
   useEffect(() => trackPageView({}), [location, trackPageView]);
   return null;
 };
-
-// Local absolute frontend root (set in .env)
-const LOCAL_FRONTEND_ROOT =
-  (import.meta.env.VITE_LOCAL_FRONTEND_ROOT as string) || '';
-const CONTAINER_ROOT = '/app';
-
-// Map container path to local path and open in VS Code via URL scheme
-function openInVSCode({ codeInfo }: InspectParams) {
-  // Handle potential missing codeInfo
-  if (!codeInfo) return;
-
-  let abs = codeInfo.absolutePath;
-
-  // Create an absolute container path if only relative is provided
-  if (!abs && codeInfo.relativePath) {
-    abs = `${CONTAINER_ROOT}/${codeInfo.relativePath}`.replace(/\/{2,}/g, '/');
-  }
-
-  // Handle potential missing abs path result
-  if (!abs) return;
-
-  // Translate container path to local machine root
-  if (LOCAL_FRONTEND_ROOT && abs.startsWith(CONTAINER_ROOT)) {
-    abs = abs.replace(CONTAINER_ROOT, LOCAL_FRONTEND_ROOT);
-  }
-
-  // Line/Column info
-  const line = codeInfo.lineNumber ?? 1;
-  const col = codeInfo.columnNumber ?? 1;
-
-  // Open VS Code (host must have VS Code installed to handle the scheme)
-  const url = `vscode://file${abs}:${line}:${col}`;
-  window.location.href = encodeURI(url);
-}
 
 const App: React.FC = () => (
   <MatomoProvider value={instance}>
