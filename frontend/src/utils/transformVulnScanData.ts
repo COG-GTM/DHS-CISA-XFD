@@ -33,6 +33,18 @@ export function formatRange(
   return startStr || endStr;
 }
 
+function enrolledWithinTwoWeeks(timestamp?: string | null): boolean {
+  if (!timestamp) return false;
+
+  const enrolledDate = new Date(timestamp);
+  if (isNaN(enrolledDate.getTime())) return false;
+
+  const now = new Date();
+  const twoWeeksInMs = 14 * 24 * 60 * 60 * 1000;
+
+  return now.getTime() - enrolledDate.getTime() <= twoWeeksInMs;
+}
+
 // ---------- helpers for fallback ----------
 const isBlankLike = (value: unknown) => {
   if (value === null || value === undefined) return true;
@@ -171,7 +183,9 @@ export const transformVulnScanData = (
           assetsOwned: 0,
           assetsScanned: 0,
           startDate: '',
-          endDate: ''
+          endDate: '',
+          enrolledDate: '',
+          recentlyEnrolled: false
         }
       ],
       vulnScanKeyMetrics: [
@@ -224,7 +238,11 @@ export const transformVulnScanData = (
         assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
         assetsScanned: latestHostSummary?.scanned_asset_count ?? 0,
         startDate: vulLabel.usedStart ?? '',
-        endDate: vulLabel.usedEnd ?? ''
+        endDate: vulLabel.usedEnd ?? '',
+        enrolledDate: latestVulnSummary?.enrolled_in_vs_timestamp ?? '',
+        recentlyEnrolled:
+          enrolledWithinTwoWeeks(latestVulnSummary?.enrolled_in_vs_timestamp) ??
+          false
       }
     ],
     vulnScanKeyMetrics: [
@@ -399,5 +417,19 @@ export function shouldSkipVulnType(
     mediumSeverity === 0 &&
     highSeverity === 0 &&
     criticalSeverity === 0
+  );
+}
+
+export default function isDataEmpty(data: VulnScanDataTransformed) {
+  return (
+    !data.vulnScanSummary.length &&
+    !data.vulnScanKeyMetrics.length &&
+    !data.detectedServicesKeyMetrics.length &&
+    !data.detectedHostsKeyMetrics.length &&
+    !data.detectedHostsTop5VulnerableHosts.length &&
+    !data.topVulnerabilities.length &&
+    !data.topKevVulnerabilities.length &&
+    !data.riskyServices.length &&
+    !data.severityByProminence.length
   );
 }
