@@ -16,7 +16,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 # Use your existing helpers exactly as named.
-from xfd_api.tasks.helpers.syncdb_helpers.create_sampe_data import (  # type: ignore
+from xfd_api.tasks.helpers.syncdb_helpers.create_sample_data import (  # type: ignore
     create_api_key_for_user,
     write_api_key_to_env_file,
 )
