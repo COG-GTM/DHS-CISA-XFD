@@ -512,13 +512,14 @@ async def call_search_logs_filtered(
 @api_router.get(
     "/metrics/customers",
     dependencies=[Depends(get_current_active_user)],
-    tags=["Metrics"],
+    response_model=bytes,
     responses={
         200: {
             "content": {"text/csv": {}},
             "description": "CSV of CustomerMetrics for yesterday.",
         }
     },
+    tags=["Metrics"],
 )
 async def call_export_customer_metrics_csv(
     current_user: User = Depends(get_current_active_user),

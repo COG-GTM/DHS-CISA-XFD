@@ -52,8 +52,8 @@ def freeze_time(monkeypatch):
     monkeypatch.setattr("django.utils.timezone.now", lambda: FIXED_NOW)
 
 
-@pytest.fixture
-def api_client() -> TestClient:
+@pytest.fixture(name="client")
+def client() -> TestClient:
     """Initialize FastAPI client with proper cleanup."""
     with TestClient(app) as c:
         yield c
@@ -65,7 +65,7 @@ def user() -> User:
     u = User.objects.create(
         first_name="",
         last_name="",
-        email=f"test-user-{int(datetime.now(UTC).timestamp())}@example.com",
+        email="test-user-{}@example.com".format(int(datetime.now(UTC).timestamp())),
         user_type=UserType.GLOBAL_ADMIN,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -197,12 +197,23 @@ def _make_result(scan: Scan, org: Organization, status: int, dt: datetime) -> No
 
 
 # -------------------------------------------------------------------
-# Scan metrics endpoints
+# Metrics endpoints
 # -------------------------------------------------------------------
+def test_metrics_customers_csv_endpoint(client: TestClient, user: User):
+    """Test /metrics/customers endpoint returns CSV with auth."""
+    metrics_mod.collect_and_upsert_customer_metrics({}, {})
+
+    resp = client.get(
+        "/metrics/customers",
+        headers={"Authorization": "Bearer " + create_jwt_token(user)},
+    )
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "Content-Disposition" in resp.headers
 
 
 def test_list_scans_org_count_by_status_counts_and_window_filter(
-    user: User, api_client: TestClient
+    user: User, client: TestClient
 ):
     """Test /metrics/scans endpoint with org_count_by_status and window_days."""
     non_global_name, global_name = _pick_scan_names_from_schema()
@@ -235,7 +246,7 @@ def test_list_scans_org_count_by_status_counts_and_window_filter(
 
     transaction.commit()
 
-    resp = api_client.get(
+    resp = client.get(
         "/metrics/scans",
         params={"window_days": 3},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
@@ -258,7 +269,7 @@ def test_list_scans_org_count_by_status_counts_and_window_filter(
 
 
 def test_get_scan_daily_status_counts_groups_by_date_and_status(
-    user: User, api_client: TestClient
+    user: User, client: TestClient
 ):
     """Test /metrics/scans/{scan_id} endpoint with daily_status_counts."""
     non_global_name, _ = _pick_scan_names_from_schema()
@@ -281,8 +292,8 @@ def test_get_scan_daily_status_counts_groups_by_date_and_status(
     transaction.commit()
 
     window_days = 3
-    resp = api_client.get(
-        f"/metrics/scans/{scan.id}",
+    resp = client.get(
+        "/metrics/scans/{}".format(scan.id),
         params={"window_days": window_days},
         headers={"Authorization": "Bearer " + create_jwt_token(user)},
     )
@@ -525,7 +536,9 @@ def test_export_csv_default_fieldnames_filters_yesterday_only(clock):
     CustomerMetrics.objects.create(date=older_date, region=1)
 
     filename, csv_bytes = export_customer_metrics()
-    assert filename == f"cyhy_dashboard_customer_metrics_{target_date.isoformat()}.csv"
+    assert filename == "cyhy_dashboard_customer_metrics_{}.csv".format(
+        target_date.isoformat()
+    )
 
     header, rows = parse_csv(csv_bytes)
     assert header == _default_fieldnames(CustomerMetrics)
@@ -538,7 +551,7 @@ def test_export_csv_with_explicit_fields_and_values(clock):
     run_task()
     cols = ("date", "region", "users_invite_pending")
     filename, csv_bytes = export_customer_metrics(fieldnames=cols)
-    assert filename.endswith(f"{target_date.isoformat()}.csv")
+    assert filename.endswith("{}.csv".format(target_date.isoformat()))
 
     header, rows = parse_csv(csv_bytes)
     assert header == list(cols)
