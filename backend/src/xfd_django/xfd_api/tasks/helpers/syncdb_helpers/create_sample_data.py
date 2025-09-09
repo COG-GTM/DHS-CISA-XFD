@@ -8,6 +8,7 @@ import ipaddress
 import json
 import logging
 import os
+from pathlib import Path
 import random
 import secrets
 import string
@@ -742,6 +743,14 @@ def create_test_user(organization):
 
 def create_api_key_for_user(user):
     """Create a sample API key linked to a user."""
+    "Check if an API key already exists for the user"
+    existing_key = ApiKey.objects.filter(user=user).order_by("-created_at").first()
+    if existing_key:
+        # We can't return the full raw key since only the hash is stored.
+        # Instead, raise an error to prevent duplicate creation or handle accordingly.
+        raise ValueError(
+            f"User {user.email} already has an API key (last four: {existing_key.last_four})."
+        )
     # Generate a random 16-byte API key
     key = secrets.token_hex(16)
 
@@ -763,6 +772,50 @@ def create_api_key_for_user(user):
         user.email,
         key,
     )
+    return key
+
+
+def write_api_key_to_env_file(key):
+    """
+    In the app/xfd_api/tasks directory, replace or append CF_API_KEY=<key>.
+
+    in .env. If .env does not exist there, create it.
+    """
+    # 1) Construct the path to app/xfd_api/tasks relative to the container’s /app cwd
+    tasks_directory = Path.cwd() / "xfd_api" / "tasks"
+    env_path = tasks_directory / ".env"
+
+    # 2) Ensure the tasks directory exists
+    if not tasks_directory.exists() or not tasks_directory.is_dir():
+        LOGGER.error(
+            "Error: tasks directory does not exist ",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # 3) If .env exists in that directory, read + replace or append CF_API_KEY
+    key_prefix = "CF_API_KEY="
+    if env_path.exists() and env_path.is_file():
+        existing_lines = env_path.read_text(encoding="utf-8").splitlines()
+        updated_lines = []
+        did_replace = False
+
+        for line in existing_lines:
+            if line.startswith(key_prefix):
+                updated_lines.append(f"{key_prefix}{key}")
+                did_replace = True
+            else:
+                updated_lines.append(line)
+
+        if not did_replace:
+            # No existing CF_API_KEY line → append it
+            updated_lines.append(f"{key_prefix}{key}")
+
+        env_path.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
+
+    # 4) If .env doesn’t exist, create it and write CF_API_KEY
+    else:
+        env_path.write_text(f"{key_prefix}{key}\n", encoding="utf-8")
 
 
 def generate_random_name():
