@@ -33,7 +33,18 @@ def handler(event, context):
         create_matomo_scan_user()
 
         # Create a read-only user for both the default and mini_data_lake databases
-        create_readonly_user()
+        user = os.getenv("READ_ONLY_DB_USER")
+        password = os.getenv("READ_ONLY_DB_PASSWORD")
+        if not user or not password:
+            LOGGER.warning("READ_ONLY_DB_USER or READ_ONLY_DB_PASSWORD is not set.")
+        create_readonly_user(user, password)
+
+        # Create a read-only user for Coginiti
+        user = os.getenv("COGINITI_DB_USER")
+        password = os.getenv("COGINITI_DB_PASSWORD")
+        if not user or not password:
+            LOGGER.warning("COGINITI_DB_USER or COGINITI_DB_PASSWORD is not set.")
+        create_readonly_user(user, password)
 
         return {
             "status_code": 200,
