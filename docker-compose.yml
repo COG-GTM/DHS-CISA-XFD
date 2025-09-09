@@ -29,7 +29,6 @@ services:
       - CHOKIDAR_USEPOLLING=true
     env_file:
       - ./.env
-    # command: npm run dev -- --port 3000 --host 0.0.0.0
     depends_on:
       - backend
     networks:
