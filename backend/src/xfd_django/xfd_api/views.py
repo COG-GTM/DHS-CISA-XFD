@@ -191,7 +191,7 @@ MatomoResponse = Dict[str, Any]
 # Matomo Proxy
 @api_router.api_route(
     "/matomo/{path:path}",
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    methods=["GET", "POST"],
     response_model=Optional[MatomoResponse],
     tags=["Analytics"],
 )
@@ -200,7 +200,7 @@ async def matomo_proxy(
 ):
     """Proxy requests to the Matomo analytics instance."""
     MATOMO_URL = os.getenv("VITE_MATOMO_URL", "")
-    if current_user.user_type not in ["analytics", "globalView", "globalAdmin"]:
+    if current_user.user_type not in ["globalAdmin"]:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to Matomo
