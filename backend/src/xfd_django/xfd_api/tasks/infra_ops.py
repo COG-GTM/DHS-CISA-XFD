@@ -37,7 +37,6 @@ def handler(event, context):
         password = os.getenv("READ_ONLY_DB_PASSWORD")
         if not user or not password:
             LOGGER.warning("READ_ONLY_DB_USER or READ_ONLY_DB_PASSWORD is not set.")
-            return
         create_readonly_user(user, password)
 
         # Create a read-only user for Coginiti
@@ -45,7 +44,6 @@ def handler(event, context):
         password = os.getenv("COGINITI_DB_PASSWORD")
         if not user or not password:
             LOGGER.warning("COGINITI_DB_USER or COGINITI_DB_PASSWORD is not set.")
-            return
         create_readonly_user(user, password)
 
         return {
