@@ -136,13 +136,12 @@ class Scheduler:
                 resp = sqs.send_message_batch(QueueUrl=queue_url, Entries=entries)
 
                 # Handle any failed messages
-                if "Failed" in resp:
-                    for failure in resp["Failed"]:
-                        LOGGER.warning(
-                            "Failed to send message %s: %s",
-                            failure["Id"],
-                            failure["Message"],
-                        )
+                for failure in resp.get("Failed", []):
+                    LOGGER.warning(
+                        "Failed to send message %s: %s",
+                        failure["Id"],
+                        failure["Message"],
+                    )
             except Exception as e:
                 LOGGER.error("Error sending message batch: %s", e)
 
@@ -161,6 +160,7 @@ class Scheduler:
             # Set manual_run_pending to False since scan is now launched
             scan.manual_run_pending = False
             scan.last_run = timezone.now()
+            scan.total_orgs = len(filtered_orgs)
             scan.save()
             LOGGER.info("Updated scan: manual_run_pending set to False")
 
@@ -194,8 +194,7 @@ class Scheduler:
                 scan.last_run = timezone.make_aware(
                     scan.last_run, timezone.get_current_timezone()
                 )
-            frequency_seconds = scan.frequency
-            if (timezone.now() - scan.last_run).total_seconds() < frequency_seconds:
+            if (timezone.now() - scan.last_run).total_seconds() < scan.frequency:
                 return False
 
         def filter_scan_tasks(tasks):

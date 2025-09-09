@@ -42,23 +42,45 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
         SUM(CASE WHEN POSITION('\"up\":false' IN json_serialize(state)) > 0 THEN 1 ELSE 0 END) AS down_host_count,
         COUNT(DISTINCT ip) AS scanned_asset_count,
 
-        -- DONE timestamps
-        MIN(CASE WHEN POSITION('\"DONE\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"DONE\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS done_min_timestamp,
-        MAX(CASE WHEN POSITION('\"DONE\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"DONE\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS done_max_timestamp,
-
         -- PORTSCAN timestamps
-        MIN(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS port_scan_min_timestamp,
-        MAX(CASE WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS port_scan_max_timestamp,
+        MIN(
+            CASE
+                WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS port_scan_min_timestamp,
+        MAX(
+            CASE
+                WHEN POSITION('\"PORTSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"PORTSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS port_scan_max_timestamp,
 
         -- VULNSCAN timestamps
-        MIN(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vuln_scan_min_timestamp,
-        MAX(CASE WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0
-                THEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) END) AS vuln_scan_max_timestamp,
+        MIN(
+            CASE
+                WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS vuln_scan_min_timestamp,
+        MAX(
+            CASE
+                WHEN POSITION('\"VULNSCAN\":\"' IN ls) > 0 THEN
+                    CASE
+                        WHEN CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ) >= GETDATE() - INTERVAL '120 days' THEN
+                        CAST(SPLIT_PART(SPLIT_PART(ls, '\"VULNSCAN\":\"', 2), '\"', 1) AS TIMESTAMPTZ)
+                    END
+            END
+        ) AS vuln_scan_max_timestamp,
 
         -- NETSCAN1 timestamps
         MIN(CASE WHEN POSITION('\"NETSCAN1\":\"' IN ls) > 0
@@ -120,8 +142,6 @@ def create_daily_host_summary(org_id_dict, summary_date=None):
                     "up_host_count": row["up_host_count"],
                     "down_host_count": row["down_host_count"],
                     "scanned_asset_count": row["scanned_asset_count"],
-                    "done_min_timestamp": row["done_min_timestamp"],
-                    "done_max_timestamp": row["done_max_timestamp"],
                     "port_scan_min_timestamp": row["port_scan_min_timestamp"],
                     "port_scan_max_timestamp": row["port_scan_max_timestamp"],
                     "vuln_scan_min_timestamp": row["vuln_scan_min_timestamp"],

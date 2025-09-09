@@ -22,6 +22,7 @@ from django.utils import timezone
 from faker import Faker
 from xfd_api.helpers.regionStateMap import REGION_STATE_MAP
 from xfd_api.models import Domain, Service, Vulnerability
+from xfd_api.schema_models.scan import SCAN_SCHEMA
 from xfd_api.tasks.refresh_material_views import handler as refresh_materialized_views
 from xfd_api.tasks.refresh_vs_summaries import handler as refresh_vs_summaries
 from xfd_api.tasks.utils.mdl_insert_utils import fill_cidr_live_ips_bulk_update
@@ -35,6 +36,8 @@ from xfd_mini_dl.models import (
     Location,
     Organization,
     PortScan,
+    Scan,
+    ScanResult,
     Ticket,
     TicketEvent,
     User,
@@ -853,3 +856,86 @@ def create_sample_services_and_vulnerabilities(domain):
             actions=[],
             structuredData={},
         )
+
+
+def generate_scan_results(num_results=7360, days_back=92):
+    """Generate list of dummy ScanResult records."""
+    non_global_scans = {
+        name
+        for name, schema in SCAN_SCHEMA.items()
+        if getattr(schema, "global_scan", True) is False
+    }
+
+    scan_ids = list(
+        Scan.objects.filter(name__in=non_global_scans).values_list("id", flat=True)
+    )
+    org_ids = list(Organization.objects.values_list("id", flat=True))
+
+    status_weights = {
+        200: 60,  # Heavily favored
+        500: 10,
+        204: 8,
+        400: 5,
+        401: 4,
+        403: 4,
+        404: 4,
+        502: 2,
+        503: 2,
+        100: 1,
+        301: 1,
+    }
+
+    weighted_status_pool = [
+        code for code, weight in status_weights.items() for _ in range(weight)
+    ]
+
+    status_messages = {
+        100: "Continue",
+        200: "OK",
+        204: "No Content",
+        301: "Moved Permanently",
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        500: "Internal Server Error",
+        502: "Bad Gateway",
+        503: "Service Unavailable",
+    }
+
+    scans = {s.id: s for s in Scan.objects.filter(id__in=scan_ids)}
+    orgs = {o.id: o for o in Organization.objects.filter(id__in=org_ids)}
+
+    now = timezone.now()
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
+        days=days_back
+    )
+    total_seconds = (now - start).total_seconds()
+
+    records = []
+    for _ in range(num_results):
+        scan_id = random.choice(scan_ids)
+        org_id = random.choice(org_ids)
+        status = random.choice(weighted_status_pool)
+
+        records.append(
+            ScanResult(
+                id=uuid.uuid4(),
+                scanned_at=start + timedelta(seconds=random.uniform(0, total_seconds)),
+                http_status=status,
+                message=status_messages.get(status, ""),
+                scan=scans[scan_id],
+                organization=orgs[org_id],
+            )
+        )
+
+    return records
+
+
+@transaction.atomic
+def populate_scan_results():
+    """Populate the ScanResult table with dummy data."""
+    LOGGER.info("Populating scan results...")
+    records = generate_scan_results()
+    ScanResult.objects.bulk_create(records, batch_size=4000)
+    LOGGER.info("Inserted {} scan results.".format(len(records)))
