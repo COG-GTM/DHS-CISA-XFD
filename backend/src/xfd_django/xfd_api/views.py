@@ -217,7 +217,7 @@ async def pe_proxy(
 ):
     """Proxy requests to the P&E Django application."""
     # Ensure only Global Admin and Global View users can access
-    if current_user.user_type not in ["globalView", "globalAdmin"]:
+    if current_user.user_type not in ["globalAdmin"]:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     # Handle the proxy request to the P&E Django application
