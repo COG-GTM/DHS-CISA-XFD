@@ -9,7 +9,7 @@ from django.db import connections
 VW_SERVICE_VERSION = "20250823"
 MAT_VW_COMBINED_VULNS_VERSION = "20250823"
 DOMAIN_MAT_VIEW_VERSION = "20250823"
-DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250823"
+DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250909"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -706,6 +706,77 @@ def create_domain_search_mat_view(database):
         cursor.execute(
             """
             CREATE MATERIALIZED VIEW mat_vw_domain_search AS
+            WITH
+            -- Normalize services once; avoid JSON in hot path
+            svc AS (
+                SELECT
+                    s.domain_id,
+                    s.id AS service_id,
+                    s.port,
+                    COALESCE(s.service, (s.products->0->>'name')) AS service_name,
+                    s.last_seen
+                FROM mat_vw_service s
+            ),
+
+            -- Distinct services per domain (for count)
+            svc_counts AS (
+                SELECT domain_id, COUNT(*) AS services_count
+                FROM (SELECT DISTINCT domain_id, service_id FROM svc) t
+                GROUP BY domain_id
+            ),
+
+            -- Top-3 ports per domain by recency
+            port_rank AS (
+                SELECT
+                    domain_id,
+                    port,
+                    MAX(last_seen) AS last_seen,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY domain_id
+                        ORDER BY MAX(last_seen) DESC
+                    ) AS rn
+                FROM svc
+                GROUP BY domain_id, port
+            ),
+            ports_preview AS (
+                SELECT
+                    domain_id,
+                    STRING_AGG(port::text, ', ' ORDER BY last_seen DESC) AS ports_preview
+                FROM port_rank
+                WHERE rn <= 3
+                GROUP BY domain_id
+            ),
+
+            -- Top-3 service names per domain by recency
+            svcname_rank AS (
+                SELECT
+                    domain_id,
+                    service_name,
+                    MAX(last_seen) AS last_seen,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY domain_id
+                        ORDER BY MAX(last_seen) DESC
+                    ) AS rn
+                FROM svc
+                GROUP BY domain_id, service_name
+            ),
+            services_preview AS (
+                SELECT
+                    domain_id,
+                    STRING_AGG(service_name, ', ' ORDER BY last_seen DESC) AS services_preview
+                FROM svcname_rank
+                WHERE rn <= 3
+                GROUP BY domain_id
+            ),
+
+            -- Vuln counts per domain (already distinct by vuln_id)
+            vuln_counts AS (
+                SELECT
+                    domain_id,
+                    NULLIF(COUNT(DISTINCT vuln_id), 0) AS vulnerabilities_count
+                FROM mat_vw_combined_vulns
+                GROUP BY domain_id
+            )
 
             SELECT
                 d.id AS domain_id,
@@ -719,71 +790,16 @@ def create_domain_search_mat_view(database):
                 d.reverse_name,
                 d.created_at,
                 d.updated_at,
-
-            -- First 3 ports preview as comma-separated string
-            (
-                SELECT string_agg(port::text, ', ')
-                FROM (
-                    SELECT sub_inner.port
-                    FROM (
-                        SELECT s2.port, s2.last_seen
-                        FROM mat_vw_service s2
-                        WHERE s2.domain_id = d.id
-                        ORDER BY s2.last_seen DESC
-                    ) sub_inner
-                    GROUP BY sub_inner.port
-                    ORDER BY max(sub_inner.last_seen) DESC
-                    LIMIT 3
-                ) sub
-            ) AS ports_preview,
-
-            -- First 3 service names preview as comma-separated string
-            (
-                SELECT string_agg(service_name, ', ')
-                FROM (
-                    SELECT sub_inner.service_name
-                    FROM (
-                        SELECT (s2.products->0->>'name') AS service_name, s2.last_seen
-                        FROM mat_vw_service s2
-                        WHERE s2.domain_id = d.id
-                        ORDER BY s2.last_seen DESC
-                    ) sub_inner
-                    GROUP BY sub_inner.service_name
-                    ORDER BY max(sub_inner.last_seen) DESC
-                    LIMIT 3
-                ) sub
-            ) AS services_preview,
-
-            -- Services count
-            COUNT(DISTINCT s.id) AS services_count,
-
-            -- Vulnerabilities count
-            CASE WHEN COUNT(DISTINCT v.vuln_id) = 0 THEN NULL ELSE COUNT(DISTINCT v.vuln_id) END AS vulnerabilities_count
-
-            FROM
-                mat_vw_domain d
-
-            LEFT JOIN organization o
-                ON o.id = d.organization_id
-
-            LEFT JOIN mat_vw_service s
-                ON s.domain_id = d.id
-
-            LEFT JOIN mat_vw_combined_vulns v
-                ON v.domain_id = d.id
-
-            GROUP BY
-                d.id,
-                d.name,
-                d.ip,
-                d.organization_id,
-                o.name,
-                d.source,
-                d.country,
-                d.cloud_hosted,
-                d.reverse_name,
-                d.created_at,
-                d.updated_at;
+                p.ports_preview,
+                sp.services_preview,
+                sc.services_count,
+                vc.vulnerabilities_count
+            FROM mat_vw_domain d
+            LEFT JOIN organization o ON o.id = d.organization_id
+            LEFT JOIN svc_counts       sc ON sc.domain_id = d.id
+            LEFT JOIN vuln_counts      vc ON vc.domain_id = d.id
+            LEFT JOIN ports_preview     p ON p.domain_id = d.id
+            LEFT JOIN services_preview sp ON sp.domain_id = d.id
             """
         )
 
