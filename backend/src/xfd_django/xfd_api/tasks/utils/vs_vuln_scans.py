@@ -217,7 +217,6 @@ def create_vuln_scan_summary(summary_date=None):
         )
 
         if not included.exists():
-            LOGGER.info("No tickets found creating empty summary.")
             VulnScanSummary.objects.update_or_create(
                 summary_date=summary_date,
                 organization=org,

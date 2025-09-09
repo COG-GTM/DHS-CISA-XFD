@@ -61,15 +61,34 @@ def handler(event):
 def main(event):
     """Identify assets owned by each stakeholder."""
     try:
-        flag_cidr_changes()
-
         organization_id = event.get("organizationId")
-
+        subdomain_found = False
+        cidr_found = False
         orgs_to_sync = Organization.objects.filter(id__in=[organization_id])
         for org in orgs_to_sync:
-            LOGGER.info("Running ASM Sync on organization %s", org.name)
-        # orgs_to_sync = Organization.objects.filter(acronym__in=event.organization.id)
-        enumerate_subs(orgs_to_sync)
+            LOGGER.info(
+                "Running ASM Sync on organization %s (%s)", org.name, org.acronym
+            )
+
+        # Process CIDRs
+        try:
+            flag_cidr_changes()
+            cidr_found = Cidr.objects.filter(
+                cidrorgs__organization__in=orgs_to_sync, cidrorgs__current=True
+            ).exists()
+        except Exception as e:
+            message = "Error processing CIDRs: {}".format(e)
+            LOGGER.warning(message)
+
+        # Process subdomains
+        try:
+            enumerate_subs(orgs_to_sync)
+            subdomain_found = SubDomains.objects.filter(
+                organization__in=orgs_to_sync, current=True
+            ).exists()
+        except Exception as e:
+            message = "Error processing subdomains: {}".format(e)
+            LOGGER.warning(message)
 
         LOGGER.info("Identifying subdomains from ips...")
         connect_subs_from_ips(orgs_to_sync)
@@ -84,9 +103,18 @@ def main(event):
         LOGGER.info("Running Shodan dedupe...")
         dedupe(orgs_to_sync)
         LOGGER.info("Finished running Shodan dedupe")
+        if cidr_found or subdomain_found:
+            LOGGER.info("ASM Sync completed successfully.")
+            return {"status_code": 200, "body": "ASM Sync completed successfully."}
+        else:
+            return {
+                "status_code": 204,
+                "body": "ASM Sync finished without finding new CIDR blocks and subdomains.",
+            }
+
     except Exception as e:
-        LOGGER.warning("Error running ASM %s", e)
-    # quit()
+        LOGGER.warning("Error running ASM Sync %s", e)
+        return {"status_code": 500, "body": "Error running ASM Sync: {}".format(e)}
 
 
 def flag_asset_changes():
@@ -102,11 +130,6 @@ def flag_asset_changes():
     IpsSubs.objects.filter(last_seen__lt=cutoff_date).update(current=False)
 
     Ip.objects.filter(last_seen_timestamp__lt=cutoff_date).update(current=False)
-
-    # Ip.objects.filter(
-    #     (Q(sub_domains__current=False) | Q(sub_domains__isnull=True)) &  # No current subdomains or no subdomains at all
-    #     Q(origin_cidr__current=False)  # The associated origin_cidr is not current
-    # ).update(current=False)
 
 
 def flag_cidr_changes():

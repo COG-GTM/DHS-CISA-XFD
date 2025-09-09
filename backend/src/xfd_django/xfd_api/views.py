@@ -39,6 +39,11 @@ from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.metrics import (
+    default_metrics_window,
+    get_scan_daily_status_counts,
+    list_scans_org_count_by_status,
+)
 from .api_methods.object_store import get_object_store_presigned_url
 from .api_methods.pshtt_sync import pshtt_sync_post
 from .api_methods.queue_monitoring import list_queues
@@ -112,6 +117,10 @@ from .schema_models.dmz_sync import (
 )
 from .schema_models.dns_twist_sync import DnsTwistSyncBody, DnsTwistSyncResponse
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
+from .schema_models.metrics import (
+    GetScanDailyStatusCountsResponse,
+    ListScansOrgCountByStatusResponse,
+)
 from .schema_models.notification import CreateNotificationSchema
 from .schema_models.notification import Notification as NotificationSchema
 from .schema_models.object_store import (
@@ -473,6 +482,54 @@ async def call_search_logs_filtered(
             status_code=500, detail="Serialization error: {}".format(str(e))
         )
     return LogSearchResponseFilters(result=result, count=count)
+
+
+# ========================================
+#   Metrics Dashboard Endpoints
+# ========================================
+
+
+@api_router.get(
+    "/metrics/scans",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ListScansOrgCountByStatusResponse,
+    tags=["metrics"],
+)
+async def call_list_scans_org_count_by_status(
+    window_days: int = default_metrics_window,
+    current_user: User = Depends(get_current_active_user),
+):
+    """List scans and annotate with metrics."""
+    try:
+        return list_scans_org_count_by_status(window_days, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching scan metrics: {}".format(e),
+        )
+
+
+@api_router.get(
+    "/metrics/scans/{scan_id}",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=GetScanDailyStatusCountsResponse,
+    tags=["metrics"],
+)
+async def call_get_scan_daily_status_counts(
+    scan_id: str,
+    window_days: int = default_metrics_window,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get daily http status counts for a specific scan."""
+    try:
+        return get_scan_daily_status_counts(scan_id, window_days, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching daily status counts for scan {}: {}".format(
+                scan_id, e
+            ),
+        )
 
 
 # ========================================
