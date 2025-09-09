@@ -5,7 +5,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
@@ -185,12 +185,14 @@ async def get_redis_client(request: Request):
 # ========================================
 #   Analytic Endpoints
 # ========================================
+MatomoResponse = Dict[str, Any]
 
 
 # Matomo Proxy
 @api_router.api_route(
     "/matomo/{path:path}",
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    response_model=Optional[MatomoResponse],
     tags=["Analytics"],
 )
 async def matomo_proxy(
