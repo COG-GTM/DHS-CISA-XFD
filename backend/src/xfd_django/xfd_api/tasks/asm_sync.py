@@ -19,7 +19,6 @@ from xfd_mini_dl.models import (
     Cidr,
     CidrOrgs,
     DataSource,
-    Ip,
     IpsSubs,
     Organization,
     SubDomains,
@@ -120,7 +119,7 @@ def main(event):
 def flag_asset_changes():
     """Mark Ips and Subdomains that are were not seen in the last scan as not current."""
     cutoff_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
-        days=15
+        days=90
     )
 
     SubDomains.objects.filter(Q(last_seen__lt=cutoff_date)).exclude(
@@ -129,29 +128,42 @@ def flag_asset_changes():
 
     IpsSubs.objects.filter(last_seen__lt=cutoff_date).update(current=False)
 
-    Ip.objects.filter(last_seen_timestamp__lt=cutoff_date).update(current=False)
+    # Ip.objects.filter(last_seen_timestamp__lt=cutoff_date).update(current=False)
 
 
 def flag_cidr_changes():
-    """Mark Cidrs that are were not seen in the last scan as not current."""
-    # Get all CidrOrgs where the last_seen date is older than 3 days
+    """Mark Cidrs that were not seen in the last scan as not current.
+
+    return (organization_id, cidr_id) for cidrorgs that were closed.
+    """
     cutoff_date = timezone.now().date() - datetime.timedelta(days=3)
 
-    CidrOrgs.objects.filter(last_seen__lt=cutoff_date).update(current=False)
-    CidrOrgs.objects.filter(last_seen__gte=cutoff_date).update(current=True)
-    # Step 1: Get all Cidr objects that:
-    # - Have no associated CidrOrgs at all, or
-    # - Have associated CidrOrgs, but all of them have current=False or current is null
-    cidrs_to_retire = Cidr.objects.filter(
-        Q(cidrorgs__isnull=True)
-        | Q(cidrorgs__current=False)  # No CidrOrgs associated
-        | Q(cidrorgs__current__isnull=True)  # Associated CidrOrgs are not current
+    # Find CidrOrgs that will be closed
+    cidrorgs_to_close = CidrOrgs.objects.filter(last_seen__lt=cutoff_date)
+
+    # Capture their (org_id, cidr_id) before updating
+    closed_pairs = cidrorgs_to_close.values_list(
+        "organization_id", "cidr_id"
     ).distinct()
 
-    # Step 2: Update the retired field to True for those Cidr objects
+    # Mark them as not current
+    cidrorgs_to_close.update(current=False)
+
+    # Keep others marked current
+    CidrOrgs.objects.filter(last_seen__gte=cutoff_date).update(current=True)
+
+    # Retire cidrs that no longer have current orgs
+    cidrs_to_retire = Cidr.objects.filter(
+        Q(cidrorgs__isnull=True)
+        | Q(cidrorgs__current=False)
+        | Q(cidrorgs__current__isnull=True)
+    ).distinct()
     cidrs_to_retire.update(retired=True)
 
-    Cidr.objects.filter(Q(cidrorgs__current=True)).distinct().update(retired=False)
+    # Unretire cidrs that still have current orgs
+    Cidr.objects.filter(cidrorgs__current=True).distinct().update(retired=False)
+
+    return list(closed_pairs)
 
 
 def enumerate_subs(org_list=None):
