@@ -4,12 +4,14 @@ import ScansView from 'pages/Scans/ScansView';
 import ScanTasksView from 'pages/Scans/ScanTasksView';
 import Metrics from '../../components/Metrics/MetricsDashboard';
 import QueueMonitorView from 'pages/Scans/QueueMonitorView';
-import { Box, Container, Tab } from '@mui/material';
+import { Box, Button, Container, Tab } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Logs } from 'components/Logs/Logs';
+import { useAuthContext } from 'context/AuthContext';
 
 export const AdminTools: React.FC = () => {
   const [value, setValue] = React.useState('1');
+  const { user } = useAuthContext(); // get user from context
 
   const handleChange = (event: React.SyntheticEvent, new_value: string) => {
     setValue(new_value);
@@ -17,6 +19,22 @@ export const AdminTools: React.FC = () => {
   return (
     <Container maxWidth="xl" sx={{ py: 1 }}>
       <Box sx={{ width: '100%', typography: 'body1' }}>
+        {/* Matomo button at top left, only for globalAdmin */}
+        {user?.user_type === 'globalAdmin' && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#005EA2',
+                color: '#fff',
+                '&:hover': { backgroundColor: '#004B87' }
+              }}
+              onClick={() => window.open('/matomo', '_blank')}
+            >
+              Matomo
+            </Button>
+          </Box>
+        )}
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList onChange={handleChange} aria-label="lab API tabs example">
