@@ -42,6 +42,7 @@ def export_customer_metrics(
 
     if fieldnames is None:
         fieldnames = _default_fieldnames(CustomerMetrics)
+    fieldnames = [f for f in fieldnames if f not in ("id", "created_at")]
 
     buffer = io.StringIO(newline="")
     writer = csv.writer(buffer)
