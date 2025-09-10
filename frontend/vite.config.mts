@@ -33,7 +33,21 @@ export default defineConfig(({ mode, command }) => {
       host: '0.0.0.0',
       strictPort: true,
       watch: { usePolling: true, interval: 1000 },
-      hmr: { host: 'localhost', clientPort: 3000 }
+      hmr: { host: 'localhost', clientPort: 3000 },
+      proxy: {
+        // Keep tracking public so hits aren’t blocked
+        '/matomo/matomo.php': {
+          target: 'http://backend:3000',
+          changeOrigin: false,
+          xfwd: true
+        },
+        // Everything else under /matomo: backend enforces Depends(get_current_active_user)
+        '/matomo': {
+          target: 'http://backend:3000',
+          changeOrigin: false,
+          xfwd: true
+        }
+      }
     },
     test: {
       globals: true,
