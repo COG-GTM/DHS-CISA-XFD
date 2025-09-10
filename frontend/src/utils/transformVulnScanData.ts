@@ -16,7 +16,7 @@ export function formatShortDate(
   if (Number.isNaN(dateObj.getTime())) return '';
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric'
   });
 }
@@ -28,8 +28,21 @@ export function formatRange(
   const startStr = formatShortDate(start);
   const endStr = formatShortDate(end);
   if (!startStr && !endStr) return 'No Dates Available';
-  if (startStr && endStr) return `${startStr} - ${endStr}`;
+  // Ensures only end date is shown per CRASM-3140
+  if (startStr && endStr) return `${endStr}`;
   return startStr || endStr;
+}
+
+function enrolledWithinTwoWeeks(timestamp?: string | null): boolean {
+  if (!timestamp) return false;
+
+  const enrolledDate = new Date(timestamp);
+  if (isNaN(enrolledDate.getTime())) return false;
+
+  const now = new Date();
+  const twoWeeksInMs = 14 * 24 * 60 * 60 * 1000;
+
+  return now.getTime() - enrolledDate.getTime() <= twoWeeksInMs;
 }
 
 // ---------- helpers for fallback ----------
@@ -52,7 +65,7 @@ const parseDate = (value: unknown): Date | null => {
 
 const formatDateLabel = (dateObj: Date) =>
   new Intl.DateTimeFormat('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric'
   }).format(dateObj);
@@ -65,11 +78,8 @@ const buildRangeLabel = (
   const endDate = parseDate(endValue);
 
   if (startDate && endDate) {
-    return {
-      label: `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`,
-      start: startDate.toISOString(),
-      end: endDate.toISOString()
-    };
+    // Ensures only end date is shown per CRASM-3140
+    return { label: formatDateLabel(endDate), end: endDate.toISOString() };
   }
   if (endDate) {
     return { label: formatDateLabel(endDate), end: endDate.toISOString() };
@@ -171,9 +181,11 @@ export const transformVulnScanData = (
           hostScan: 'Not available',
           vulnerabilityScan: 'Reach out to Vulnerability Mailbox',
           assetsOwned: 0,
-          assetsScanned: 0,
+          hostsScanned: 0,
           startDate: '',
-          endDate: ''
+          endDate: '',
+          enrolledDate: '',
+          recentlyEnrolled: false
         }
       ],
       vulnScanKeyMetrics: [
@@ -224,9 +236,13 @@ export const transformVulnScanData = (
         ),
         vulnerabilityScan: vulLabel.label,
         assetsOwned: latestVulnSummary?.assets_owned_count ?? 0,
-        assetsScanned: latestHostSummary?.scanned_asset_count ?? 0,
+        hostsScanned: latestHostSummary?.up_host_count ?? 0,
         startDate: vulLabel.usedStart ?? '',
-        endDate: vulLabel.usedEnd ?? ''
+        endDate: vulLabel.usedEnd ?? '',
+        enrolledDate: latestVulnSummary?.enrolled_in_vs_timestamp ?? '',
+        recentlyEnrolled:
+          enrolledWithinTwoWeeks(latestVulnSummary?.enrolled_in_vs_timestamp) ??
+          false
       }
     ],
     vulnScanKeyMetrics: [
@@ -401,5 +417,19 @@ export function shouldSkipVulnType(
     mediumSeverity === 0 &&
     highSeverity === 0 &&
     criticalSeverity === 0
+  );
+}
+
+export default function isDataEmpty(data: VulnScanDataTransformed) {
+  return (
+    !data.vulnScanSummary.length &&
+    !data.vulnScanKeyMetrics.length &&
+    !data.detectedServicesKeyMetrics.length &&
+    !data.detectedHostsKeyMetrics.length &&
+    !data.detectedHostsTop5VulnerableHosts.length &&
+    !data.topVulnerabilities.length &&
+    !data.topKevVulnerabilities.length &&
+    !data.riskyServices.length &&
+    !data.severityByProminence.length
   );
 }

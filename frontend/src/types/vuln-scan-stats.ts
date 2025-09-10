@@ -173,9 +173,11 @@ export interface ScanningSummary {
   hostScan: string;
   vulnerabilityScan: string;
   assetsOwned: number;
-  assetsScanned: number;
-  startDate: string;
+  hostsScanned: number;
+  startDate?: string;
   endDate: string;
+  enrolledDate: string;
+  recentlyEnrolled: boolean;
 }
 
 export type VulnScanDataTransformed = {

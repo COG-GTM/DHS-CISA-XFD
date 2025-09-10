@@ -71,6 +71,7 @@ def main(command_options):
     try:
         organization_name = command_options.get("organizationName")
         organization_id = command_options.get("organizationId")
+        data_saved = False
         if not organization_name or not organization_id:
             return {"statusCode": 400, "body": "Organization name or id not provided."}
 
@@ -104,7 +105,10 @@ def main(command_options):
                 )
                 if response:
                     LOGGER.info(response.json())
-                    total_pages = process_response(response, org)
+                    result = process_response(response, org)
+                    data_saved = result.get("data_saved", data_saved)
+                    total_pages = result.get("total_pages", 1)
+
                 else:
                     LOGGER.error("Failed to query DMZ Cred Sync API for %s.", acronym)
                     return {
@@ -119,8 +123,15 @@ def main(command_options):
                     done = True
 
             update_query_timestamp(org, "credential_sync", start_pulling_time)
-
-        return {"statusCode": 200, "body": "Credential sync completed successfully."}
+        if data_saved:
+            return {
+                "statusCode": 200,
+                "body": "Credential Sync completed successfully.",
+            }
+        return {
+            "statusCode": 204,
+            "body": "Credential Sync found no new data.",
+        }
 
     except Exception as e:
         LOGGER.error("Scan failed to complete: %s", e)
@@ -136,6 +147,7 @@ def process_response(response, org):
 
     cred_breaches_array = data.get("credential_breaches", [])
     total_pages = data.get("total_pages", 1)
+    breaches_saved, exposures_saved = False, False
 
     if cred_breaches_array:
         breach_dict = {}
@@ -184,6 +196,7 @@ def process_response(response, org):
                             ],
                         },
                     )
+                breaches_saved = True
             except Exception as e:
                 LOGGER.error("Error saving Cred Breaches: %s", e)
 
@@ -252,6 +265,10 @@ def process_response(response, org):
                         "sub_domain": sub_obj,
                     },
                 )
+                exposures_saved = True
             except Exception as e:
                 LOGGER.error("Error saving Credential Exposure: %s", e)
-    return total_pages
+    return {
+        "total_pages": total_pages,
+        "data_saved": exposures_saved or breaches_saved,
+    }

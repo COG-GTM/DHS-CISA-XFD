@@ -49,8 +49,8 @@ risky_service_map = {
 }
 
 nmi_service_group_map = {
-    "microsoft-d": "smb",
-    "ms-wbt-server": "dp",
+    "microsoft-ds": "smb",
+    "ms-wbt-server": "rdp",
     "rtelnet": "telnet",
     "smbdirect": "smb",
     "telnet": "telnet",

@@ -10,15 +10,11 @@ import {
   ModalRef
 } from '@trussworks/react-uswds';
 import { ModalToggleButton } from 'components';
-// import { Column, CellProps } from 'react-table';
 import { Scan, Organization, ScanSchema, OrganizationTag } from 'types';
-// import { FaTimes, FaEdit } from 'react-icons/fa';
 import { FaTimes } from 'react-icons/fa';
 import { FaPlayCircle } from 'react-icons/fa';
 import { useAuthContext } from 'context';
-// @ts-ignore:next-line
 import { formatDistanceToNow, parseISO } from 'date-fns';
-// import { Link } from 'react-router-dom';
 import { setFrequency } from 'pages/Scan/Scan';
 import { ScanForm, ScanFormValues } from 'components/ScanForm';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
@@ -37,9 +33,6 @@ import {
   Snackbar,
   SnackbarCloseReason
 } from '@mui/material';
-//Needed for the CustomToolbar:
-// import CustomToolbar from 'components/DataGrid/CustomToolbar';
-// import { Add, Publish } from '@mui/icons-material';
 
 interface Errors extends Partial<Scan> {
   global?: string;
@@ -419,33 +412,7 @@ const ScansView: React.FC = () => {
   ];
 
   //To-do: Add a button to toolbar to import scans
-  // const importScanButton = (
-  //   <MuiButton
-  //     size="small"
-  //     sx={{ '& .MuiButton-startIcon': { mr: '2px', mb: '2px' } }}
-  //     startIcon={<Publish />}
-  //     onClick={() => {
-  //       setDialogOpen(true);
-  //     }}
-  //   >
-  //     Import
-  //   </MuiButton>
-  // );
-
   //To-do: Add a button to toolbar to add scans
-  // const addScanButton = (
-  //   <MuiButton
-  //     size="small"
-  //     sx={{ '& .MuiButton-startIcon': { mr: '2px', mb: '2px' } }}
-  //     startIcon={<Add />}
-  //     onClick={() => {
-  //       addScanModalRef.current?.toggleModal(undefined, true);
-  //     }}
-  //   >
-  //     Add Scan
-  //   </MuiButton>
-  // );
-
   //To-do: Dialogs/Modals need to be built for Import and Add Scan. Export is already handled by MUI DataGrid.
 
   return (
@@ -487,10 +454,6 @@ const ScansView: React.FC = () => {
               rows={scansRows}
               columns={scansCols}
               //To-do: re-enable Custom Toolbar to handle scan Create, Export, Import,
-              // slots={{ toolbar: CustomToolbar }}
-              // slotProps={{
-              //   toolbar: { children: [importScanButton, addScanButton] }
-              // }}
             />
           )}
         </Paper>
