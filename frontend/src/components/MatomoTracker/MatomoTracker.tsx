@@ -17,7 +17,7 @@ export const MatomoTracker = () => {
     // Inject Matomo tracking logic
     const _paq = (window._paq = window._paq || []);
     _paq.push(['setTrackerUrl', matomoTrackingApiUrl]);
-    _paq.push(['setSiteId', 1]);
+    _paq.push(['setSiteId', siteId]);
     _paq.push(['trackPageView']);
     _paq.push(['enableLinkTracking']);
 
