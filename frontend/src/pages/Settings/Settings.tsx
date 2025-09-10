@@ -25,7 +25,7 @@ const Settings: React.FC = () => {
           <Button
             type="button"
             onClick={() => {
-              window.location.href = `/matomo`;
+              window.open('/matomo', '_blank');
             }}
           >
             Matomo
