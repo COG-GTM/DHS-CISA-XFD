@@ -21,8 +21,11 @@ from django.db.models import (
     Case,
     Count,
     DateField,
+    DurationField,
     Exists,
     ExpressionWrapper,
+    FloatField,
+    Func,
     IntegerField,
     OuterRef,
     Q,
@@ -181,21 +184,30 @@ def _collect_active_users_30d(end_dt):
 
 def _collect_mean_wait_time_for_pending_users(end_dt):
     """
-    Average wait time for users currently awaiting approval.
+    Average wait time (in days, float) for users currently awaiting approval.
 
-    Computes whole-day waits per user:
-        whole_days = (end_dt.date() - user.created_at.date()).days
-    Returns dict[region] -> {'pending_count': int, 'avg_wait': Decimal}
+    Computes whole-day waits per user as:
+        whole_days = end_dt.date() - created_at::date
+    Returns dict[region] -> {'pending_count': int, 'avg_wait': float}
     """
     region_expr = _region_int_from_char("region_id")
 
     end_date_val = Value(end_dt.date(), output_field=DateField())
-    whole_days_expr = ExpressionWrapper(
+
+    delta = ExpressionWrapper(
         end_date_val - TruncDate("created_at"),
-        output_field=IntegerField(),
+        output_field=DurationField(),
     )
 
-    avg_days = Avg(whole_days_expr)
+    # Convert interval -> seconds using Postgres EXTRACT(EPOCH FROM ...)
+    seconds = Func(
+        delta,
+        function="EXTRACT",
+        template="EXTRACT(EPOCH FROM %(expressions)s)",
+        output_field=FloatField(),
+    )
+
+    days = ExpressionWrapper(seconds / Value(86400.0), output_field=FloatField())
 
     qs = (
         User.objects.filter(invite_pending=True, created_at__lte=end_dt)
@@ -203,7 +215,7 @@ def _collect_mean_wait_time_for_pending_users(end_dt):
         .values("region_num")
         .annotate(
             pending_count=Count("id"),
-            avg_wait=avg_days,
+            avg_wait=Avg(days),  # float days
         )
     )
 
