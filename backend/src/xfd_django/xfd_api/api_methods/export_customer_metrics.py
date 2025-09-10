@@ -1,32 +1,23 @@
 """Utility to export CustomerMetrics rows as CSV."""
 # Standard Python Libraries
-import csv
 from datetime import timedelta
-import io
 from typing import Iterable, List, Optional, Sequence, Tuple
 
 # Third-Party Libraries
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import DateField, DateTimeField, Field
 from django.utils import timezone
+from xfd_api.utils import csv_utils
 from xfd_mini_dl.models import CustomerMetrics
+
+EXCLUDED_FIELDS: tuple[str, ...] = ("id", "created_at")
 
 
 def export_customer_metrics(
     fieldnames: Optional[Sequence[str]] = None,
     date_field_candidates: Iterable[str] = ("metrics_date", "date", "as_of_date"),
 ) -> Tuple[str, bytes]:
-    """
-    Export all CustomerMetrics rows from yesterday as CSV.
-
-    Args:
-        fieldnames: Optional explicit column order for the CSV. If omitted,
-            all concrete, non-relation fields on CustomerMetrics are used.
-        date_field_candidates: Ordered names to try for the metrics date field.
-
-    Returns:
-        (filename, csv_bytes)
-    """
+    """Export CustomerMetrics rows for yesterday as a CSV."""
     yesterday = (timezone.now() - timedelta(days=1)).date()
 
     date_field_name, date_field = _resolve_date_field(
@@ -42,17 +33,12 @@ def export_customer_metrics(
 
     if fieldnames is None:
         fieldnames = _default_fieldnames(CustomerMetrics)
-    fieldnames = [f for f in fieldnames if f not in ("id", "created_at")]
+    fieldnames = [f for f in fieldnames if f not in EXCLUDED_FIELDS]
 
-    buffer = io.StringIO(newline="")
-    writer = csv.writer(buffer)
-    writer.writerow(list(fieldnames))
-    for row in qs.values_list(*fieldnames):
-        writer.writerow(row)
+    csv_text = csv_utils.queryset_to_csv(qs, fieldnames, sanitize=True, newline="")
 
-    # Filename like: cyhy_dashboard_customer_metrics_2025-09-03.csv
     filename = "cyhy_dashboard_customer_metrics_{}.csv".format(yesterday.isoformat())
-    return filename, buffer.getvalue().encode("utf-8")
+    return filename, csv_text.encode("utf-8")
 
 
 def _resolve_date_field(model, candidates: Iterable[str]) -> Tuple[str, Field]:
