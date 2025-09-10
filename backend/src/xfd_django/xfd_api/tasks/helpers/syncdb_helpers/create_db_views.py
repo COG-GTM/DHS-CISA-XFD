@@ -6,10 +6,10 @@ import logging
 from django.db import connections
 
 # If changes are made to materialized view make sure to update version number
-VW_SERVICE_VERSION = "20250609"
-MAT_VW_COMBINED_VULNS_VERSION = "20250609"
-DOMAIN_MAT_VIEW_VERSION = "20250609"
-DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250611"
+VW_SERVICE_VERSION = "20250823"
+MAT_VW_COMBINED_VULNS_VERSION = "20250823"
+DOMAIN_MAT_VIEW_VERSION = "20250823"
+DOMAIN_SEARCH_MAT_VIEW_VERSION = "20250823"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,22 +38,30 @@ def create_vuln_normal_views(database):
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_ticket_vulns AS
-            -- Query for VS Ticket Vulns
-            SELECT
-                'vuln_scanning_tickets' as scan_source,
-                t.id as vuln_id,
-                t.opened_timestamp::timestamp as created_at,
-                t.updated_timestamp::timestamp as updated_at,
-                coalesce(t.closed_timestamp::timestamp, t.updated_timestamp::timestamp) as last_seen,
-                t.cve_string as cve,
-                t.vuln_name as title,
-                vs.cpe as product,
-                t.ip_string as domain_string,
+            WITH latest_ticket_event AS (
+                SELECT DISTINCT ON (ticket_id) *
+                FROM ticket_event
+                ORDER BY ticket_id, event_timestamp DESC, id DESC
+            ),
+            latest_ip_sub AS (
+                SELECT DISTINCT ON (ip_id) ip_id, sub_domain_id
+                FROM ips_subs
+                ORDER BY ip_id, sub_domain_id
+            )
+            SELECT DISTINCT ON (t.id)
+                'vuln_scanning_tickets' AS scan_source,
+                t.id AS vuln_id,
+                t.opened_timestamp::timestamp AS created_at,
+                t.updated_timestamp::timestamp AS updated_at,
+                COALESCE(t.closed_timestamp::timestamp, t.updated_timestamp::timestamp) AS last_seen,
+                t.cve_string AS cve,
+                t.vuln_name AS title,
+                vs.cpe AS product,
+                t.ip_string AS domain_string,
                 COALESCE(sub_link.sub_domain_id, t.ip_id) AS domain_id,
-                t.port_protocol as protocol,
-                t.vuln_port::text as port,
+                t.port_protocol AS protocol,
+                t.vuln_port::text AS port,
                 t.cvss_base_score,
-                --COALESCE(t.cvss_severity::text, 'N/A') as severity,
                 CASE
                     WHEN t.cvss_severity = 0 THEN 'N/A'
                     WHEN t.cvss_severity = 1 THEN 'Low'
@@ -63,51 +71,35 @@ def create_vuln_normal_views(database):
                     ELSE 'N/A'
                 END AS severity,
                 t.organization_id,
-                CASE
-                    WHEN t.is_open THEN 'open'
-                    ELSE 'closed'
-                END AS state,
-                t.vuln_source as data_source,
-                COALESCE(vs.description, te.reason, 'N/A') as description,
-                t.false_positive::bool as false_positive,
-                t.is_kev::bool as is_kev,
-                t.is_kev_ransomware::bool as is_kev_ransomware,
-                t.service_name as service_string,
-                t.is_risky::bool as is_risky_service,
-                --null as os, --t.os as os --Not seeing this in the ticket
-                t.operating_system as os,
-                null as cwe,
-                vs.cpe as cpe,
-                null as references,
-                'unconfirmed' as substate,
-                null as needs_population,
-                null as actions,
-                null as structured_data,
-                null as kev_results,
-                --Additional fields requested:
+                CASE WHEN t.is_open THEN 'open' ELSE 'closed' END AS state,
+                t.vuln_source AS data_source,
+                COALESCE(vs.description, te.reason, 'N/A') AS description,
+                t.false_positive::bool AS false_positive,
+                t.is_kev::bool AS is_kev,
+                t.is_kev_ransomware::bool AS is_kev_ransomware,
+                t.service_name AS service_string,
+                t.is_risky::bool AS is_risky_service,
+                t.operating_system AS os,
+                NULL AS cwe,
+                vs.cpe AS cpe,
+                NULL AS references,
+                'unconfirmed' AS substate,
+                NULL AS needs_population,
+                NULL AS actions,
+                NULL AS structured_data,
+                NULL AS kev_results,
+                -- Additional fields
                 t.ip_string,
                 vs.cvss_vector,
-                t.cvss_severity as severity_int,
+                t.cvss_severity AS severity_int,
                 vs.plugin_id,
                 vs.solution,
                 vs.synopsis,
-                vs.plugin_output as results
+                vs.plugin_output AS results
             FROM ticket t
-            LEFT JOIN LATERAL (
-                SELECT te.*
-                FROM ticket_event te
-                WHERE te.ticket_id = t.id
-                ORDER BY te.event_timestamp DESC, te.id DESC
-                LIMIT 1
-            ) te ON TRUE
+            LEFT JOIN latest_ticket_event te ON te.ticket_id = t.id
             LEFT JOIN vuln_scan vs ON vs.id = te.vuln_scan_id
-            LEFT JOIN LATERAL (
-                SELECT sub_domain_id
-                FROM ips_subs ipsubs
-                WHERE ipsubs.ip_id = t.ip_id
-                ORDER BY sub_domain_id
-                LIMIT 1
-            ) sub_link ON TRUE
+            LEFT JOIN latest_ip_sub sub_link ON sub_link.ip_id = t.ip_id;
             """
         )
 
@@ -115,7 +107,7 @@ def create_vuln_normal_views(database):
             """
             CREATE OR REPLACE VIEW vw_shodan_vulns AS
             -- Query for ShodanVulns
-            SELECT
+            SELECT DISTINCT ON (sv.shodan_vuln_uid)
                 'shodan_vulnerability' as scan_source,
                 sv.shodan_vuln_uid::text as vuln_id,
                 sv."created_at"::timestamp as created_at,
@@ -170,7 +162,7 @@ def create_vuln_normal_views(database):
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_credential_breaches AS
-            SELECT
+            SELECT DISTINCT ON (vuln_id)
                 scan_source,
                 vuln_id,
                 created_at,
@@ -259,9 +251,9 @@ def create_vuln_materialized_views(database):
             """
             CREATE MATERIALIZED VIEW IF NOT EXISTS mat_vw_combined_vulns AS
             SELECT * from vw_ticket_vulns
-            union
+            union all
             SELECT * from vw_shodan_vulns
-            union
+            union all
             SELECT * from vw_credential_breaches
         """
         )
@@ -553,6 +545,11 @@ def create_service_mat_view(database):
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_shodan_service AS
+            WITH latest_ip_sub AS (
+                SELECT DISTINCT ON (ip_id) ip_id, sub_domain_id
+                FROM ips_subs
+                ORDER BY ip_id, sub_domain_id
+            )
             SELECT
                 s.shodan_asset_uid::text AS id,
                 s.created_at AS "created_at",
@@ -586,13 +583,7 @@ def create_service_mat_view(database):
                 COALESCE(sub_link.sub_domain_id,s.ip_uid) AS domain_id,
                 NULL::uuid AS discovered_by_id
             FROM shodan_assets s
-            LEFT JOIN LATERAL (
-                SELECT sub_domain_id
-                FROM ips_subs ipsubs
-                WHERE ipsubs.ip_id = s.ip_uid
-                ORDER BY sub_domain_id -- or ORDER BY created_at if that column exists
-                LIMIT 1
-            ) AS sub_link ON TRUE
+            LEFT JOIN latest_ip_sub sub_link ON sub_link.ip_id = s.ip_uid
             WHERE s.port IS NOT NULL AND
             (s.product IS NOT NULL OR s.server IS NOT NULL);
         """
@@ -603,6 +594,11 @@ def create_service_mat_view(database):
         cursor.execute(
             """
             CREATE OR REPLACE VIEW vw_portscan_service AS
+            WITH latest_ip_sub AS (
+                SELECT DISTINCT ON (ip_id) ip_id, sub_domain_id
+                FROM ips_subs
+                ORDER BY ip_id, sub_domain_id
+            )
             SELECT
                 ps.id AS id,
                 ps.time_scanned AS created_at,
@@ -636,13 +632,7 @@ def create_service_mat_view(database):
                 COALESCE(sub_link.sub_domain_id, ps.ip_id) AS domain_id,
                 NULL::uuid AS discovered_by_id
             FROM port_scan ps
-            LEFT JOIN LATERAL (
-                SELECT sub_domain_id
-                FROM ips_subs ipsubs
-                WHERE ipsubs.ip_id = ps.ip_id
-                ORDER BY sub_domain_id
-                LIMIT 1
-            ) sub_link ON TRUE
+            LEFT JOIN latest_ip_sub sub_link ON sub_link.ip_id = ps.ip_id
             WHERE ps.latest = TRUE
             AND ps.port IS NOT NULL
             AND ps.service_name IS NOT NULL;

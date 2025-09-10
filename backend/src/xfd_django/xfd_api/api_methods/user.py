@@ -581,7 +581,7 @@ def approve_user_registration(user_id, current_user):
     try:
         send_registration_approved_email(
             user.email,
-            subject="CyHy Dashboard Registration Approved",
+            subject="CISA CyHy Dashboard Account Approved",
             first_name=user.first_name,
             last_name=user.last_name,
             template="crossfeed_approval_notification.html",

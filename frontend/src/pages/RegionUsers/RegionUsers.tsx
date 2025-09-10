@@ -352,8 +352,7 @@ export const RegionUsers: React.FC = () => {
       return;
     }
     try {
-      // const rows = await apiGet<OrganizationType[]>(getOrgsURL + row.region_id);
-      const rows = await apiGet<OrganizationType[]>(getOrgsURL + 3);
+      const rows = await apiGet<OrganizationType[]>(getOrgsURL + row.region_id);
       setOrganizations(rows);
       if (row.roles.length > 0) {
         setSelectedOrg({

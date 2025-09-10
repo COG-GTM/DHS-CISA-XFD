@@ -25,10 +25,7 @@ const Settings: React.FC = () => {
           <Button
             type="button"
             onClick={() => {
-              window.open(
-                `${import.meta.env.VITE_API_URL}/matomo/index.php`,
-                '_blank'
-              );
+              window.location.href = `/matomo`;
             }}
           >
             Matomo

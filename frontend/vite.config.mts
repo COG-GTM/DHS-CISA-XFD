@@ -3,8 +3,9 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { type PluginOption } from 'vite';
+import { loadEnv, type PluginOption } from 'vite';
 
+const env = loadEnv('', process.cwd(), '');
 export default defineConfig(({ mode }) => ({
   define: {
     global: 'window'
@@ -34,6 +35,20 @@ export default defineConfig(({ mode }) => ({
     },
     hmr: {
       clientPort: 80
+    },
+    proxy: {
+      // Keep tracking public so hits aren’t blocked
+      '/matomo/matomo.php': {
+        target: 'http://backend:3000',
+        changeOrigin: false,
+        xfwd: true
+      },
+      // Everything else under /matomo: backend enforces Depends(get_current_active_user)
+      '/matomo': {
+        target: 'http://backend:3000',
+        changeOrigin: false,
+        xfwd: true
+      }
     }
   },
   test: {

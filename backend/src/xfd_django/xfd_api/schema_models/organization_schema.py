@@ -88,7 +88,7 @@ class ScanTaskSchema(BaseModel):
 
     id: UUID
     created_at: datetime
-    scan: SimpleScanSchema
+    scan: Optional[SimpleScanSchema] = None
 
 
 class GetOrganizationSchema(BaseModel):

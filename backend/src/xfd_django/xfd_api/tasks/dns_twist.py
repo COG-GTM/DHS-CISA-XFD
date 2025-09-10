@@ -18,7 +18,7 @@ from xfd_mini_dl.models import DataSource, DomainPermutations, Organization, Sub
 
 date = datetime.datetime.now().strftime("%Y-%m-%d")
 LOGGER = logging.getLogger(__name__)
-BACKEND_DOMAIN = os.getenv("BACKEND_DOMAIN", "localhost")
+BACKEND_DOMAIN = os.getenv("BACKEND_DOMAIN", "http://backend:3000/blocklist/check")
 DMZ_API_KEY = os.getenv("DMZ_API_KEY", "local")
 
 
