@@ -32,7 +32,7 @@ DEBUG = os.getenv("MATOMO_PROXY_DEBUG", "").lower() in ("1", "true", "yes")
 
 
 def _join_public(public_prefix: str, suffix: str) -> str:
-    return "{}/{}.format(public_prefix.rstrip('/'), suffix.lstrip('/'))"
+    return "{}/{}".format(public_prefix.rstrip("/"), suffix.lstrip("/"))
 
 
 def _pick_public_host_and_proto(request: Request) -> tuple[str, str]:
