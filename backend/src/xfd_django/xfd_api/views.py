@@ -1,6 +1,6 @@
 """This module defines the API endpoints for the FastAPI application."""
 # Standard Python Libraries
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import hashlib
 import json
 import logging
@@ -25,6 +25,9 @@ from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
 import xfd_api.api_methods.dmz_sync as cybersix_module
 from xfd_api.auth import is_global_write_admin
+
+# xfd_api helpers
+from xfd_api.helpers.checksum_response import build_checksum_response
 from xfd_mini_dl.models import User
 
 # from .schemas import Cpe
@@ -39,6 +42,7 @@ from .api_methods.cve import get_all_cves, get_cves_by_id, get_cves_by_name
 from .api_methods.dmz_sync import CybersixSyncParams
 from .api_methods.dns_twist_sync import dns_twist_sync_post
 from .api_methods.domain import export_domains, get_domain_by_id, search_domains
+from .api_methods.export import export
 from .api_methods.metrics import (
     default_metrics_window,
     get_scan_daily_status_counts,
@@ -89,6 +93,11 @@ from .api_methods.vulnerability import (
     search_vulnerabilities,
     v2_get_vulnerability_by_id,
 )
+from .api_methods.was_sync import (
+    get_all_was_scan_summaries,
+    get_was_findings_queryset,
+    paginate_queryset,
+)
 from .api_methods.xpanse_sync import xpanse_sync_post
 from .auth import (
     get_current_active_user,
@@ -117,6 +126,7 @@ from .schema_models.dmz_sync import (
 )
 from .schema_models.dns_twist_sync import DnsTwistSyncBody, DnsTwistSyncResponse
 from .schema_models.domain import DomainSearch, DomainSearchResponse, GetDomainResponse
+from .schema_models.export import ExportPayload, ExportResponse
 from .schema_models.metrics import (
     GetScanDailyStatusCountsResponse,
     ListScansOrgCountByStatusResponse,
@@ -161,6 +171,12 @@ from .schema_models.vulnerability import (
     VulnByIdRequest,
     VulnerabilitySearch,
     VulnerabilitySearchResponse,
+)
+from .schema_models.was_sync import (
+    GetAllWasFindingsResponse,
+    GetWasScanSummariesResponse,
+    WasFinding,
+    WasScanSummarySchema,
 )
 from .tools.serializers import serialize_organization, serialize_user
 from .tools.user_logger_decorator import (
@@ -399,6 +415,24 @@ async def get_call_all_cves(
         content=response_obj,
         headers={"X-Salted-Checksum": checksum},
     )
+
+
+# ========================================
+#   New Export Endpoint
+# ========================================
+
+
+@api_router.post(
+    "/export",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=ExportResponse,
+    tags=["Export"],
+)
+async def export_post(
+    request_body: ExportPayload, current_user: User = Depends(get_current_active_user)
+):
+    """Call export."""
+    return export(request_body, current_user)
 
 
 # ========================================
@@ -2033,3 +2067,114 @@ def generate_presigned_object_store_url(
         ObjectStorePresignedUrlResponse: _description_
     """
     return get_object_store_presigned_url(current_user, body)
+
+
+# ==========================
+# WAS Scan Endpoints  #
+# ==========================
+
+
+# POST
+@api_router.post(
+    "/was_scan_summaries",
+    response_model=GetWasScanSummariesResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["WAS Scan Summaries"],
+)
+async def get_was_scan_summaries_endpoint(
+    response: Response,
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(100, ge=1, description="How many items per page."),
+):
+    """
+    Return paginated WAS scan summaries plus an X‑Salted‑Checksum header for integrity.
+
+    - `page` & `per_page` control pagination.
+    - Only authenticated users may call this.
+    """
+    try:
+        total_pages, records = await get_all_was_scan_summaries(
+            page=page,
+            per_page=per_page,
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {error}",
+        )
+
+    # Serialize ORM objects to plain dicts
+    payload = [
+        WasScanSummarySchema.model_validate(record, from_attributes=True).model_dump()
+        for record in records
+    ]
+
+    response_body = {
+        "status": "ok",
+        "payload": jsonable_encoder(payload),
+        "total_pages": total_pages,
+        "current_page": page,
+    }
+
+    return build_checksum_response(response_body, response, status.HTTP_200_OK)
+
+
+# WAS Findings Sync
+@api_router.post(
+    "/dmz_sync/was_findings",
+    response_model=GetAllWasFindingsResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["WAS findings to sync to LZ db"],
+)
+async def get_call_all_was_findings(  # noqa: D401
+    response: Response,
+    current_user: User = Depends(get_current_active_user),
+    page: int = Query(1, ge=1, description="Which page to fetch (1-indexed)."),
+    per_page: int = Query(
+        200, ge=1, le=1000, description="How many items per page (max 1000)."
+    ),
+    since_date: date
+    | None = Query(
+        default=None,
+        description="Optional date filter (records last_detected >= this).",
+    ),
+):
+    """
+    Return paginated WAS findings plus an X-Salted-Checksum header for integrity.
+
+    Notes:
+    - Authorization is enforced via `is_global_write_admin`.
+    - Pagination is controlled by `page` and `per_page`.
+    - The response body is JSON-serializable and signed with a salted checksum header.
+    """
+    # Enforce write-admin access using the shared helper (no functional change)
+    if not is_global_write_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized access.",
+        )
+
+    try:
+        queryset = get_was_findings_queryset(since_date)
+        total_pages, records = paginate_queryset(queryset, page, per_page)
+    except Exception as error:
+        LOGGER.exception("Failed to build WAS findings page: %s", error)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error: {}".format(error),
+        ) from error
+
+    payload_items = [
+        WasFinding.model_validate(record, from_attributes=True) for record in records
+    ]
+    response_body = {
+        "status": "ok",
+        "payload": jsonable_encoder(payload_items),
+        "total_pages": total_pages,
+        "current_page": page,
+    }
+
+    # Keep the same 201 return and checksum behavior
+    return build_checksum_response(response_body, response, status.HTTP_201_CREATED)

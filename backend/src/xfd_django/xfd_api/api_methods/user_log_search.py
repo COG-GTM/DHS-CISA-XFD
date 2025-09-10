@@ -68,6 +68,8 @@ def _find_first_value(sources, key, default=""):
 ACTED_ON_USER_PATHS = [
     ("user",),
     ("removal_result", "role_deleted", "user"),
+    ("removal_result", "user_deleted"),
+    ("deny_result", "denied_user"),
     ("user_to_approve",),
     ("approval_results", "role_deleted", "user"),
 ]
