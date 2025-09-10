@@ -541,7 +541,10 @@ def test_export_csv_default_fieldnames_filters_yesterday_only(clock):
     )
 
     header, rows = parse_csv(csv_bytes)
-    assert header == _default_fieldnames(CustomerMetrics)
+    expected_header = [
+        f for f in _default_fieldnames(CustomerMetrics) if f not in ("id", "created_at")
+    ]
+    assert header == expected_header
     assert len(rows) == len(metrics_mod.REGIONS)
 
 
