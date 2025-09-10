@@ -179,7 +179,7 @@ class ESClient:
 
     def scroll_domains(self, scroll_id: str, keepalive: str = "2m"):
         """Fetch the next batch of results for a scroll context."""
-        return self.client.scroll(scroll_id=scroll_id, scroll=keepalive)
+        return self.client.scroll(scroll_id=scroll_id, params={"scroll": keepalive})
 
     def clear_scroll_domains(self, scroll_id: str):
         """Clear the scroll context to free resources."""
