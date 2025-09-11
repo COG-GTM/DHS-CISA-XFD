@@ -26,6 +26,12 @@ checkUserExpiration:
   events:
     - schedule: cron(0 0 * * ? *)  # Runs every day at midnight
 
+queryDailyCustomerMetrics:
+  timeout: 300
+  handler: src/xfd_django/xfd_api/tasks/metrics.collect_and_upsert_customer_metrics
+  events:
+    - schedule: cron(0 0 * * ? *)  # Runs every day at midnight
+
 scanExecution:
   timeout: 900  # 15 minutes
   handler: src/xfd_django/xfd_api/tasks/scanExecution.handler

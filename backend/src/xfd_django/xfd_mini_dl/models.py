@@ -6,7 +6,9 @@ import uuid
 
 # Third-Party Libraries
 from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Q
 from netfields import InetAddressField
 
 manage_db = True
@@ -116,6 +118,137 @@ class Cpe(AutoLengthCheckModel):
         db_table = "cpe"
         managed = manage_db  # This ensures Django does not manage the table
         unique_together = (("name", "version", "vendor"),)  # Unique constraint
+
+
+class CustomerMetrics(AutoLengthCheckModel):
+    """Daily org and user metrics aggregated by region."""
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="PK: Unique identifier for a CustomerMetrics row.",
+    )
+
+    date = models.DateField(
+        db_column="date",
+        help_text="Metrics observation date (UTC).",
+    )
+
+    region = models.PositiveSmallIntegerField(
+        db_column="region",
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        null=True,
+        help_text="Region number where 1–10 are valid.",
+    )
+
+    active_orgs_without_users = models.PositiveIntegerField(
+        db_column="active_orgs_without_users",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Active organizations that have zero associated users.",
+    )
+
+    external_active_orgs = models.PositiveIntegerField(
+        db_column="external_active_orgs",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Active organizations that are external (non-CISA).",
+    )
+
+    external_retired_orgs = models.PositiveIntegerField(
+        db_column="external_retired_orgs",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Retired organizations that are external (non-CISA).",
+    )
+
+    external_users = models.PositiveIntegerField(
+        db_column="external_users",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users classified as external (non-CISA).",
+    )
+
+    cisa_users = models.PositiveIntegerField(
+        db_column="cisa_users",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users classified as CISA.",
+    )
+
+    users_without_org = models.PositiveIntegerField(
+        db_column="users_without_org",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users who are not linked to any organization.",
+    )
+
+    users_created = models.PositiveIntegerField(
+        db_column="users_created",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users created on this date.",
+    )
+
+    users_approved = models.PositiveIntegerField(
+        db_column="users_approved",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users approved on this date.",
+    )
+
+    users_invite_pending = models.PositiveIntegerField(
+        db_column="users_invite_pending",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users with invite pending at end of this date.",
+    )
+
+    active_users = models.PositiveIntegerField(
+        db_column="active_users",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Users that have logged in within past 30 days.",
+    )
+
+    mean_approval_time = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        db_column="mean_approval_time",
+        null=True,
+        blank=True,
+        help_text="Mean wait time in days of users waiting for approval.",
+    )
+
+    created_at = models.DateTimeField(
+        db_column="created_at",
+        auto_now_add=True,
+        help_text="Row creation timestamp.",
+    )
+
+    class Meta:
+        """The Meta class for CustomerMetrics."""
+
+        app_label = app_label_name
+        managed = manage_db
+        db_table = "customer_metrics"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["date", "region"],
+                condition=Q(region__isnull=False),
+                name="uniq_metrics_date_region_when_region_set",
+            ),
+            models.UniqueConstraint(
+                fields=["date"],
+                condition=Q(region__isnull=True),
+                name="uniq_metrics_date_when_region_null",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["date"], name="idx_customer_metrics_date"),
+            models.Index(fields=["region"], name="idx_customer_metrics_region"),
+        ]
 
 
 class Cve(AutoLengthCheckModel):
