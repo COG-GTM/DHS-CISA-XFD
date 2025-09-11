@@ -377,6 +377,7 @@ export const Users: React.FC = () => {
       disableExport: true,
       minWidth: 50,
       flex: 0.4,
+      sortable: false,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `Delete user ${cellValues.row.full_name}`;
         const descriptionId = `delete-description-${cellValues.row.id}`;
