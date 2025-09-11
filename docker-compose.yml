@@ -24,13 +24,18 @@ services:
     volumes:
       - ./frontend/src:/app/src
     ports:
-      - '80:3000'
+      - "80:3000"
     environment:
       - CHOKIDAR_USEPOLLING=true
     env_file:
       - ./.env
+    depends_on:
+      - backend
+    networks:
+      - backend
     tty: true
     restart: always
+
 
   backend:
     container_name: backend
@@ -141,7 +146,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=password
     logging:
-      driver: none
+      driver: json-file
     ports:
       - 3306:3306
     restart: always
@@ -164,7 +169,7 @@ services:
       - MATOMO_GENERAL_PROXY_URI_HEADER=1
       - MATOMO_GENERAL_ASSUME_SECURE_PROTOCOL=1
     logging:
-      driver: none
+      driver: json-file
     ports:
       - "8080:80"
     restart: always

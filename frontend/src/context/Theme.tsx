@@ -45,6 +45,7 @@ declare module '@mui/material/styles' {
   interface TypographyVariants {
     boldBody: React.CSSProperties;
     largeBody: React.CSSProperties;
+    subMenuText: React.CSSProperties;
     logText: React.CSSProperties;
     globalNav: React.CSSProperties;
     link: React.CSSProperties;
@@ -57,6 +58,7 @@ declare module '@mui/material/styles' {
   interface TypographyVariantsOptions {
     boldBody: React.CSSProperties;
     largeBody: React.CSSProperties;
+    subMenuText: React.CSSProperties;
     logText: React.CSSProperties;
     globalNav: React.CSSProperties;
     link: React.CSSProperties;
@@ -91,7 +93,7 @@ declare module '@mui/material/styles' {
 declare module '@mui/material/Typography' {
   interface TypographyPropsVariantOverrides {
     boldBody: true;
-    largeBody: true;
+    subMenuText: true;
     logText: true;
     globalNav: true;
     largeBody: true;
@@ -335,6 +337,11 @@ const theme = createTheme({
       textTransform: 'none',
       letterSpacing: '0%',
       lineHeight: '22px'
+    },
+    subMenuText: {
+      fontSize: '16px',
+      fontWeight: 600,
+      textTransform: 'none'
     },
     button: {
       fontSize: '14px',
