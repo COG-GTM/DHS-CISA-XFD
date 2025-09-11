@@ -1,7 +1,7 @@
 import { Organization } from './organization';
 import { Scan } from './scan';
 import { Cpe } from './cpe';
-
+import { Cve } from './cve';
 export interface Product {
   // Common name
   name: string;
@@ -118,49 +118,7 @@ export interface Vulnerability {
     tags: string[];
   }[];
   service: Service;
-  adp_automatable: boolean | null;
-  adp_created_at: string | null;
-  adp_cve_id: string | null;
-  adp_date_updated: string | null;
-  adp_exploitation: string | null;
-  adp_id: number | null;
-  adp_provider: string | null;
-  adp_ssvc_timestamp: string | null;
-  adp_ssvc_version: string | null;
-  adp_technical_impact: string | null;
-  adp_title: string | null;
-  adp_updated_at: string | null;
-  cve_row_id: number | null;
-  cve_name: string | null;
-  cve_modified_at: Date;
-  cve_published_at: Date;
-  cve_status: string | null;
-  cve_cvss_v2_source: string | null;
-  cve_cvss_v2_type: string | null;
-  cve_cvss_v2_version: string | null;
-  cve_cvss_v2_vector_string: string | null;
-  cve_cvss_v2_base_score: string | null;
-  cve_cvss_v2_base_severity: string | null;
-  cve_cvss_v2_exploitability_score: string | null;
-  cve_cvss_v2_impact_score: string | null;
-  cve_cvss_v3_source: string | null;
-  cve_cvss_v3_type: string | null;
-  cve_cvss_v3_version: string | null;
-  cve_cvss_v3_vector_string: string | null;
-  cve_cvss_v3_base_score: string | null;
-  cve_cvss_v3_base_severity: string | null;
-  cve_cvss_v3_exploitability_score: string | null;
-  cve_cvss_v3_impact_score: string | null;
-  cve_cvss_v4_source: string | null;
-  cve_cvss_v4_type: string | null;
-  cve_cvss_v4_version: string | null;
-  cve_cvss_v4_vector_string: string | null;
-  cve_cvss_v4_base_score: string | null;
-  cve_cvss_v4_base_severity: string | null;
-  cve_cvss_v4_exploitability_score: string | null;
-  cve_cvss_v4_impact_score: string | null;
-  cve_weaknesses: string[] | null;
-  cve_cpe_list: Cpe[] | null;
+  cve_full: Cve | null;
   cpes: Cpe[];
 }
 
