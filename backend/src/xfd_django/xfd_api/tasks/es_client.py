@@ -173,9 +173,17 @@ class ESClient:
             LOGGER.error("Error deleting all indices: %s", e)
             raise e
 
-    def search_domains(self, body):
+    def search_domains(self, body, **kwargs):
         """Search domains index with specified query body."""
-        return self.client.search(index=DOMAINS_INDEX, body=body)
+        return self.client.search(index=DOMAINS_INDEX, body=body, **kwargs)
+
+    def scroll_domains(self, scroll_id: str, keepalive: str = "2m"):
+        """Fetch the next batch of results for a scroll context."""
+        return self.client.scroll(scroll_id=scroll_id, params={"scroll": keepalive})
+
+    def clear_scroll_domains(self, scroll_id: str):
+        """Clear the scroll context to free resources."""
+        return self.client.clear_scroll(body={"scroll_id": [scroll_id]})
 
     def search_organizations(self, body):
         """Search organizations index with specified query body."""
