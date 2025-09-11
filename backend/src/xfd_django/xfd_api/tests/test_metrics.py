@@ -33,6 +33,8 @@ from xfd_mini_dl.models import (
 # Global test config
 # -------------------------------------------------------------------
 
+client = TestClient(app)
+
 pytestmark = pytest.mark.django_db(
     transaction=True, databases=["default", "mini_data_lake"]
 )
@@ -50,13 +52,6 @@ def freeze_time(monkeypatch):
     """Freeze both Django and metrics' timezone to a fixed UTC instant."""
     monkeypatch.setattr(metrics_mod.dj_timezone, "now", lambda: FIXED_NOW)
     monkeypatch.setattr("django.utils.timezone.now", lambda: FIXED_NOW)
-
-
-@pytest.fixture(name="client")
-def client() -> TestClient:
-    """Initialize FastAPI client with proper cleanup."""
-    with TestClient(app) as c:
-        yield c
 
 
 @pytest.fixture
@@ -199,7 +194,7 @@ def _make_result(scan: Scan, org: Organization, status: int, dt: datetime) -> No
 # -------------------------------------------------------------------
 # Metrics endpoints
 # -------------------------------------------------------------------
-def test_metrics_customers_csv_endpoint(client: TestClient, user: User):
+def test_metrics_customers_csv_endpoint(user: User):
     """Test /metrics/customers endpoint returns CSV with auth."""
     metrics_mod.collect_and_upsert_customer_metrics({}, {})
 
@@ -212,9 +207,7 @@ def test_metrics_customers_csv_endpoint(client: TestClient, user: User):
     assert "Content-Disposition" in resp.headers
 
 
-def test_list_scans_org_count_by_status_counts_and_window_filter(
-    user: User, client: TestClient
-):
+def test_list_scans_org_count_by_status_counts_and_window_filter(user: User):
     """Test /metrics/scans endpoint with org_count_by_status and window_days."""
     non_global_name, global_name = _pick_scan_names_from_schema()
     if non_global_name is None:
@@ -268,9 +261,7 @@ def test_list_scans_org_count_by_status_counts_and_window_filter(
     assert counts.get(404) == 1
 
 
-def test_get_scan_daily_status_counts_groups_by_date_and_status(
-    user: User, client: TestClient
-):
+def test_get_scan_daily_status_counts_groups_by_date_and_status(user: User):
     """Test /metrics/scans/{scan_id} endpoint with daily_status_counts."""
     non_global_name, _ = _pick_scan_names_from_schema()
     if non_global_name is None:
