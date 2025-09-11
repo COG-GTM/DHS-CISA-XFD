@@ -98,9 +98,9 @@ export const Users: React.FC = () => {
           : 'None';
         row.orgs = row.roles
           ? row.roles
-              .filter((role) => role.approved)
-              .map((role) => role.organization.name)
-              .join(', ')
+            .filter((role) => role.approved)
+            .map((role) => role.organization.name)
+            .join(', ')
           : 'None';
         row.full_name = `${row.first_name} ${row.last_name}`;
       });
@@ -331,6 +331,7 @@ export const Users: React.FC = () => {
       minWidth: 50,
       flex: 0.5,
       disableExport: true,
+      sortable: false,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `View or Edit User ${cellValues.row.full_name}`;
         const descriptionId = `description-${cellValues.row.id}`;
@@ -554,8 +555,8 @@ export const Users: React.FC = () => {
           <ImportExport<
             | User
             | {
-                roles: string;
-              }
+              roles: string;
+            }
           >
             name="users"
             fieldsToImport={[
