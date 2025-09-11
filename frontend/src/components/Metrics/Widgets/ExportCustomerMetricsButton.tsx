@@ -1,6 +1,5 @@
 import React from 'react';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import { FileDownload } from '@mui/icons-material';
 import Tooltip from '@mui/material/Tooltip';
 import { useAuthContext } from 'context';
@@ -90,11 +89,7 @@ export const ExportCustomerMetricsButton: React.FC = () => {
             }
           }}
         >
-          {loading ? (
-            <CircularProgress size={20} sx={{ color: '#fff' }} />
-          ) : (
-            'Download Customer Metrics'
-          )}
+          Download Customer Metrics
         </Button>
       </span>
     </Tooltip>
