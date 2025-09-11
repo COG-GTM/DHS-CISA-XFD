@@ -33,21 +33,29 @@ MATERIALIZED_VIEWS = [
         "name": "mat_vw_domain",
         "create_fn": create_domain_materialized_view,
         "version": DOMAIN_MAT_VIEW_VERSION,
+        "depends_on": [],
     },
     {
         "name": "mat_vw_service",
         "create_fn": create_service_mat_view,
         "version": VW_SERVICE_VERSION,
+        "depends_on": [],
     },
     {
         "name": "mat_vw_combined_vulns",
         "create_fn": create_vuln_materialized_views,
         "version": MAT_VW_COMBINED_VULNS_VERSION,
+        "depends_on": [],
     },
     {
         "name": "mat_vw_domain_search",
         "create_fn": create_domain_search_mat_view,
         "version": DOMAIN_SEARCH_MAT_VIEW_VERSION,
+        "depends_on": [
+            "mat_vw_domain",
+            "mat_vw_service",
+            "mat_vw_combined_vulns",
+        ],
     },
 ]
 
@@ -137,6 +145,42 @@ def handler(event):
 
     try:
         with connections["mini_data_lake"].cursor() as cursor:
+            deps = {v["name"]: set(v.get("depends_on", [])) for v in MATERIALIZED_VIEWS}
+            rev_deps = {n: set() for n in deps}
+            for n, dset in deps.items():
+                for d in dset:
+                    rev_deps[d].add(n)
+
+            def mv_exists(name):
+                return view_exists(cursor, name, materialized=True)
+
+            def mv_version(name):
+                return get_matview_version(cursor, name)
+
+            # Which MVs are going to be rebuilt (missing or version bump)?
+            to_rebuild = {
+                v["name"]
+                for v in MATERIALIZED_VIEWS
+                if (not mv_exists(v["name"])) or (mv_version(v["name"]) != v["version"])
+            }
+
+            # Any dependent of a to_rebuild MV must be dropped first.
+            to_drop = set()
+            stack = list(to_rebuild)
+            while stack:
+                cur = stack.pop()
+                for child in rev_deps.get(cur, ()):
+                    if child not in to_drop:
+                        to_drop.add(child)
+                        stack.append(child)
+
+            # Drop dependents first (reverse of your list; your list is already base->dependent)
+            for v in reversed(MATERIALIZED_VIEWS):
+                name = v["name"]
+                if name in to_drop and mv_exists(name):
+                    LOGGER.info("Pre-dropping dependent MV %s ...", name)
+                    cursor.execute(f"DROP MATERIALIZED VIEW IF EXISTS {name};")
+
             for view in MATERIALIZED_VIEWS:
                 try:
                     name = view["name"]

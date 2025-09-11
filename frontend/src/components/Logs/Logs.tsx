@@ -197,6 +197,7 @@ export const Logs: FC<LogsProps> = () => {
         const u =
           cellValues.row.payload?.user ||
           cellValues.row.payload?.removal_result?.role_deleted?.user ||
+          cellValues.row.payload?.removal_result?.user_deleted ||
           cellValues.row.payload?.user_to_approve ||
           cellValues.row.payload?.approval_results?.role_deleted?.user;
         return (
@@ -218,6 +219,7 @@ export const Logs: FC<LogsProps> = () => {
         const u =
           cellValues.row.payload?.user ||
           cellValues.row.payload?.removal_result?.role_deleted?.user ||
+          cellValues.row.payload?.removal_result?.user_deleted ||
           cellValues.row.payload?.user_to_approve ||
           cellValues.row.payload?.approval_results?.role_deleted?.user;
         return (
@@ -239,10 +241,26 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`Organization for Log ${cellValues.row.id}: ${cellValues.row.payload?.organization?.name || cellValues.row.payload?.from_organization?.name || 'N/A'}`}
+            aria-label={`Organization for Log ${cellValues.row.id}: ${
+              cellValues.row.payload?.organization?.name ||
+              cellValues.row.payload?.from_organization?.name ||
+              cellValues.row.payload?.removal_result?.user_deleted
+                ?.organization ||
+              cellValues.row.payload?.removal_result?.role_deleted?.user
+                ?.organization ||
+              cellValues.row.payload?.user?.organization ||
+              cellValues.row.payload?.user_to_approve?.organization ||
+              'N/A'
+            }`}
           >
             {cellValues.row.payload?.organization?.name ||
               cellValues.row.payload?.from_organization?.name ||
+              cellValues.row.payload?.removal_result?.user_deleted
+                ?.organization ||
+              cellValues.row.payload?.removal_result?.role_deleted?.user
+                ?.organization ||
+              cellValues.row.payload?.user?.organization ||
+              cellValues.row.payload?.user_to_approve?.organization ||
               'N/A'}
           </Box>
         );
@@ -323,10 +341,25 @@ export const Logs: FC<LogsProps> = () => {
         return (
           <Box
             component={'span'}
-            aria-label={`User Type for Log ${cellValues.row.id}: ${cellValues.row.payload?.user?.user_type || cellValues.row.payload?.user_to_approve?.user_type || 'N/A'}`}
+            aria-label={`User Type for Log ${cellValues.row.id}:
+            ${
+              cellValues.row.payload?.user?.user_type ||
+              cellValues.row.payload?.user_to_approve?.user_type ||
+              cellValues.row.payload?.removal_result?.user_deleted?.user_type ||
+              cellValues.row.payload?.removal_result?.role_deleted?.user
+                ?.user_type ||
+              cellValues.row.payload?.approval_results?.role_deleted?.user
+                ?.user_type ||
+              'N/A'
+            }`}
           >
             {cellValues.row.payload?.user?.user_type ||
               cellValues.row.payload?.user_to_approve?.user_type ||
+              cellValues.row.payload?.removal_result?.user_deleted?.user_type ||
+              cellValues.row.payload?.removal_result?.role_deleted?.user
+                ?.user_type ||
+              cellValues.row.payload?.approval_results?.role_deleted?.user
+                ?.user_type ||
               'N/A'}
           </Box>
         );

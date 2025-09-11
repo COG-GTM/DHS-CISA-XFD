@@ -110,6 +110,10 @@ async def get_token_from_header(request: Request) -> Optional[str]:
         if auth_header.startswith("Bearer "):
             return auth_header[7:]  # Remove 'Bearer ' prefix
         return auth_header  # Return the token directly if no 'Bearer ' prefix
+    for name in ("token", "crossfeed-token"):
+        request_token = request.cookies.get(name)
+        if request_token and request_token not in ("null", "undefined", "None", ""):
+            return request_token
     return None
 
 
