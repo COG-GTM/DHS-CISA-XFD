@@ -6638,3 +6638,151 @@ class Vulnerability(models.Model):
         app_label = app_label_name
         managed = False
         db_table = "mat_vw_combined_vulns"
+
+
+class VulnerabilityV2(models.Model):
+    """Define VwCombinedVulns model."""
+
+    id = models.TextField(
+        primary_key=True,
+        unique=True,
+        help_text="Id of the vulnerability",
+        db_column="vuln_id",
+    )
+    scan_source = models.TextField(
+        blank=True, null=True, help_text="Scan that identified the data."
+    )
+    created_at = models.DateTimeField(
+        help_text="Date and time the vulnerability was first seen",
+    )
+    updated_at = models.DateTimeField(
+        help_text="Date and time the vulnerability was last updated",
+    )
+    last_seen = models.DateTimeField(
+        help_text="Date and time the vulnerability was last seen",
+    )
+    cve = models.CharField(blank=True, null=True, max_length=255)
+    title = models.TextField(blank=True, null=True)
+    product = models.CharField(blank=True, null=True, max_length=255)
+    domain_string = models.TextField(blank=True, null=True)
+    domain = models.ForeignKey(
+        Domain,
+        models.DO_NOTHING,
+        db_column="domain_id",
+        blank=True,
+        null=True,
+        help_text="Foreign key to the domain or IP where the vulnerablily was found.",
+        related_name="vulnerabilities_v2",
+    )
+    protocol = models.CharField(blank=True, null=True, max_length=255)
+    port = models.CharField(blank=True, null=True, max_length=255)
+    cvss = models.DecimalField(
+        max_digits=100,
+        decimal_places=5,
+        blank=True,
+        null=True,
+        db_column="cvss_base_score",
+        help_text="CVSS (Common Vulnerability Scoring System) is the score reperesenting the severity of the vulnerability from 0 (None) to 10 (Critical)",
+    )
+    severity = models.CharField(blank=True, null=True, max_length=255)
+    organization = models.ForeignKey(
+        Organization,
+        models.DO_NOTHING,
+        db_column="organization_id",
+        blank=True,
+        null=True,
+        related_name="vulnerabilities_v2",
+        help_text="Foreign key to the organization that owns the vulnerable asset.",
+    )
+    state = models.CharField(blank=True, null=True, max_length=255)
+    source = models.CharField(
+        blank=True, null=True, max_length=255, db_column="data_source"
+    )
+    description = models.TextField(blank=True, null=True)
+    false_positive = models.BooleanField(
+        db_column="false_positive",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability has been reported as a false positive.",
+    )
+    is_kev = models.BooleanField(
+        db_column="is_kev",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability has been on the CISA Known Exploited Vulnerability (KEV) list.",
+    )
+    is_kev_ransomware = models.BooleanField(
+        db_column="is_kev_ransomware",
+        blank=True,
+        null=True,
+        help_text="A boolean field to flag if a vulnerability is linked to a known ransomware exploit.",
+    )
+    service_string = models.CharField(blank=True, null=True, max_length=255)
+    # service = models.ForeignKey(
+    #     Service,
+    #     models.DO_NOTHING,
+    #     db_column="service_id",
+    #     blank=True,
+    #     null=True,
+    #     help_text="Foreign key relationship to the service the vulnerability was found on.",
+    #     related_name="vulnerabilities",
+    # )
+    is_risky_service = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text="T/F if the vulnerability is a known risky service.",
+    )
+    os = models.CharField(blank=True, null=True, max_length=255)
+    cwe = models.CharField(blank=True, null=True, max_length=255)
+    cpe = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Common Platform Enumeration (CPE) id for the product the vulnerability was found on.",
+    )
+    references = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="Additional links to references and sources associates with the vulnerability.",
+    )
+    substate = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Substate of the vulnerability ('unconfirmed', 'exploitable', 'false-positive', 'accepted-risk', 'remediated')",
+    )
+    needs_population = models.BooleanField(
+        blank=True,
+        null=True,
+        db_column="needs_population",
+        help_text="A boolean field to flag vulnerabilities that need to be populated additional findings.",
+    )
+    actions = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="A list of state changes of the vulnerability, tracking its status from intially created to closed.",
+    )
+    structured_data = models.JSONField(
+        blank=True,
+        null=True,
+        db_column="structured_data",
+        help_text="Any additional data that does not fit into the vulnerability table pertinent to the end user.",
+    )
+    kev_results = models.JSONField(
+        db_column="kev_results",
+        blank=True,
+        null=True,
+        help_text="The CISA provided KEV information assocaited with KEV vulnerabilities.",
+    )
+    ip_string = models.CharField(max_length=255, blank=True, null=True)
+    cvss_vector = models.TextField(blank=True, null=True)
+    severity_int = models.IntegerField(blank=True, null=True)
+    plugin_id = models.TextField(blank=True, null=True)
+    solution = models.TextField(blank=True, null=True)
+    synopsis = models.TextField(blank=True, null=True)
+    results = models.TextField(blank=True, null=True)
+
+    class Meta:
+        """Set Vulnerability model metadata."""
+
+        app_label = app_label_name
+        managed = False
+        db_table = "mat_vw_combined_vulns"
