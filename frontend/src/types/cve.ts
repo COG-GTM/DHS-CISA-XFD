@@ -1,37 +1,37 @@
 export interface Cve {
-  id: string;
-  name: string;
-  published_at: string; // ISO date string
-  modified_at: string; // ISO date string
-  status: string;
-  description: string;
+  id: string | null;
+  name: string | null;
+  published_at: string | null; // ISO date string
+  modified_at: string | null; // ISO date string
+  status: string | null;
+  description: string | null;
 
-  cvss_v2_source: string;
-  cvss_v2_type: string;
-  cvss_v2_version: string;
-  cvss_v2_vector_string: string;
-  cvss_v2_base_score: string;
-  cvss_v2_base_severity: string;
-  cvss_v2_exploitability_score: string;
-  cvss_v2_impact_score: string;
+  cvss_v2_source: string | null;
+  cvss_v2_type: string | null;
+  cvss_v2_version: string | null;
+  cvss_v2_vector_string: string | null;
+  cvss_v2_base_score: string | null;
+  cvss_v2_base_severity: string | null;
+  cvss_v2_exploitability_score: string | null;
+  cvss_v2_impact_score: string | null;
 
-  cvss_v3_source: string;
-  cvss_v3_type: string;
-  cvss_v3_version: string;
-  cvss_v3_vector_string: string;
-  cvss_v3_base_score: string;
-  cvss_v3_base_severity: string;
-  cvss_v3_exploitability_score: string;
-  cvss_v3_impact_score: string;
+  cvss_v3_source: string | null;
+  cvss_v3_type: string | null;
+  cvss_v3_version: string | null;
+  cvss_v3_vector_string: string | null;
+  cvss_v3_base_score: string | null;
+  cvss_v3_base_severity: string | null;
+  cvss_v3_exploitability_score: string | null;
+  cvss_v3_impact_score: string | null;
 
-  cvss_v4_source: string;
-  cvss_v4_type: string;
-  cvss_v4_version: string;
-  cvss_v4_vector_string: string;
-  cvss_v4_base_score: string;
-  cvss_v4_base_severity: string;
-  cvss_v4_exploitability_score: string;
-  cvss_v4_impact_score: string;
+  cvss_v4_source: string | null;
+  cvss_v4_type: string | null;
+  cvss_v4_version: string | null;
+  cvss_v4_vector_string: string | null;
+  cvss_v4_base_score: string | null;
+  cvss_v4_base_severity: string | null;
+  cvss_v4_exploitability_score: string | null;
+  cvss_v4_impact_score: string | null;
 
   weaknesses: string[];
   reference_urls: string[];
@@ -51,7 +51,7 @@ export interface Ssvc {
   automatable: boolean | null;
   created_at: string | null;
   cve_id: string | null;
-  date_updated: string | null;
+  adp_date_updated: string | null;
   exploitation: string | null;
   id: number | null;
   adp_provider: string | null;
