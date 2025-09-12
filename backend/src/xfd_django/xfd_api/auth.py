@@ -111,7 +111,6 @@ async def get_token_from_header(request: Request) -> Optional[str]:
             return auth_header[7:]  # Remove 'Bearer ' prefix
         return auth_header  # Return the token directly if no 'Bearer ' prefix
     for name in ("token", "crossfeed-token"):
-        LOGGER.debug("Request Cookies: %s", request.cookies)
         request_token = request.cookies.get(name)
         if request_token and request_token not in ("null", "undefined", "None", ""):
             return request_token

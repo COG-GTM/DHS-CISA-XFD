@@ -62,9 +62,6 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
     filters?.find((filter) => filter.field === 'organization_id')?.values
       ?.length == 1;
 
-  console.log(filters?.find((filter) => filter.field === 'organization_id'));
-  console.log('Allow Export', allowExport);
-
   const fetchDomainsExport = async (): Promise<string | null> => {
     try {
       const body: any = {
@@ -277,7 +274,6 @@ export const DashboardUI: React.FC<ContextType & { location: any }> = (
             </Stack>
             <Button
               hidden={!allowExport}
-              // disabled={!allowExport}
               variant="outlined"
               onClick={() =>
                 exportCSV(

@@ -22,6 +22,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import httpx
 from mangum import Mangum
 from redis import asyncio as aioredis
 from xfd_api.tasks.scheduler import handler as scheduler_handler
@@ -93,6 +94,25 @@ def get_application() -> FastAPI:
     from xfd_api.views import api_router  # pylint: disable=C0415
 
     app = FastAPI(title=settings.PROJECT_NAME, debug=settings.DEBUG)
+
+    # Create one pooled client on startup
+    @app.on_event("startup")
+    async def _httpx_startup():
+        app.state.httpx = httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=5, read=30, write=30, pool=30),
+            limits=httpx.Limits(
+                max_connections=200,
+                max_keepalive_connections=50,
+                keepalive_expiry=60.0,
+            ),
+            http2=False,
+        )
+
+    # Close it on shutdown
+    @app.on_event("shutdown")
+    async def _httpx_shutdown():
+        await app.state.httpx.aclose()
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOWED_HOSTS or ["*"],

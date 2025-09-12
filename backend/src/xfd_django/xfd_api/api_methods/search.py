@@ -88,6 +88,55 @@ async def fetch_all_results(
     return results
 
 
+async def fetch_all_results_scroll(
+    search_body: DomainSearchBody,
+    client: ESClient,
+    page_size: int = 1000,
+    scroll_keepalive: str = "2m",
+) -> list[dict]:
+    """Fetch all results from Elasticsearch using the scroll API."""
+    results: list[dict] = []
+    scroll_id = None
+
+    # Build base request using your existing function
+    body = build_request(search_body)
+
+    # Scroll-specific tweaks
+    body.pop("from", None)
+    body["size"] = page_size
+    body.pop("aggs", None)
+    body.pop("highlight", None)
+
+    try:
+        resp = client.search_domains(body=body, scroll=scroll_keepalive)
+        scroll_id = resp.get("_scroll_id")
+        hits = resp.get("hits", {}).get("hits", [])
+
+        while hits:
+            results.extend(h["_source"] for h in hits if "_source" in h)
+
+            resp = client.scroll_domains(
+                scroll_id=scroll_id, keepalive=scroll_keepalive
+            )
+            scroll_id = resp.get("_scroll_id", scroll_id)
+            hits = resp.get("hits", {}).get("hits", [])
+
+    except Exception as e:
+        LOGGER.exception("Elasticsearch scroll error: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error streaming results from Elasticsearch.",
+        )
+    finally:
+        if scroll_id:
+            try:
+                client.clear_scroll_domains(scroll_id=scroll_id)
+            except Exception:
+                LOGGER.warning("Failed to clear scroll_id %s", scroll_id)
+
+    return results
+
+
 def process_results(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Process Elasticsearch results into the desired format."""
     processed_results = []
@@ -347,7 +396,7 @@ async def search_export(search_body: DomainSearchBody, current_user) -> Dict[str
 
     # Fetch results from Elasticsearch
     client = ESClient()
-    results = await fetch_all_results(search_body, client)
+    results = await fetch_all_results_scroll(search_body, client)
 
     # Process results for CSV
     processed_results = process_results(results)
