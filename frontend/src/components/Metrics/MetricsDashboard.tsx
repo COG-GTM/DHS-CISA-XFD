@@ -14,9 +14,11 @@ const MetricsDashboard: React.FC = () => {
           <Button
             variant="contained"
             sx={{
-              backgroundColor: '#005EA2',
+              backgroundColor: (theme) => theme.palette.primary.dark,
               color: '#fff',
-              '&:hover': { backgroundColor: '#004B87' },
+              '&:hover': {
+                backgroundColor: (theme) => theme.palette.primary.darker
+              },
               display: 'flex',
               alignItems: 'center',
               gap: 1
