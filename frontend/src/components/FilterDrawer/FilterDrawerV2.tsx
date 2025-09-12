@@ -176,10 +176,10 @@ export const FilterDrawer: FC<
         '& .MuiDrawer-paper': {
           position: 'fixed',
           width: drawerWidth,
-          overflow: 'visible',
+          overflow: 'auto',
           backgroundColor: 'neutrals.white',
           top: isMobile ? 0 : topOffset - 84,
-          height: isMobile ? '100%' : 'auto',
+          height: isMobile ? '100%' : `calc(100% - (${topOffset}px - 84px))`,
           minHeight: `calc(100% - ${topOffset}px)`,
           zIndex: (theme) => theme.zIndex.appBar,
           msOverflowStyle: 'none',
