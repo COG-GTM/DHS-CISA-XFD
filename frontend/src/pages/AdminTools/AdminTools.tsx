@@ -7,16 +7,13 @@ import QueueMonitorView from 'pages/Scans/QueueMonitorView';
 import { Box, Container, Tab } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Logs } from 'components/Logs/Logs';
-import { useAuthContext } from 'context/AuthContext';
 
 export const AdminTools: React.FC = () => {
   const [value, setValue] = React.useState('1');
-  const { user } = useAuthContext();
 
   const handleChange = (event: React.SyntheticEvent, new_value: string) => {
     setValue(new_value);
   };
-
   return (
     <Container maxWidth="xl" sx={{ py: 1 }}>
       <Box sx={{ width: '100%', typography: 'body1' }}>
