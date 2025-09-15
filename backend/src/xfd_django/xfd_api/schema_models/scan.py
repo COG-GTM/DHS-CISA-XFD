@@ -306,6 +306,12 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Active port scan of common ports",
     ),
+    "redshift_cve_scan": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        description="Creates cve redshift scan.",
+    ),
     "rootDomainSync": ScanSchema(
         type="fargate",
         is_passive=True,
