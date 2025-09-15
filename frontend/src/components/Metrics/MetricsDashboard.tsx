@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import { useAuthContext } from 'context/AuthContext';
-import MatomoLogo from '../../../src/assets/matomo-logo.png';
+import MatomoLogo from '@/assets/matomo-logo.png';
 import ScansWidget from './Widgets/ScansWidget';
 
 const MetricsDashboard: React.FC = () => {
@@ -24,6 +24,7 @@ const MetricsDashboard: React.FC = () => {
               gap: 1
             }}
             onClick={() => window.open('/matomo', '_blank')}
+            aria-label="Open Matomo Dashboard"
           >
             <img
               src={MatomoLogo}
