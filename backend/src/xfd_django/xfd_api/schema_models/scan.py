@@ -309,8 +309,10 @@ SCAN_SCHEMA = {
     "redshift_cve_scan": ScanSchema(
         type="fargate",
         is_passive=True,
-        global_scan=False,
+        global_scan=True,
         description="Creates cve redshift scan.",
+        cpu="2048",
+        memory="16384",
     ),
     "rootDomainSync": ScanSchema(
         type="fargate",
