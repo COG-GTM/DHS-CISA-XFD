@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { User } from 'types/user';
+import { useAuthContext } from 'context';
 
-export default function useFirstLoginPopup(
-  user: User | null,
-  apiPut: any,
-  apiGet: any,
-  setUser: any
-) {
+export default function useFirstLoginPopup(user: User | null) {
+  const { apiPut, apiGet, setUser } = useAuthContext();
   const [show, setShow] = useState(!!user?.first_login);
   const dismissedRef = useRef(false);
 
