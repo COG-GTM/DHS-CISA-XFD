@@ -4,7 +4,6 @@
   },
   "dependencies": {
     "date-fns-tz": "^3.2.0",
-    "react-dev-inspector": "^2.0.1",
     "react-router-hash-link": "^2.4.3"
   },
   "devDependencies": {

@@ -30,7 +30,7 @@ const MetricsDashboard: React.FC = () => {
           >
             <img
               src={MatomoLogo}
-              alt="Matomo"
+              alt="Matomo Logo"
               style={{ height: 24, width: 24 }}
             />
             Matomo
