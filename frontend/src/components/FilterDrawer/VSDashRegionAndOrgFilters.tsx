@@ -391,7 +391,7 @@ export const VSDashRegionAndOrgFilters: React.FC<
                 userLevel === REGIONAL_ADMIN ||
                 userLevel === GLOBAL_ADMIN ||
                 userLevel === GLOBAL_VIEW
-                  ? 'This filter, by default, displays up to 10 suggestions. Use this filter to search for an organization.'
+                  ? 'This search shows up to 10 organizations to start. Begin typing to search across all organizations and select one.'
                   : ''
               }
             />
