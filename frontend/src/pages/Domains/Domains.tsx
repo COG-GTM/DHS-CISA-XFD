@@ -38,6 +38,37 @@ export interface DomainRow {
 }
 
 export const Domains: React.FC = () => {
+  // Is this needed? Will we ever have a need to sort domain in "example.com" format?
+  // Custom natural sort for domains: Natural sorting compares numbers within strings (e.g., "domain2.com" vs "domain10.com").
+  function naturalCompare(a: string, b: string): number {
+    // Tokenize into numeric and non-numeric segments
+    const tokenize = (str: string): (string | number)[] => {
+      return (str.match(/(\d+|\D+)/g) || []).map((s) => {
+        const n = Number(s);
+        return isNaN(n) ? s : n;
+      });
+    };
+    const ax = tokenize(a);
+    const bx = tokenize(b);
+
+    for (let i = 0; i < Math.max(ax.length, bx.length); i++) {
+      if (ax[i] === undefined) return -1;
+      if (bx[i] === undefined) return 1;
+      if (typeof ax[i] === 'number' && typeof bx[i] === 'number') {
+        if (ax[i] !== bx[i]) return (ax[i] as number) - (bx[i] as number);
+      } else if (ax[i] !== bx[i]) {
+        return String(ax[i]).localeCompare(String(bx[i]));
+      }
+    }
+    return 0;
+  }
+
+  // Custom sort for IP addresses: Sorting should treat each octet as a number (e.g., "10.1.1.1" vs "2.1.1.1"), not as a string.
+  function ipCompare(a: string, b: string): number {
+    const toNum = (ip: string) => ip.split('.').reduce((acc, octet) => acc * 256 + Number(octet), 0);
+    return toNum(a) - toNum(b);
+  }
+
   const location = useLocation();
   const state = location.state as
     | { orgName?: string; orgId?: string }
@@ -181,6 +212,7 @@ export const Domains: React.FC = () => {
       headerName: 'Domain',
       minWidth: 100,
       flex: 1,
+      sortComparator: ipCompare,
       renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
         return (
           <Box
@@ -213,6 +245,7 @@ export const Domains: React.FC = () => {
       headerName: 'IP',
       minWidth: 50,
       flex: 1,
+      sortComparator: ipCompare,
       renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
         return (
           <Box
