@@ -23,7 +23,9 @@ const MetricsDashboard: React.FC = () => {
               alignItems: 'center',
               gap: 1
             }}
-            onClick={() => window.open('/matomo', '_blank')}
+            onClick={() =>
+              window.open('/matomo', '_blank', 'noopener,noreferrer')
+            }
             aria-label="Open Matomo Dashboard"
           >
             <img
