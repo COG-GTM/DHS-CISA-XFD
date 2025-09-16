@@ -4,7 +4,7 @@ import {
   transformVulnScanData,
   NO_DATA_FALLBACK_LABEL
 } from 'utils/transformVulnScanData';
-import { ContextType, useAuthContext } from 'context';
+import { useAuthContext } from 'context';
 
 const InitialVSData: VulnScanDataTransformed = {
   vulnScanSummary: [],
@@ -29,11 +29,12 @@ export function useVulnScanData(orgId: string) {
       setError(
         "Please join an organization to be shown your organization's vulnerability scan data."
       );
+      setData(InitialVSData);
       return;
     }
-
-    const fetchData = async () => {
+    const fetchVSScan = async () => {
       setLoading(true);
+      setError(null);
       try {
         const response = await apiPost('/stats/trends', {
           body: {
@@ -44,7 +45,7 @@ export function useVulnScanData(orgId: string) {
             }
           }
         });
-        console.log(response);
+
         const isEmpty =
           !response?.host_summaries?.length &&
           !response?.port_scan_summaries?.length &&
@@ -58,23 +59,31 @@ export function useVulnScanData(orgId: string) {
           );
           return;
         }
+
         const transformed = transformVulnScanData(response);
+
         // If transform hit the 4th fallback, show the big NoDataMessage panel
         const vsLabel = transformed.vulnScanSummary[0]?.vulnerabilityScan;
         if (vsLabel === NO_DATA_FALLBACK_LABEL) {
+          setData(InitialVSData);
           setError('NO_DATA');
           return;
         }
+
         setData(transformed);
       } catch (err: any) {
-        setError(err.message || 'Failed to load vulnerability scan data.');
+        console.error(err);
+        setError(
+          err.message +
+            '. Failed to load vulnerability scan data. See the console log for more details.'
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [orgId, apiPost]);
+    fetchVSScan();
+  }, [apiPost, orgId]);
 
   return { data, loading, error };
 }
