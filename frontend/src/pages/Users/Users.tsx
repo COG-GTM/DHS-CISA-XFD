@@ -98,9 +98,9 @@ export const Users: React.FC = () => {
           : 'None';
         row.orgs = row.roles
           ? row.roles
-            .filter((role) => role.approved)
-            .map((role) => role.organization.name)
-            .join(', ')
+              .filter((role) => role.approved)
+              .map((role) => role.organization.name)
+              .join(', ')
           : 'None';
         row.full_name = `${row.first_name} ${row.last_name}`;
       });
@@ -556,8 +556,8 @@ export const Users: React.FC = () => {
           <ImportExport<
             | User
             | {
-              roles: string;
-            }
+                roles: string;
+              }
           >
             name="users"
             fieldsToImport={[
