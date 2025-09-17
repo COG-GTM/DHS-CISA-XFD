@@ -568,7 +568,7 @@ def upsert_organization(organization_data, current_user):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# PUT: /organizations/{organization_id}
+# POST: /update_organization/{organization_id}
 def update_organization(organization_id: str, organization_data, current_user):
     """Update an organization by its ID."""
     try:

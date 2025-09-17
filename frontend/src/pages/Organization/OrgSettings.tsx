@@ -50,7 +50,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
   setOrganization,
   tags
 }) => {
-  const { apiPut, apiPost, user, setFeedbackMessage } = useAuthContext();
+  const { apiPost, user, setFeedbackMessage } = useAuthContext();
   const [inputValue, setInputValue] = useState('');
   const [dialog, setDialog] = useState<{
     open: boolean;
@@ -68,7 +68,7 @@ export const OrgSettings: React.FC<OrgSettingsProps> = ({
 
   const updateOrganization = async () => {
     try {
-      const org = await apiPut(`/organizations/${organization.id}`, {
+      const org = await apiPost(`/update_organization/${organization.id}`, {
         body: organization
       });
       setOrganization(org);

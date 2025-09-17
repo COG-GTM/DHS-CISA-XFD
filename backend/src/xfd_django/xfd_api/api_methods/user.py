@@ -443,7 +443,7 @@ def get_users_v2(state, region_id, invite_pending, current_user):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# PUT: /v2/users/{user_id}
+# POST: /v2/update_user/{user_id}
 def update_user_v2(user_id, user_data, current_user):
     """Update a particular user."""
     try:

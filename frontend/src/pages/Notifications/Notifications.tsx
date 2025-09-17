@@ -292,9 +292,9 @@ export const Notifications: React.FC = () => {
   ) => {
     let notification;
     try {
-      if (apiType === 'put') {
+      if (apiType === 'post') {
         notification = await handleApiCall(
-          () => apiPut('/notifications/' + body.id, { body }),
+          () => apiPost('/update_notification/' + body.id, { body }),
           'The notification was successfully updated.',
           'The notification was not able to be updated.'
         );
