@@ -19,7 +19,9 @@ export default function useFirstLoginPopup(
     dismissedRef.current = true;
     setShow(false);
     try {
-      await apiPost(`/v2/update_user/${user?.id}`, { body: { first_login: false } });
+      await apiPost(`/v2/update_user/${user?.id}`, {
+        body: { first_login: false }
+      });
       const refreshed = await apiGet('/users/me');
       setUser?.(refreshed);
     } catch (err) {

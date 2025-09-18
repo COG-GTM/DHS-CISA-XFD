@@ -644,7 +644,9 @@ def test_update_user_v2_success(test_user):
 def test_update_user_v2_not_found_invalid_uuid():
     """POST /v2/update_user/{bad-uuid} should return 404 for malformed UUID."""
     url = f"{BASE_URL}/v2/update_user/{INVALID}"
-    resp = requests.post(url, json={"first_name": "X"}, headers=HEADERS, timeout=TIMEOUT)
+    resp = requests.post(
+        url, json={"first_name": "X"}, headers=HEADERS, timeout=TIMEOUT
+    )
     assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
 
 
@@ -652,7 +654,9 @@ def test_update_user_v2_not_found_invalid_uuid():
 def test_update_user_v2_not_found_nonexistent_uuid():
     """POST /v2/update_user/{random-uuid} should return 404 when the user doesn't exist."""
     url = f"{BASE_URL}/v2/update_user/{BAD_ID}"
-    resp = requests.post(url, json={"first_name": "X"}, headers=HEADERS, timeout=TIMEOUT)
+    resp = requests.post(
+        url, json={"first_name": "X"}, headers=HEADERS, timeout=TIMEOUT
+    )
     assert resp.status_code == 404, f"Expected 404 Not Found, got {resp.status_code}"
 
 
