@@ -35,7 +35,7 @@ test.describe('domains-table', () => {
     await page.waitForSelector('[aria-label="Domains Table"]');
     await page.getByRole('columnheader', { name: /Domain/i }).click();
     const domainCells = await page.locator('td[data-field="name"]').allTextContents();
-    const sorted = [...domainCells].sort(naturalCompare);
+    const sorted = [...domainCells].sort(ipCompare);
 
     // Accessibility scan scoped to the domains table only
     const results = await makeAxeBuilder().include('[aria-label="Domains Table"]').analyze();
