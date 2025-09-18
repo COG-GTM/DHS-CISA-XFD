@@ -33,7 +33,7 @@ import {
   Vulnerabilities,
   Vulnerability
 } from 'pages';
-import { LayoutWithSearch, RouteGuard } from 'components';
+import { LayoutWithSearch, RouteGuard, MatomoTracker } from 'components';
 import './styles.scss';
 import { Authenticator } from '@aws-amplify/ui-react';
 import { StaticsContextProvider } from 'context/StaticsContextProvider';
@@ -72,6 +72,7 @@ const LinkTracker = () => {
 
 const App: React.FC = () => (
   <MatomoProvider value={instance}>
+    <MatomoTracker />
     <Router>
       <CFThemeProvider>
         <AuthContextProvider>

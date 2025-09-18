@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { initializeUser, User, Organization as OrganizationType } from 'types';
 import ConfirmDialog from 'components/Dialog/ConfirmDialog';
+import { ExportCustomerMetricsButton } from '@components/Metrics/Widgets/ExportCustomerMetricsButton';
 import InfoDialog from 'components/Dialog/InfoDialog';
 import { useAuthContext } from 'context';
 import { Alert, Box, Button, Paper, Stack, Typography } from '@mui/material';
@@ -17,7 +18,6 @@ import { CheckCircleOutline as CheckIcon } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useUserLevel } from 'hooks/useUserLevel';
 import { formatDate, parseISO } from 'date-fns';
-import { render } from '@testing-library/react';
 
 type DialogStates = {
   isOrgDialogOpen: boolean;
@@ -638,6 +638,7 @@ export const RegionUsers: React.FC = () => {
           {`${formattedUserType} Dashboard`}
         </Typography>
         <br />
+        <ExportCustomerMetricsButton />
         <Typography variant="h2" style={{ fontSize: '1.25rem' }} pb={2} pt={2}>
           Pending Requests
         </Typography>
