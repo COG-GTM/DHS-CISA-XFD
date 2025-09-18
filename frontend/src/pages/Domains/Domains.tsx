@@ -20,7 +20,7 @@ import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import CustomNoRowsOverlay from 'components/DataGrid/CustomNoRowsOverlay';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
-import { ipCompare } from 'utils/sort';
+import { naturalCompare, ipCompare } from 'utils/sort';
 import { extractInitialFilters } from 'utils/vulnerabilitiesTableUtils';
 
 const PAGE_SIZE = 15;
@@ -182,7 +182,7 @@ export const Domains: React.FC = () => {
       headerName: 'Domain',
       minWidth: 100,
       flex: 1,
-      sortComparator: ipCompare,
+      sortComparator: naturalCompare,
       renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
         return (
           <Box
