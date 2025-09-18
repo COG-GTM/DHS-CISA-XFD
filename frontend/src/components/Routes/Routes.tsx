@@ -3,7 +3,6 @@ import { Route, Switch } from 'react-router-dom';
 import { RouteGuard } from 'components/Routes/RouteGuard';
 import {
   AdminTools,
-  AuthCreateAccount,
   AuthLogin,
   Domain,
   Domains,
@@ -21,7 +20,7 @@ import {
   Vulnerabilities,
   Vulnerability
 } from 'pages';
-import { VulnerabilityScanWithSearch } from 'pages/VulnerabilityScanDash/VulnerabilityScan';
+import { VulnerabilityScanWithSearch } from '../Gates/VSDashboardGate';
 
 export const Routes: React.FC = () => {
   return (
@@ -34,7 +33,6 @@ export const Routes: React.FC = () => {
       />
       <Route exact path="/login-gov-callback" component={LoginGovCallback} />
       <Route exact path="/okta-callback" component={OktaCallback} />
-      {/* <Route exact path="/create-account" component={AuthCreateAccount} /> */}
       <Route exact path="/terms" component={TermsOfUse} />
       <RouteGuard
         exact
