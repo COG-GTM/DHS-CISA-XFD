@@ -388,8 +388,10 @@ export const VSDashRegionAndOrgFilters: React.FC<
               placeholder="Search Organizations"
               onBlur={() => setIsOrgOpen(false)}
               helperText={
-                userLevel === REGIONAL_ADMIN || userLevel === GLOBAL_ADMIN
-                  ? 'This filter, by default, displays data for all organizations in your region. Use this filter to select an organization.'
+                userLevel === REGIONAL_ADMIN ||
+                userLevel === GLOBAL_ADMIN ||
+                userLevel === GLOBAL_VIEW
+                  ? 'This search shows up to 10 organizations to start. Begin typing to search across all organizations and select one.'
                   : ''
               }
             />
