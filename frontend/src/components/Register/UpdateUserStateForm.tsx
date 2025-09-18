@@ -49,7 +49,7 @@ export const UpdateStateForm: React.FC<{
     };
 
     try {
-      await apiPost(`/v2/update_users/${user_id}`, {
+      await apiPost(`/v2/update_user/${user_id}`, {
         body
       });
 
