@@ -331,6 +331,8 @@ export const Users: React.FC = () => {
       minWidth: 50,
       flex: 0.5,
       disableExport: true,
+      sortable: false,
+      filterable: false,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `View or Edit User ${cellValues.row.full_name}`;
         const descriptionId = `description-${cellValues.row.id}`;
@@ -376,6 +378,8 @@ export const Users: React.FC = () => {
       disableExport: true,
       minWidth: 50,
       flex: 0.4,
+      sortable: false,
+      filterable: false,
       renderCell: (cellValues: GridRenderCellParams) => {
         const ariaLabel = `Delete user ${cellValues.row.full_name}`;
         const descriptionId = `delete-description-${cellValues.row.id}`;
