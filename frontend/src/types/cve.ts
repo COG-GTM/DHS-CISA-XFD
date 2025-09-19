@@ -55,6 +55,7 @@ export interface Ssvc {
   exploitation: string | null;
   id: number | null;
   adp_provider: string | null;
+  adp_title?: string | null;
   ssvc_timestamp: string | null;
   ssvc_version: string | null;
   technical_impact: string | null;
