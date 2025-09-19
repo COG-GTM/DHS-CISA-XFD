@@ -70,9 +70,6 @@ jobs:
         run: npm audit --production
   backend_python:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.10
@@ -84,8 +81,15 @@ jobs:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
-      - uses: pypa/gh-action-pip-audit@v1.1.0
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install -r backend/worker/requirements.txt
+
+      - name: Security
+        uses: pypa/gh-action-pip-audit@v1.1.0
         with:
           inputs: |
-            requirements.txt
-            worker/requirements.txt
+            backend/requirements.txt
+            backend/worker/requirements.txt
