@@ -85,3 +85,5 @@ jobs:
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
       - uses: pypa/gh-action-pip-audit@v1.1.0
+        with:
+          inputs: requirements.txt worker/requirements.txt
