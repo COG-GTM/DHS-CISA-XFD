@@ -82,13 +82,6 @@ jobs:
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
 
-      # Debug step (optional but useful to verify pshtt path)
-      - name: Show repo layout
-        run: |
-          pwd
-          ls -la backend/worker
-          ls -la backend/worker/external || true
-
       # Install base dependencies (matches Dockerfile)
       - name: Install base requirements
         run: |
@@ -104,6 +97,4 @@ jobs:
       - name: Security audit
         uses: pypa/gh-action-pip-audit@v1.1.0
         with:
-          inputs: |
-            backend/requirements.txt
-            backend/worker/requirements.txt
+          args: --local
