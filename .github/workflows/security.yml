@@ -92,7 +92,7 @@ jobs:
       - name: Security audit python backend API
         run: |
           pip install safety
-          safety scan --file backend/requirements.txt --full-report
+          safety check --file=backend/requirements.txt --full-report
 
       # Install worker deps (this will pick up -e external/pshtt just like Dockerfile)
       - name: Install worker requirements
@@ -103,4 +103,4 @@ jobs:
       - name: Security audit python worker
         run: |
           pip install safety
-          safety scan --file backend/worker/requirements.txt --full-report
+          safety check --file=backend/worker/requirements.txt --full-report
