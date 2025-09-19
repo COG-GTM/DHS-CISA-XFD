@@ -86,4 +86,6 @@ jobs:
           restore-keys: pip-
       - uses: pypa/gh-action-pip-audit@v1.1.0
         with:
-          inputs: requirements.txt worker/requirements.txt
+          inputs: |
+            requirements.txt
+            worker/requirements.txt
