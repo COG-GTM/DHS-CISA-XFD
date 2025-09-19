@@ -97,8 +97,8 @@ jobs:
 
       # Install worker deps (this will pick up -e external/pshtt just like Dockerfile)
       - name: Install worker requirements
-        working-directory: backend/worker
-        run: pip install -r requirements.txt
+        working-directory: backend
+        run: pip install -r worker/requirements.txt
 
       # Run pip-audit security scan on both sets of requirements
       - name: Security audit
