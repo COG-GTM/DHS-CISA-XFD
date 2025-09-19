@@ -126,22 +126,26 @@ export interface Vulnerability {
   structured_data: { [x: string]: any } | null;
   substate: string;
   notes?: string | null;
-  actions: {
-    type: 'state-change' | 'comment';
-    state?: string;
-    substate?: string;
-    value?: string;
-    automatic: boolean;
-    user_id: string | null;
-    userName?: string | null;
-    date: string;
-  }[] | null;
-  references: {
-    url: string;
-    name: string;
-    source: string;
-    tags: string[];
-  }[] | null;
+  actions:
+    | {
+        type: 'state-change' | 'comment';
+        state?: string;
+        substate?: string;
+        value?: string;
+        automatic: boolean;
+        user_id: string | null;
+        userName?: string | null;
+        date: string;
+      }[]
+    | null;
+  references:
+    | {
+        url: string;
+        name: string;
+        source: string;
+        tags: string[];
+      }[]
+    | null;
   service?: Service | null;
   cve_full: Cve | null;
   cpes?: Cpe[] | null;
