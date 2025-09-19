@@ -13,7 +13,7 @@ import {
 import Cookies from 'universal-cookie';
 import { Snackbar } from '@mui/material';
 import { Alert } from '@mui/material';
-import { AlertProps } from '@mui/lab';
+import { AlertProps } from '@mui/material/Alert';
 
 export const currentTermsVersion = '1';
 

@@ -204,8 +204,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
-        cpu="4096",
-        memory="16384",
+        cpu="16384",
+        memory="65536",
         description="Pull in vulnerability data from VSs Vulnerability database",
     ),
     "cveSync": ScanSchema(
@@ -306,6 +306,14 @@ SCAN_SCHEMA = {
         global_scan=False,
         description="Active port scan of common ports",
     ),
+    "redshift_cve_scan": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        description="Creates cve redshift scan.",
+        cpu="2048",
+        memory="16384",
+    ),
     "rootDomainSync": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -322,8 +330,8 @@ SCAN_SCHEMA = {
         type="fargate",
         is_passive=True,
         global_scan=True,
-        cpu="4096",
-        memory="16384",
+        cpu="16384",
+        memory="65536",
         description="Syncs records with Elasticsearch so that they appear in search results.",
     ),
     "shodan": ScanSchema(
@@ -404,6 +412,14 @@ SCAN_SCHEMA = {
         memory="8192",
         description="Updates blocked ip records against blocklist.de global IP blocklist",
     ),
+    "was": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Populate was info at commercial mdl",
+    ),
     "was_sync": ScanSchema(
         type="fargate",
         is_passive=True,
@@ -411,6 +427,14 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Pull in WAS finding data from commercial mdl",
+    ),
+    "was_lz_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=True,
+        cpu="1024",
+        memory="8192",
+        description="Pull in WAS data from commercial mdl and sync to LZ MDL",
     ),
     "xpanse_sync": ScanSchema(
         type="fargate",
@@ -476,6 +500,15 @@ SCAN_SCHEMA = {
         cpu="1024",
         memory="8192",
         description="Collect alerts, mentions, credentials, and top CVEs from Cybersixgill dark web monitoring.",
+    ),
+    "dns_twist_sync": ScanSchema(
+        type="fargate",
+        is_passive=True,
+        global_scan=False,
+        cpu="1024",
+        memory="8192",
+        description="Pull DomainPermutation data and push them to the DMZ sync endpoint.",
+        max_concurrent_tasks=10000,
     ),
     "pshtt_scan": ScanSchema(
         type="fargate",
