@@ -50,10 +50,10 @@ export interface Cve {
 export interface Ssvc {
   automatable: boolean | string | null;
   created_at: string | null;
-  cve_id: string | null;
+  cve_id?: string | null;
   adp_date_updated: string | null;
   exploitation: string | null;
-  id: number | null;
+  id?: number | null;
   adp_provider: string | null;
   adp_title?: string | null;
   ssvc_timestamp: string | null;
