@@ -2136,7 +2136,7 @@ async def get_was_scan_summaries_endpoint(
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {error}",
+            detail="Unexpected error: {}".format(error),
         )
 
     # Serialize ORM objects to plain dicts

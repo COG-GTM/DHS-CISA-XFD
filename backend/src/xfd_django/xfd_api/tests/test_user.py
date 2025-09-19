@@ -1472,9 +1472,9 @@ def test_update_user_v2_standard_user_cannot_update_own_email():
     payload = {"email": "hacked@example.com"}
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
     assert response.status_code == 403
@@ -1497,9 +1497,9 @@ def test_update_user_v2_standard_user_cannot_approve_themselves():
     }
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
     assert response.status_code == 403
@@ -1527,9 +1527,9 @@ def test_update_user_v2_regional_admin_cannot_update_user_type():
     payload = {"user_type": UserType.GLOBAL_ADMIN}
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(regional_admin)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(regional_admin))},
     )
 
     assert response.status_code == 403
@@ -1557,9 +1557,9 @@ def test_update_user_v2_regional_admin_cannot_update_in_region_state():
     payload = {"state": "NY"}
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(regional_admin)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(regional_admin))},
     )
 
     assert response.status_code == 403
@@ -1578,9 +1578,9 @@ def test_update_user_v2_standard_user_cannot_update_name():
     payload = {"first_name": "New", "last_name": "Name"}
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
 
     assert response.status_code == 403
@@ -1600,9 +1600,9 @@ def test_standard_user_cannot_clear_invite_pending():
     payload = {"invite_pending": False}
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
     assert response.status_code == 403
     assert (
@@ -1626,9 +1626,9 @@ def test_standard_user_cannot_self_approve():
     payload = {"date_approved": datetime.now().isoformat()}
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
-        headers={"Authorization": f"Bearer {create_jwt_token(user)}"},
+        headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
     assert response.status_code == 403
     assert (
@@ -1757,7 +1757,7 @@ def test_standard_user_updates_self_user_type_unauthenticated():
         "user_type": UserType.STANDARD,
     }
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
@@ -1786,7 +1786,7 @@ def test_standard_user_updates_self_unauthenticated():
         "state": "CA",
     }
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
@@ -1816,7 +1816,7 @@ def test_standard_user_updates_other_unauthenticated():
     )
     payload = {}
     response = client.post(
-        f"/v2/update_user/{user_to_update.id}",
+        "/v2/update_user/{}".format(user_to_update.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
@@ -1848,7 +1848,7 @@ def test_regional_user_updates_self_confirm_authorized_fields():
     }
 
     response = client.post(
-        f"/v2/update_user/{user.id}",
+        "/v2/update_user/{}".format(user.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
@@ -1892,7 +1892,7 @@ def test_regional_user_updates_other_confirm_authorized_fields():
         "approved_by": None,
     }
     response = client.post(
-        f"/v2/update_user/{user_to_update.id}",
+        "/v2/update_user/{}".format(user_to_update.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
@@ -1936,7 +1936,7 @@ def test_global_user_updates_confirm_authorized_fields():
         "login_blocked_by_maintenance": False,
     }
     response = client.post(
-        f"/v2/update_user/{user_to_update.id}",
+        "/v2/update_user/{}".format(user_to_update.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )
@@ -1967,7 +1967,7 @@ def test_global_user_updates_confirm_unauthorized_fields():
     )
     payload = {"email": "{}@example.com".format(secrets.token_hex(4))}
     response = client.post(
-        f"/v2/update_user/{user_to_update.id}",
+        "/v2/update_user/{}".format(user_to_update.id),
         json=payload,
         headers={"Authorization": "Bearer {}".format(create_jwt_token(user))},
     )

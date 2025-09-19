@@ -179,14 +179,18 @@ def delete_user(target_user_id, current_user):
         # Return success response
         return {
             "status": "success",
-            "message": f"User {target_user_id} and associated roles have been deleted successfully.",
+            "message": "User {} and associated roles have been deleted successfully.".format(
+                target_user_id
+            ),
             "user_deleted": serialize_user(target_user),
         }
 
     except User.DoesNotExist:
         raise HTTPException(status_code=404, detail="User not found.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error deleting user: {}".format(str(e))
+        )
 
 
 # GET: /users
