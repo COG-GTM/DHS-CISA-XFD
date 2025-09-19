@@ -82,13 +82,26 @@ jobs:
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
 
-      - name: Install dependencies
+      # Debug step (optional but useful to verify pshtt path)
+      - name: Show repo layout
         run: |
-          pip install backend/worker/external/pshtt
-          pip install -r backend/requirements.txt
-          pip install -r backend/worker/requirements.txt
+          pwd
+          ls -la backend/worker
+          ls -la backend/worker/external || true
 
-      - name: Security
+      # Install base dependencies (matches Dockerfile)
+      - name: Install base requirements
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -r backend/requirements.txt
+
+      # Install worker deps (this will pick up -e external/pshtt just like Dockerfile)
+      - name: Install worker requirements
+        working-directory: backend/worker
+        run: pip install -r requirements.txt
+
+      # Run pip-audit security scan on both sets of requirements
+      - name: Security audit
         uses: pypa/gh-action-pip-audit@v1.1.0
         with:
           inputs: |
