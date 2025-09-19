@@ -88,13 +88,19 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install -r backend/requirements.txt
 
+      # Run pip-audit security scan on both sets of requirements
+      - name: Security audit python backend API
+        uses: pypa/gh-action-pp-audit@v1.1.0
+        with:
+          args: --local
+
       # Install worker deps (this will pick up -e external/pshtt just like Dockerfile)
       - name: Install worker requirements
         working-directory: backend
         run: pip install -r worker/requirements.txt
 
       # Run pip-audit security scan on both sets of requirements
-      - name: Security audit
+      - name: Security audit python worker
         uses: pypa/gh-action-pip-audit@v1.1.0
         with:
           args: --local
