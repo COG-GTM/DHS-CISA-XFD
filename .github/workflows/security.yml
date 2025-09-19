@@ -90,7 +90,7 @@ jobs:
 
       # Run pip-audit security scan on both sets of requirements
       - name: Security audit python backend API
-        uses: pypa/gh-action-pp-audit@v1.1.0
+        uses: pypa/gh-action-pip-audit@v1.1.0
         with:
           args: --local
 
