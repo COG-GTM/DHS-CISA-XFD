@@ -84,6 +84,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install -e backend/worker/external/pshtt
           pip install -r backend/requirements.txt
           pip install -r backend/worker/requirements.txt
 
