@@ -1,5 +1,5 @@
 -e external/pshtt
-mitmproxy==10.1.1
+mitmproxy==10.2.3
 nested_lookup==0.2.25
 numpy==1.24.3
 pandas==2.2.3

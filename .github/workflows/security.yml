@@ -84,3 +84,15 @@ jobs:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt
+      - name: Run pip-audit on worker
+        run: pip-audit -r worker/requirements.txt
+      - name: Install safety
+        run: pip install safety
+      - name: Run safety
+        run: safety check -r requirements.txt
+      - name: Run safety on worker
+        run: safety check -r worker/requirements.txt
