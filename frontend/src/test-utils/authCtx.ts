@@ -22,6 +22,7 @@ export const authCtx: AuthContextType = {
   apiDelete: vi.fn(),
   apiPatch: vi.fn(),
   apiPost: vi.fn(),
+  // TODO: Remove apiPut after branch DJ_put_to_pull is merged into develop
   apiPut: vi.fn(),
   maximumRole: 'user',
   touVersion: 'v1-user',
