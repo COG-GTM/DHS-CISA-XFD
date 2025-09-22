@@ -54,7 +54,7 @@ export const Domains: React.FC = () => {
     Query<DomainSearchApiResponse>['filters']
   >([]);
   const [loadingError, setLoadingError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [hasPreloadedFilters, setPreloadedFiltersActive] = useState(false);
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
