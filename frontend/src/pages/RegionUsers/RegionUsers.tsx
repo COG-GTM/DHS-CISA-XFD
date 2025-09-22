@@ -40,6 +40,9 @@ const transformData = (data: User[]): User[] => {
     ...user,
     roles,
     organizations: roles.map((role) => ' ' + role.organization.name),
+    organizations_display: roles
+      .map((role) => role.organization.name)
+      .join(', '),
     last_logged_in: user.last_logged_in
       ? formatDate(parseISO(user.last_logged_in), 'MM/dd/yyyy hh:mm a')
       : 'None'
@@ -234,20 +237,18 @@ export const RegionUsers: React.FC = () => {
       }
     },
     {
-      field: 'organizations',
+      field: 'organizations_display',
       headerName: 'Organizations',
       minWidth: 250,
       flex: 2,
-      renderCell: (cellValues: GridRenderCellParams) => {
-        return (
-          <Box
-            component="span"
-            aria-label={`Organizations for User ${cellValues.row.full_name}: ${cellValues.row.organizations.join(', ')}`}
-          >
-            {cellValues.row.organizations.join(', ')}
-          </Box>
-        );
-      }
+      renderCell: (cellValues: GridRenderCellParams) => (
+        <Box
+          component="span"
+          aria-label={`Organizations for User ${cellValues.row.full_name}: ${cellValues.row.organizations_display}`}
+        >
+          {cellValues.row.organizations_display}
+        </Box>
+      )
     }
   ];
   const regionIdColumn = {
