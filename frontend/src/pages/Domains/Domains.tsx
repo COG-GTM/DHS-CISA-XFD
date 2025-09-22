@@ -15,12 +15,11 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import FiberManualRecordRounded from '@mui/icons-material/FiberManualRecordRounded';
-import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRenderCellParams, GridSortModel } from '@mui/x-data-grid';
 import CustomToolbar from 'components/DataGrid/CustomToolbar';
 import CustomNoRowsOverlay from 'components/DataGrid/CustomNoRowsOverlay';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { FindingsHeader } from 'components/FindingsLibrary/FindingsHeader';
-import { naturalCompare, ipCompare } from 'utils/sort';
 import { extractInitialFilters } from 'utils/vulnerabilitiesTableUtils';
 
 const PAGE_SIZE = 15;
@@ -57,6 +56,7 @@ export const Domains: React.FC = () => {
   const [loadingError, setLoadingError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasPreloadedFilters, setPreloadedFiltersActive] = useState(false);
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   useEffect(() => {
     if (state) {
@@ -140,14 +140,17 @@ export const Domains: React.FC = () => {
     fetchDomains({
       page: 1,
       pageSize: PAGE_SIZE,
-      filters
+      filters,
+      order: sortModel[0]?.field,
+      sort: sortModel[0]?.sort ?? undefined
     });
-  }, [fetchDomains, filters]);
+  }, [fetchDomains, filters, sortModel]);
 
   const resetDomains = useCallback(() => {
     history.replace({ ...location, state: null });
     setPreloadedFiltersActive(false);
     setFilters([]);
+    setSortModel([]);
     setPaginationModel((prev) => ({
       ...prev,
       page: 0,
@@ -156,7 +159,9 @@ export const Domains: React.FC = () => {
     fetchDomains({
       page: 1,
       pageSize: PAGE_SIZE,
-      filters: []
+      filters: [],
+      order: undefined,
+      sort: undefined
     });
   }, [fetchDomains, history, location]);
 
@@ -182,7 +187,6 @@ export const Domains: React.FC = () => {
       headerName: 'Domain',
       minWidth: 100,
       flex: 1,
-      sortComparator: naturalCompare,
       renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
         return (
           <Box
@@ -215,7 +219,6 @@ export const Domains: React.FC = () => {
       headerName: 'IP',
       minWidth: 50,
       flex: 1,
-      sortComparator: ipCompare,
       renderCell: (cellValues: GridRenderCellParams<DomainRow>) => {
         return (
           <Box
@@ -422,6 +425,11 @@ export const Domains: React.FC = () => {
               rows={domRows}
               rowCount={totalResults}
               columns={domCols}
+              sortingMode="server"
+              sortModel={sortModel}
+              onSortModelChange={(model) => {
+                setSortModel(model);
+              }}
               slots={{
                 toolbar: CustomToolbar,
                 noRowsOverlay: CustomNoRowsOverlay
@@ -439,7 +447,9 @@ export const Domains: React.FC = () => {
                 fetchDomains({
                   page: model.page + 1,
                   pageSize: model.pageSize,
-                  filters: filters
+                  filters: filters,
+                  order: sortModel[0]?.field,
+                  sort: sortModel[0]?.sort ?? undefined
                 });
               }}
               pageSizeOptions={[15, 30, 50, 100]}
