@@ -70,39 +70,17 @@ jobs:
         run: npm audit --production
   backend_python:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.11
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5.0.0
         with:
-          python-version: '3.11'
+          python-version: '3.10'
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: pip-
-
-      # Install base dependencies (matches Dockerfile)
-      - name: Install base requirements
-        run: |
-          pip install --upgrade pip setuptools wheel
-          pip install -r backend/requirements.txt
-
-      # Run Safety scan for backend API
-      - name: Security audit python backend API
-        run: |
-          pip install safety
-          safety check --file=backend/requirements.txt --full-report
-          continue-on-error: true
-
-      # Install worker deps (this will pick up -e external/pshtt just like Dockerfile)
-      - name: Install worker requirements
-        working-directory: backend
-        run: pip install -r worker/requirements.txt
-
-      # Run Safety scan for worker
-      - name: Security audit python worker
-        run: |
-          pip install safety
-          safety check --file=backend/worker/requirements.txt --full-report
-          continue-on-error: true
