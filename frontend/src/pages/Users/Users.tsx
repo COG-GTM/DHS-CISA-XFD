@@ -492,6 +492,7 @@ export const Users: React.FC = () => {
       maxWidth="1152px"
       width="100%"
       margin="auto"
+      pb={6}
     >
       <Typography
         fontSize={34}
@@ -553,7 +554,7 @@ export const Users: React.FC = () => {
       ) : null}
       {confirmDeleteUserDialog}
       {(newUserDialogOpen || editUserDialogOpen) && renderUserForm}
-      {user?.user_type === 'globalAdmin' && (
+      {/* {user?.user_type === 'globalAdmin' && (
         <>
           <ImportExport<
             | User
@@ -596,7 +597,7 @@ export const Users: React.FC = () => {
             }}
           />
         </>
-      )}
+      )} */}
       <InfoDialog
         isOpen={infoDialogOpen}
         handleClick={() => {
