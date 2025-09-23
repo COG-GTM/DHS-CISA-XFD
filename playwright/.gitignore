@@ -4,5 +4,3 @@
 /test-results/
 node_modules/
 storageState.json
-.env
-!.env.example
