@@ -3,26 +3,6 @@ import { expect } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
 
 test.describe('Home Page Accessibility', () => {
-  test('Standard User: homepage accessibility', async ({
-    pageAsStandardUser,
-    makeAxeBuilder
-  }, testInfo: TestInfo) => {
-    await runAccessibilityTest(
-      pageAsStandardUser,
-      makeAxeBuilder,
-      testInfo,
-      'Standard User'
-    );
-  });
-
-  /*test('Global View: homepage accessibility', async ({ pageAsGlobalView, makeAxeBuilder }, testInfo: TestInfo) => {
-    await runAccessibilityTest(pageAsGlobalView, makeAxeBuilder, testInfo, 'Global View');
-  });*/
-
-  /*test('Regional Admin: homepage accessibility', async ({ pageAsRegionalAdmin, makeAxeBuilder }, testInfo: TestInfo) => {
-    await runAccessibilityTest(pageAsRegionalAdmin, makeAxeBuilder, testInfo, 'Regional Admin');
-  });*/
-
   test('Global Admin: homepage accessibility', async ({
     pageAsGlobalAdmin,
     makeAxeBuilder
@@ -32,6 +12,39 @@ test.describe('Home Page Accessibility', () => {
       makeAxeBuilder,
       testInfo,
       'Global Admin'
+    );
+  });
+  test('Regional Admin: homepage accessibility', async ({
+    pageAsRegionalAdmin,
+    makeAxeBuilder
+  }, testInfo: TestInfo) => {
+    await runAccessibilityTest(
+      pageAsRegionalAdmin,
+      makeAxeBuilder,
+      testInfo,
+      'Regional Admin'
+    );
+  });
+  test('Global View: homepage accessibility', async ({
+    pageAsGlobalView,
+    makeAxeBuilder
+  }, testInfo: TestInfo) => {
+    await runAccessibilityTest(
+      pageAsGlobalView,
+      makeAxeBuilder,
+      testInfo,
+      'Global View'
+    );
+  });
+  test('Standard User: homepage accessibility', async ({
+    pageAsStandardUser,
+    makeAxeBuilder
+  }, testInfo: TestInfo) => {
+    await runAccessibilityTest(
+      pageAsStandardUser,
+      makeAxeBuilder,
+      testInfo,
+      'Standard User'
     );
   });
 });

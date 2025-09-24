@@ -8,6 +8,8 @@ type AxeFixture = {
 
 type RolePagesFixture = {
   pageAsGlobalAdmin: Page;
+  pageAsRegionalAdmin: Page;
+  pageAsGlobalView: Page;
   pageAsStandardUser: Page;
 };
 
@@ -24,6 +26,30 @@ export const test = base.extend<AxeFixture & RolePagesFixture>({
   pageAsGlobalAdmin: async ({ browser }, use) => {
     const context = await browser.newContext({
       storageState: '.auth/global-admin.json'
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+  pageAsRegionalAdmin: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: '.auth/regional-admin.json'
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+  pageAsGlobalView: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: '.auth/global-view.json'
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+  pageAsStandardUser: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: '.auth/standard-user.json'
     });
     const page = await context.newPage();
     await use(page);
