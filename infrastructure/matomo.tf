@@ -385,3 +385,52 @@ resource "aws_ssm_parameter" "matomo_db_password" {
     Owner   = "Crossfeed managed resource"
   }
 }
+
+# Elastic File System permissions
+resource "aws_iam_policy" "efs_deploy_policy" {
+  count       = var.is_dmz ? 1 : 0
+  name        = "crossfeed-${var.stage}-efs-deploy-policy"
+  description = "Allow creating/managing EFS (FS, AP, MT) for Matomo"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "EfsCrudAndTagging",
+        Effect = "Allow",
+        Action = [
+          "elasticfilesystem:CreateFileSystem",
+          "elasticfilesystem:DeleteFileSystem",
+          "elasticfilesystem:UpdateFileSystem",
+          "elasticfilesystem:DescribeFileSystems",
+          "elasticfilesystem:CreateMountTarget",
+          "elasticfilesystem:DeleteMountTarget",
+          "elasticfilesystem:DescribeMountTargets",
+          "elasticfilesystem:DescribeMountTargetSecurityGroups",
+          "elasticfilesystem:CreateAccessPoint",
+          "elasticfilesystem:DeleteAccessPoint",
+          "elasticfilesystem:DescribeAccessPoints",
+          "elasticfilesystem:TagResource",
+          "elasticfilesystem:UntagResource",
+          "elasticfilesystem:ListTagsForResource"
+        ],
+        Resource = "*"
+      },
+      {
+        Sid    = "Ec2DescribesForEfs",
+        Effect = "Allow",
+        Action = [
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "efs_deploy_user_attach" {
+  count      = var.is_dmz ? 1 : 0
+  user       = "crossfeed-deploy-staging"
+  policy_arn = aws_iam_policy.efs_deploy_policy[0].arn
+}
