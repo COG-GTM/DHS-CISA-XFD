@@ -8,8 +8,6 @@ type AxeFixture = {
 
 type RolePagesFixture = {
   pageAsGlobalAdmin: Page;
-  pageAsRegionalAdmin: Page;
-  pageAsGlobalView: Page;
   pageAsStandardUser: Page;
 };
 

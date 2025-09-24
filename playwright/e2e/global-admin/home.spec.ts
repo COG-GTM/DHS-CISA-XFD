@@ -3,15 +3,23 @@ import { expect } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
 
 test.describe('Home Page Accessibility', () => {
-  /*test('Standard User: homepage accessibility', async ({ pageAsStandardUser, makeAxeBuilder }, testInfo: TestInfo) => {
-    await runAccessibilityTest(pageAsStandardUser, makeAxeBuilder, testInfo, 'Standard User');
+  test('Standard User: homepage accessibility', async ({
+    pageAsStandardUser,
+    makeAxeBuilder
+  }, testInfo: TestInfo) => {
+    await runAccessibilityTest(
+      pageAsStandardUser,
+      makeAxeBuilder,
+      testInfo,
+      'Standard User'
+    );
   });
 
-  test('Global View: homepage accessibility', async ({ pageAsGlobalView, makeAxeBuilder }, testInfo: TestInfo) => {
+  /*test('Global View: homepage accessibility', async ({ pageAsGlobalView, makeAxeBuilder }, testInfo: TestInfo) => {
     await runAccessibilityTest(pageAsGlobalView, makeAxeBuilder, testInfo, 'Global View');
-  });
+  });*/
 
-  test('Regional Admin: homepage accessibility', async ({ pageAsRegionalAdmin, makeAxeBuilder }, testInfo: TestInfo) => {
+  /*test('Regional Admin: homepage accessibility', async ({ pageAsRegionalAdmin, makeAxeBuilder }, testInfo: TestInfo) => {
     await runAccessibilityTest(pageAsRegionalAdmin, makeAxeBuilder, testInfo, 'Regional Admin');
   });*/
 
