@@ -137,6 +137,23 @@ def apply_sort(qs, sort: str | None, order: str | None):
             OrderBy(F("ip_inet"), descending=desc, nulls_last=True),  # numeric IP sort
             OrderBy(F("ip"), descending=desc),  # stable fallback
         )
+    if sort == "domain":
+        # If you’re certain ip values are valid IPs, you can drop the Case/When and Cast directly.
+        return qs.annotate(
+            domain_string_inet=Case(
+                When(
+                    domain_string__isnull=False,
+                    then=Cast("domain_string", output_field=GenericIPAddressField()),
+                ),
+                default=Value(None),
+                output_field=GenericIPAddressField(),
+            ),
+        ).order_by(
+            OrderBy(
+                F("domain_string_inet"), descending=desc, nulls_last=True
+            ),  # numeric IP sort
+            OrderBy(F("domain_string"), descending=desc),  # stable fallback
+        )
 
     field = sort or "id"  # default if None
     return qs.order_by(("-" if desc else "") + field)
