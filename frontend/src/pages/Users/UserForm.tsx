@@ -215,7 +215,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       region_id: values.region_id
     };
     try {
-      await apiPut(`/v2/users/${values.id}`, { body });
+      await apiPost(`/v2/update_user/${values.id}`, { body });
       if (values.originalOrgId !== values.org_id) {
         if (values.originalOrgId) {
           await apiPost(
