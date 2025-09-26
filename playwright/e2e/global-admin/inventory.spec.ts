@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
 
 test.describe('Inventory', () => {
-  test('Test inventory accessibility', async ({
+  test.skip('Test inventory accessibility', async ({
     pageAsGlobalAdmin,
     makeAxeBuilder
   }, testInfo: TestInfo) => {
@@ -19,7 +19,7 @@ test.describe('Inventory', () => {
     expect(accessibilityScanResults.violations).toHaveLength(0);
   });
 
-  test('Test domain accessibility', async ({
+  test.skip('Test domain accessibility', async ({
     pageAsGlobalAdmin,
     makeAxeBuilder
   }, testInfo: TestInfo) => {

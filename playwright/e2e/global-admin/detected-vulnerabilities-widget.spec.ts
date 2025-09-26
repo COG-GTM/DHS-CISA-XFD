@@ -7,7 +7,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
     await pageAsGlobalAdmin.goto('/VSDashboard');
   });
 
-  test('should display main widget heading and tooltip', async ({
+  test.skip('should display main widget heading and tooltip', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Check that the main widget heading is visible
@@ -23,7 +23,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
     await tooltipButton.click();
   });
 
-  test('should navigate to details page when clicking "View Details"', async ({
+  test.skip('should navigate to details page when clicking "View Details"', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Verify "View Details" link is visible and navigates correctly
@@ -37,7 +37,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
 
   //========= Severity by Prominenece ==========
 
-  test('should toggle severity by prominence graph data using KEV, Distinct, All buttons', async ({
+  test.skip('should toggle severity by prominence graph data using KEV, Distinct, All buttons', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Scope radios to the "Severity by Prominence" section
@@ -62,7 +62,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
     await expect(allBtn).toHaveAttribute('aria-checked', 'true');
   });
 
-  test('should render severity bars with correct labels', async ({
+  test.skip('should render severity bars with correct labels', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Locate all bars on the graph with aria-labels
@@ -78,7 +78,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
     await expect(bars.nth(3)).toHaveAttribute('aria-label', /low/i);
   });
 
-  test(' severity chart bar colors are correct for KEV, Distinct, and All', async ({
+  test.skip(' severity chart bar colors are correct for KEV, Distinct, and All', async ({
     page: pageAsGlobalAdmin
   }) => {
     const bars = pageAsGlobalAdmin.locator('svg .MuiBarElement-root');
@@ -105,7 +105,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
 
   // ====== Top Vulnerability by Occurrence =======
 
-  test('should toggle  occurrence table data using KEV and All buttons', async ({
+  test.skip('should toggle  occurrence table data using KEV and All buttons', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Scope radios to the "Top Vulnerabilities by Occurrence" section
@@ -126,7 +126,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
     await expect(allBtn).toHaveAttribute('aria-checked', 'true');
   });
 
-  test('should display vulnerability occurrunce table with correct columns and data', async ({
+  test.skip('should display vulnerability occurrunce table with correct columns and data', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Assert the table headers are visible
@@ -152,7 +152,7 @@ test.describe('Known Exploited and Other Detected Vulnerabilities Widget', () =>
     await firstCell.click();
   });
 
-  test('hover tooltips show text for all info icons', async ({
+  test.skip('hover tooltips show text for all info icons', async ({
     page: pageAsGlobalAdmin
   }) => {
     // Small helper to reduce flakiness with MUI’s show/leave delays

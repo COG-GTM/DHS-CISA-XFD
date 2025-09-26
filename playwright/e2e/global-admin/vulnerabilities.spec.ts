@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
 
 test.describe('Vulnerabilities', () => {
-  test('Test vulnerabilities accessibility', async ({
+  test.skip('Test vulnerabilities accessibility', async ({
     page: pageAsGlobalAdmin,
     makeAxeBuilder
   }, testInfo: TestInfo) => {

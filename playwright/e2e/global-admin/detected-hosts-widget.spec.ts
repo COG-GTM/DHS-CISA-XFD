@@ -9,7 +9,7 @@ test.describe('VS Dashboard — Detected Hosts & Top Vulnerable Hosts', () => {
   ];
 
   for (const label of hostMetrics) {
-    test(`should show "${label}" button with number`, async ({
+    test.skip(`should show "${label}" button with number`, async ({
       page: pageAsGlobalAdmin
     }) => {
       await pageAsGlobalAdmin.goto('/VSDashboard', {

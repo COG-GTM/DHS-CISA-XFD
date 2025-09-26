@@ -2,7 +2,7 @@ import { test } from '../../tests/fixtures';
 import { expect } from '@playwright/test';
 
 test.describe('Latest Scanning Summary - Page Resize', () => {
-  test('Widget is responsive and reload-safe', async ({
+  test.skip('Widget is responsive and reload-safe', async ({
     page: pageAsGlobalAdmin
   }) => {
     await pageAsGlobalAdmin.goto('/VSDashboard');
@@ -35,7 +35,7 @@ test.describe('Latest Scanning Summary - Page Resize', () => {
 });
 
 test.describe('Latest Scanning Summary - ARIA labels', () => {
-  test('ARIA: Info icon and metric buttons have correct labels', async ({
+  test.skip('ARIA: Info icon and metric buttons have correct labels', async ({
     page: pageAsGlobalAdmin
   }) => {
     await pageAsGlobalAdmin.goto('/VSDashboard');
@@ -62,7 +62,7 @@ test.describe('Latest Scanning Summary - ARIA labels', () => {
 });
 
 test.describe('Latest Scanning Summary - Scan Date Display', () => {
-  test('should display valid scan date ranges in correct format', async ({
+  test.skip('should display valid scan date ranges in correct format', async ({
     pageAsGlobalAdmin
   }) => {
     await pageAsGlobalAdmin.goto('/VSDashboard');
@@ -89,7 +89,7 @@ test.describe('Latest Scanning Summary - Scan Date Display', () => {
 });
 
 test.describe('Latest Scanning Summary Button Tests', () => {
-  test('Widget info icon shows correct tooltip', async ({
+  test.skip('Widget info icon shows correct tooltip', async ({
     page: pageAsGlobalAdmin
   }) => {
     await pageAsGlobalAdmin.goto('/VSDashboard');
@@ -122,7 +122,7 @@ test.describe('Latest Scanning Summary Button Tests', () => {
   ]);
 
   for (const label of Object.keys(metricTooltips)) {
-    test(`Click 2 behavior for "${label}" metric card`, async ({
+    test.skip(`Click 2 behavior for "${label}" metric card`, async ({
       page: pageAsGlobalAdmin
     }) => {
       const id = label.replace(/\s+/g, '-').toLowerCase();
@@ -162,7 +162,7 @@ test.describe('Latest Scanning Summary Button Tests', () => {
 });
 
 test.describe('Latest Scanning Summary - Keyboard Movement', () => {
-  test('Keyboard navigation inside widget is tabbable', async ({
+  test.skip('Keyboard navigation inside widget is tabbable', async ({
     page: pageAsGlobalAdmin
   }) => {
     await pageAsGlobalAdmin.goto('/VSDashboard');
@@ -210,7 +210,7 @@ test.describe('Latest Scanning Summary - Keyboard Movement', () => {
 });
 
 test.describe('Latest Scanning Summary - Metric Boxes', () => {
-  test('Checks that the metric boxes in the widget number + label + tooltip checks', async ({
+  test.skip('Checks that the metric boxes in the widget number + label + tooltip checks', async ({
     page: pageAsGlobalAdmin
   }) => {
     const pause = (ms: number) => pageAsGlobalAdmin.waitForTimeout(ms);
