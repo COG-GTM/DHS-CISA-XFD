@@ -166,14 +166,14 @@ if IS_LAMBDA and not IS_LOCAL:
                 "class": "watchtower.CloudWatchLogHandler",
                 "formatter": "standard",
                 "boto3_session": boto3.Session(region_name=AWS_REGION),
-                "log_group": "crossfeed-{}-backend-api".format(STAGE),
+                "log_group_name": "crossfeed-{}-backend-api".format(STAGE),
             },
             "requests_cloudwatch": {
                 "level": "INFO",
                 "class": "watchtower.CloudWatchLogHandler",
                 "formatter": "standard",
                 "boto3_session": boto3.Session(region_name=AWS_REGION),
-                "log_group": "crossfeed-{}-backend-api-requests".format(STAGE),
+                "log_group_name": "crossfeed-{}-backend-api-requests".format(STAGE),
             },
         }
     )
