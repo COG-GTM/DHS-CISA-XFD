@@ -39,7 +39,7 @@ async function loginAndSaveStorage(
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
   await page.getByTestId('button').click();
-  await page.getByLabel('Email Address').fill(String(process.env.PW_XFD_LOGIN));
+  await page.getByLabel('Email Address').fill(username);
   await page.getByRole('button', { name: 'Next' }).click();
   await page.waitForFunction(() => document.title.includes('Login.gov'));
   await page.getByLabel('Email address').fill(username);
