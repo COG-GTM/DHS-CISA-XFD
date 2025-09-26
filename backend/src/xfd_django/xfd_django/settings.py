@@ -155,7 +155,6 @@ handlers = {
 if IS_LAMBDA and not IS_LOCAL:
     # Third-Party Libraries
     import boto3
-    from watchtower import CloudWatchLogHandler
 
     AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
     STAGE = os.getenv("STAGE", "dev")
@@ -164,14 +163,14 @@ if IS_LAMBDA and not IS_LOCAL:
         {
             "app_cloudwatch": {
                 "level": LOGGING_LEVEL,
-                "class": CloudWatchLogHandler,
+                "class": "watchtower.CloudWatchLogHandler",
                 "formatter": "standard",
                 "boto3_session": boto3.Session(region_name=AWS_REGION),
                 "log_group": "crossfeed-{}-backend-api".format(STAGE),
             },
             "requests_cloudwatch": {
                 "level": "INFO",
-                "class": CloudWatchLogHandler,
+                "class": "watchtower.CloudWatchLogHandler",
                 "formatter": "standard",
                 "boto3_session": boto3.Session(region_name=AWS_REGION),
                 "log_group": "crossfeed-{}-backend-api-requests".format(STAGE),
