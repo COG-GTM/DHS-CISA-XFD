@@ -9,11 +9,7 @@ import {
 } from '@mui/material';
 import { tableCellClasses } from '@mui/material/TableCell';
 
-const DetailsList = ({
-  data
-}: {
-  data: Record<string, React.ReactNode>;
-}) => (
+const DetailsList = ({ data }: { data: Record<string, React.ReactNode> }) => (
   <Grid
     size={{ sm: 12, md: 6 }}
     sx={{ display: 'flex', justifyContent: 'left' }}
