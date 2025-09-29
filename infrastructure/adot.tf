@@ -21,41 +21,39 @@ variable "create_vpc_endpoints" {
 
 # ---- Network ids pulled from SSM (you already pass these in tfvars) ----
 data "aws_ssm_parameter" "vpc_cidr" {
-  count = var.create_vpc_endpoints ? 1 : 0
+  count = var.create_vpc_endpoints && var.ssm_vpc_cidr_block != "" ? 1 : 0
   name  = var.ssm_vpc_cidr_block
 }
 
 data "aws_ssm_parameter" "subnet_ep_a" {
-  count = var.create_vpc_endpoints ? 1 : 0
+  count = var.create_vpc_endpoints && var.ssm_subnet_backend_id != "" ? 1 : 0
   name  = var.ssm_subnet_backend_id
 }
 
 data "aws_ssm_parameter" "subnet_ep_b" {
-  count = var.create_vpc_endpoints ? 1 : 0
+  count = var.create_vpc_endpoints && var.ssm_subnet_worker_id != "" ? 1 : 0
   name  = var.ssm_subnet_worker_id
 }
 
 data "aws_ssm_parameter" "subnet_ep_c" {
-  count = var.create_vpc_endpoints ? 1 : 0
+  count = var.create_vpc_endpoints && var.ssm_subnet_matomo_id != "" ? 1 : 0
   name  = var.ssm_subnet_matomo_id
 }
 
 locals {
   is_gov = var.aws_partition == "aws-us-gov"
 
-  # Safely dereference only when endpoints are enabled
-  vpc_id   = var.create_vpc_endpoints ? data.aws_ssm_parameter.vpc_id[0].value : null
-  vpc_cidr = var.create_vpc_endpoints ? data.aws_ssm_parameter.vpc_cidr[0].value : null
+  vpc_id   = var.create_vpc_endpoints ? try(data.aws_ssm_parameter.vpc_id[0].value, null) : null
+  vpc_cidr = var.create_vpc_endpoints ? try(data.aws_ssm_parameter.vpc_cidr[0].value, null) : null
 
   subnets_ep = var.create_vpc_endpoints ? compact([
-    data.aws_ssm_parameter.subnet_ep_a[0].value,
-    data.aws_ssm_parameter.subnet_ep_b[0].value,
-    data.aws_ssm_parameter.subnet_ep_c[0].value
+    try(data.aws_ssm_parameter.subnet_ep_a[0].value, null),
+    try(data.aws_ssm_parameter.subnet_ep_b[0].value, null),
+    try(data.aws_ssm_parameter.subnet_ep_c[0].value, null)
   ]) : []
 
   account_root_arn = "arn:${var.aws_partition}:iam::${data.aws_caller_identity.current.account_id}:root"
 
-  # GovCloud uses your custom layer ARN (from tfvars), Commercial leaves it blank for Serverless to use AWS-managed ARNs.
   adot_python_layer_arn_resolved = local.is_gov ? var.adot_python_layer_arn_govcloud : ""
 }
 
