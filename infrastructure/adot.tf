@@ -20,7 +20,6 @@ variable "create_vpc_endpoints" {
 
 
 # ---- Network ids pulled from SSM (you already pass these in tfvars) ----
-data "aws_ssm_parameter" "vpc_id" { name = var.ssm_vpc_id }
 data "aws_ssm_parameter" "vpc_cidr" { name = var.ssm_vpc_cidr_block }
 data "aws_ssm_parameter" "subnet_ep_a" { name = var.ssm_subnet_backend_id }
 data "aws_ssm_parameter" "subnet_ep_b" { name = var.ssm_subnet_worker_id }
