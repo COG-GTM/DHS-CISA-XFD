@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { User } from 'types/user';
-import { useAuthContext } from 'context';
 
-export default function useFirstLoginPopup(user: User | null) {
-  const { apiPut, apiGet, setUser } = useAuthContext();
+export default function useFirstLoginPopup(
+  user: User | null,
+  apiPost: any,
+  apiGet: any,
+  setUser: any
+) {
   const [show, setShow] = useState(!!user?.first_login);
   const dismissedRef = useRef(false);
 
@@ -16,7 +19,9 @@ export default function useFirstLoginPopup(user: User | null) {
     dismissedRef.current = true;
     setShow(false);
     try {
-      await apiPut(`/v2/users/${user?.id}`, { body: { first_login: false } });
+      await apiPost(`/v2/update_user/${user?.id}`, {
+        body: { first_login: false }
+      });
       const refreshed = await apiGet('/users/me');
       setUser?.(refreshed);
     } catch (err) {

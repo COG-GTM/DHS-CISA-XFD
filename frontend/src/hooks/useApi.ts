@@ -58,8 +58,6 @@ export const useApi = (onError?: OnError) => {
     apiGet: useMemo(() => apiMethod(API.get.bind(API), 'get'), [apiMethod]),
     apiPost: useMemo(() => apiMethod(API.post.bind(API), 'post'), [apiMethod]),
     apiDelete: useMemo(() => apiMethod(API.del.bind(API), 'del'), [apiMethod]),
-    // TODO: Remove apiPut after branch DJ_put_to_pull is merged into develop
-    apiPut: useMemo(() => apiMethod(API.put.bind(API), 'put'), [apiMethod]),
     apiPatch: useMemo(
       () => apiMethod(API.patch.bind(API), 'patch'),
       [apiMethod]

@@ -49,7 +49,7 @@ const transformData = (data: User[]): User[] => {
   }));
 };
 export const RegionUsers: React.FC = () => {
-  const { apiDelete, apiGet, apiPost, apiPut, user } = useAuthContext();
+  const { apiDelete, apiGet, apiPost, user } = useAuthContext();
   const apiRefPendingUsers = useGridApiRef();
   const apiRefCurrentUsers = useGridApiRef();
   const regionalAdminId = user?.region_id;
@@ -442,7 +442,7 @@ export const RegionUsers: React.FC = () => {
 
   const updateUser = useCallback(
     (user_id: string, org_name: string): Promise<boolean> => {
-      return apiPut(`/v2/users/${user_id}`, {
+      return apiPost(`/v2/update_user/${user_id}`, {
         body: { invite_pending: false }
       }).then(
         (res) => {
@@ -463,12 +463,12 @@ export const RegionUsers: React.FC = () => {
         }
       );
     }, // eslint-disable-next-line react-hooks/exhaustive-deps
-    [apiPut]
+    [apiPost]
   );
 
   const sendApprovalEmail = useCallback(
     (user_id: string): Promise<boolean> => {
-      return apiPut(`/users/${user_id}/register/approve`).then(
+      return apiPost(`/users/${user_id}/register/approve`).then(
         (res) => {
           console.log(res);
           return true;
@@ -479,7 +479,7 @@ export const RegionUsers: React.FC = () => {
         }
       );
     }, // eslint-disable-next-line react-hooks/exhaustive-deps
-    [apiPut]
+    [apiPost]
   );
 
   const handleCloseDialog = (value: CloseReason) => {
