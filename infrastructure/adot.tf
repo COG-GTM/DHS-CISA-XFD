@@ -39,7 +39,7 @@ locals {
 }
 
 resource "aws_security_group" "telemetry_endpoints_sg" {
-  count  = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
+  count  = (local.is_gov && local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
   name   = "crossfeed-${var.stage}-telemetry-endpoints"
   vpc_id = local.vpc_id
 
@@ -64,7 +64,7 @@ resource "aws_security_group" "telemetry_endpoints_sg" {
 # ---- Interface VPC Endpoints (toggle via create_vpc_endpoints) ----
 # X-Ray endpoint service name: com.amazonaws.${region}.xray
 resource "aws_vpc_endpoint" "xray" {
-  count               = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
+  count               = (local.is_gov && local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${var.aws_region}.xray"
   vpc_endpoint_type   = "Interface"
@@ -76,7 +76,7 @@ resource "aws_vpc_endpoint" "xray" {
 
 # CloudWatch Logs endpoint service name: com.amazonaws.${region}.logs
 resource "aws_vpc_endpoint" "logs" {
-  count               = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
+  count               = (local.is_gov && local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type   = "Interface"
