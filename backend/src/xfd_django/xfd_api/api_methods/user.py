@@ -477,7 +477,8 @@ def update_user_v2(user_id, user_data, current_user):
         allowed_fields = get_allowed_user_update_fields(current_user, user)
 
         # Check for disallowed fields before applying updates
-        disallowed_fields = set(updates.keys()) - allowed_fields
+        requested_fields = set(updates.keys())
+        disallowed_fields = requested_fields - allowed_fields
         if disallowed_fields:
             raise HTTPException(
                 status_code=403,
@@ -486,6 +487,13 @@ def update_user_v2(user_id, user_data, current_user):
                 ),
             )
 
+        if "user_type" in requested_fields:
+            if updates["user_type"] in ["globalView", "globalAdmin", "regionalAdmin"]:
+                if not user.email.endswith("cisa.dhs.gov"):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="User not authorized for requested user type.",
+                    )
         # Apply only the allowed updates
         for field, value in updates.items():
             if field == "state":
