@@ -20,159 +20,70 @@ variable "create_vpc_endpoints" {
 
 
 # ---- Network ids pulled from SSM (you already pass these in tfvars) ----
-data "aws_ssm_parameter" "vpc_cidr" {
-  count = var.create_vpc_endpoints && var.ssm_vpc_cidr_block != "" ? 1 : 0
-  name  = var.ssm_vpc_cidr_block
-}
-
-data "aws_ssm_parameter" "subnet_ep_a" {
-  count = var.create_vpc_endpoints && var.ssm_subnet_backend_id != "" ? 1 : 0
-  name  = var.ssm_subnet_backend_id
-}
-
-data "aws_ssm_parameter" "subnet_ep_b" {
-  count = var.create_vpc_endpoints && var.ssm_subnet_worker_id != "" ? 1 : 0
-  name  = var.ssm_subnet_worker_id
-}
-
-data "aws_ssm_parameter" "subnet_ep_c" {
-  count = var.create_vpc_endpoints && var.ssm_subnet_matomo_id != "" ? 1 : 0
-  name  = var.ssm_subnet_matomo_id
-}
-
 locals {
   is_gov = var.aws_partition == "aws-us-gov"
 
-  vpc_id   = var.create_vpc_endpoints ? try(data.aws_ssm_parameter.vpc_id[0].value, null) : null
-  vpc_cidr = var.create_vpc_endpoints ? try(data.aws_ssm_parameter.vpc_cidr[0].value, null) : null
+  # Use DMZ resources in commercial-DMZ, otherwise (GovCloud+endpoints) use SSM, else null
+  vpc_id   = var.is_dmz ? aws_vpc.crossfeed_vpc[0].id : (local.is_gov && var.create_vpc_endpoints ? data.aws_ssm_parameter.vpc_id[0].value : null)
+  vpc_cidr = var.is_dmz ? aws_vpc.crossfeed_vpc[0].cidr_block : (local.is_gov && var.create_vpc_endpoints ? data.aws_ssm_parameter.vpc_cidr_block[0].value : null)
 
-  subnets_ep = var.create_vpc_endpoints ? compact([
-    try(data.aws_ssm_parameter.subnet_ep_a[0].value, null),
-    try(data.aws_ssm_parameter.subnet_ep_b[0].value, null),
-    try(data.aws_ssm_parameter.subnet_ep_c[0].value, null)
-  ]) : []
-
-  account_root_arn = "arn:${var.aws_partition}:iam::${data.aws_caller_identity.current.account_id}:root"
+  subnets_ep = var.is_dmz ? [aws_subnet.backend[0].id, aws_subnet.worker[0].id, aws_subnet.matomo_1[0].id] : (local.is_gov && var.create_vpc_endpoints ? compact([
+    data.aws_ssm_parameter.subnet_backend_id[0].value,
+    data.aws_ssm_parameter.subnet_worker_id[0].value,
+    data.aws_ssm_parameter.subnet_matomo_id[0].value
+    ])
+    : []
+  )
 
   adot_python_layer_arn_resolved = local.is_gov ? var.adot_python_layer_arn_govcloud : ""
 }
 
-# ---- Publish the layer ARN for Serverless to consume (GovCloud only) ----
-resource "aws_ssm_parameter" "adot_python_layer_arn" {
-  count       = local.is_gov ? 1 : 0
-  name        = "/crossfeed/${var.stage}/adot_python_layer_arn"
-  description = "ADOT Python Lambda Layer ARN for ${var.stage} (${var.aws_region})"
-  type        = "String"
-  value       = local.adot_python_layer_arn_resolved
-}
-
-# ---- Security group for Interface VPC Endpoints (tight inbound on 443) ----
 resource "aws_security_group" "telemetry_endpoints_sg" {
-  count       = var.create_vpc_endpoints ? 1 : 0
-  name        = "crossfeed-${var.stage}-telemetry-endpoints"
-  description = "Restrict access to X-Ray and CloudWatch Logs interface endpoints"
-  vpc_id      = local.vpc_id
+  count  = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
+  name   = "crossfeed-${var.stage}-telemetry-endpoints"
+  vpc_id = local.vpc_id
 
   ingress {
-    description = "HTTPS from within VPC"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [local.vpc_cidr]
   }
 
-  # Allow return traffic; scope to VPC CIDR
   egress {
-    description = "Responses to VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = [local.vpc_cidr]
   }
 
-  tags = {
-    Project = var.project
-    Stage   = var.stage
-    Owner   = "Crossfeed managed resource"
-  }
+  tags = { Project = var.project, Stage = var.stage, Owner = "Crossfeed managed resource" }
 }
 
-# ---- Endpoint policies (limit use to our account) ----
-locals {
-  xray_vpce_policy = {
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "AllowXRayWritesFromThisAccount",
-        Effect    = "Allow",
-        Principal = { AWS = local.account_root_arn },
-        Action = [
-          "xray:PutTraceSegments",
-          "xray:PutTelemetryRecords",
-          "xray:GetSamplingRules",
-          "xray:GetSamplingTargets",
-          "xray:GetSamplingStatisticSummaries"
-        ],
-        Resource = "*"
-      }
-    ]
-  }
-
-  logs_vpce_policy = {
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "AllowCWLogsFromThisAccount",
-        Effect    = "Allow",
-        Principal = { AWS = local.account_root_arn },
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ],
-        Resource = "*"
-      }
-    ]
-  }
-}
 
 # ---- Interface VPC Endpoints (toggle via create_vpc_endpoints) ----
 # X-Ray endpoint service name: com.amazonaws.${region}.xray
 resource "aws_vpc_endpoint" "xray" {
-  count               = var.create_vpc_endpoints ? 1 : 0
+  count               = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${var.aws_region}.xray"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.subnets_ep
   security_group_ids  = [aws_security_group.telemetry_endpoints_sg[0].id]
-  policy              = jsonencode(local.xray_vpce_policy)
-
-  tags = {
-    Project = var.project
-    Stage   = var.stage
-    Owner   = "Crossfeed managed resource"
-  }
+  tags                = { Project = var.project, Stage = var.stage, Owner = "Crossfeed managed resource" }
 }
 
 # CloudWatch Logs endpoint service name: com.amazonaws.${region}.logs
 resource "aws_vpc_endpoint" "logs" {
-  count               = var.create_vpc_endpoints ? 1 : 0
+  count               = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
   vpc_id              = local.vpc_id
   service_name        = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = local.subnets_ep
   security_group_ids  = [aws_security_group.telemetry_endpoints_sg[0].id]
-  policy              = jsonencode(local.logs_vpce_policy)
-
-  tags = {
-    Project = var.project
-    Stage   = var.stage
-    Owner   = "Crossfeed managed resource"
-  }
+  tags                = { Project = var.project, Stage = var.stage, Owner = "Crossfeed managed resource" }
 }
 
 # ---- Outputs ----

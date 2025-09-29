@@ -13,10 +13,10 @@ resource "aws_iam_policy" "ci_ssm_read" {
         "ssm:GetParametersByPath"
       ],
       Resource = [
-        "arn:aws:ssm:us-east-1:957221700844:parameter/LZ/VPC_CIDR_BLOCK",
         "arn:aws:ssm:us-east-1:957221700844:parameter/LZ/SUBNET_ENDPOINT_A_ID",
         "arn:aws:ssm:us-east-1:957221700844:parameter/LZ/SUBNET_ENDPOINT_B_ID",
         "arn:aws:ssm:us-east-1:957221700844:parameter/LZ/SUBNET_ENDPOINT_C_ID",
+        "arn:aws:ssm:us-east-1:957221700844:parameter/LZ/VPC_CIDR_BLOCK",
         "arn:aws:ssm:us-east-1:957221700844:parameter/LZ/VPC_ID"
       ]
     }]
