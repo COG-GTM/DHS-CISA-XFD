@@ -7,7 +7,7 @@ variable "adot_python_layer_arn_govcloud" {
 
   # Fail fast if deploying to GovCloud without providing the layer ARN
   validation {
-    condition     = var.aws_partition != "aws-us-gov" || length(trim(var.adot_python_layer_arn_govcloud)) > 0
+    condition     = var.adot_python_layer_arn_govcloud == "" || can(regex("^arn:aws-us-gov:lambda:[a-z0-9-]+:\\d{12}:layer:[A-Za-z0-9._-]+:\\d+$", var.adot_python_layer_arn_govcloud))
     error_message = "GovCloud detected (aws-us-gov) but 'adot_python_layer_arn_govcloud' is empty. Publish your ADOT layer in this region and set its ARN."
   }
 }
@@ -20,6 +20,7 @@ variable "create_vpc_endpoints" {
 
 
 # ---- Network ids pulled from SSM (you already pass these in tfvars) ----
+data "aws_ssm_parameter" "vpc_id" { name = var.ssm_vpc_id }
 data "aws_ssm_parameter" "vpc_cidr" { name = var.ssm_vpc_cidr_block }
 data "aws_ssm_parameter" "subnet_ep_a" { name = var.ssm_subnet_backend_id }
 data "aws_ssm_parameter" "subnet_ep_b" { name = var.ssm_subnet_worker_id }
@@ -33,8 +34,8 @@ locals {
     data.aws_ssm_parameter.subnet_ep_b.value,
     data.aws_ssm_parameter.subnet_ep_c.value
   ])
-  vpc_id           = data.aws_ssm_parameter.vpc_id[0]
-  vpc_cidr         = data.aws_ssm_parameter.vpc_cidr
+  vpc_id           = data.aws_ssm_parameter.vpc_id.value
+  vpc_cidr         = data.aws_ssm_parameter.vpc_cidr.value
   account_root_arn = "arn:${var.aws_partition}:iam::${data.aws_caller_identity.current.account_id}:root"
 
   # GovCloud: use your published layer ARN from tfvars
