@@ -20,25 +20,42 @@ variable "create_vpc_endpoints" {
 
 
 # ---- Network ids pulled from SSM (you already pass these in tfvars) ----
-data "aws_ssm_parameter" "vpc_cidr" { name = var.ssm_vpc_cidr_block }
-data "aws_ssm_parameter" "subnet_ep_a" { name = var.ssm_subnet_backend_id }
-data "aws_ssm_parameter" "subnet_ep_b" { name = var.ssm_subnet_worker_id }
-data "aws_ssm_parameter" "subnet_ep_c" { name = var.ssm_subnet_matomo_id }
+data "aws_ssm_parameter" "vpc_cidr" {
+  count = var.create_vpc_endpoints ? 1 : 0
+  name  = var.ssm_vpc_cidr_block
+}
 
-# ---- Locals ----
+data "aws_ssm_parameter" "subnet_ep_a" {
+  count = var.create_vpc_endpoints ? 1 : 0
+  name  = var.ssm_subnet_backend_id
+}
+
+data "aws_ssm_parameter" "subnet_ep_b" {
+  count = var.create_vpc_endpoints ? 1 : 0
+  name  = var.ssm_subnet_worker_id
+}
+
+data "aws_ssm_parameter" "subnet_ep_c" {
+  count = var.create_vpc_endpoints ? 1 : 0
+  name  = var.ssm_subnet_matomo_id
+}
+
 locals {
   is_gov = var.aws_partition == "aws-us-gov"
-  subnets_ep = compact([
-    data.aws_ssm_parameter.subnet_ep_a.value,
-    data.aws_ssm_parameter.subnet_ep_b.value,
-    data.aws_ssm_parameter.subnet_ep_c.value
-  ])
-  vpc_id           = data.aws_ssm_parameter.vpc_id[0]
-  vpc_cidr         = data.aws_ssm_parameter.vpc_cidr.value
+
+  # Safely dereference only when endpoints are enabled
+  vpc_id   = var.create_vpc_endpoints ? data.aws_ssm_parameter.vpc_id[0].value : null
+  vpc_cidr = var.create_vpc_endpoints ? data.aws_ssm_parameter.vpc_cidr[0].value : null
+
+  subnets_ep = var.create_vpc_endpoints ? compact([
+    data.aws_ssm_parameter.subnet_ep_a[0].value,
+    data.aws_ssm_parameter.subnet_ep_b[0].value,
+    data.aws_ssm_parameter.subnet_ep_c[0].value
+  ]) : []
+
   account_root_arn = "arn:${var.aws_partition}:iam::${data.aws_caller_identity.current.account_id}:root"
 
-  # GovCloud: use your published layer ARN from tfvars
-  # Commercial: let Serverless use AWS-managed ARNs directly (no SSM needed)
+  # GovCloud uses your custom layer ARN (from tfvars), Commercial leaves it blank for Serverless to use AWS-managed ARNs.
   adot_python_layer_arn_resolved = local.is_gov ? var.adot_python_layer_arn_govcloud : ""
 }
 
