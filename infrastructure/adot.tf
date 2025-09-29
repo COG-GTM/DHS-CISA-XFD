@@ -33,7 +33,7 @@ locals {
     data.aws_ssm_parameter.subnet_ep_b.value,
     data.aws_ssm_parameter.subnet_ep_c.value
   ])
-  vpc_id           = data.aws_ssm_parameter.vpc_id.value
+  vpc_id           = data.aws_ssm_parameter.vpc_id[0].value
   vpc_cidr         = data.aws_ssm_parameter.vpc_cidr.value
   account_root_arn = "arn:${var.aws_partition}:iam::${data.aws_caller_identity.current.account_id}:root"
 
