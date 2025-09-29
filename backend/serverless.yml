@@ -218,4 +218,3 @@ plugins:
   - serverless-python-requirements
   - serverless-plugin-ifelse
   - serverless-prune-versions
-

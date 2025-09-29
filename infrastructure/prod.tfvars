@@ -1,4 +1,4 @@
-adot_python_layer_arn_govcloud = "arn:aws-us-gov:lambda:us-gov-east-1:<your-account-id>:layer:adot-python:<version>"
+adot_python_layer_arn_govcloud     = "arn:aws-us-gov:lambda:us-gov-west-1:263512260366:layer:adot-python-with-collector:1"
 aws_region                         = "us-gov-east-1"
 aws_other_region                   = "us-gov-west-1"
 aws_partition                      = "aws-us-gov"

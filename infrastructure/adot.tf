@@ -18,26 +18,23 @@ variable "create_vpc_endpoints" {
   description = "Whether to create interface VPC endpoints for X-Ray and CloudWatch Logs."
 }
 
-# ---- Identity ----
-data "aws_caller_identity" "current" {}
 
 # ---- Network ids pulled from SSM (you already pass these in tfvars) ----
-data "aws_ssm_parameter" "vpc_id"      { name = var.ssm_vpc_id }
-data "aws_ssm_parameter" "vpc_cidr"    { name = var.ssm_vpc_cidr_block }
+data "aws_ssm_parameter" "vpc_cidr" { name = var.ssm_vpc_cidr_block }
 data "aws_ssm_parameter" "subnet_ep_a" { name = var.ssm_subnet_backend_id }
 data "aws_ssm_parameter" "subnet_ep_b" { name = var.ssm_subnet_worker_id }
 data "aws_ssm_parameter" "subnet_ep_c" { name = var.ssm_subnet_matomo_id }
 
 # ---- Locals ----
 locals {
-  is_gov     = var.aws_partition == "aws-us-gov"
+  is_gov = var.aws_partition == "aws-us-gov"
   subnets_ep = compact([
     data.aws_ssm_parameter.subnet_ep_a.value,
     data.aws_ssm_parameter.subnet_ep_b.value,
     data.aws_ssm_parameter.subnet_ep_c.value
   ])
-  vpc_id           = data.aws_ssm_parameter.vpc_id.value
-  vpc_cidr         = data.aws_ssm_parameter.vpc_cidr.value
+  vpc_id           = data.aws_ssm_parameter.vpc_id[0]
+  vpc_cidr         = data.aws_ssm_parameter.vpc_cidr
   account_root_arn = "arn:${var.aws_partition}:iam::${data.aws_caller_identity.current.account_id}:root"
 
   # GovCloud: use your published layer ARN from tfvars
@@ -88,13 +85,13 @@ resource "aws_security_group" "telemetry_endpoints_sg" {
 # ---- Endpoint policies (limit use to our account) ----
 locals {
   xray_vpce_policy = {
-    Version   = "2012-10-17",
+    Version = "2012-10-17",
     Statement = [
       {
         Sid       = "AllowXRayWritesFromThisAccount",
         Effect    = "Allow",
         Principal = { AWS = local.account_root_arn },
-        Action    = [
+        Action = [
           "xray:PutTraceSegments",
           "xray:PutTelemetryRecords",
           "xray:GetSamplingRules",
@@ -107,13 +104,13 @@ locals {
   }
 
   logs_vpce_policy = {
-    Version   = "2012-10-17",
+    Version = "2012-10-17",
     Statement = [
       {
         Sid       = "AllowCWLogsFromThisAccount",
         Effect    = "Allow",
         Principal = { AWS = local.account_root_arn },
-        Action    = [
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
