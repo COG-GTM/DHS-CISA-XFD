@@ -77,7 +77,7 @@ resource "aws_vpc_endpoint" "xray" {
 # CloudWatch Logs endpoint service name: com.amazonaws.${region}.logs
 resource "aws_vpc_endpoint" "logs" {
   count               = (local.vpc_id != null && length(local.subnets_ep) > 0) ? 1 : 0
-  vpc_id              = local.vpc_id
+  vpc_id              = var.is_dmz ? aws_vpc.crossfeed_vpc[0].id : data.aws_ssm_parameter.vpc_id[0].value
   service_name        = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
