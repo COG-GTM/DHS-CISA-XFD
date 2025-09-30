@@ -47,7 +47,7 @@ resource "aws_security_group" "telemetry_endpoints_sg" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = [local.vpc_cidr]
+    cidr_blocks = [var.is_dmz ? aws_vpc.crossfeed_vpc[0].cidr_block : data.aws_ssm_parameter.vpc_cidr_block[0].value]
   }
 
   egress {
