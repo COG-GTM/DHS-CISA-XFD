@@ -6,6 +6,7 @@ import logging
 import os
 
 # Third-Party Libraries
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
 from django.forms import model_to_dict
@@ -488,8 +489,14 @@ def update_user_v2(user_id, user_data, current_user):
             )
 
         if "user_type" in requested_fields:
-            if updates["user_type"] in ["globalView", "globalAdmin", "regionalAdmin"]:
-                if not user.email.endswith("cisa.dhs.gov"):
+            if updates["user_type"] in settings.ALLOWED_ADMIN_ROLES:
+                email_value = (user.email or "").strip().lower()
+                email_parts = email_value.split("@")
+                email_domain = email_parts[-1] if len(email_parts) == 2 else ""
+                allowed_admin_domains = (
+                    settings.ALLOWED_ADMIN_DOMAINS
+                )  # list[str], e.g., ["cisa.dhs.gov"]
+                if email_domain not in allowed_admin_domains:
                     raise HTTPException(
                         status_code=403,
                         detail="User not authorized for requested user type.",
