@@ -16,7 +16,8 @@ scheduler:
         deployment.environment=${self:provider.stage}
 
   handler: src/xfd_django/xfd_api/tasks/scheduler.handler
-  #TODO: Parameterize the timeout value at a future date see CRASM-3270. See all timeouts below.
+  # TODO: Parameterize the timeout value,
+  # at a future date see CRASM-3270. See all timeouts below.
   timeout: 900
   events:
     - schedule: rate(5 minutes)
