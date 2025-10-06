@@ -3,6 +3,7 @@ import { Box, Button, TextField } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useAuthContext } from 'context';
 import { useStaticsContext } from 'context/StaticsContext';
+import { useNavigationContext } from 'context/NavigationContext';
 import {
   useUserLevel,
   GLOBAL_ADMIN,
@@ -39,10 +40,12 @@ export const VSDashRegionAndOrgFilters: React.FC<
 > = ({ addFilter, removeFilter, filters }) => {
   const { user, apiPost, currentOrganization } = useAuthContext();
   const { regions } = useStaticsContext();
+  const { isDrillDown } = useNavigationContext();
   const [search_term, setSearchTerm] = useState<string>('');
   const [orgResults, setOrgResults] = useState<OrganizationShallow[]>([]);
   const [isRegOpen, setIsRegOpen] = useState(false);
   const [isOrgOpen, setIsOrgOpen] = useState(false);
+  // Initialize selectedRegion - let the effect handle setting the correct value
   const [selectedRegion, setSelectedRegion] = useState<string | undefined>(
     undefined
   );
@@ -62,9 +65,10 @@ export const VSDashRegionAndOrgFilters: React.FC<
     };
   };
 
+  // Initialize selectedOrg - let the effect handle setting the correct value
   const [selectedOrg, setSelectedOrg] = useState<
     OrganizationShallow | undefined
-  >(shallowCurrentOrg(currentOrganization as Organization));
+  >(undefined);
 
   const searchOrganizations = useCallback(
     async (search_term: string, regions?: string[]) => {
@@ -174,6 +178,101 @@ export const VSDashRegionAndOrgFilters: React.FC<
     searchOrganizations(search_term, regionFilterValues ?? []);
   }, [searchOrganizations, search_term, regionFilterValues]);
 
+  // Initialize UI state with user defaults - only run once on mount
+  useEffect(() => {
+    // Don't run initialization during drill-down scenarios
+    if (isDrillDown) {
+      return;
+    }
+
+    // Set user's default region if not already set
+    if (!selectedRegion && user?.region_id) {
+      console.log('Initializing with user default region:', user.region_id);
+      setSelectedRegion(user.region_id);
+
+      // Also add the user's default region as a filter to ensure correct drill-down behavior
+      // This prevents other region filters from being stored during drill-down
+      const existingRegionFilter = filters.find(
+        (filter) => filter.field === REGION_FILTER_KEY
+      );
+      if (
+        !existingRegionFilter ||
+        existingRegionFilter.values[0] !== user.region_id
+      ) {
+        console.log(
+          'Adding user default region filter to ensure correct drill-down:',
+          user.region_id
+        );
+        // Remove any existing region filters first
+        if (existingRegionFilter && existingRegionFilter.values) {
+          existingRegionFilter.values.forEach((value: string) => {
+            removeFilter(REGION_FILTER_KEY, value, 'any');
+          });
+        }
+        addFilter(REGION_FILTER_KEY, user.region_id, 'any');
+      }
+    }
+
+    // Set user's default organization if not already set
+    if (!selectedOrg && currentOrganization) {
+      const defaultOrg = shallowCurrentOrg(currentOrganization as Organization);
+      if (defaultOrg) {
+        console.log('Initializing with user default org:', defaultOrg.name);
+        setSelectedOrg(defaultOrg);
+      }
+    }
+    // Only run on mount and when user/currentOrganization become available
+    // Don't run during drill-down scenarios to avoid interfering with restoration
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.region_id, currentOrganization?.id, isDrillDown]);
+
+  // Handle drill-down filter restoration - only during drill-down scenarios
+  useEffect(() => {
+    // Only restore filters when returning from drill-down
+    if (!isDrillDown) {
+      return;
+    }
+
+    const regionFilter = filters.find(
+      (filter) => filter.field === REGION_FILTER_KEY
+    );
+    const orgFilter = filters.find(
+      (filter) => filter.field === ORGANIZATION_FILTER_KEY
+    );
+
+    console.log('Drill-down detected, checking for filter restoration');
+
+    // Restore region filter if it exists and differs from current selection
+    if (regionFilter && regionFilter.values && regionFilter.values.length > 0) {
+      const targetRegion = regionFilter.values[0] as string;
+      if (targetRegion !== selectedRegion) {
+        console.log('Restoring region filter from drill-down:', targetRegion);
+        setSelectedRegion(targetRegion);
+      }
+    }
+
+    // Restore organization filter if it exists and differs from current selection
+    if (orgFilter && orgFilter.values && orgFilter.values.length > 0) {
+      const firstOrg = orgFilter.values[0];
+      if (typeof firstOrg === 'object' && firstOrg.id) {
+        if (!selectedOrg || selectedOrg.id !== firstOrg.id) {
+          console.log('Restoring org filter from drill-down:', firstOrg.name);
+          setSelectedOrg(firstOrg as OrganizationShallow);
+        }
+      }
+    } else {
+      // If no explicit org filter exists, restore the default organization
+      // This handles the case where user was using default org before drill-down
+      if (!selectedOrg && currentOrganization) {
+        const defaultOrg = shallowCurrentOrg(currentOrganization as Organization);
+        if (defaultOrg) {
+          console.log('Restoring default org after drill-down:', defaultOrg.name);
+          setSelectedOrg(defaultOrg);
+        }
+      }
+    }
+  }, [isDrillDown, filters, selectedRegion, selectedOrg, currentOrganization]);
+
   const handleTextChange = (v: string) => {
     setSearchTerm(v);
   };
@@ -226,7 +325,7 @@ export const VSDashRegionAndOrgFilters: React.FC<
     <>
       <Box padding={2}>
         <Autocomplete
-          value={selectedRegion ?? user?.region_id ?? ''}
+          value={selectedRegion ?? ''}
           onChange={(e, v) => {
             setTimeout(() => {
               handleChangeRegion(v);
