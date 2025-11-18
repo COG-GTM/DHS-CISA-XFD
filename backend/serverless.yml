@@ -87,7 +87,7 @@ provider:
   name: aws
   region: ${file(env.yml):${self:provider.stage}.REGION, ''}
   endpointType: ${file(env.yml):${self:provider.stage}.ENDPOINT_TYPE, ''}
-  runtime: python3.11
+  runtime: python3.12
   timeout: 30
   stage: ${opt:stage, 'dev'}
   environment: ${file(env.yml):${self:provider.stage}, ''}

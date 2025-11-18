@@ -11,11 +11,11 @@ RUN apt update && apt install -y git zlib1g-dev
 
 RUN apt-get update && apt-get install -y jq
 
-RUN wget -c https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tar.xz && tar -Jxvf Python-3.10.11.tar.xz
-RUN cd Python-3.10.11 && ./configure && make -j4 && make altinstall
-RUN update-alternatives --install /usr/bin/python python /usr/local/bin/python3.10 1
-RUN update-alternatives --install /usr/bin/pip pip /usr/local/bin/pip3.10 1
-RUN pip3.10 install --upgrade pip
+RUN wget -c https://www.python.org/ftp/python/3.12.8/Python-3.12.8.tar.xz && tar -Jxvf Python-3.12.8.tar.xz
+RUN cd Python-3.12.8 && ./configure && make -j4 && make altinstall
+RUN update-alternatives --install /usr/bin/python python /usr/local/bin/python3.12 1
+RUN update-alternatives --install /usr/bin/pip pip /usr/local/bin/pip3.12 1
+RUN pip3.12 install --upgrade pip
 
 RUN apt remove dav1d && apt autoclean && apt autoremove
 
@@ -29,6 +29,9 @@ RUN ./aws/install
 RUN git clone -b crossfeed-SQS https://github.com/cisagov/ATC-Framework.git && \
     cd ATC-Framework && \
     git checkout 115aca7ca6e9b4e739104058f888ca3c259f7d69 && \
+    echo "Before patching matplotlib:" && grep -n "matplotlib" setup.py || true && \
+    sed -E -i 's/matplotlib\s*==\s*3\.3\.4/matplotlib>=3.8,<3.9/g' setup.py && \
+    echo "After patching matplotlib:" && grep -n "matplotlib" setup.py || true && \
     pip install .
 
 RUN python -m spacy download en_core_web_lg
