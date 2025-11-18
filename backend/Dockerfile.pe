@@ -29,7 +29,9 @@ RUN ./aws/install
 RUN git clone -b crossfeed-SQS https://github.com/cisagov/ATC-Framework.git && \
     cd ATC-Framework && \
     git checkout 115aca7ca6e9b4e739104058f888ca3c259f7d69 && \
-    sed -i 's/matplotlib==3\.3\.4/matplotlib>=3.8,<3.9/g' $(grep -Rl "matplotlib==3\.3\.4" .) && \
+    echo "Before patching matplotlib:" && grep -n "matplotlib" setup.py || true && \
+    sed -E -i 's/matplotlib\s*==\s*3\.3\.4/matplotlib>=3.8,<3.9/g' setup.py && \
+    echo "After patching matplotlib:" && grep -n "matplotlib" setup.py || true && \
     pip install .
 
 RUN python -m spacy download en_core_web_lg
