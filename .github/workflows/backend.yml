@@ -61,8 +61,21 @@ jobs:
       - name: Lint with pylint
         run: make pylint
 
-      - name: Run pytest
-        run: make pytest
+      - name: Run pytest with coverage
+        run: |
+          docker compose exec backend pytest --no-migrations --reuse-db \
+            --cov=xfd_api --cov-report=xml --cov-report=term
+          docker compose cp backend:/app/coverage.xml ./coverage.xml
+        working-directory: ./
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
 
   build_worker:
     runs-on: ubuntu-latest
