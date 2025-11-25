@@ -1,6 +1,7 @@
 # XFD
 
 [![GitHub Build Status](https://github.com/cisagov/ASM-Dashboard/workflows/build/badge.svg)](https://github.com/cisagov/ASM-Dashboard/actions)
+[![codecov](https://codecov.io/gh/COG-GTM/DHS-CISA-XFD/branch/develop/graph/badge.svg)](https://codecov.io/gh/COG-GTM/DHS-CISA-XFD)
 
 ## Contributing
 
