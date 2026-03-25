@@ -153,11 +153,8 @@ from .schema_models.user import (
     RegisterUserResponse,
     UpdateUserV2,
 )
-from .schema_models.user import (
-    UserResponseV2,
-    VersionModel,
-)
 from .schema_models.user import User as UserSchema
+from .schema_models.user import UserResponseV2, VersionModel
 from .schema_models.user_log_schema import (
     GetLogResponse,
     LogSearch,
