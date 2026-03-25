@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 # Third-Party Libraries
+from django.utils.html import escape
 from fastapi import (
     APIRouter,
     Body,
@@ -1646,6 +1647,7 @@ async def register_approve(
     user_id: str, current_user: User = Depends(get_current_active_user)
 ):
     """Approve a registered user."""
+    user_id = escape(user_id)
     return user.approve_user_registration(user_id, current_user)
 
 
@@ -1659,6 +1661,7 @@ async def register_deny(
     user_id: str, current_user: User = Depends(get_current_active_user)
 ):
     """Deny a registered user."""
+    user_id = escape(user_id)
     return user.deny_user_registration(user_id, current_user)
 
 
