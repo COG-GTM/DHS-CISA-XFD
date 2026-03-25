@@ -263,13 +263,21 @@ def ping(url, allow_redirects=False, verify=True):
     values like multipart/x-mixed-replace;boundary=ffserver that
     indicate that the response body will stream indefinitely.
     """
-    if CA_FILE and verify:
+    if CA_FILE:
         verify = CA_FILE
+    elif not verify:
+        # Instead of disabling certificate verification entirely, use a
+        # custom CA bundle from the REQUESTS_CA_BUNDLE environment variable
+        # if one is available.  This avoids Man-in-the-Middle exposure while
+        # still allowing connections to endpoints with non-public certificates.
+        ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
+        if ca_bundle:
+            verify = ca_bundle
 
     return requests.get(
         url,
         allow_redirects=allow_redirects,
-        # Validate certificates.
+        # Validate certificates using the best available trust store.
         verify=verify,
         # Setting this to true delays the retrieval of the content
         # until we access Response.content.  Since we aren't
