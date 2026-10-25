@@ -193,8 +193,11 @@ resource "aws_ecs_task_definition" "matomo" {
 
   container_definitions = jsonencode([
     {
+      # Pinned to a Matomo image built on a PHP release that fixes PHP2Shell
+      # (CVE-2026-109618 / CVE-2026-109619). matomo:5.2.1 ships PHP 8.3.16
+      # (vulnerable); matomo:5.14.2-apache ships PHP 8.4.27 (fixed).
       name      = "main",
-      image     = "matomo:5.2.1",
+      image     = "matomo:5.14.2-apache",
       essential = true,
 
       # Mount EFS at /var/www/html in Matomo Fargate container
@@ -272,6 +275,12 @@ resource "aws_ecs_task_definition" "matomo" {
           ' "$CONFIG" > "$TMP" && mv "$TMP" "$CONFIG"
 
           chmod 0640 "$CONFIG" || true
+
+          # PHP2Shell mitigation recommended by the PHP team (not the fix; the
+          # fix is the patched PHP build in the image). Matomo does not use
+          # session upload progress.
+          printf '%s\n' 'session.upload_progress.enabled = 0' > /usr/local/etc/php/conf.d/zz-php2shell-mitigation.ini
+
           exec docker-php-entrypoint apache2-foreground
         EOC
       ],
