@@ -409,14 +409,11 @@ async def get_by_org_stats(
         # Initialize the results list
         by_org_data = []
 
-        # Fetch data from Redis for each organization ID
-        for org_id in filtered_org_ids:
-            redis_key = "by_org_stats:{}".format(org_id)
-            org_stats = await redis_client.get(redis_key)
+        # Fetch all organizations' stats from Redis in a single MGET
+        redis_keys = ["by_org_stats:{}".format(org_id) for org_id in filtered_org_ids]
+        for org_stats in await redis_client.mget(*redis_keys):
             if org_stats:
-                by_org_data.append(
-                    json.loads(org_stats)
-                )  # Directly append the Redis data
+                by_org_data.append(json.loads(org_stats))
 
         if not by_org_data:
             raise HTTPException(
